@@ -12,388 +12,36 @@
   <link rel="apple-touch-icon" sizes="180x180" href="assets/Favicon Generator/apple-touch-icon.png" />
   <link rel="manifest" href="assets/Favicon Generator/site.webmanifest" />
   
-  <!-- Link to the EXTERNAL stylesheet -->
-  <link rel="stylesheet" href="style.css" />
-  <style>/* === 1. MODERN CSS RESET & GLOBAL STYLES === */
-    *, *::before, *::after {
-      box-sizing: border-box;
-    }
-    
-    body, h1, p, ul, li {
-      margin: 0;
-      padding: 0;
-    }
-    
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      line-height: 1.6;
-      background-color: #f4f4f8;
-      color: #333;
-      /* Use Flexbox for overall sticky footer layout */
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
-      position: relative;
-    }
-    
-    ul {
-      list-style: none;
-    }
-    
-    a {
-      text-decoration: none;
-      color: inherit;
-    }
-    
-    /* Container helper class for centering and max width */
-    .container {
-      max-width: 1400px;
-      margin: 0 auto;
-      padding: 0 20px;
-    }
-    
-    /* === 2. BACKGROUND STYLING === */
-    
-    .page-background {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0, 40, 85, 0.8); /* Dark overlay */
-      z-index: 0; 
-    }
-    
-    .page-background-image {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      z-index: -1; /* Puts image furthest back */
-      opacity: 0.7;
-    }
-    
-    
-    /* === 3. HEADER & NAVIGATION === */
-    
-    header {
-      position: relative;
-      z-index: 10; /* Ensure header is above content wrapper background layers */
-    }
-    
-    .logo {
-      display: block;
-      max-width: 150px;
-      margin: 20px auto 0;
-      filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
-    }
-    
-    .navbar {
-      background-color: #002855; 
-      padding: 10px 0;
-      margin-top: 20px;
-    }
-    
-    .navbar-content {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    
-    .navbar-brand {
-      color: #fff;
-      font-size: 1.5rem;
-      font-weight: bold;
-    }
-    
-    .navbar-nav {
-      display: flex;
-    }
-    
-    .navbar-nav li {
-      margin-left: 20px;
-    }
-    
-    .navbar-link {
-      color: #fff;
-      padding: 5px 10px;
-      transition: color 0.3s ease;
-    }
-    
-    .navbar-link:hover,
-    .navbar-link.active {
-      color: #6cb5d9;
-    }
-    
-    
-    /* === 4. MAIN CONTENT AREA === */
-    
-    main {
-      flex-grow: 1; /* This makes the main content take up all available vertical space */
-      padding: 40px 20px;
-      position: relative; /* Needed for z-index context relative to backgrounds */
-      z-index: 2; /* Puts main content above background layers */
-    }
-    
-    main h1 {
-      color: #fff; 
-      text-align: center;
-      font-size: 2.5rem;
-      margin-bottom: 15px;
-      text-shadow: 0 2px 4px rgba(0,0,0,0.5);
-    }
-    
-    main p {
-      color: #eee; 
-      text-align: center;
-      font-size: 1.1rem;
-      margin-bottom: 40px;
-      text-shadow: 0 1px 3px rgba(0,0,0,0.5);
-    }
-    
-    
-    /* === 5. MEETS CARD LAYOUT (Original styles refined) === */
-    
-    .meets-container {
-      max-width: 1400px;
-      margin: 0 auto;
-      padding: 0 20px;
-    }
-    
-    #meets-list {
-      display: grid;
-      /* Use auto-fill and minmax for a fully responsive grid */
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-      gap: 28px;
-    }
-    
-    #meets-list li {
-      background: linear-gradient(135deg, #ffffff 0%, #f8fbfd 100%);
-      border-radius: 16px;
-      padding: 28px 24px;
-      box-shadow: 0 4px 16px rgba(0, 40, 85, 0.08);
-      border: 1.5px solid rgba(0, 40, 85, 0.06);
-      cursor: pointer;
-      transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-      position: relative;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-      text-align:center
-    }
-    
-    /* Gradient top accent bar */
-    #meets-list li::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 4px;
-      background: linear-gradient(90deg, #002855 0%, #0056b3 50%, #002855 100%);
-      transform: scaleX(0);
-      transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-      transform-origin: left;
-    }
-    
-    #meets-list li:hover::before {
-      transform: scaleX(1);
-    }
-    
-    #meets-list li a {
-      color: #002855;
-      font-weight: 700;
-      font-size: 1.25rem;
-      margin-bottom: 12px;
-      transition: color 0.3s ease;
-      line-height: 1.3;
-      word-wrap: break-word;
-      text-align:center
-    }
-    
-    #meets-list li a:hover {
-      color: #0056b3;
-    }
-    
-    #meets-list li div {
-      color: #666;
-      margin-bottom: 8px;
-      font-size: 0.95rem;
-    }
-    
-    #meets-list li div:first-of-type {
-      font-weight: 600;
-      color: #0056b3;
-      margin-bottom: 6px;
-      font-size: 1rem;
-    }
-    
-    /* Note: The last div's style is handled in the JS via inline style in the HTML you provided, 
-       but it's good practice to keep CSS in the CSS file: */
-    /* #meets-list li div:last-of-type { 
-      color: #888;
-      font-size: 0.9rem;
-      margin-top: auto;
-      padding-top: 12px;
-      border-top: 1px solid rgba(0, 40, 85, 0.1);
-      font-style: italic;
-    } */
-    
-    
-    #meets-list li:hover {
-      transform: translateY(-8px) scale(1.02);
-      box-shadow: 0 16px 40px rgba(0, 40, 85, 0.15);
-      background: linear-gradient(135deg, #f0f7ff 0%, #ffffff 100%);
-      border-color: rgba(0, 86, 179, 0.2);
-    }
-    
-    /* Empty state styling */
-    .empty-state {
-      text-align: center;
-      padding: 60px 20px;
-      grid-column: 1 / -1;
-      color: #fff;
-    }
-    
-    .empty-state p {
-      color: inherit;
-      font-size: 1.1rem;
-    }
-    
-    
-    /* === 6. FOOTER === */
-     /* Footer */
-    footer {
-  /* Remove the solid background color */
-  background: rgba(0, 40, 85, 0.85); /* Semi-transparent version of your primary blue */
-  backdrop-filter: blur(8px); /* Optional: Adds a glass effect */
-  color: white;
-  text-align: center;
-  padding: 40px 20px;
-  margin-top: 80px;
-  position: relative;
-  z-index: 1; /* Ensures footer content stays above the image */
-}
-.footer-with-bg {
-  position: relative;
-  overflow: hidden; /* Clips the image to footer boundaries */
-  padding: 60px 20px;
-  color: white;
-  text-align: center;
-}
-
-.footer-bg-img {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover; /* Ensures the mountain image fills the area */
-  z-index: -1; /* Puts it behind the text */
-  filter: brightness(0.5); /* Darkens the image so text is readable */
-}
-
-.footer-content {
-  position: relative;
-  z-index: 2;
-}
-    
-    
-    /* === 7. RESPONSIVE ADJUSTMENTS (Media Queries) === */
-    
-    @media (max-width: 1024px) {
-      #meets-list {
-        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-        gap: 24px;
-      }
-    }
-    
-    @media (max-width: 768px) {
-      .container, .meets-container {
-        padding: 0 16px;
-      }
-    
-      #meets-list {
-        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-        gap: 18px;
-      }
-    
-      main h1 {
-        font-size: 2rem;
-      }
-    }
-    
-    @media (max-width: 500px) {
-      .container, .meets-container {
-        padding: 0 12px;
-      }
-    
-      #meets-list {
-        grid-template-columns: 1fr; /* Stack cards vertically on mobile */
-        gap: 16px;
-      }
-    
-      .navbar-content {
-        flex-direction: column;
-        gap: 10px;
-      }
-    
-      .navbar-brand {
-        margin-bottom: 10px;
-      }
-      
-      .navbar-nav li {
-          margin: 0 10px;
-      }
-    
-      main h1 {
-        font-size: 1.7rem;
-      }
-    }
-    
-    </style>
+  <link rel="stylesheet" href="/assets/main.css" />
 </head>
 <body>
-  <div class="content-wrapper">
-    <!-- Background elements (Assuming these are full-screen overlays/images) -->
-    <div class="page-background"></div>
-    <img src="assets/meets background.jpg" alt="" class="page-background-image" />
-    
-    <header>
-      <!-- Logo image for desktop/large view -->
-      <img src="assets/Wvruns Logo.png" alt="Mountain State Miles Logo" class="logo" />
-      
-      <!-- Navigation Bar -->
-      <nav class="navbar">
-        <div class="container">
-          <div class="navbar-content">
-            <!-- Text/Emoji logo for the navbar -->
-            <a href="xc.html" class="navbar-brand">🏔️ Cross Country</a>
-            <ul class="navbar-nav">
-              <li><a href="xc.html" class="navbar-link">Home</a></li>
-              <li><a href="schools.html" class="navbar-link">Schools</a></li>
-              <li><a href="meets.html" class="navbar-link active">Meets</a></li>
-              <li><a href="rankings.html" class="navbar-link">Rankings</a></li>
-              <li><a href="analytics.html" class="navbar-link">Analytics</a></li>
-              
-            </ul>
-          </div>
-        </div>
-      </nav>
-    </header>
-    
-    <main>
+  <header>
+    <nav class="navbar">
+      <div class="navbar-content">
+        <a href="xc.html" class="navbar-brand">Cross Country</a>
+        <button class="mobile-menu-toggle" aria-label="Toggle menu">☰</button>
+        <ul class="navbar-nav" id="main-nav">
+          <li><a href="/home/index" class="navbar-link">Home</a></li>
+          <li><a href="xc.html" class="navbar-link">Cross Country</a></li>
+          <li><a href="schools.html" class="navbar-link">Schools</a></li>
+          <li><a href="meets.html" class="navbar-link active">Meets</a></li>
+          <li><a href="rankings.html" class="navbar-link">Rankings</a></li>
+          <li><a href="analytics.html" class="navbar-link">Analytics</a></li>
+        </ul>
+        <button class="theme-toggle" aria-label="Switch theme">🌙</button>
+      </div>
+    </nav>
+  </header>
+
+  <main class="content-section">
       <h1>Meets</h1>
       <p>Browse all cross country and track meets in West Virginia.</p>
-      <div class="meets-container">
-        <ul id="meets-list">Loading meets...</ul>
-      </div>
-    </main>
+    <div class="meets-container">
+      <ul id="meets-list">Loading meets...</ul>
+    </div>
+  </main>
 
-    <footer>
+  <footer>
         <div class="row">
             <!-- 1st Column -->
             <div class="footer-col">
@@ -437,13 +85,11 @@
         </div>
     </footer>
 
-  <!-- Firebase SDK Scripts (Good as is) -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-analytics-compat.js"></script>
+  <script src="/assets/theme-toggle.js"></script>
   <script src="firebase-config.js"></script>
   <script src="firebase-helpers.js"></script>
-  <script src="email-signup.js"></script>
 
   <script>
     async function loadMeets() {
@@ -481,7 +127,7 @@
               <a href="meet.html?slug=${meet.slug}">${meet.name}</a>
               <div>${date}</div>
               <div>${location}</div>
-              ${meet.description ? `<div style="margin-top: auto; padding-top: 12px; border-top: 1px solid rgba(0, 40, 85, 0.1);">
+              ${meet.description ? `<div style="margin-top: auto; padding-top: 12px; border-top: 1px solid var(--border);">
                 ${meet.description}
               </div>` : ''}
             </li>
@@ -500,6 +146,23 @@
     } else {
         document.getElementById('meets-list').innerHTML = '<li class="empty-state"><p>Firebase scripts not loaded correctly.</p></li>';
     }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const menuToggle = document.querySelector('.mobile-menu-toggle');
+      const navMenu = document.getElementById('main-nav');
+      
+      if (menuToggle && navMenu) {
+        menuToggle.addEventListener('click', () => {
+          navMenu.classList.toggle('mobile-open');
+        });
+        
+        document.addEventListener('click', (e) => {
+          if (!navMenu.contains(e.target) && !menuToggle.contains(e.target)) {
+            navMenu.classList.remove('mobile-open');
+          }
+        });
+      }
+    });
   </script>
 </body>
 </html>

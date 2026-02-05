@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Track Admin Login</title>
-  <link rel="stylesheet" href="../style.css">
+  <link rel="stylesheet" href="/assets/main.css">
   <style>
     body {
       margin: 0;
@@ -15,7 +15,7 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      font-family: Arial, sans-serif;
+      font-family: var(--font-sans);
       color: white;
     }
 
@@ -69,15 +69,6 @@
       font-size: 18px;
       display: none;
     }
-    .navbar{
-            width: 100vw;
-            text-align: center;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            z-index: 1000;
-        }
   </style>
 </head>
 
@@ -92,6 +83,7 @@
           <li><a href="index.html" class="navbar-link">Track</a></li>
           <li><a href="meets.html" class="navbar-link">Meets</a></li>
         </ul>
+        <button class="theme-toggle" aria-label="Switch theme">🌙</button>
       </div>
     </nav>
   </header>
@@ -103,6 +95,7 @@
     <p id="error" class="error">Incorrect password.</p>
   </div>
   
+  <script src="/assets/theme-toggle.js"></script>
   <script>
     // Already logged in? → Go to admin page
     if (localStorage.getItem("&#116; &#114; &#97; &#99; &#107; &#97; &#100; &#109; &#105; &#110;") === "&#116; &#114; &#117; &#101;") {
@@ -118,23 +111,15 @@
         document.getElementById("error").style.display = "block";
       }
     }
-    // Get a reference to the button element
+    
     const passwordInput = document.getElementById("password");
+    passwordInput.addEventListener("keydown", function(event) {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        document.querySelector(".btn").click();
+      }
+    });
 
-// Listen for keydown event on the input field
-passwordInput.addEventListener("keydown", function(event) {
-  // Use event.key === "Enter" for modern standards (2025)
-  if (event.key === "Enter") {
-    event.preventDefault(); // Prevents default browser actions
-    document.querySelector(".btn").click(); // Programmatically clicks the button
-  }
-});
-
-
-  </script>
-  
-  <script>
-    // Mobile menu toggle
     document.addEventListener('DOMContentLoaded', () => {
       const menuToggle = document.querySelector('.mobile-menu-toggle');
       const navMenu = document.getElementById('main-nav');

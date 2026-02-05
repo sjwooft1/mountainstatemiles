@@ -4,81 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>XC Admin Login</title>
-  <link rel="stylesheet" href="../style.css">
-  <style>
-    body {
-      margin: 0;
-      height: 100vh;
-      background-image: url("assets/login bg.webp");
-      background-size: cover;
-      background-position: center;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      font-family: Arial, sans-serif;
-      color: white;
-    }
-
-    .login-box {
-      background: rgba(7, 34, 86, 0.75);
-      padding: 40px;
-      width: 320px;
-      border-radius: 12px;
-      backdrop-filter: blur(6px);
-      text-align: center;
-      box-shadow: 0 8px 25px rgba(0,0,0,0.3);
-    }
-
-    .login-box h2 {
-      margin-bottom: 20px;
-      font-size: 26px;
-      font-weight: bold;
-    }
-
-    input {
-      width: 95%;
-      padding: 12px;
-      border: none;
-      border-radius: 6px;
-      margin-bottom: 15px;
-      font-size: 16px;
-      outline: none;
-      text-align: center;
-    }
-
-    .btn {
-      width: 100%;
-      padding: 12px;
-      background: #ffcc00;
-      border: none;
-      border-radius: 6px;
-      font-size: 16px;
-      font-weight: bold;
-      cursor: pointer;
-      transition: 0.2s;
-    }
-
-    .btn:hover {
-      background: #04561b;
-      transform: scale(1.05);
-    }
-
-    .error {
-      margin-top: 5px;
-      color: #ff0000;
-      font-size: 18px;
-      display: none;
-    }
-    .navbar{
-            width: 100vw;
-            text-align: center;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            z-index: 1000;
-        }
-  </style>
+  <link rel="stylesheet" href="/assets/main.css">
 </head>
 
 <body>
@@ -88,22 +14,38 @@
         <a href="xc.html" class="navbar-brand">🏔️ Cross Country</a>
         <button class="mobile-menu-toggle" aria-label="Toggle menu">☰</button>
         <ul class="navbar-nav" id="main-nav">
-          <li><a href="/home/" class="navbar-link">Home</a></li>
+          <li><a href="/home/index" class="navbar-link">Home</a></li>
           <li><a href="xc.html" class="navbar-link">Cross Country</a></li>
           <li><a href="schools.html" class="navbar-link">Schools</a></li>
           <li><a href="meets.html" class="navbar-link">Meets</a></li>
+          <li><a href="rankings.html" class="navbar-link">Rankings</a></li>
+          <li><a href="analytics.html" class="navbar-link">Analytics</a></li>
         </ul>
+        <button class="theme-toggle" aria-label="Switch theme">🌙</button>
       </div>
     </nav>
   </header>
   
-  <div class="login-box">
-    <h2>CrossCountry Admin Login</h2>
-    <input type="password" id="password" placeholder="Enter Password">
-    <button class="btn" onclick="checkLogin()">Login</button>
-    <p id="error" class="error">Incorrect password.</p>
-  </div>
-  
+  <main class="content-section">
+    <div class="login-box">
+      <h2>Cross Country Admin Login</h2>
+      <input type="password" id="password" placeholder="Enter Password">
+      <button class="btn" onclick="checkLogin()">Login</button>
+      <p id="error" class="error">Incorrect password.</p>
+    </div>
+  </main>
+
+  <footer>
+    <div class="row">
+      <div class="footer-col"><h4>General</h4><ul><li><a href="/home/index">Home</a></li><li><a href="/home/admin">Admin</a></li><li><a href="/news">News</a></li></ul></div>
+      <div class="footer-col"><h4>Cross Country</h4><ul><li><a href="/CrossCountry/xc">Home</a></li><li><a href="/CrossCountry/meets">Meets</a></li><li><a href="/CrossCountry/schools">Schools</a></li><li><a href="/CrossCountry/rankings">Rankings</a></li><li><a href="/CrossCountry/analytics">Analytics</a></li></ul></div>
+      <div class="footer-col"><h4>Track</h4><ul><li><a href="/Track/index">Home</a></li><li><a href="/Track/meets">Meets</a></li><li><a href="/Track/teams">Teams</a></li><li><a href="/Track/rankings">Rankings</a></li><li><a href="/Track/analytics">Analytics</a></li></ul></div>
+    </div>
+    <hr>
+    <div class="row"><div class="footer-bottom"><p>&#169; 2026 Mountain State Miles — Built by runners, for runners.</p></div></div>
+  </footer>
+
+  <script src="/assets/theme-toggle.js"></script>
   <script>
     // Already logged in? → Go to admin page
     if (localStorage.getItem("&#120; &#99; &#97; &#100; &#109; &#105; &#110;") === "&#116; &#114; &#117; &#101;") {
@@ -121,32 +63,29 @@
     }
     const passwordInput = document.getElementById("password");
 
-// Listen for keydown event on the input field
-passwordInput.addEventListener("keydown", function(event) {
-  // Use event.key === "Enter" for modern standards (2025)
-  if (event.key === "Enter") {
-    event.preventDefault(); // Prevents default browser actions
-    document.querySelector(".btn").click(); // Programmatically clicks the button
-  }
-  });
-  
-  // Mobile menu toggle
-  document.addEventListener('DOMContentLoaded', () => {
-    const menuToggle = document.querySelector('.mobile-menu-toggle');
-    const navMenu = document.getElementById('main-nav');
+    passwordInput.addEventListener("keydown", function(event) {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        document.querySelector(".btn").click();
+      }
+    });
     
-    if (menuToggle && navMenu) {
-      menuToggle.addEventListener('click', () => {
-        navMenu.classList.toggle('mobile-open');
-      });
+    document.addEventListener('DOMContentLoaded', () => {
+      const menuToggle = document.querySelector('.mobile-menu-toggle');
+      const navMenu = document.getElementById('main-nav');
       
-      document.addEventListener('click', (e) => {
-        if (!navMenu.contains(e.target) && !menuToggle.contains(e.target)) {
-          navMenu.classList.remove('mobile-open');
-        }
-      });
-    }
-  });
+      if (menuToggle && navMenu) {
+        menuToggle.addEventListener('click', () => {
+          navMenu.classList.toggle('mobile-open');
+        });
+        
+        document.addEventListener('click', (e) => {
+          if (!navMenu.contains(e.target) && !menuToggle.contains(e.target)) {
+            navMenu.classList.remove('mobile-open');
+          }
+        });
+      }
+    });
   </script>
 
 </body>

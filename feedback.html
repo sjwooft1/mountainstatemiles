@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Feedback & Suggestions — Mountain State Miles</title>
+  <link rel="icon" type="image/png" href="/assets/Favicon Generator/favicon-96x96.png" sizes="96x96" />
+  <link rel="icon" type="image/svg+xml" href="/assets/Favicon Generator/favicon.svg" />
+  <link rel="shortcut icon" href="/assets/Favicon Generator/favicon.ico" />
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+  <header>
+    <nav class="navbar">
+      <div class="navbar-content">
+        <a href="/home/index" class="navbar-brand">MSM</a>
+        <button class="mobile-menu-toggle" aria-label="Toggle menu">☰</button>
+        <ul class="navbar-nav" id="main-nav">
+          <li><a href="/home/index" class="navbar-link">Home</a></li>
+          <li><a href="/home/about" class="navbar-link">About</a></li>
+          <li><a href="/feedback" class="navbar-link active">Feedback</a></li>
+          <li><a href="/Track/index" class="navbar-link">Track & Field</a></li>
+          <li><a href="/CrossCountry/xc" class="navbar-link">Cross Country</a></li>
+          <li><a href="/weather" class="navbar-link">Weather</a></li>
+        </ul>
+        <button class="theme-toggle" aria-label="Switch theme">🌙</button>
+      </div>
+    </nav>
+  </header>
+
+  <main class="content-section">
+    <h1 class="section-title">Feedback & Suggestions</h1>
+    <p class="text-center mb-4">Request new features, suggest changes, report issues with results, or leave a comment. We read everything and use it to improve Mountain State Miles.</p>
+
+    <div id="feedback-alert" class="alert" style="display: none;"></div>
+
+    <form id="feedback-form" class="card" style="max-width: 600px; margin: 0 auto 2rem;">
+      <div class="form-group">
+        <label class="form-label" for="feedback-type">Type of feedback *</label>
+        <select id="feedback-type" class="form-select" required>
+          <option value="">Choose one...</option>
+          <option value="feature">New feature request</option>
+          <option value="change">Change or improvement</option>
+          <option value="comment">General comment</option>
+          <option value="results">Results / data feedback</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="feedback-message">Your message *</label>
+        <textarea id="feedback-message" class="form-textarea" rows="5" required placeholder="Describe your idea, issue, or comment..."></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="feedback-email">Email (optional)</label>
+        <input type="email" id="feedback-email" class="form-input" placeholder="So we can follow up if needed">
+      </div>
+      <button type="submit" class="btn btn-primary">Send feedback</button>
+    </form>
+
+    <p class="text-center" style="color: var(--text-tertiary); font-size: 0.9rem;">Feedback is stored securely and visible only to site admins. We may use it to improve the site and prioritize new features.</p>
+  </main>
+
+  <footer>
+    <div class="row">
+      <div class="footer-col">
+        <h4>General</h4>
+        <ul>
+          <li><a href="/home/index">Home</a></li>
+          <li><a href="/home/about">About</a></li>
+          <li><a href="/feedback">Feedback</a></li>
+          <li><a href="/home/admin">Admin</a></li>
+          <li><a href="/news">News</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Cross Country</h4>
+        <ul>
+          <li><a href="/CrossCountry/xc">Home</a></li>
+          <li><a href="/CrossCountry/meets">Meets</a></li>
+          <li><a href="/CrossCountry/schools">Schools</a></li>
+          <li><a href="/CrossCountry/rankings">Rankings</a></li>
+          <li><a href="/CrossCountry/analytics">Analytics</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Track</h4>
+        <ul>
+          <li><a href="/Track/index">Home</a></li>
+          <li><a href="/Track/meets">Meets</a></li>
+          <li><a href="/Track/teams">Teams</a></li>
+          <li><a href="/Track/rankings">Rankings</a></li>
+          <li><a href="/Track/analytics">Analytics</a></li>
+        </ul>
+      </div>
+    </div>
+    <hr>
+    <div class="row">
+      <div class="footer-bottom">
+        <p>&#169; 2026 Mountain State Miles — Built by runners, for runners.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="/assets/theme-toggle.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyCBQt9I_OSoUuTM61F-JXNBkD98f7PCJcA",
+      authDomain: "mountainstatemiles-1326f.firebaseapp.com",
+      databaseURL: "https://mountainstatemiles-1326f-default-rtdb.firebaseio.com",
+      projectId: "mountainstatemiles-1326f",
+      storageBucket: "mountainstatemiles-1326f.firebasestorage.app",
+      messagingSenderId: "605911511756",
+      appId: "1:605911511756:web:0e99071a816f0a39210869",
+      measurementId: "G-N3DNFRQNF9"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+
+    function showAlert(message, isError) {
+      const el = document.getElementById('feedback-alert');
+      el.textContent = message;
+      el.className = 'alert show ' + (isError ? 'alert-error' : 'alert-success');
+      el.style.display = 'block';
+      el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      setTimeout(() => { el.style.display = 'none'; }, 6000);
+    }
+
+    document.getElementById('feedback-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const type = document.getElementById('feedback-type').value;
+      const message = document.getElementById('feedback-message').value.trim();
+      const email = document.getElementById('feedback-email').value.trim();
+      const btn = e.target.querySelector('button[type="submit"]');
+
+      if (!type || !message) {
+        showAlert('Please choose a type and enter your message.', true);
+        return;
+      }
+
+      btn.disabled = true;
+      try {
+        await database.ref('feedback').push({
+          type: type,
+          message: message,
+          email: email || null,
+          createdAt: Date.now()
+        });
+        showAlert('Thanks! Your feedback has been sent. We appreciate it.');
+        document.getElementById('feedback-form').reset();
+      } catch (err) {
+        console.error(err);
+        showAlert('Something went wrong. Please try again or email us.', true);
+      } finally {
+        btn.disabled = false;
+      }
+    });
+
+    document.querySelector('.mobile-menu-toggle').addEventListener('click', () => {
+      document.getElementById('main-nav').classList.toggle('mobile-open');
+    });
+  </script>
+</body>
+</html>

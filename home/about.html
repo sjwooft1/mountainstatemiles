@@ -10,141 +10,11 @@
     <link rel="shortcut icon" href="/assets/Favicon Generator/favicon.ico" />
     <link rel="apple-touch-icon" sizes="180x180" href="/assets/Favicon Generator/apple-touch-icon.png" />
     <link rel="manifest" href="assets/Favicon Generator/site.webmanifest" />
-    <link rel="stylesheet" href="../style.css">
-    <link rel="stylesheet" href="home.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/assets/main.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <style>
-        .page-background-image {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            z-index: -1;
-            filter: brightness(0.5);
-        }
-
-        body {
-            background-color: #000000;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            padding: 0;
-            padding-bottom: 60px;
-            position: relative;
-            z-index: 1;
-            margin: 0;
-            width: 100%;
-        }
-
-        @media (min-width: 769px) {
-            body {
-                padding-bottom: 0;
-            }
-        }
-
-        main {
-            flex: 1;
-            max-width: 900px;
-            width: 100%;
-            margin: 0 auto;
-            padding: 2rem;
-            position: relative;
-            z-index: 2;
-        }
-
-        h1 {
-            color: white;
-            font-size: 2.5rem;
-            margin-bottom: 1.5rem;
-            text-shadow: 0 2px 20px rgba(0, 0, 0, 0.3);
-        }
-
-        h2 {
-            color: white;
-            font-size: 1.75rem;
-            margin-top: 2rem;
-            margin-bottom: 1rem;
-            border-bottom: 2px solid #10b981;
-            padding-bottom: 0.5rem;
-        }
-
-        p, li {
-            color: rgba(255, 255, 255, 0.9);
-            font-size: 1.05rem;
-            line-height: 1.8;
-            margin-bottom: 1rem;
-        }
-
-        ul {
-            margin-left: 2rem;
-        }
-
-        .feature-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 2rem;
-            margin: 2rem 0;
-        }
-
-        .feature-card {
-            background: rgba(255, 255, 255, 0.1);
-            border-left: 4px solid #10b981;
-            padding: 1.5rem;
-            border-radius: 8px;
-            backdrop-filter: blur(10px);
-        }
-
-        .feature-card h3 {
-            color: #10b981;
-            margin-top: 0;
-        }
-
-        .cta-section {
-            background: rgba(16, 185, 129, 0.15);
-            border: 2px solid #10b981;
-            padding: 2rem;
-            border-radius: 12px;
-            text-align: center;
-            margin-top: 3rem;
-        }
-
-        .cta-section a {
-            display: inline-block;
-            background: #10b981;
-            color: white;
-            padding: 0.75rem 1.5rem;
-            border-radius: 8px;
-            text-decoration: none;
-            font-weight: 600;
-            margin-top: 1rem;
-            transition: all 0.3s ease;
-        }
-
-        .cta-section a:hover {
-            background: #059669;
-            transform: translateY(-2px);
-            box-shadow: 0 8px 16px rgba(16, 185, 129, 0.3);
-        }
-
-        @media (max-width: 768px) {
-            main {
-                padding: 1rem;
-            }
-
-            h1 {
-                font-size: 1.75rem;
-            }
-
-            h2 {
-                font-size: 1.25rem;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
     <img src="bg.jpeg" alt="Background Image" class="page-background-image" />
@@ -152,14 +22,17 @@
     <header>
         <nav class="navbar">
             <div class="navbar-content">
-                <a href="index.html" class="navbar-brand">🏔️ Mountain State Miles</a>
+                <a href="/home/index" class="navbar-brand">MSM</a>
                 <button class="mobile-menu-toggle" aria-label="Toggle menu">☰</button>
                 <ul class="navbar-nav" id="main-nav">
-                    <li><a href="index.html" class="navbar-link">Home</a></li>
-                    <li><a href="about.html" class="navbar-link active">About</a></li>
-                    <li><a href="/Track/index.html" class="navbar-link">Track & Field</a></li>
-                    <li><a href="/CrossCountry/xc.html" class="navbar-link">Cross Country</a></li>
+                    <li><a href="/home/index" class="navbar-link">Home</a></li>
+                    <li><a href="/home/about" class="navbar-link active">About</a></li>
+                    <li><a href="/feedback" class="navbar-link">Feedback</a></li>
+                    <li><a href="/Track/index" class="navbar-link">Track & Field</a></li>
+                    <li><a href="/CrossCountry/xc" class="navbar-link">Cross Country</a></li>
+                    <li><a href="/weather" class="navbar-link">Weather</a></li>
                 </ul>
+                <button class="theme-toggle" aria-label="Switch theme">🌙</button>
             </div>
         </nav>
     </header>
@@ -232,9 +105,9 @@
         <div class="cta-section">
             <h3>Ready to Explore?</h3>
             <p>Check out our track and cross country sections to see the latest results and rankings.</p>
-            <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
-                <a href="/Track/index.html">Track & Field</a>
-                <a href="/CrossCountry/xc.html">Cross Country</a>
+            <div class="flex gap-2 justify-center" style="flex-wrap: wrap;">
+                <a href="/Track/index" class="btn">Track & Field</a>
+                <a href="/CrossCountry/xc" class="btn">Cross Country</a>
             </div>
         </div>
     </main>
@@ -244,48 +117,42 @@
             <div class="footer-col">
                 <h4>General</h4>
                 <ul>
-                    <li><a href="/home/index.html">Home</a></li>
-                    <li><a href="/home/about.html">About</a></li>
-                    <li><a href="/home/admin.html">Admin</a></li>
+                    <li><a href="/home/index">Home</a></li>
+                    <li><a href="/home/about">About</a></li>
+                    <li><a href="/home/admin">Admin</a></li>
+                    <li><a href="/news">News</a></li>
                 </ul>
             </div>
-
             <div class="footer-col">
                 <h4>Cross Country</h4>
                 <ul>
-                    <li><a href="/CrossCountry/xc.html">Home</a></li>
-                    <li><a href="/CrossCountry/meets.html">Meets</a></li>
-                    <li><a href="/CrossCountry/schools.html">Schools</a></li>
-                    <li><a href="/CrossCountry/rankings.html">Rankings</a></li>
-                    <li><a href="/CrossCountry/analytics.html">Analytics</a></li>
+                    <li><a href="/CrossCountry/xc">Home</a></li>
+                    <li><a href="/CrossCountry/meets">Meets</a></li>
+                    <li><a href="/CrossCountry/schools">Schools</a></li>
+                    <li><a href="/CrossCountry/rankings">Rankings</a></li>
+                    <li><a href="/CrossCountry/analytics">Analytics</a></li>
                 </ul>
             </div>
-
             <div class="footer-col">
                 <h4>Track</h4>
                 <ul>
-                    <li><a href="/Track/index.html">Home</a></li>
-                    <li><a href="/Track/meets.html">Meets</a></li>
-                    <li><a href="/Track/teams.html">Teams</a></li>
-                    <li><a href="/Track/rankings.html">Rankings</a></li>
-                    <li><a href="/Track/analytics.html">Analytics</a></li>
+                    <li><a href="/Track/index">Home</a></li>
+                    <li><a href="/Track/meets">Meets</a></li>
+                    <li><a href="/Track/teams">Teams</a></li>
+                    <li><a href="/Track/rankings">Rankings</a></li>
+                    <li><a href="/Track/analytics">Analytics</a></li>
                 </ul>
             </div>
         </div>
         <hr>
         <div class="row">
             <div class="footer-bottom">
-                <div style="margin-bottom: 1rem;">
-                    <a href="https://github.com/sjwooft1/mountainstatemiles" target="_blank" rel="noopener noreferrer" style="display: inline-flex; align-items: center; gap: 0.5rem; color: rgba(255, 255, 255, 0.9); text-decoration: none; transition: color 0.3s ease;">
-                        <i class="fab fa-github" style="font-size: 1.5rem;"></i>
-                        <span>GitHub Repository</span>
-                    </a>
-                </div>
-                <p>&#169; 2026 Mountain State Miles — Built by runners, for runners.</p>
+                <p><a href="https://github.com/sjwooft1/mountainstatemiles" target="_blank" rel="noopener noreferrer" class="navbar-link">GitHub</a> · &#169; 2026 Mountain State Miles — Built by runners, for runners.</p>
             </div>
         </div>
     </footer>
 
+    <script src="/assets/theme-toggle.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const menuToggle = document.querySelector('.mobile-menu-toggle');

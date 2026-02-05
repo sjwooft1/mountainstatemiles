@@ -5,21 +5,27 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Track Meets — Mountain State Miles</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../style.css">
+  <link rel="stylesheet" href="/assets/main.css">
   
   <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
 
   <style>
+    @font-face {
+      font-family: 'Aqeon Demo';
+      src: url('../assets/Aqeon Demo Font.ttf') format('truetype');
+    }
+
     * { box-sizing: border-box; }
     
     :root {
-      --primary: #002855;
-      --secondary: #0056b3;
-      --accent: #ff6b35;
-      --accent-dark: #d9530a;
-      --bg-light: #f8f9fa;
-      --text-primary: #1a1a1a;
-      --text-secondary: #666;
+      --primary: #000000;
+      --secondary: #1a1a1a;
+      --accent: #000000;
+      --accent-dark: #1a1a1a;
+      --bg-light: #ffffff;
+      --text-primary: #000000;
+      --text-secondary: #666666;
+      --border: #e0e0e0;
     }
     
     html, body {
@@ -66,19 +72,21 @@
     }
 
     .section-title {
-      font-size: 2.2rem;
+      font-family: 'Aqeon Demo', sans-serif;
+      font-size: 2.5rem;
       font-weight: 800;
-      color: var(--primary);
+      color: var(--text-primary);
       margin: 0;
       position: relative;
+      letter-spacing: -0.02em;
     }
     
     /* View Toggles */
     .view-toggles {
       display: flex;
-      background: white;
-      border: 1px solid #e0e0e0;
-      border-radius: 8px;
+      background: var(--bg-light);
+      border: 1px solid var(--border);
+      border-radius: 4px;
       padding: 4px;
     }
     
@@ -86,7 +94,7 @@
       padding: 8px 16px;
       border: none;
       background: transparent;
-      border-radius: 6px;
+      border-radius: 3px;
       cursor: pointer;
       font-weight: 600;
       color: var(--text-secondary);
@@ -100,12 +108,12 @@
 
     /* Calendar Styling */
     #calendar {
-      background: white;
+      background: var(--bg-light);
       padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+      border-radius: 6px;
+      border: 1px solid var(--border);
       min-height: 600px;
-      display: none; /* Hidden by default */
+      display: none;
     }
 
     .fc-event {
@@ -126,13 +134,13 @@
     }
     
     .meet-card {
-      background: white;
-      border-radius: 12px;
+      background: var(--bg-light);
+      border-radius: 6px;
       padding: 24px;
       text-decoration: none;
       color: inherit;
-      border: 1px solid #e0e0e0;
-      transition: all 0.3s;
+      border: 1px solid var(--border);
+      transition: all 0.2s;
       display: flex;
       flex-direction: column;
       gap: 8px;
@@ -140,96 +148,160 @@
     
     .meet-card:hover {
       transform: translateY(-4px);
-      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.1);
-      border-color: var(--accent);
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
+      border-color: var(--primary);
     }
 
-    .meet-card-title { font-size: 1.25rem; font-weight: 700; color: var(--primary); margin: 0; }
-    .meet-card-date { color: var(--accent); font-weight: 600; margin: 0; }
-    .meet-card-location { color: var(--text-secondary); font-size: 0.9rem; margin: 0; }
+    .meet-card-title { 
+      font-family: 'Aqeon Demo', sans-serif;
+      font-size: 1.25rem; 
+      font-weight: 700; 
+      color: var(--primary); 
+      margin: 0; 
+    }
+    .meet-card-date { 
+      color: var(--text-secondary); 
+      font-weight: 600; 
+      margin: 0; 
+    }
+    .meet-card-location { 
+      color: var(--text-secondary); 
+      font-size: 0.9rem; 
+      margin: 0; 
+    }
     
-    .filter-bar { margin-bottom: 20px; display: flex; gap: 10px; }
+    .filter-bar { 
+      margin-bottom: 20px; 
+      display: flex; 
+      gap: 10px; 
+    }
     .filter-chip {
       padding: 6px 12px;
-      border-radius: 20px;
-      border: 1px solid #ddd;
-      background: white;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      background: var(--bg-light);
       cursor: pointer;
       font-size: 0.9rem;
+      color: var(--text-primary);
+      transition: all 0.2s;
     }
-    .filter-chip.active { background: var(--accent); color: white; border-color: var(--accent); }
+    .filter-chip.active { 
+      background: var(--primary); 
+      color: white; 
+      border-color: var(--primary); 
+    }
 
     /* Footer */
     footer {
-      background: rgba(0, 40, 85, 0.9);
+      background: var(--bg-light);
+      border-top: 1px solid var(--border);
       padding: 60px 20px;
-      color: white;
+      color: var(--text-secondary);
       text-align: center;
       margin-top: 60px;
       position: relative;
     }
+
+    footer a {
+      color: var(--primary);
+      border-bottom: 1px solid var(--border);
+      transition: border-color 0.2s;
+    }
+
+    footer a:hover {
+      border-bottom-color: var(--primary);
+    }
     
     .footer-bg-img {
-      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-      object-fit: cover; z-index: -1; filter: brightness(0.4);
+      display: none;
     }
-    .export-container { position: relative; display: inline-block; }
-.export-main-btn { background: var(--secondary); color: white; border: none; }
-.export-dropdown {
-  display: none;
-  position: absolute;
-  right: 0;
-  background: white;
-  min-width: 200px;
-  box-shadow: 0 8px 16px rgba(0,0,0,0.2);
-  z-index: 1000;
-  border-radius: 8px;
-  overflow: hidden;
-  margin-top: 5px;
-}
-.export-dropdown button {
-  width: 100%;
-  padding: 12px 16px;
-  border: none;
-  background: none;
-  text-align: left;
-  cursor: pointer;
-  font-size: 0.9rem;
-  color: var(--text-primary);
-}
-.export-dropdown button:hover { background: var(--bg-light); color: var(--accent); }
-.show { display: block; }
-  /* Labels inside dropdown */
-.dropdown-label {
-  padding: 8px 16px 4px;
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  color: var(--text-secondary);
-  font-weight: 800;
-  background: #eee;
-  margin: 0;
-}
 
-/* Popup / Modal Styles */
-.modal-overlay {
-  display: none;
-  position: fixed;
-  top: 0; left: 0; width: 100%; height: 100%;
-  background: rgba(0,0,0,0.6);
-  z-index: 2000;
-  justify-content: center;
-  align-items: center;
-}
-.modal-content {
-  background: white;
-  padding: 30px;
-  border-radius: 15px;
-  max-width: 450px;
-  width: 90%;
-  color: var(--text-primary);
-  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-}
-.search-bar {
+    .export-container { 
+      position: relative; 
+      display: inline-block; 
+    }
+
+    .export-main-btn { 
+      background: var(--primary); 
+      color: white; 
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .export-main-btn:hover {
+      background: var(--secondary);
+    }
+
+    .export-dropdown {
+      display: none;
+      position: absolute;
+      right: 0;
+      background: var(--bg-light);
+      min-width: 200px;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.12);
+      z-index: 1000;
+      border-radius: 6px;
+      overflow: hidden;
+      margin-top: 5px;
+      border: 1px solid var(--border);
+    }
+
+    .export-dropdown button {
+      width: 100%;
+      padding: 12px 16px;
+      border: none;
+      background: none;
+      text-align: left;
+      cursor: pointer;
+      font-size: 0.9rem;
+      color: var(--text-primary);
+      transition: background 0.2s;
+    }
+
+    .export-dropdown button:hover { 
+      background: var(--bg-light);
+      color: var(--primary); 
+    }
+
+    .show { 
+      display: block; 
+    }
+
+    .dropdown-label {
+      padding: 8px 16px 4px;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+      font-weight: 800;
+      background: #f5f5f5;
+      margin: 0;
+    }
+
+    /* Popup / Modal Styles */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.6);
+      z-index: 2000;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .modal-content {
+      background: var(--bg-light);
+      padding: 30px;
+      border-radius: 6px;
+      max-width: 450px;
+      width: 90%;
+      color: var(--text-primary);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    }
+
+    .search-bar {
       display: flex;
       justify-content: center;
       margin-top: 10px;
@@ -238,24 +310,80 @@
     .search-bar input {
       width: 300px;
       padding: 12px 16px;
-      border-radius: 10px;
-      border: 2px solid #e5e7eb;
+      border-radius: 4px;
+      border: 1px solid var(--border);
       font-size: 1em;
-      transition: all 0.3s ease;
-      box-shadow: 0px 0px 50px rgba(36, 36, 148, 0.696);
+      transition: all 0.2s ease;
+      color: var(--text-primary);
     }
 
     .search-bar input:focus {
       outline: none;
-      border-color: #134987;
-      box-shadow: 0 10px 20px rgba(11, 56, 154, 0.861);
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.05);
     }
-.modal-content h3 { margin-top: 0; color: var(--primary); }
-.modal-content ol { padding-left: 20px; margin: 20px 0; }
-.modal-content li { margin-bottom: 10px; }
-.modal-actions { display: flex; gap: 10px; }
-.btn-download { background: var(--accent); color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; flex: 2; font-weight: bold; }
-.btn-close { background: #ccc; color: #333; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; flex: 1; }
+
+    .modal-content h3 { 
+      margin-top: 0; 
+      color: var(--primary);
+      font-family: 'Aqeon Demo', sans-serif;
+    }
+
+    .modal-content ol { 
+      padding-left: 20px; 
+      margin: 20px 0; 
+    }
+
+    .modal-content li { 
+      margin-bottom: 10px; 
+    }
+
+    .modal-actions { 
+      display: flex; 
+      gap: 10px; 
+    }
+
+    .btn-download { 
+      background: var(--primary); 
+      color: white; 
+      border: none; 
+      padding: 10px 20px; 
+      border-radius: 4px; 
+      cursor: pointer; 
+      flex: 2; 
+      font-weight: bold;
+      transition: background 0.2s;
+    }
+
+    .btn-download:hover {
+      background: var(--secondary);
+    }
+
+    .btn-close { 
+      background: var(--border); 
+      color: var(--text-primary); 
+      border: none; 
+      padding: 10px 20px; 
+      border-radius: 4px; 
+      cursor: pointer; 
+      flex: 1;
+      transition: background 0.2s;
+    }
+
+    .btn-close:hover {
+      background: #d0d0d0;
+    }
+
+    @media (max-width: 768px) {
+      .section-title {
+        font-size: 2rem;
+      }
+
+      .search-bar input {
+        width: 100%;
+        max-width: 300px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -263,7 +391,7 @@
   <header>
     <nav class="navbar">
       <div class="navbar-content">
-        <a href="index.html" class="navbar-brand">⚡ Track & Field</a>
+        <a href="index.html" class="navbar-brand">Track</a>
         <ul class="navbar-nav">
           <li><a href="index.html" class="navbar-link">Home</a></li>
           <li><a href="meets.html" class="navbar-link active">Meets</a></li>

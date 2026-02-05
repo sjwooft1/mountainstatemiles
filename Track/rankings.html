@@ -7,203 +7,28 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/handsontable@latest/dist/handsontable.full.min.css">
 <script src="https://cdn.jsdelivr.net/npm/handsontable@latest/dist/handsontable.full.min.js"></script>
-<link rel="stylesheet" href="../style.css">
-<style>
-  * { box-sizing: border-box; }
-  
-  :root {
-    --primary: #002855;
-    --secondary: #0056b3;
-    --text-primary: #1a1a1a;
-    --text-secondary: #666;
-    --bg-light: #f8f9fa;
-    --border-light: #e0e0e0;
-    --accent: #ff6b35;
-    --accent-dark: #d9530a;
-  }
-  
-  html, body {
-    margin: 0;
-    padding: 0;
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
-    background: var(--bg-light);
-    color: var(--text-primary);
-    line-height: 1.6;
-  }
-  
-  header {
-    background: white;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    position: sticky;
-    top: 0;
-    z-index: 100;
-  }
-  
-  .navbar {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0 20px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    height: 70px;
-  }
-  
-  .navbar-brand {
-    font-size: 1.3rem;
-    font-weight: 700;
-    color: var(--primary);
-    text-decoration: none;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  
-  .navbar-nav {
-    display: flex;
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    gap: 30px;
-  }
-  
-  .navbar-link {
-    color: var(--text-primary);
-    text-decoration: none;
-    font-weight: 500;
-    transition: color 0.3s;
-    position: relative;
-  }
-  
-  .navbar-link:hover,
-  .navbar-link.active {
-    color: var(--secondary);
-  }
-  
-  .navbar-link.active::after {
-    content: '';
-    position: absolute;
-    bottom: -5px;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: var(--accent);
-    border-radius: 2px;
-  }
-  
-  main {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 60px 20px;
-  }
-  
-  .section-title {
-    font-size: 2.2rem;
-    font-weight: 800;
-    margin: 0 0 40px;
-    color: var(--primary);
-    position: relative;
-    padding-bottom: 15px;
-  }
-  
-  .section-title::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 80px;
-    height: 4px;
-    background: linear-gradient(90deg, var(--accent), var(--accent-dark));
-    border-radius: 2px;
-  }
-  
-  .filter-controls {
-    display: flex;
-    gap: 12px;
-    margin-bottom: 24px;
-    align-items: center;
-    flex-wrap: wrap;
-  }
-  
-  .btn, .season-btn {
-    padding: 10px 20px;
-    border: 2px solid var(--border-light);
-    background: white;
-    color: var(--text-primary);
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: 600;
-    transition: all 0.3s;
-    font-size: 0.95rem;
-  }
-  
-  .btn:hover,
-  .season-btn:hover {
-    border-color: var(--accent);
-    background: var(--accent);
-    color: white;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(255, 107, 53, 0.2);
-  }
-  
-  select.season-btn {
-    padding: 10px 20px;
-    cursor: pointer;
-  }
-  
- /* Footer */
- footer {
-  /* Remove the solid background color */
-  background: rgba(0, 40, 85, 0.85); /* Semi-transparent version of your primary blue */
-  backdrop-filter: blur(8px); /* Optional: Adds a glass effect */
-  color: white;
-  text-align: center;
-  padding: 40px 20px;
-  margin-top: 80px;
-  position: relative;
-  z-index: 1; /* Ensures footer content stays above the image */
-}
-.footer-with-bg {
-  position: relative;
-  overflow: hidden; /* Clips the image to footer boundaries */
-  padding: 60px 20px;
-  color: white;
-  text-align: center;
-}
-
-.footer-bg-img {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover; /* Ensures the mountain image fills the area */
-  z-index: -1; /* Puts it behind the text */
-  filter: brightness(0.5); /* Darkens the image so text is readable */
-}
-
-.footer-content {
-  position: relative;
-  z-index: 2;
-}
-</style>
+<link rel="stylesheet" href="/assets/main.css">
 </head>
 <body>
   <header>
     <nav class="navbar">
-      <a href="index.html" class="navbar-brand">⚡ Track & Field</a>
-      <ul class="navbar-nav">
-        <li><a href="/index.html" class="navbar-link">Home</a></li>
-        <li><a href="index.html" class="navbar-link">Track</a></li>
-        <li><a href="meets.html" class="navbar-link">Meets</a></li>
-        <li><a href="events.html" class="navbar-link">Events</a></li>
-        <li><a href="rankings.html" class="navbar-link active">Rankings</a></li>
-        <li><a href="analytics.html" class="navbar-link">Analytics</a></li>
-      </ul>
+      <div class="navbar-content">
+        <a href="index.html" class="navbar-brand">Track</a>
+        <button class="mobile-menu-toggle" aria-label="Toggle menu">☰</button>
+        <ul class="navbar-nav" id="main-nav">
+          <li><a href="/home/index" class="navbar-link">Home</a></li>
+          <li><a href="index.html" class="navbar-link">Track</a></li>
+          <li><a href="meets.html" class="navbar-link">Meets</a></li>
+          <li><a href="events.html" class="navbar-link">Events</a></li>
+          <li><a href="rankings.html" class="navbar-link active">Rankings</a></li>
+          <li><a href="analytics.html" class="navbar-link">Analytics</a></li>
+        </ul>
+        <button class="theme-toggle" aria-label="Switch theme">🌙</button>
+      </div>
     </nav>
   </header>
-  
-  <main>
+
+  <main class="content-section">
     <h1 class="section-title">Rankings</h1>
 
     <div class="filter-controls">
@@ -480,5 +305,6 @@ document.addEventListener('DOMContentLoaded', () => {
   setTimeout(initEvents, 100);
 });
 </script>
+<script src="/assets/theme-toggle.js"></script>
 </body>
 </html>

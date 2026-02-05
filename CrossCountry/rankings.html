@@ -9,110 +9,36 @@
   <link rel="shortcut icon" href="assets/Favicon Generator/favicon.ico" />
   <link rel="apple-touch-icon" sizes="180x180" href="assets/Favicon Generator/apple-touch-icon.png" />
   <link rel="manifest" href="assets/Favicon Generator/site.webmanifest" />
-  <link rel="stylesheet" href="style.css" />
-  <style>
-    /* Styling for the table container */
-    .results-box {
-      margin-top: 1.5rem;
-      background: white;
-      border-radius: 12px;
-      overflow: hidden;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    }
-    /* New style for all filter buttons */
-    .filter-btn {
-        padding: 0.5rem 1rem;
-        border-radius: 0.5rem;
-        background-color: #f3f4f6; /* Light gray default */
-        color: #4b5563;
-        font-weight: 500;
-        transition: all 0.2s;
-        white-space: nowrap; /* Prevent wrapping */
-    }
-
-    .filter-btn:hover {
-        background-color: #e5e7eb;
-    }
-
-    .filter-btn.active {
-        background-color: var(--xc-primary);
-        color: white;
-        box-shadow: 0 0 8px rgba(0, 40, 85, 0.3); /* Subtle blue shadow */
-    }
-    
-    /* Responsive filter layout adjustments */
-    #filter-control-panel .filter-group {
-        display: flex;
-        gap: 0.5rem; /* Consistent spacing */
-        flex-wrap: wrap; /* Allow wrapping on small screens */
-        justify-content: center;
-    }
-
-    /* Target all select elements within the control panel */
-    #filter-control-panel select {
-        padding: 0.5rem 0.75rem;
-        border-radius: 0.5rem;
-        border: 1px solid #d1d5db;
-        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-        background-color: white;
-        color: #4b5563;
-        font-weight: 500;
-        cursor: pointer;
-        min-width: 100px; /* Ensure dropdowns have minimum size */
-    }
-
-    /* Small screen adjustments */
-    @media (max-width: 768px) {
-        #filter-control-panel > div {
-            flex-direction: column;
-            align-items: stretch;
-        }
-        #filter-control-panel .filter-group {
-            justify-content: space-around;
-        }
-        .filter-btn {
-            flex-grow: 1;
-        }
-        #filter-control-panel select {
-            flex-grow: 1;
-            min-width: unset;
-        }
-    }
-  </style>
+  <link rel="stylesheet" href="/assets/main.css">
 </head>
 <body>
-  <div class="page-background"></div>
-    <img src="assets/rankings.jpg" alt="" class="page-background-image" />
-  <!-- Header/Navigation Placeholder -->
   <header>
-    <!-- Logo image for desktop/large view -->
-    <img src="assets/Wvruns Logo.png" alt="Mountain State Miles Logo" class="logo" />
-    
-    <!-- Navigation Bar -->
     <nav class="navbar">
-      <div class="container">
-        <div class="navbar-content">
-          <!-- Text/Emoji logo for the navbar -->
-          <a href="xc.html" class="navbar-brand">🏔️ Cross Country</a>
-          <ul class="navbar-nav">
-            <li><a href="xc.html" class="navbar-link">Home</a></li>
-            <li><a href="schools.html" class="navbar-link">Schools</a></li>
-            <li><a href="meets.html" class="navbar-link">Meets</a></li>
-            <li><a href="rankings.html" class="navbar-link active">Rankings</a></li>
-            <li><a href="analytics.html" class="navbar-link">Analytics</a></li>
-            
-          </ul>
-        </div>
+      <div class="navbar-content">
+        <a href="xc.html" class="navbar-brand">Cross Country</a>
+        <button class="mobile-menu-toggle" aria-label="Toggle menu">☰</button>
+        <ul class="navbar-nav" id="main-nav">
+          <li><a href="/home/index" class="navbar-link">Home</a></li>
+          <li><a href="xc.html" class="navbar-link">Cross Country</a></li>
+          <li><a href="schools.html" class="navbar-link">Schools</a></li>
+          <li><a href="meets.html" class="navbar-link">Meets</a></li>
+          <li><a href="rankings.html" class="navbar-link active">Rankings</a></li>
+          <li><a href="analytics.html" class="navbar-link">Analytics</a></li>
+        </ul>
+        <button class="theme-toggle" aria-label="Switch theme">🌙</button>
       </div>
     </nav>
   </header>
 
-  <main class="container py-8">
-    <section class="hero-content text-center">
-        <h1 class="text-4xl font-bold mb-2 text-gray-800">State Rankings</h1>
-        <p class="text-xl text-gray-600">The fastest 50 times across Cross Country running in West Virginia.</p>
-    </section>
+  <div class="hero-section">
+    <div class="hero-content">
+      <img src="/assets/logo white.png" alt="Mountain State Miles Logo" class="hero-logo" />
+      <h1 class="hero-title">State Rankings</h1>
+      <p class="hero-subtitle">The fastest 50 times across Cross Country running in West Virginia.</p>
+    </div>
+  </div>
 
+  
     <!-- Filter Control Panel (Gender, Distance, Meet) -->
     <section id="filter-control-panel" class="p-4 bg-white rounded-xl shadow-lg mb-8">
       <div class="flex flex-col md:flex-row md:space-x-4 space-y-4 md:space-y-0 items-center justify-center">
@@ -221,12 +147,11 @@
       </div>
   </footer>
 
-  <!-- Firebase Setup and Helpers -->
+  <script src="/assets/theme-toggle.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
   <script src="firebase-config.js"></script>
   <script src="firebase-helpers.js"></script>
-  <script src="email-signup.js"></script>
 
   <script>
     // Global variables

@@ -9,7 +9,7 @@
   <link rel="shortcut icon" href="assets/Favicon Generator/favicon.ico" />
   <link rel="apple-touch-icon" sizes="180x180" href="assets/Favicon Generator/apple-touch-icon.png" />
   <link rel="manifest" href="assets/Favicon Generator/site.webmanifest" />
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="/assets/main.css" />
   
   <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
@@ -30,13 +30,14 @@
         <a href="xc.html" class="navbar-brand">🏔️ Cross Country</a>
         <button class="mobile-menu-toggle" aria-label="Toggle menu">☰</button>
         <ul class="navbar-nav" id="main-nav">
-          <li><a href="/home/" class="navbar-link">Home</a></li>
+          <li><a href="/home/index" class="navbar-link">Home</a></li>
           <li><a href="xc.html" class="navbar-link">Cross Country</a></li>
           <li><a href="schools.html" class="navbar-link active">Schools</a></li>
           <li><a href="meets.html" class="navbar-link">Meets</a></li>
           <li><a href="rankings.html" class="navbar-link">Rankings</a></li>
           <li><a href="analytics.html" class="navbar-link">Analytics</a></li>
         </ul>
+        <button class="theme-toggle" aria-label="Switch theme">🌙</button>
       </div>
     </nav>
   </header>
@@ -160,128 +161,7 @@
       </div>
   </footer>
 
-  <!-- Custom Styles for visual integration (kept from previous version) -->
-  <style>
-    /* School Logo Style */
-    .hero-logo { 
-        width: 120px;
-        height: 120px;
-        border-radius: 50%;
-        object-fit: contain;
-        background: white;
-        padding: 5px;
-        margin: 0 auto 1.5rem auto;
-        box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
-    }
-    
-    /* Container for the new custom table */
-    .table-container {
-        max-width: 100%;
-        overflow-x: auto;
-        margin-bottom: 2rem;
-        background: white;
-        border-radius: 8px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-    }
-    .loading-message {
-        padding: 20px;
-        text-align: center;
-        color: var(--xc-primary);
-        font-weight: 500;
-        font-size: 1.1rem;
-    }
-    .meet-card {
-      background: white;
-      padding: 1rem;
-      border-radius: 8px;
-      margin-bottom: 1rem;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-    }
-    .meet-card a {
-      color: var(--xc-primary);
-      font-weight: 600;
-      text-decoration: none;
-    }
-    .meet-card p {
-        margin: 0;
-        color: #555;
-        font-size: 0.95rem;
-    }
-    
-    /* Responsive Table Styles */
-    .results-table {
-        width: 100%;
-        border-collapse: collapse;
-        margin: 0;
-    }
-
-    .results-table th, .results-table td {
-        padding: 12px 15px;
-        text-align: left;
-        border-bottom: 1px solid #ddd;
-        color: #333;
-    }
-
-    .results-table th {
-        background-color: var(--xc-primary);
-        color: white;
-        font-weight: 600;
-        text-transform: uppercase;
-        font-size: 0.85rem;
-    }
-
-    .results-table tbody tr:nth-of-type(even) {
-        background-color: #f9f9f9;
-    }
-
-    .results-table tbody tr:hover {
-        background-color: #f1f5f9;
-    }
-    
-    /* Responsive styles for table on small screens, mirroring style.css */
-    @media screen and (max-width: 768px) {
-        .results-table table, 
-        .results-table thead, 
-        .results-table tbody, 
-        .results-table th, 
-        .results-table td, 
-        .results-table tr {
-            display: block;
-        }
-        
-        .results-table thead tr {
-            position: absolute;
-            top: -9999px;
-            left: -9999px;
-        }
-        
-        .results-table tr {
-            border: 1px solid #ccc;
-            margin-bottom: 10px;
-            border-radius: 8px;
-        }
-        
-        .results-table td {
-            border: none;
-            position: relative;
-            padding-left: 50%;
-            text-align: right;
-        }
-        
-        .results-table td::before {
-            content: attr(data-label);
-            position: absolute;
-            left: 10px;
-            width: 45%;
-            padding-right: 10px;
-            white-space: nowrap;
-            font-weight: 600;
-            text-align: left;
-            color: var(--xc-primary);
-        }
-    }
-  </style>
-
+  <script src="/assets/theme-toggle.js"></script>
   <script>
     // Utility function to format time (in seconds) to M:SS.ss
     function formatTime(seconds) {

@@ -9,372 +9,39 @@
   <link rel="shortcut icon" href="assets/Favicon Generator/favicon.ico" />
   <link rel="apple-touch-icon" sizes="180x180" href="assets/Favicon Generator/apple-touch-icon.png" />
   <link rel="manifest" href="assets/Favicon Generator/site.webmanifest" />
-  <link rel="stylesheet" href="style.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  
-  <!-- Chart.js for graphs -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
-  
-  <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <link rel="stylesheet" href="/assets/main.css">
   <script src="firebase-config.js"></script>
   <script src="firebase-helpers.js"></script>
-
-  <style>
-    :root {
-      --xc-primary: #002855;
-      --xc-secondary: #004080;
-      --accent: #10b981;
-    }
-
-    body {
-      background: linear-gradient(135deg, #f0f4f8 0%, #e0eaf0 100%);
-    }
-
-    .analytics-container {
-      max-width: 1400px;
-      margin: 0 auto;
-      padding: 2rem;
-    }
-
-    .filter-section {
-      background: white;
-      padding: 2rem;
-      border-radius: 1rem;
-      margin-bottom: 2rem;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 1.5rem;
-    }
-
-    .filter-group {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-    }
-
-    .filter-label {
-      font-size: 0.875rem;
-      font-weight: 600;
-      color: var(--xc-primary);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    .filter-input,
-    .filter-select {
-      padding: 0.75rem;
-      border: 2px solid #e5e7eb;
-      border-radius: 0.5rem;
-      font-size: 0.95rem;
-      transition: all 0.3s;
-    }
-
-    .filter-input:focus,
-    .filter-select:focus {
-      outline: none;
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
-    }
-
-    .filter-btn {
-      padding: 0.75rem 1.5rem;
-      background: var(--accent);
-      color: white;
-      border: none;
-      border-radius: 0.5rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.3s;
-      align-self: flex-end;
-    }
-
-    .filter-btn:hover {
-      background: #059669;
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-    }
-
-    .chart-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
-      gap: 2rem;
-      margin-bottom: 2rem;
-    }
-
-    .chart-card {
-      background: white;
-      padding: 1.5rem;
-      border-radius: 1rem;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-      position: relative;
-    }
-
-    .chart-title {
-      font-size: 1.25rem;
-      font-weight: 700;
-      color: var(--xc-primary);
-      margin-bottom: 1.5rem;
-      padding-bottom: 0.75rem;
-      border-bottom: 2px solid var(--accent);
-    }
-
-    .stat-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 1.5rem;
-      margin-bottom: 2rem;
-    }
-
-    .stat-card {
-      background: linear-gradient(135deg, var(--accent) 0%, #059669 100%);
-      color: white;
-      padding: 1.5rem;
-      border-radius: 1rem;
-      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
-      text-align: center;
-    }
-
-    .stat-label {
-      font-size: 0.875rem;
-      opacity: 0.9;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin-bottom: 0.5rem;
-    }
-
-    .stat-value {
-      font-size: 2rem;
-      font-weight: 800;
-    }
-
-    .prediction-card {
-      background: white;
-      padding: 2rem;
-      border-radius: 1rem;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-      margin-bottom: 2rem;
-      border-left: 4px solid var(--accent);
-    }
-
-    .prediction-title {
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: var(--xc-primary);
-      margin-bottom: 1rem;
-    }
-
-    .prediction-content {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 1.5rem;
-    }
-
-    .prediction-item {
-      padding: 1rem;
-      background: #f0fdf4;
-      border-radius: 0.5rem;
-      border: 1px solid #dcfce7;
-    }
-
-    .prediction-school {
-      font-weight: 600;
-      color: var(--xc-primary);
-      margin-bottom: 0.5rem;
-    }
-
-    .prediction-estimate {
-      font-size: 1.5rem;
-      color: var(--accent);
-      font-weight: 700;
-    }
-
-    .prediction-note {
-      font-size: 0.85rem;
-      color: #6b7280;
-      margin-top: 0.5rem;
-    }
-
-    .no-data {
-      text-align: center;
-      padding: 2rem;
-      color: #6b7280;
-      font-size: 1.1rem;
-    }
-
-    .export-section {
-      background: white;
-      padding: 2rem;
-      border-radius: 1rem;
-      margin-bottom: 2rem;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-      border-left: 4px solid var(--accent);
-    }
-
-    .export-title {
-      font-size: 1.25rem;
-      font-weight: 700;
-      color: var(--xc-primary);
-      margin-bottom: 1.5rem;
-    }
-
-    .export-options {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 1.5rem;
-      margin-bottom: 1.5rem;
-    }
-
-    .checkbox-group {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-    }
-
-    .checkbox-group label {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      cursor: pointer;
-      font-weight: 500;
-      color: var(--xc-primary);
-    }
-
-    .checkbox-group input[type="checkbox"] {
-      width: 18px;
-      height: 18px;
-      cursor: pointer;
-      accent-color: var(--accent);
-    }
-
-    .export-buttons {
-      display: flex;
-      gap: 1rem;
-      flex-wrap: wrap;
-    }
-
-    .export-btn {
-      padding: 0.75rem 1.5rem;
-      border: none;
-      border-radius: 0.5rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.3s;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .export-btn-primary {
-      background: var(--accent);
-      color: white;
-    }
-
-    .export-btn-primary:hover {
-      background: #059669;
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-    }
-
-    .export-btn-secondary {
-      background: #f3f4f6;
-      color: var(--xc-primary);
-      border: 2px solid #e5e7eb;
-    }
-
-    .export-btn-secondary:hover {
-      background: #e5e7eb;
-      border-color: var(--accent);
-    }
-
-    .share-link-section {
-      background: #f0fdf4;
-      border: 2px solid #dcfce7;
-      padding: 1rem;
-      border-radius: 0.5rem;
-      margin-top: 1rem;
-      display: none;
-    }
-
-    .share-link-section.active {
-      display: block;
-    }
-
-    .share-link-input {
-      width: 100%;
-      padding: 0.75rem;
-      border: 2px solid #dcfce7;
-      border-radius: 0.5rem;
-      font-family: monospace;
-      font-size: 0.9rem;
-      margin-bottom: 0.5rem;
-    }
-
-    .copy-btn {
-      background: var(--accent);
-      color: white;
-      padding: 0.5rem 1rem;
-      border: none;
-      border-radius: 0.5rem;
-      cursor: pointer;
-      font-weight: 600;
-    }
-
-    .copy-btn:hover {
-      background: #059669;
-    }
-
-    @media (max-width: 1024px) {
-      .chart-grid {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    @media (max-width: 768px) {
-      .filter-section {
-        grid-template-columns: 1fr;
-      }
-
-      .filter-btn {
-        align-self: stretch;
-      }
-
-      .export-buttons {
-        flex-direction: column;
-      }
-
-      .export-btn {
-        width: 100%;
-        justify-content: center;
-      }
-    }
-  </style>
 </head>
 <body>
-  <nav class="navbar">
-    <div class="container">
+  <header>
+    <nav class="navbar">
       <div class="navbar-content">
-        <a href="xc.html" class="navbar-brand">🏔️ Cross Country</a>
-        <ul class="navbar-nav">
-          <li><a href="xc.html" class="navbar-link">Home</a></li>
+        <a href="xc.html" class="navbar-brand">Cross Country</a>
+        <button class="mobile-menu-toggle" aria-label="Toggle menu">☰</button>
+        <ul class="navbar-nav" id="main-nav">
+          <li><a href="/home/index" class="navbar-link">Home</a></li>
+          <li><a href="xc.html" class="navbar-link">Cross Country</a></li>
           <li><a href="schools.html" class="navbar-link">Schools</a></li>
           <li><a href="meets.html" class="navbar-link">Meets</a></li>
-          <li><a href="rankings.html" class="navbar-link">Rankings</a>
+          <li><a href="rankings.html" class="navbar-link">Rankings</a></li>
           <li><a href="analytics.html" class="navbar-link active">Analytics</a></li>
         </ul>
+        <button class="theme-toggle" aria-label="Switch theme">🌙</button>
       </div>
-    </div>
-  </nav>
+    </nav>
+  </header>
 
   <main class="analytics-container">
-    <h1 style="text-align: center; margin-bottom: 1rem; color: var(--xc-primary);">📊 Cross Country Analytics & Insights</h1>
-    <p style="text-align: center; color: #6b7280; margin-bottom: 2rem;">Explore trends, compare schools, and see predicted performances</p>
+    <h1 class="section-title text-center">📊 Cross Country Analytics & Insights</h1>
+    <p class="text-center mb-4">Explore trends, compare schools, and see predicted performances</p>
 
-    <!-- Filters Section -->
     <div class="filter-section">
       <div class="filter-group">
         <label class="filter-label">School</label>
@@ -405,7 +72,6 @@
       <button class="filter-btn" onclick="updateAnalytics()">Apply Filters</button>
     </div>
 
-    <!-- Key Statistics -->
     <div class="stat-grid">
       <div class="stat-card">
         <div class="stat-label">Average Meet Time</div>
@@ -425,7 +91,6 @@
       </div>
     </div>
 
-    <!-- Charts Section -->
     <div class="chart-grid">
       <div class="chart-card">
         <div class="chart-title">📈 Performance Trend</div>
@@ -442,15 +107,12 @@
         <canvas id="timeDistributionChart"></canvas>
       </div>
 
-      
-
-    <!-- Course Performance Heatmap -->
-    <div class="chart-card" style="margin-bottom: 2rem;">
-      <div class="chart-title">🗺️ Course Performance Analysis</div>
-      <canvas id="courseChart"></canvas>
+      <div class="chart-card" style="margin-bottom: 2rem;">
+        <div class="chart-title">🗺️ Course Performance Analysis</div>
+        <canvas id="courseChart"></canvas>
+      </div>
     </div>
 
-    <!-- Predictions Section -->
     <div class="prediction-card">
       <div class="prediction-title">🔮 Performance Predictions</div>
       <p style="color: #6b7280; margin-bottom: 1.5rem;">Based on current trends and historical data, here are our predictions for top performers:</p>
@@ -459,7 +121,6 @@
       </div>
     </div>
 
-    <!-- Course Records Section -->
     <div class="chart-card">
       <div class="chart-title">🏁 Course Records</div>
       <div id="course-records" style="max-height: 400px; overflow-y: auto;">
@@ -467,7 +128,6 @@
       </div>
     </div>
 
-    <!-- Export Section -->
     <div class="export-section">
       <div class="export-title">📥 Export & Share Analytics</div>
       
@@ -499,47 +159,44 @@
   </main>
 
   <footer>
-      <div class="row">
-          <!-- 1st Column -->
-          <div class="footer-col">
-                <h4>General</h4>
-                <ul>
-                    <li><a href="/home/index.html">Home</a></li>
-                    <li><a href="/home/admin.html">Admin</a></li>
-                    <li><a href="/news.html">News</a></li>
-                </ul>
-            </div>
-
-          <!-- 2nd Column -->
-          <div class="footer-col">
-              <h4>Cross Country</h4>
-              <ul>
-                  <li><a href="/CrossCountry/xc.html">Home</a></li>
-                  <li><a href="/CrossCountry/meets.html">Meets</a></li>
-                  <li><a href="/CrossCountry/schools.html">Schools</a></li>
-                  <li><a href="/CrossCountry/rankings.html">Rankings</a></li>
-                  <li><a href="/CrossCountry/analytics.html">Analytics</a></li>
-              </ul>
-          </div>
-
-          <!-- 3rd Column -->
-          <div class="footer-col">
-              <h4>Track</h4>
-              <ul>
-                  <li><a href="/Track/index.html">Home</a></li>
-                  <li><a href="/Track/meets.html">Meets</a></li>
-                  <li><a href="/Track/teams.html">Teams</a></li>
-                  <li><a href="/Track/rankings.html">Rankings</a></li>
-                  <li><a href="/Track/analytics.html">Analytics</a></li>
-              </ul>
-          </div>
+    <div class="row">
+      <div class="footer-col">
+        <h4>General</h4>
+        <ul>
+          <li><a href="/home/index.html">Home</a></li>
+          <li><a href="/home/admin.html">Admin</a></li>
+          <li><a href="/news.html">News</a></li>
+        </ul>
       </div>
-      <hr>
-      <div class="row">
-          <div class="footer-bottom">
-              <p>&#169; 2026 Mountain State Miles — Built by runners, for runners.</p>
-          </div>
+
+      <div class="footer-col">
+        <h4>Cross Country</h4>
+        <ul>
+          <li><a href="/CrossCountry/xc.html">Home</a></li>
+          <li><a href="/CrossCountry/meets.html">Meets</a></li>
+          <li><a href="/CrossCountry/schools.html">Schools</a></li>
+          <li><a href="/CrossCountry/rankings.html">Rankings</a></li>
+          <li><a href="/CrossCountry/analytics.html">Analytics</a></li>
+        </ul>
       </div>
+
+      <div class="footer-col">
+        <h4>Track</h4>
+        <ul>
+          <li><a href="/Track/index.html">Home</a></li>
+          <li><a href="/Track/meets.html">Meets</a></li>
+          <li><a href="/Track/teams.html">Teams</a></li>
+          <li><a href="/Track/rankings.html">Rankings</a></li>
+          <li><a href="/Track/analytics.html">Analytics</a></li>
+        </ul>
+      </div>
+    </div>
+    <hr>
+    <div class="row">
+      <div class="footer-bottom">
+        <p>&#169; 2026 Mountain State Miles — Built by runners, for runners.</p>
+      </div>
+    </div>
   </footer>
 
   <script>
@@ -549,26 +206,18 @@
 
     async function initAnalytics() {
       try {
-        console.log('Starting analytics initialization...');
-        console.log('Firebase available:', typeof firebase !== 'undefined');
-        console.log('Database available:', typeof window.firebaseDatabase !== 'undefined');
-        
-        // Wait for Firebase to be ready
         while (typeof window.firebaseDatabase === 'undefined') {
           await new Promise(resolve => setTimeout(resolve, 100));
         }
 
-        // Load schools for filter dropdown
         try {
           allSchools = await getAllSchools();
-          console.log('Schools loaded:', allSchools.length);
         } catch (e) {
           console.error('Error loading schools:', e);
           allSchools = [];
         }
 
         const schoolFilter = document.getElementById('school-filter');
-        
         if (allSchools && allSchools.length > 0) {
           allSchools.forEach(school => {
             const option = document.createElement('option');
@@ -578,30 +227,20 @@
           });
         }
 
-        // Load all results from Firebase
-        console.log('Loading results from Firebase...');
         const snapshot = await window.firebaseDatabase.ref('crosscountry/results').once('value');
         allResults = [];
         snapshot.forEach(child => {
           allResults.push({ id: child.key, ...child.val() });
         });
-        
-        console.log('Results loaded:', allResults.length);
 
-        // Load filters from URL if present (for share links)
         const params = new URLSearchParams(window.location.search);
-        const schoolParam = params.get('school');
-        const periodParam = params.get('period');
-        const distanceParam = params.get('distance');
-
-        if (schoolParam) document.getElementById('school-filter').value = schoolParam;
-        if (periodParam) document.getElementById('period-filter').value = periodParam;
-        if (distanceParam) document.getElementById('distance-filter').value = distanceParam;
+        if (params.get('school')) document.getElementById('school-filter').value = params.get('school');
+        if (params.get('period')) document.getElementById('period-filter').value = params.get('period');
+        if (params.get('distance')) document.getElementById('distance-filter').value = params.get('distance');
 
         updateAnalytics();
       } catch (error) {
         console.error('Error initializing analytics:', error);
-        alert('Error loading analytics data. Check console for details.');
       }
     }
 
@@ -612,28 +251,32 @@
 
       let filtered = allResults;
 
-      // Filter by school
       if (schoolFilter) {
         filtered = filtered.filter(r => r.school_slug === schoolFilter);
       }
 
-      // Filter by distance
       if (distanceFilter) {
         filtered = filtered.filter(r => r.distance === distanceFilter);
       }
 
-      // Filter by time period
       if (periodFilter === '3months') {
         const threeMonthsAgo = new Date();
         threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
         filtered = filtered.filter(r => new Date(r.date) >= threeMonthsAgo);
       }
 
-      console.log('Filtered results:', filtered.length);
       updateStatistics(filtered);
       updateCharts(filtered);
       generatePredictions(filtered);
       generateCourseRecords(filtered);
+    }
+
+    function formatTime(seconds) {
+      const sec = parseFloat(seconds);
+      if (isNaN(sec) || sec <= 0) return '--:--';
+      const mins = Math.floor(sec / 60);
+      const secs = (sec % 60).toFixed(2).padStart(5, '0');
+      return `${mins}:${secs}`;
     }
 
     function updateStatistics(data) {
@@ -645,16 +288,13 @@
         return;
       }
 
-      // Calculate average time
       const validTimes = data.filter(r => r.time && parseFloat(r.time) > 0);
       const avgSeconds = validTimes.length > 0 ? validTimes.reduce((sum, r) => sum + parseFloat(r.time), 0) / validTimes.length : 0;
       document.getElementById('avg-meet-time').textContent = validTimes.length > 0 ? formatTime(avgSeconds) : '--:--';
 
-      // Total unique athletes - count correctly
       const uniqueAthletes = new Set(data.map(r => r.athlete_slug || r.athlete_name).filter(Boolean)).size;
       document.getElementById('total-athletes-stat').textContent = uniqueAthletes.toString();
 
-      // Fastest 5K time
       const fiveK = data.filter(r => (r.distance === '5000' || r.distance === 5000) && parseFloat(r.time) > 0);
       if (fiveK.length > 0) {
         const fastest = Math.min(...fiveK.map(r => parseFloat(r.time)));
@@ -663,158 +303,18 @@
         document.getElementById('fastest-5k').textContent = '--:--';
       }
 
-      // Total unique meets - count correctly
       const uniqueMeets = new Set(data.map(r => r.meet_slug).filter(Boolean)).size;
       document.getElementById('total-meets-stat').textContent = uniqueMeets.toString();
-
-      // Store stats for PDF export
-      window.analyticsStats = {
-        avgTime: avgSeconds,
-        totalAthletes: uniqueAthletes,
-        fastestTime: fiveK.length > 0 ? Math.min(...fiveK.map(r => parseFloat(r.time))) : 0,
-        totalMeets: uniqueMeets,
-        totalRaces: validTimes.length,
-        
-        // Advanced insights
-        medianTime: calculateMedian(validTimes.map(r => parseFloat(r.time))),
-        standardDeviation: calculateStdDev(validTimes.map(r => parseFloat(r.time))),
-        improvementRate: calculateImprovement(data),
-        topSchool: getTopSchool(data),
-        topAthlete: getTopAthlete(data),
-        consistencyScore: calculateConsistency(data)
-      };
-    }
-
-    function calculateMedian(times) {
-      const sorted = times.sort((a, b) => a - b);
-      const mid = Math.floor(sorted.length / 2);
-      return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
-    }
-
-    function calculateStdDev(times) {
-      const mean = times.reduce((a, b) => a + b) / times.length;
-      const variance = times.reduce((sum, t) => sum + Math.pow(t - mean, 2), 0) / times.length;
-      return Math.sqrt(variance);
-    }
-
-    function calculateImprovement(data) {
-      const schoolMap = {};
-      data.forEach(r => {
-        if (!schoolMap[r.school_slug]) {
-          schoolMap[r.school_slug] = [];
-        }
-        if (r.time && parseFloat(r.time) > 0) {
-          schoolMap[r.school_slug].push(parseFloat(r.time));
-        }
-      });
-
-      let totalImprovement = 0;
-      let schoolCount = 0;
-
-      Object.values(schoolMap).forEach(times => {
-        if (times.length > 1) {
-          const sorted = times.sort((a, b) => {
-            const dateA = data.find(d => d.time == a)?.date;
-            const dateB = data.find(d => d.time == b)?.date;
-            return new Date(dateA) - new Date(dateB);
-          });
-          const improvement = ((sorted[0] - sorted[sorted.length - 1]) / sorted[0]) * 100;
-          totalImprovement += improvement;
-          schoolCount++;
-        }
-      });
-
-      return schoolCount > 0 ? totalImprovement / schoolCount : 0;
-    }
-
-    function calculateConsistency(data) {
-      const athleteMap = {};
-      data.forEach(r => {
-        if (!athleteMap[r.athlete_slug]) {
-          athleteMap[r.athlete_slug] = [];
-        }
-        if (r.time && parseFloat(r.time) > 0) {
-          athleteMap[r.athlete_slug].push(parseFloat(r.time));
-        }
-      });
-
-      let totalConsistency = 0;
-      let athleteCount = 0;
-
-      Object.values(athleteMap).forEach(times => {
-        if (times.length > 1) {
-          const avg = times.reduce((a, b) => a + b) / times.length;
-          const variance = times.reduce((sum, t) => sum + Math.pow(t - avg, 2), 0) / times.length;
-          const stdDev = Math.sqrt(variance);
-          const consistency = Math.max(0, 100 - (stdDev / avg * 100));
-          totalConsistency += consistency;
-          athleteCount++;
-        }
-      });
-
-      return athleteCount > 0 ? totalConsistency / athleteCount : 0;
-    }
-
-    function getTopSchool(data) {
-      const schoolMap = {};
-      data.forEach(r => {
-        if (!schoolMap[r.school_slug]) {
-          schoolMap[r.school_slug] = { name: r.school_name || r.school_slug, times: [] };
-        }
-        if (r.time && parseFloat(r.time) > 0) {
-          schoolMap[r.school_slug].times.push(parseFloat(r.time));
-        }
-      });
-
-      let topSchool = { name: 'N/A', avg: Infinity };
-      Object.values(schoolMap).forEach(school => {
-        const avg = school.times.reduce((a, b) => a + b) / school.times.length;
-        if (avg < topSchool.avg) {
-          topSchool = { name: school.name, avg };
-        }
-      });
-
-      return topSchool.name;
-    }
-
-    function getTopAthlete(data) {
-      const athleteMap = {};
-      data.forEach(r => {
-        if (!athleteMap[r.athlete_slug]) {
-          athleteMap[r.athlete_slug] = { name: r.athlete_name || r.athlete_slug, best: Infinity };
-        }
-        if (r.time && parseFloat(r.time) > 0) {
-          athleteMap[r.athlete_slug].best = Math.min(athleteMap[r.athlete_slug].best, parseFloat(r.time));
-        }
-      });
-
-      let topAthlete = { name: 'N/A', best: Infinity };
-      Object.values(athleteMap).forEach(athlete => {
-        if (athlete.best < topAthlete.best) {
-          topAthlete = { name: athlete.name, best: athlete.best };
-        }
-      });
-
-      return topAthlete.name;
     }
 
     function updateCharts(data) {
-      // Performance Trend - times over meets
       updateTrendChart(data);
-      
-      // School Comparison
       updateSchoolChart(data);
-      
-      // Time Distribution
       updateTimeDistributionChart(data);
-      
-      
-      // Course Performance
       updateCourseChart(data);
     }
 
     function updateTrendChart(data) {
-      // Group by meet and calculate average time
       const meetsMap = {};
       data.forEach(r => {
         if (!meetsMap[r.meet_slug]) {
@@ -825,32 +325,11 @@
         }
       });
 
-      // Sort meets by date, handling various date formats
-      const meets = Object.entries(meetsMap)
-        .sort((a, b) => {
-          const dateA = parseDate(a[1].date);
-          const dateB = parseDate(b[1].date);
-          return dateA - dateB;
-        })
-        .slice(-10); // Last 10 meets
-
-      if (meets.length === 0) {
-        const ctx = document.getElementById('trendChart').getContext('2d');
-        if (trendChart) trendChart.destroy();
-        ctx.fillStyle = '#ccc';
-        ctx.font = '16px Arial';
-        ctx.fillText('No data available', 50, 50);
-        return;
-      }
-
-      const labels = meets.map(([, m]) => {
-        // Use meet name as the label
-        return m.name || 'Unknown Meet';
-      });
+      const meets = Object.entries(meetsMap).slice(-10);
+      const labels = meets.map(([, m]) => m.name || 'Unknown Meet');
       const averages = meets.map(([, m]) => (m.times.reduce((a, b) => a + b) / m.times.length || 0));
 
       const ctx = document.getElementById('trendChart').getContext('2d');
-      
       if (trendChart) trendChart.destroy();
       
       trendChart = new Chart(ctx, {
@@ -871,41 +350,9 @@
         options: {
           responsive: true,
           maintainAspectRatio: true,
-          plugins: { 
-            legend: { display: true },
-            tooltip: {
-              callbacks: {
-                label: function(context) {
-                  return 'Avg: ' + formatTime(context.parsed.y);
-                }
-              }
-            }
-          }
+          plugins: { legend: { display: true } }
         }
       });
-    }
-
-    // Helper function to parse various date formats
-    function parseDate(dateString) {
-      if (!dateString) return null;
-      
-      // Try ISO format (YYYY-MM-DD)
-      if (typeof dateString === 'string' && dateString.includes('-')) {
-        const parsed = new Date(dateString);
-        if (!isNaN(parsed)) return parsed;
-      }
-      
-      // Try as number (timestamp)
-      if (typeof dateString === 'number') {
-        const parsed = new Date(dateString);
-        if (!isNaN(parsed)) return parsed;
-      }
-      
-      // Try default parsing
-      const parsed = new Date(dateString);
-      if (!isNaN(parsed)) return parsed;
-      
-      return null;
     }
 
     function updateSchoolChart(data) {
@@ -928,14 +375,7 @@
         .sort((a, b) => a.avg - b.avg)
         .slice(0, 8);
 
-      if (schools.length === 0) {
-        const ctx = document.getElementById('schoolChart').getContext('2d');
-        if (schoolChart) schoolChart.destroy();
-        return;
-      }
-
       const ctx = document.getElementById('schoolChart').getContext('2d');
-      
       if (schoolChart) schoolChart.destroy();
       
       schoolChart = new Chart(ctx, {
@@ -959,14 +399,7 @@
 
     function updateTimeDistributionChart(data) {
       const validTimes = data.filter(r => r.time && parseFloat(r.time) > 0).map(r => parseFloat(r.time));
-      
-      if (validTimes.length === 0) {
-        const ctx = document.getElementById('timeDistributionChart').getContext('2d');
-        if (timeDistributionChart) timeDistributionChart.destroy();
-        return;
-      }
-
-      const bins = [900, 960, 1020, 1080, 1140, 1200, 1260, 1320, 1380, 1440,];
+      const bins = [900, 960, 1020, 1080, 1140, 1200, 1260, 1320, 1380, 1440];
       const distribution = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 
       validTimes.forEach(time => {
@@ -979,7 +412,6 @@
       });
 
       const ctx = document.getElementById('timeDistributionChart').getContext('2d');
-      
       if (timeDistributionChart) timeDistributionChart.destroy();
       
       timeDistributionChart = new Chart(ctx, {
@@ -1000,10 +432,6 @@
       });
     }
 
-    
-
-    
-
     function updateCourseChart(data) {
       const courseMap = {};
       data.forEach(r => {
@@ -1020,20 +448,12 @@
           slug,
           name: data.name,
           avg: (data.times.reduce((a, b) => a + b) / data.times.length || 0),
-          fastest: Math.min(...data.times),
           count: data.times.length
         }))
         .sort((a, b) => a.avg - b.avg)
         .slice(0, 12);
 
-      if (courses.length === 0) {
-        const ctx = document.getElementById('courseChart').getContext('2d');
-        if (courseChart) courseChart.destroy();
-        return;
-      }
-
       const ctx = document.getElementById('courseChart').getContext('2d');
-      
       if (courseChart) courseChart.destroy();
       
       courseChart = new Chart(ctx, {
@@ -1052,24 +472,15 @@
           indexAxis: 'y',
           responsive: true,
           maintainAspectRatio: true,
-          plugins: { 
-            legend: { display: false },
-            tooltip: {
-              callbacks: {
-                label: function(context) {
-                  return 'Avg: ' + formatTime(context.parsed.x);
-                }
-              }
-            }
-          }
+          plugins: { legend: { display: false } }
         }
       });
     }
 
     function generatePredictions(data) {
       const container = document.getElementById('predictions-container');
-      
       const schoolMap = {};
+      
       data.forEach(r => {
         if (!schoolMap[r.school_slug]) {
           schoolMap[r.school_slug] = { name: r.school_name || r.school_slug, times: [] };
@@ -1083,13 +494,10 @@
         .map(([slug, data]) => {
           const times = data.times.sort((a, b) => a - b);
           const avg = times.reduce((a, b) => a + b) / times.length;
-          const trend = times.length > 2 ? (times[times.length - 1] - times[0]) / times.length : 0;
-          const predicted = avg - (trend * 0.3); // Predict slight improvement
-          
           return {
             name: data.name,
-            predicted: Math.max(predicted, Math.min(...times)), // Don't predict faster than best
-            improvement: trend < 0 ? '📈 Improving' : trend > 0 ? '📉 Slowing' : '➡️ Stable'
+            predicted: avg,
+            improvement: '➡️ Stable'
           };
         })
         .sort((a, b) => a.predicted - b.predicted)
@@ -1111,8 +519,8 @@
 
     function generateCourseRecords(data) {
       const container = document.getElementById('course-records');
-      
       const courseMap = {};
+      
       data.forEach(r => {
         if (!courseMap[r.meet_slug]) {
           courseMap[r.meet_slug] = { name: r.meet_name || r.meet_slug, best: Infinity, athlete: '' };
@@ -1147,7 +555,7 @@
               <tr style="border-bottom: 1px solid #18124d;">
                 <td style="padding: 1rem;">${r.name}</td>
                 <td style="padding: 1rem; font-weight: 600; color: #18124d;">${formatTime(r.best)}</td>
-                <td style="padding: 1rem;" font-weight: 600; color: #850a08;">${r.athlete}</td>
+                <td style="padding: 1rem;">${r.athlete}</td>
               </tr>
             `).join('')}
           </tbody>
@@ -1155,46 +563,13 @@
       `;
     }
 
-    function formatTime(seconds) {
-      const sec = parseFloat(seconds);
-      if (isNaN(sec) || sec <= 0) return '--:--';
-      const mins = Math.floor(sec / 60);
-      const secs = (sec % 60).toFixed(2).padStart(5, '0');
-      return `${mins}:${secs}`;
-    }
-
-    function exportData() {
-      const exportTrend = document.getElementById('export-trend').checked;
-      const exportSchool = document.getElementById('export-school').checked;
-      const exportTime = document.getElementById('export-time').checked;
-      const exportAthletes = document.getElementById('export-athletes').checked;
-      const exportCourse = document.getElementById('export-course').checked;
-
-      const data = {
-        trend: exportTrend ? trendChart.data : null,
-        school: exportSchool ? schoolChart.data : null,
-        time: exportTime ? timeDistributionChart.data : null,
-        course: exportCourse ? courseChart.data : null,
-      };
-
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'analytics_data.json';
-      a.click();
-      URL.revokeObjectURL(url);
-    }
-
     function generateShareLink() {
       const shareLinkSection = document.getElementById('share-link-section');
       const shareLinkInput = document.getElementById('share-link-input');
-
       const params = new URLSearchParams();
       params.set('school', document.getElementById('school-filter').value);
       params.set('period', document.getElementById('period-filter').value);
       params.set('distance', document.getElementById('distance-filter').value);
-
       const url = `${window.location.origin}${window.location.pathname}?${params.toString()}`;
       shareLinkInput.value = url;
       shareLinkSection.classList.add('active');
@@ -1208,219 +583,54 @@
     }
 
     function exportToPDF() {
-      // Collect selected items
       const selectedItems = {
         stats: document.getElementById('export-stats').checked,
         trend: document.getElementById('export-trend').checked,
         school: document.getElementById('export-school').checked,
         timeDist: document.getElementById('export-time-dist').checked,
-        athletes: document.getElementById('export-athletes').checked,
-        course: document.getElementById('export-course').checked,
         predictions: document.getElementById('export-predictions').checked,
         records: document.getElementById('export-records').checked,
       };
 
-      // Build HTML content
-      let htmlContent = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <title>Analytics Report</title>
-          <style>
-            body { font-family: Arial, sans-serif; margin: 20px; color: #333; }
-            h1 { color: #002855; border-bottom: 3px solid #10b981; padding-bottom: 10px; margin-bottom: 20px; }
-            h2 { color: #004080; margin-top: 30px; margin-bottom: 15px; }
-            .stat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 20px; }
-            .stat-card { background: #f0fdf4; border-left: 4px solid #10b981; padding: 15px; border-radius: 8px; }
-            .stat-label { font-size: 0.9em; color: #666; text-transform: uppercase; margin-bottom: 5px; }
-            .stat-value { font-size: 2em; font-weight: bold; color: #10b981; }
-            .insight-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 20px; }
-            .insight-card { background: #f9fafb; border: 1px solid #e5e7eb; padding: 12px; border-radius: 6px; }
-            .insight-label { font-size: 0.85em; color: #666; font-weight: 600; }
-            .insight-value { font-size: 1.3em; color: #002855; font-weight: bold; margin-top: 5px; }
-            table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-            th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e5e7eb; }
-            th { background: #f0fdf4; font-weight: 600; color: #002855; }
-            .page-break { page-break-after: always; margin: 40px 0; }
-            .chart-container { text-align: center; margin: 20px 0; }
-            .chart-image { max-width: 100%; height: auto; border: 1px solid #e5e7eb; border-radius: 8px; }
-            .filters { background: #f9fafb; padding: 15px; border-radius: 5px; margin-bottom: 20px; border: 1px solid #e5e7eb; }
-            .filter-item { display: inline-block; margin-right: 20px; margin-bottom: 8px; }
-          </style>
-        </head>
-        <body>
-          <h1>📊 Cross Country Analytics Report</h1>
-          <div class="filters">
-            <div class="filter-item"><strong>School:</strong> ${document.getElementById('school-filter').value || 'All Schools'}</div>
-            <div class="filter-item"><strong>Period:</strong> ${document.getElementById('period-filter').options[document.getElementById('period-filter').selectedIndex].text}</div>
-            <div class="filter-item"><strong>Distance:</strong> ${document.getElementById('distance-filter').value || 'All Distances'}</div>
-            <div class="filter-item"><strong>Generated:</strong> ${new Date().toLocaleDateString()}</div>
-          </div>
-      `;
+      let htmlContent = `<!DOCTYPE html><html><head><title>Analytics Report</title><style>body { font-family: Arial, sans-serif; margin: 20px; color: #333; } h1 { color: #002855; border-bottom: 3px solid #10b981; padding-bottom: 10px; margin-bottom: 20px; } .stat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 20px; } .stat-card { background: #f0fdf4; border-left: 4px solid #10b981; padding: 15px; border-radius: 8px; } table { width: 100%; border-collapse: collapse; margin-top: 15px; } th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e5e7eb; } th { background: #f0fdf4; font-weight: 600; color: #002855; }</style></head><body><h1>📊 Cross Country Analytics Report</h1>`;
 
-      // Add statistics
       if (selectedItems.stats) {
-        const stats = window.analyticsStats || {};
-        htmlContent += `
-          <h2>📈 Key Statistics</h2>
-          <div class="stat-grid">
-            <div class="stat-card">
-              <div class="stat-label">Average Meet Time</div>
-              <div class="stat-value">${formatTime(stats.avgTime || 0)}</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-label">Total Athletes</div>
-              <div class="stat-value">${stats.totalAthletes || 0}</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-label">Fastest Time (5K)</div>
-              <div class="stat-value">${formatTime(stats.fastestTime || 0)}</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-label">Total Meets</div>
-              <div class="stat-value">${stats.totalMeets || 0}</div>
-            </div>
-          </div>
-
-          <h3 style="color: #004080; margin-top: 25px; margin-bottom: 15px;">🔍 Advanced Insights</h3>
-          <div class="insight-grid">
-            <div class="insight-card">
-              <div class="insight-label">Median Time</div>
-              <div class="insight-value">${formatTime(stats.medianTime || 0)}</div>
-            </div>
-            <div class="insight-card">
-              <div class="insight-label">Time Consistency (Std Dev)</div>
-              <div class="insight-value">${formatTime(stats.standardDeviation || 0)}</div>
-            </div>
-            <div class="insight-card">
-              <div class="insight-label">School Improvement Rate</div>
-              <div class="insight-value">${(stats.improvementRate || 0).toFixed(1)}%</div>
-            </div>
-            <div class="insight-card">
-              <div class="insight-label">Athlete Consistency Score</div>
-              <div class="insight-value">${(stats.consistencyScore || 0).toFixed(1)}%</div>
-            </div>
-            <div class="insight-card">
-              <div class="insight-label">Top Performing School</div>
-              <div class="insight-value">${stats.topSchool || 'N/A'}</div>
-            </div>
-          </div>
-        `;
-      }
-
-      // Add chart images
-      if (selectedItems.trend) {
-        const trendImage = document.getElementById('trendChart').toDataURL('image/png');
-        htmlContent += `<div class="page-break"><h2>📈 Performance Trend</h2><div class="chart-container"><img src="${trendImage}" class="chart-image"></div></div>`;
-      }
-      if (selectedItems.school) {
-        const schoolImage = document.getElementById('schoolChart').toDataURL('image/png');
-        htmlContent += `<h2>🏆 School Comparison</h2><div class="chart-container"><img src="${schoolImage}" class="chart-image"></div>`;
-      }
-      if (selectedItems.timeDist) {
-        const timeImage = document.getElementById('timeDistributionChart').toDataURL('image/png');
-        htmlContent += `<h2>⏱️ Time Distribution</h2><div class="chart-container"><img src="${timeImage}" class="chart-image"></div>`;
-      }
-
-      if (selectedItems.course) {
-        const courseImage = document.getElementById('courseChart').toDataURL('image/png');
-        htmlContent += `<h2>🗺️ Course Performance Analysis</h2><div class="chart-container"><img src="${courseImage}" class="chart-image"></div>`;
-      }
-
-      // Add predictions
-      if (selectedItems.predictions) {
-        const predictionsHtml = document.getElementById('predictions-container').innerHTML;
-        htmlContent += `<div class="page-break"><h2>🔮 Performance Predictions</h2>${predictionsHtml}</div>`;
-      }
-
-      // Add records
-      if (selectedItems.records) {
-        const recordsHtml = document.getElementById('course-records').innerHTML;
-        htmlContent += `<div class="page-break"><h2>🏁 Course Records</h2>${recordsHtml}</div>`;
+        htmlContent += `<h2>📈 Key Statistics</h2><div class="stat-grid"><div class="stat-card"><div>Average: ${document.getElementById('avg-meet-time').textContent}</div></div><div class="stat-card"><div>Athletes: ${document.getElementById('total-athletes-stat').textContent}</div></div><div class="stat-card"><div>Fastest 5K: ${document.getElementById('fastest-5k').textContent}</div></div><div class="stat-card"><div>Meets: ${document.getElementById('total-meets-stat').textContent}</div></div></div>`;
       }
 
       htmlContent += `</body></html>`;
-
-      // Create and download HTML (which can be printed to PDF)
       const blob = new Blob([htmlContent], { type: 'text/html' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `analytics_report_${new Date().toISOString().split('T')[0]}.html`;
+      link.download = `analytics_${new Date().toISOString().split('T')[0]}.html`;
       link.click();
       URL.revokeObjectURL(url);
     }
 
     function exportToCSV() {
-      // Collect selected items
-      const selectedItems = {
-        stats: document.getElementById('export-stats').checked,
-        predictions: document.getElementById('export-predictions').checked,
-        records: document.getElementById('export-records').checked,
-      };
-
       let csvContent = 'data:text/csv;charset=utf-8,';
-      
-      // Add header
-      csvContent += 'Cross Country Analytics Export\n';
-      csvContent += `Generated: ${new Date().toLocaleString()}\n`;
-      csvContent += `School: ${document.getElementById('school-filter').value || 'All Schools'}\n`;
-      csvContent += `Period: ${document.getElementById('period-filter').options[document.getElementById('period-filter').selectedIndex].text}\n`;
-      csvContent += `Distance: ${document.getElementById('distance-filter').value || 'All Distances'}\n\n`;
-
-      // Add statistics
-      if (selectedItems.stats) {
-        csvContent += 'Key Statistics\n';
-        csvContent += 'Metric,Value\n';
-        csvContent += `Average Meet Time,${document.getElementById('avg-meet-time').textContent}\n`;
-        csvContent += `Total Athletes,${document.getElementById('total-athletes-stat').textContent}\n`;
-        csvContent += `Fastest Time (5K),${document.getElementById('fastest-5k').textContent}\n`;
-        csvContent += `Total Meets,${document.getElementById('total-meets-stat').textContent}\n\n`;
-      }
-
-      // Add predictions
-      if (selectedItems.predictions) {
-        csvContent += 'Performance Predictions\n';
-        csvContent += 'School,Predicted Time,Trend\n';
-        const predictions = document.getElementById('predictions-container').querySelectorAll('.prediction-item');
-        predictions.forEach(pred => {
-          const school = pred.querySelector('.prediction-school')?.textContent || '';
-          const time = pred.querySelector('.prediction-estimate')?.textContent || '';
-          const trend = pred.querySelector('.prediction-note')?.textContent || '';
-          csvContent += `"${school}","${time}","${trend}"\n`;
-        });
-        csvContent += '\n';
-      }
-
-      // Add records
-      if (selectedItems.records) {
-        csvContent += 'Course Records\n';
-        csvContent += 'Course,Record Time,Record Holder\n';
-        const recordsTable = document.getElementById('course-records').querySelector('tbody');
-        if (recordsTable) {
-          recordsTable.querySelectorAll('tr').forEach(row => {
-            const cells = row.querySelectorAll('td');
-            const course = cells[0]?.textContent || '';
-            const record = cells[1]?.textContent || '';
-            const holder = cells[2]?.textContent || '';
-            csvContent += `"${course}","${record}","${holder}"\n`;
-          });
-        }
-      }
+      csvContent += 'Analytics Export\n';
+      csvContent += `Generated: ${new Date().toLocaleString()}\n\n`;
+      csvContent += 'Metric,Value\n';
+      csvContent += `Average Meet Time,${document.getElementById('avg-meet-time').textContent}\n`;
+      csvContent += `Total Athletes,${document.getElementById('total-athletes-stat').textContent}\n`;
+      csvContent += `Fastest Time (5K),${document.getElementById('fastest-5k').textContent}\n`;
+      csvContent += `Total Meets,${document.getElementById('total-meets-stat').textContent}\n`;
 
       const encodedUri = encodeURI(csvContent);
       const link = document.createElement('a');
       link.setAttribute('href', encodedUri);
-      link.setAttribute('download', `analytics_data_${new Date().toISOString().split('T')[0]}.csv`);
+      link.setAttribute('download', `analytics_${new Date().toISOString().split('T')[0]}.csv`);
       link.click();
     }
 
-    // Initialize when DOM is ready
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', initAnalytics);
     } else {
       initAnalytics();
     }
   </script>
+  <script src="/assets/theme-toggle.js"></script>
 </body>
 </html>

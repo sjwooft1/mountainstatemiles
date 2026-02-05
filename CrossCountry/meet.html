@@ -12,14 +12,10 @@
   <link rel="apple-touch-icon" sizes="180x180" href="assets/Favicon Generator/apple-touch-icon.png" />
   <link rel="manifest" href="assets/Favicon Generator/site.webmanifest" />
   
-  <!-- Link to the EXTERNAL stylesheet -->
-  <link rel="stylesheet" href="style.css" />
-  <!-- Removed Handsontable CSS link -->
-
   <meta name="description" content="WV running results, rankings, times, rosters, and meet data — Mountain State Miles." />
   <meta name="keywords" content="WVXC, WV Track, West Virginia Running, Cross Country Results, WV HS Running, Mountain State Miles" />
   <meta name="author" content="Mountain State Miles" />
-
+  <link rel="stylesheet" href="/assets/main.css">
   <!-- URL Parameter Script in the Head -->
   <script>
     window.addEventListener("DOMContentLoaded", () => {
@@ -33,29 +29,28 @@
 </head>
 
 <body>
-  <div class="content-wrapper">
-    <div class="page-background"></div>
-    <img src="assets/meets background.jpg" alt="" class="page-background-image" />
-    
-    <header>
-      <nav class="navbar">
-        <div class="container">
-          <div class="navbar-content">
-            <a href="xc.html" class="navbar-brand">🏔️ Cross Country</a>
-            <ul class="navbar-nav">
-              <li><a href="xc.html" class="navbar-link">Home</a></li>
-              <li><a href="schools.html" class="navbar-link">Schools</a></li>
-              <li><a href="meets.html" class="navbar-link active">Meets</a></li>
-              <li><a href="rankings.html" class="navbar-link">Rankings</a></li>
-              <li><a href="analytics.html" class="navbar-link">Analytics</a></li>  
-            </ul>
-          </div>
-        </div>
-      </nav>
-      <a href="meets.html" class="back-link">← Back to Meets</a>
-    </header>
+  <header>
+    <nav class="navbar">
+      <div class="navbar-content">
+        <a href="xc.html" class="navbar-brand">Cross Country</a>
+        <button class="mobile-menu-toggle" aria-label="Toggle menu">☰</button>
+        <ul class="navbar-nav" id="main-nav">
+          <li><a href="/home/index" class="navbar-link">Home</a></li>
+          <li><a href="xc.html" class="navbar-link">Cross Country</a></li>
+          <li><a href="schools.html" class="navbar-link">Schools</a></li>
+          <li><a href="meets.html" class="navbar-link active">Meets</a></li>
+          <li><a href="rankings.html" class="navbar-link">Rankings</a></li>
+          <li><a href="analytics.html" class="navbar-link">Analytics</a></li>
+        </ul>
+        <button class="theme-toggle" aria-label="Switch theme">🌙</button>
+      </div>
+    </nav>
+    <div class="content-section" style="padding-top: 0.5rem; padding-bottom: 0.5rem;">
+      <a href="meets.html" class="btn btn-sm">← Back to Meets</a>
+    </div>
+  </header>
 
-    <main>
+  <main class="content-section">
       <h1 id="meet-title">Meet Results</h1>
       <div id="meet-meta" class="meet-metadata"></div>
       <div id="weather-widget" class="weather-widget" style="display:none;"></div>
@@ -74,8 +69,8 @@
       </div>
 
       <!-- This div will now hold a standard HTML table created by JS -->
-      <div id="results-box"></div>
-    </main>
+    <div id="results-box" class="results-box"></div>
+  </main>
 
   <footer>
       <div class="row">
@@ -121,10 +116,9 @@
       </div>
   </footer>
 
-  <!-- Firebase SDK (Ensure HTTPS is added to fix loading errors) -->
+  <script src="/assets/theme-toggle.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-  
   <script src="firebase-config.js"></script>
   <script src="firebase-helpers.js"></script>
 

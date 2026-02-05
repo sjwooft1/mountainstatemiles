@@ -5,250 +5,30 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Track Events — Mountain State Miles</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <style>
-    * { box-sizing: border-box; }
-    
-    :root {
-      --primary: #002855;
-      --secondary: #0056b3;
-      --text-primary: #1a1a1a;
-      --text-secondary: #666;
-      --bg-light: #f8f9fa;
-      --border-light: #e0e0e0;
-      --accent: #ff6b35;
-      --accent-dark: #d9530a;
-    }
-    
-    html, body {
-      margin: 0;
-      padding: 0;
-      font-family: 'Inter', system-ui, -apple-system, sans-serif;
-      background: var(--bg-light);
-      color: var(--text-primary);
-      line-height: 1.6;
-    }
-    
-    header {
-      background: white;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-      position: sticky;
-      top: 0;
-      z-index: 100;
-    }
-    
-    .navbar {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 0 20px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      height: 70px;
-    }
-    
-    .navbar-brand {
-      font-size: 1.3rem;
-      font-weight: 700;
-      color: var(--primary);
-      text-decoration: none;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    
-    .navbar-nav {
-      display: flex;
-      list-style: none;
-      margin: 0;
-      padding: 0;
-      gap: 30px;
-    }
-    
-    .navbar-link {
-      color: var(--text-primary);
-      text-decoration: none;
-      font-weight: 500;
-      transition: color 0.3s;
-      position: relative;
-    }
-    
-    .navbar-link:hover,
-    .navbar-link.active {
-      color: var(--secondary);
-    }
-    
-    .navbar-link.active::after {
-      content: '';
-      position: absolute;
-      bottom: -5px;
-      left: 0;
-      right: 0;
-      height: 3px;
-      background: var(--accent);
-      border-radius: 2px;
-    }
-    
-    main {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 60px 20px;
-    }
-    
-    .section {
-      margin-bottom: 80px;
-    }
-    
-    .section-title {
-      font-size: 2.2rem;
-      font-weight: 800;
-      margin: 0 0 40px;
-      color: var(--primary);
-      position: relative;
-      padding-bottom: 15px;
-    }
-    
-    .section-title::after {
-      content: '';
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      width: 80px;
-      height: 4px;
-      background: linear-gradient(90deg, var(--accent), var(--accent-dark));
-      border-radius: 2px;
-    }
-    
-    .event-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 20px;
-    }
-    
-    .event-card {
-      padding: 30px 20px;
-      background: linear-gradient(135deg, white 0%, #f8f9fa 100%);
-      border: 2px solid var(--border-light);
-      border-radius: 12px;
-      text-align: center;
-      text-decoration: none;
-      color: var(--primary);
-      font-weight: 700;
-      font-size: 1.1rem;
-      transition: all 0.3s;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 120px;
-    }
-    
-    .event-card:hover {
-      border-color: var(--accent);
-      background: linear-gradient(135deg, #fff 0%, #fffaf0 100%);
-      transform: translateY(-4px);
-      box-shadow: 0 8px 24px rgba(255, 107, 53, 0.15);
-      color: var(--accent);
-    }
-    
-    .empty-state {
-      text-align: center;
-      padding: 60px 20px;
-      color: var(--text-secondary);
-      grid-column: 1 / -1;
-    }
-    
-     /* Footer */
-    footer {
-      background: rgba(0, 40, 85, 0.85);
-      backdrop-filter: blur(8px);
-      color: white;
-      text-align: center;
-      padding: 40px 20px;
-      margin-top: 80px;
-      position: relative;
-      z-index: 1;
-    }
-    .footer-with-bg {
-      position: relative;
-      overflow: hidden;
-      padding: 60px 20px;
-      color: white;
-      text-align: center;
-    }
-
-    .footer-bg-img {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      z-index: -1;
-      filter: brightness(0.5);
-    }
-
-    .footer-content {
-      position: relative;
-      z-index: 2;
-    }
-    
-    .btn {
-      display: inline-block;
-      padding: 12px 28px;
-      background: var(--accent);
-      color: white;
-      text-decoration: none;
-      border-radius: 8px;
-      font-weight: 700;
-      transition: all 0.3s;
-      border: none;
-      cursor: pointer;
-    }
-    
-    .btn:hover {
-      background: var(--accent-dark);
-      transform: translateY(-2px);
-      box-shadow: 0 6px 16px rgba(255, 107, 53, 0.3);
-    }
-    
-    @media (max-width: 768px) {
-      .navbar-nav {
-        gap: 15px;
-        font-size: 0.9rem;
-      }
-      
-      .section-title {
-        font-size: 1.8rem;
-      }
-      
-      main {
-        padding: 40px 15px;
-      }
-      
-      .event-grid {
-        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-      }
-    }
-  </style>
+  <link rel="stylesheet" href="/assets/main.css">
 </head>
 <body>
   <header>
     <nav class="navbar">
-      <a href="index.html" class="navbar-brand">⚡ Track & Field</a>
-      <ul class="navbar-nav">
-        <li><a href="/index.html" class="navbar-link">Home</a></li>
-        <li><a href="index.html" class="navbar-link">Track</a></li>
-        <li><a href="meets.html" class="navbar-link">Meets</a></li>
-        <li><a href="events.html" class="navbar-link active">Events</a></li>
-        <li><a href="rankings.html" class="navbar-link">Rankings</a></li>
-        <li><a href="analytics.html" class="navbar-link">Analytics</a></li>
-      </ul>
+      <div class="navbar-content">
+        <a href="index.html" class="navbar-brand">Track</a>
+        <button class="mobile-menu-toggle" aria-label="Toggle menu">☰</button>
+        <ul class="navbar-nav" id="main-nav">
+          <li><a href="/home/index" class="navbar-link">Home</a></li>
+          <li><a href="index.html" class="navbar-link">Track</a></li>
+          <li><a href="meets.html" class="navbar-link">Meets</a></li>
+          <li><a href="events.html" class="navbar-link active">Events</a></li>
+          <li><a href="rankings.html" class="navbar-link">Rankings</a></li>
+          <li><a href="analytics.html" class="navbar-link">Analytics</a></li>
+        </ul>
+        <button class="theme-toggle" aria-label="Switch theme">🌙</button>
+      </div>
     </nav>
   </header>
-  
-  <main>
+
+  <main class="content-section">
     <section class="section">
-      <h2 class="section-title">Track & Field Events</h2>
+    <h2 class="section-title">Track & Field Events</h2>
       <div class="event-grid" id="event-grid">
         <div class="empty-state">Loading events...</div>
       </div>
@@ -256,55 +36,16 @@
   </main>
 
   <footer>
-      <div class="row">
-          <!-- 1st Column -->
-          <div class="footer-col">
-              <h4>General</h4>
-              <ul>
-                  <li><a href="/home/index.html">Home</a></li>
-                  <li><a href="/home/about.html">About</a></li>
-                  <li><a href="/home/admin.html">Admin</a></li>
-              </ul>
-          </div>
-
-          <!-- 2nd Column -->
-          <div class="footer-col">
-              <h4>Cross Country</h4>
-              <ul>
-                  <li><a href="/CrossCountry/xc.html">Home</a></li>
-                  <li><a href="/CrossCountry/meets.html">Meets</a></li>
-                  <li><a href="/CrossCountry/schools.html">Schools</a></li>
-                  <li><a href="/CrossCountry/rankings.html">Rankings</a></li>
-                  <li><a href="/CrossCountry/analytics.html">Analytics</a></li>
-              </ul>
-          </div>
-
-          <!-- 3rd Column -->
-          <div class="footer-col">
-              <h4>Track</h4>
-              <ul>
-                  <li><a href="/Track/index.html">Home</a></li>
-                  <li><a href="/Track/meets.html">Meets</a></li>
-                  <li><a href="/Track/teams.html">Teams</a></li>
-                  <li><a href="/Track/rankings.html">Rankings</a></li>
-                  <li><a href="/Track/analytics.html">Analytics</a></li>
-              </ul>
-          </div>
-      </div>
-      <hr>
-      <div class="row">
-          <div class="footer-bottom">
-              <div style="margin-bottom: 1rem;">
-                  <a href="https://github.com/sjwooft1/mountainstatemiles" target="_blank" rel="noopener noreferrer">
-                      <i class="fab fa-github" style="font-size: 1.5rem;"></i>
-                      <span>GitHub Repository</span>
-                  </a>
-              </div>
-              <p>&#169; 2026 Mountain State Miles — Built by runners, for runners.</p>
-          </div>
-      </div>
+    <div class="row">
+      <div class="footer-col"><h4>General</h4><ul><li><a href="/home/index">Home</a></li><li><a href="/home/about">About</a></li><li><a href="/home/admin">Admin</a></li><li><a href="/news">News</a></li></ul></div>
+      <div class="footer-col"><h4>Cross Country</h4><ul><li><a href="/CrossCountry/xc">Home</a></li><li><a href="/CrossCountry/meets">Meets</a></li><li><a href="/CrossCountry/schools">Schools</a></li><li><a href="/CrossCountry/rankings">Rankings</a></li><li><a href="/CrossCountry/analytics">Analytics</a></li></ul></div>
+      <div class="footer-col"><h4>Track</h4><ul><li><a href="/Track/index">Home</a></li><li><a href="/Track/meets">Meets</a></li><li><a href="/Track/teams">Teams</a></li><li><a href="/Track/rankings">Rankings</a></li><li><a href="/Track/analytics">Analytics</a></li></ul></div>
+    </div>
+    <hr>
+    <div class="row"><div class="footer-bottom"><p>&#169; 2026 Mountain State Miles — Built by runners, for runners.</p></div></div>
   </footer>
-  
+
+  <script src="/assets/theme-toggle.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
   <script src="firebase-config.js"></script>

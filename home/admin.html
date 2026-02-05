@@ -3,193 +3,122 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mountain State Miles — Track & Cross Country</title>
+    <title>Mountain State Miles — Admin</title>
     <meta property="og:image" content="/assets/Wvruns Logo.png" />
-  <link rel="icon" type="image/png" href="/assets/Favicon Generator/favicon-96x96.png" sizes="96x96" />
-<link rel="icon" type="image/svg+xml" href="/assets/Favicon Generator/favicon.svg" />
-<link rel="shortcut icon" href="/assets/Favicon Generator/favicon.ico" />
-<link rel="apple-touch-icon" sizes="180x180" href="/assets/Favicon Generator/apple-touch-icon.png" />
-<meta name="apple-mobile-web-app-title" content="MSM" />
-<link rel="manifest" href="assets/Favicon Generator/site.webmanifest" />
-    <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/png" href="/assets/Favicon Generator/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="/assets/Favicon Generator/favicon.svg" />
+    <link rel="shortcut icon" href="/assets/Favicon Generator/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/Favicon Generator/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-title" content="MSM" />
+    <link rel="manifest" href="/assets/Favicon Generator/site.webmanifest" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="fonts.googleapis.com" rel="stylesheet">
-    <style>
-        /* CSS to make the background image work */
-        .page-background-image {
-            position: fixed; /* Fixes the image to the viewport */
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            object-fit: cover; /* Ensures the image covers the entire screen without stretching */
-            z-index: -1; /* Pushes the image behind all content */
-        }
-        @font-face {
-         font-family: 'MSM'; /* Choose a name for your font family */
-         src: url('Running.ttf') format('truetype'); /* Specify the path to your .ttf file */
-      /* You can also add other font properties like font-weight and font-style here if needed */
-         }
-
-        body {
-            /* The original background gradient is kept as a solid color fallback */
-            background-color: #667eea; 
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 2rem;
-            /* Ensure body content is above the background image */
-            position: relative;
-            z-index: 1;
-        }
-        .hero {
-            text-align: center;
-            color: white;
-            max-width: 800px;
-            margin-bottom: 3rem;
-        }
-        .hero-logo {
-            width: 120px;
-            height: 120px;
-            margin: 0 auto 2rem;
-            border-radius: 50%;
-            background: white;
-            padding: 1rem;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-        }
-        .hero h1 {
-            font-size: 3.5rem;
-            font-weight: 800;
-            margin-bottom: 1rem;
-            text-shadow: 0 2px 20px rgba(0, 0, 0, 0.2);
-            color: white;
-        }
-        .hero p {
-            font-size: 1.25rem;
-            opacity: 0.95;
-            margin-bottom: 0;
-            color: rgba(255, 255, 255, 0.95);
-        }
-        .sport-cards {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 2rem;
-            max-width: 800px;
-            width: 100%;
-        }
-        .sport-card {
-            background: rgb(19, 19, 105);
-            border-radius: 1.5rem;
-            padding: 1.5rem;
-            text-align: center;
-            text-decoration: none;
-            transition: all 0.3s ease;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-            position: relative;
-            overflow: hidden;
-        }
-        .sport-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: linear-gradient(90deg, #667eea, #764ba2);
-        }
-        .sport-card:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-            text-decoration: none;
-        }
-        .sport-card h3 {
-            font-size: 1.75rem;
-            font-weight: 700;
-            color: #6b8bb9;
-            margin-bottom: 0.5rem;
-        }
-        .sport-card p {
-            color: #6b7280;
-            margin-bottom: 0;
-        }
-        .sport-icon {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-        }
-        .track-card {
-            border-top-color: #3b82f6;
-        }
-        .xc-card {
-            border-top-color: #10b981;
-        }
-        footer {
-            margin-top: 4rem;
-            text-align: center;
-            color: rgba(255, 255, 255, 0.9);
-            position: relative; /* Needed to be above the background image */
-            z-index: 1;
-        }
-        footer a {
-            display: inline-block;
-            margin-top: 1rem;
-            padding: 0.75rem 1.5rem;
-            background: rgba(255, 255, 255, 0.2);
-            color: white;
-            border-radius: 0.5rem;
-            font-weight: 600;
-            backdrop-filter: blur(10px);
-            transition: all 0.3s ease;
-        }
-        footer a:hover {
-            background: rgba(255, 255, 255, 0.3);
-            transform: translateY(-2px);
-            text-decoration: none;
-        }
-        @media (max-width: 768px) {
-            .hero h1 {
-                font-size: 2.5rem;
-            }
-            .sport-cards {
-                grid-template-columns: 1fr;
-            }
-        }
-        h1 {
-      font-family: 'MSM', truetype; /* Apply your custom font, with a fallback */
-    }
-    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/assets/main.css">
 </head>
 <body>
-    <!-- This image tag is now used for the background -->
-    <img src="bg.jpg" alt="Background Image" class="page-background-image" />
-    
-    <div class="hero">
-        <img src="assets/Wvruns Logo.png" alt="Mountain State Miles" class="hero-logo">
-        <h1>Mountain State Miles Admin</h1>
-        <p>Your source for West Virginia track & cross country results, rankings, and records</p>
-    </div>
-    <div class="sport-cards">
-        <a href="/Track/admin-login.html" class="sport-card track-card">
-            <div class="sport-icon"></div>
-            <h3>Track & Field admin</h3>
-            <p>Admin access for track & field management</p>
-        </a>
-        <a href="/CrossCountry/login.html" class="sport-card xc-card">
-            <div class="sport-icon"></div>
-            <h3>Cross Country admin</h3>
-            <p>Admin access for cross country management</p>
-            
-        </a>
-        <a href="/news-admin.html" class="sport-card">
-            <div class="sport-icon">📰</div>
-            <h3>News</h3>
-            <p>Latest updates and recaps</p>
-        </a>
-    </div>
+    <header>
+        <nav class="navbar">
+            <div class="navbar-content">
+                <a href="/home/index" class="navbar-brand">MSM</a>
+                <button class="mobile-menu-toggle" aria-label="Toggle menu">☰</button>
+                <ul class="navbar-nav" id="main-nav">
+                    <li><a href="/home/index" class="navbar-link">Home</a></li>
+                    <li><a href="/home/about" class="navbar-link">About</a></li>
+                    <li><a href="/home/admin" class="navbar-link active">Admin</a></li>
+                    <li><a href="/Track/index" class="navbar-link">Track & Field</a></li>
+                    <li><a href="/CrossCountry/xc" class="navbar-link">Cross Country</a></li>
+                    <li><a href="/weather" class="navbar-link">Weather</a></li>
+                </ul>
+                <button class="theme-toggle" aria-label="Switch theme">🌙</button>
+            </div>
+        </nav>
+    </header>
+
+    <main class="content-section">
+        <div class="hero">
+            <img src="/assets/logo white.png" alt="Mountain State Miles" class="hero-logo">
+            <h1>Mountain State Miles Admin</h1>
+            <p>Your source for West Virginia track & cross country results, rankings, and records</p>
+        </div>
+
+        <div class="admin-cards">
+            <a href="/Track/admin-login.html" class="admin-card">
+                <div class="admin-icon">⚡</div>
+                <h3>Track & Field Admin</h3>
+                <p>Admin access for track & field management</p>
+            </a>
+            <a href="/CrossCountry/login.html" class="admin-card">
+                <div class="admin-icon">🏔️</div>
+                <h3>Cross Country Admin</h3>
+                <p>Admin access for cross country management</p>
+            </a>
+            <a href="/news-admin.html" class="admin-card">
+                <div class="admin-icon">📰</div>
+                <h3>News Admin</h3>
+                <p>Manage news and recaps</p>
+            </a>
+        </div>
+    </main>
+
     <footer>
-        <p>&copy; 2026 Mountain State Miles — Built by runners, for runners.</p>
+        <div class="row">
+            <div class="footer-col">
+                <h4>General</h4>
+                <ul>
+                    <li><a href="/home/index">Home</a></li>
+                    <li><a href="/feedback">Feedback</a></li>
+                    <li><a href="/home/admin">Admin</a></li>
+                    <li><a href="/news">News</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h4>Cross Country</h4>
+                <ul>
+                    <li><a href="/CrossCountry/xc">Home</a></li>
+                    <li><a href="/CrossCountry/meets">Meets</a></li>
+                    <li><a href="/CrossCountry/schools">Schools</a></li>
+                    <li><a href="/CrossCountry/rankings">Rankings</a></li>
+                    <li><a href="/CrossCountry/analytics">Analytics</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h4>Track</h4>
+                <ul>
+                    <li><a href="/Track/index">Home</a></li>
+                    <li><a href="/Track/meets">Meets</a></li>
+                    <li><a href="/Track/teams">Teams</a></li>
+                    <li><a href="/Track/rankings">Rankings</a></li>
+                    <li><a href="/Track/analytics">Analytics</a></li>
+                </ul>
+            </div>
+        </div>
+        <hr>
+        <div class="row">
+            <div class="footer-bottom">
+                <p>&#169; 2026 Mountain State Miles — Built by runners, for runners.</p>
+            </div>
+        </div>
     </footer>
+
+    <script src="/assets/theme-toggle.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const menuToggle = document.querySelector('.mobile-menu-toggle');
+            const navMenu = document.getElementById('main-nav');
+            
+            if (menuToggle && navMenu) {
+                menuToggle.addEventListener('click', () => {
+                    navMenu.classList.toggle('mobile-open');
+                });
+                
+                document.addEventListener('click', (e) => {
+                    if (!navMenu.contains(e.target) && !menuToggle.contains(e.target)) {
+                        navMenu.classList.remove('mobile-open');
+                    }
+                });
+            }
+        });
+    </script>
 </body>
 </html>

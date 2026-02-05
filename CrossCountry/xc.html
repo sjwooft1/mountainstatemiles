@@ -14,8 +14,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../style.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="/assets/main.css">
   <meta name="description" content="Mountain State Miles — West Virginia's home for XC & Track results, rankings, rosters, records, schedules, and meet coverage." />
   <meta name="keywords" content="West Virginia running, WVHSXC, WVXC, WV Track, WV high school running, WV cross country, WV track and field, WV runs, Mountain State Miles" />
   <meta name="author" content="Mountain State Miles" />
@@ -29,180 +29,11 @@
   <meta name="twitter:title" content="Mountain State Miles" />
   <meta name="twitter:description" content="West Virginia's XC & Track results, rankings, and athlete profiles." />
   <meta name="robots" content="index, follow" />
-  <style>
-    @font-face {
-      font-family: 'MsM';
-      src: url('Running.ttf') format('truetype');
-    }
-    
-    body {
-      margin: 0;
-      padding: 0;
-      padding-bottom: 60px;
-    }
-    
-    @media (min-width: 769px) {
-      body {
-        padding-bottom: 0;
-      }
-    }
-    
-    .hero-section {
-      background: linear-gradient(135deg, #002855 0%, #004080 100%);
-      padding: 80px 20px;
-      text-align: center;
-      color: white;
-      position: relative;
-      overflow: hidden;
-    }
-    
-    .hero-section::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="20" cy="20" r="20" fill="rgba(255,255,255,0.05)"/><circle cx="80" cy="80" r="30" fill="rgba(255,255,255,0.05)"/></svg>');
-      opacity: 0.5;
-    }
-    
-    .hero-content {
-      max-width: 900px;
-      margin: 0 auto;
-      position: relative;
-      z-index: 1;
-    }
-    
-    .hero-logo {
-      width: 80px;
-      height: 80px;
-      margin-bottom: 20px;
-      filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
-    }
-    
-    .hero-title {
-      font-family: 'MsM', sans-serif;
-      font-size: 3.5rem;
-      font-weight: 800;
-      margin: 20px 0 10px;
-      letter-spacing: -1px;
-    }
-    
-    .hero-subtitle {
-      font-size: 1.2rem;
-      opacity: 0.95;
-      margin: 0;
-      font-weight: 500;
-    }
-    
-    .content-section {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 60px 20px;
-      position: relative;
-      z-index: 2;
-    }
-    
-    .section-title {
-      font-size: 2.2rem;
-      font-weight: 800;
-      margin: 0 0 40px;
-      color: #002855;
-      position: relative;
-      padding-bottom: 15px;
-    }
-    
-    .section-title::after {
-      content: '';
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      width: 80px;
-      height: 4px;
-      background: linear-gradient(90deg, #ff6b35, #d9530a);
-      border-radius: 2px;
-    }
-    
-    .meet-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 24px;
-    }
-    
-    .meet-card {
-      background: white;
-      border-radius: 12px;
-      padding: 24px;
-      text-decoration: none;
-      color: inherit;
-      border: 1px solid #e5e7eb;
-      transition: all 0.3s;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    }
-    
-    .meet-card:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.1);
-      border-color: #ff6b35;
-    }
-    
-    .meet-card-title {
-      font-size: 1.3rem;
-      font-weight: 700;
-      margin: 0;
-      color: #002855;
-    }
-    
-    .meet-card-date {
-      font-size: 0.95rem;
-      color: #666;
-      margin: 0;
-      font-weight: 500;
-    }
-    
-    .meet-card-location {
-      font-size: 0.9rem;
-      color: #ff6b35;
-      margin: 0;
-      font-weight: 600;
-    }
-    
-    h5 {
-      text-align: center;
-    }
-    
-    h6 {
-      color: black;
-      text-align: center;
-    }
-    
-    @media (max-width: 768px) {
-      .hero-title {
-        font-size: 2.5rem;
-      }
-      
-      .hero-subtitle {
-        font-size: 1rem;
-      }
-      
-      .content-section {
-        padding: 40px 15px;
-      }
-      
-      .meet-grid {
-        grid-template-columns: 1fr;
-      }
-    }
-  </style>
 </head>
 <body>
   <div class="hero-section">
     <div class="hero-content">
-      <img src="assets/Wvruns Logo.png" alt="Mountain State Miles Logo" class="hero-logo" />
+      <img src="/assets/1.png" alt="Mountain State Miles Logo" class="hero-logo" />
       <h1 class="hero-title">Mountain State Miles</h1>
       <p class="hero-subtitle">The home for West Virginia cross country and track results — school by school, meet by meet.</p>
     </div>
@@ -211,7 +42,7 @@
   <header>
     <nav class="navbar">
       <div class="navbar-content">
-        <a href="xc.html" class="navbar-brand">🏔️ Cross Country</a>
+        <a href="xc.html" class="navbar-brand">Cross Country</a>
         <button class="mobile-menu-toggle" aria-label="Toggle menu">☰</button>
         <ul class="navbar-nav" id="main-nav">
           <li><a href="/home/" class="navbar-link">Home</a></li>
@@ -221,6 +52,7 @@
           <li><a href="rankings.html" class="navbar-link">Rankings</a></li>
           <li><a href="analytics.html" class="navbar-link">Analytics</a></li>
         </ul>
+        <button class="theme-toggle" aria-label="Switch theme">🌙</button>
       </div>
     </nav>
   </header>
@@ -230,58 +62,51 @@
     <div id="meet-list" class="meet-grid">Loading recent meets...</div>
   </main>
 
-    <footer>
-        <div class="row">
-            <!-- 1st Column -->
-            <div class="footer-col">
-                <h4>General</h4>
-                <ul>
-                    <li><a href="/home/index.html">Home</a></li>
-                    <li><a href="/home/admin.html">Admin</a></li>
-                    <li><a href="/news.html">News</a></li>
-                </ul>
-            </div>
+  <footer>
+    <div class="row">
+      <div class="footer-col">
+        <h4>General</h4>
+        <ul>
+          <li><a href="/home/index.html">Home</a></li>
+          <li><a href="/home/admin.html">Admin</a></li>
+          <li><a href="/news.html">News</a></li>
+        </ul>
+      </div>
 
-            <!-- 2nd Column -->
-            <div class="footer-col">
-                <h4>Cross Country</h4>
-                <ul>
-                    <li><a href="/CrossCountry/xc.html">Home</a></li>
-                    <li><a href="/CrossCountry/meets.html">Meets</a></li>
-                    <li><a href="/CrossCountry/schools.html">Schools</a></li>
-                    <li><a href="/CrossCountry/rankings.html">Rankings</a></li>
-                    <li><a href="/CrossCountry/analytics.html">Analytics</a></li>
-                </ul>
-            </div>
+      <div class="footer-col">
+        <h4>Cross Country</h4>
+        <ul>
+          <li><a href="/CrossCountry/xc.html">Home</a></li>
+          <li><a href="/CrossCountry/meets.html">Meets</a></li>
+          <li><a href="/CrossCountry/schools.html">Schools</a></li>
+          <li><a href="/CrossCountry/rankings.html">Rankings</a></li>
+          <li><a href="/CrossCountry/analytics.html">Analytics</a></li>
+        </ul>
+      </div>
 
-            <!-- 3rd Column -->
-            <div class="footer-col">
-                <h4>Track</h4>
-                <ul>
-                    <li><a href="/Track/index.html">Home</a></li>
-                    <li><a href="/Track/meets.html">Meets</a></li>
-                    <li><a href="/Track/teams.html">Teams</a></li>
-                    <li><a href="/Track/rankings.html">Rankings</a></li>
-                    <li><a href="/Track/analytics.html">Analytics</a></li>
-                </ul>
-            </div>
-        </div>
-        <hr>
-        <div class="row">
-            <div class="footer-bottom">
-                <p>&#169; 2026 Mountain State Miles — Built by runners, for runners.</p>
-            </div>
-        </div>
-    </footer>
+      <div class="footer-col">
+        <h4>Track</h4>
+        <ul>
+          <li><a href="/Track/index.html">Home</a></li>
+          <li><a href="/Track/meets.html">Meets</a></li>
+          <li><a href="/Track/teams.html">Teams</a></li>
+          <li><a href="/Track/rankings.html">Rankings</a></li>
+          <li><a href="/Track/analytics.html">Analytics</a></li>
+        </ul>
+      </div>
+    </div>
+    <hr>
+    <div class="row">
+      <div class="footer-bottom">
+        <p>&#169; 2026 Mountain State Miles — Built by runners, for runners.</p>
+      </div>
+    </div>
+  </footer>
 
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-analytics-compat.js"></script>
-    
-    <!-- Footer Toggle Script -->
-    <script src="../footer-toggle.js"></script>
-  
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <script src="/assets/theme-toggle.js"></script>
   <script src="firebase-config.js"></script>
   <script src="firebase-helpers.js"></script>
   <script>
@@ -324,7 +149,6 @@
     document.addEventListener('DOMContentLoaded', () => {
       loadRecentMeets();
       
-      // Mobile menu toggle
       const menuToggle = document.querySelector('.mobile-menu-toggle');
       const navMenu = document.getElementById('main-nav');
       

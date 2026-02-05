@@ -10,101 +10,9 @@
   <link rel="apple-touch-icon" sizes="180x180" href="../assets/Favicon Generator/apple-touch-icon.png" />
   <link rel="manifest" href="../assets/Favicon Generator/site.webmanifest" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="/assets/main.css">
   <style>
-    * { box-sizing: border-box; }
-    
-    :root {
-      --xc-primary: #002855;
-      --xc-secondary: #004080;
-      --text-primary: #1a1a1a;
-      --text-secondary: #666;
-      --bg-light: #f8f9fa;
-      --border-light: #e0e0e0;
-      --accent: #ff6b35;
-      --accent-dark: #d9530a;
-    }
-    
-    html, body {
-      margin: 0;
-      padding: 0;
-      font-family: 'Inter', system-ui, -apple-system, sans-serif;
-      background: var(--bg-light);
-      color: var(--text-primary);
-      line-height: 1.6;
-    }
-    
-    .page-background {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(135deg, #f0f4f8 0%, #d9e8f0 100%);
-      z-index: -2;
-    }
-    
-    .page-background-image {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      opacity: 0.15;
-      z-index: -1;
-    }
-    
-    /* Hero Section */
-    .hero-section {
-      background: linear-gradient(135deg, var(--xc-primary) 0%, var(--xc-secondary) 100%);
-      padding: 60px 20px;
-      text-align: center;
-      color: white;
-      position: relative;
-      overflow: hidden;
-    }
-    
-    .hero-section::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="20" cy="20" r="20" fill="rgba(255,255,255,0.05)"/><circle cx="80" cy="80" r="30" fill="rgba(255,255,255,0.05)"/></svg>');
-      opacity: 0.5;
-    }
-    
-    .hero-content {
-      max-width: 900px;
-      margin: 0 auto;
-      position: relative;
-      z-index: 1;
-    }
-    
-    .hero-logo {
-      width: 80px;
-      height: 80px;
-      margin-bottom: 20px;
-      filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
-    }
-    
-    .hero-title {
-      font-size: 3.5rem;
-      font-weight: 800;
-      margin: 20px 0 10px;
-      letter-spacing: -1px;
-    }
-    
-    .hero-subtitle {
-      font-size: 1.2rem;
-      opacity: 0.95;
-      margin: 0 0 30px;
-      font-weight: 500;
-    }
-    
-    /* Season Buttons */
     .season-buttons {
       display: flex;
       gap: 12px;
@@ -114,59 +22,22 @@
     }
     
     .season-btn {
-      padding: 12px 32px;
-      border: 2px solid white;
+      padding: 0.75rem 1.5rem;
+      border: 1px solid var(--text-primary);
       background: transparent;
-      color: white;
+      color: var(--text-primary);
       text-decoration: none;
-      border-radius: 8px;
-      font-weight: 700;
-      transition: all 0.3s;
-      font-size: 1rem;
+      border-radius: 4px;
+      font-weight: 600;
+      transition: all 0.2s;
+      font-size: 0.95rem;
     }
     
     .season-btn:hover {
-      background: white;
-      color: var(--xc-primary);
-      transform: translateY(-2px);
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+      background: var(--text-primary);
+      color: var(--bg-primary);
     }
     
-    /* Navigation Bar - Using unified header from style.css */
-    
-    /* Main Content */
-    main {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 60px 20px;
-    }
-    
-    /* Section */
-    .section {
-      margin-bottom: 80px;
-    }
-    
-    .section-title {
-      font-size: 2.2rem;
-      font-weight: 800;
-      margin: 0 0 40px;
-      color: var(--xc-primary);
-      position: relative;
-      padding-bottom: 15px;
-    }
-    
-    .section-title::after {
-      content: '';
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      width: 80px;
-      height: 4px;
-      background: linear-gradient(90deg, var(--accent), var(--accent-dark));
-      border-radius: 2px;
-    }
-    
-    /* Event Grid */
     .event-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -176,165 +47,42 @@
     
     .event-card {
       padding: 30px 20px;
-      background: linear-gradient(135deg, white 0%, #f8f9fa 100%);
-      border: 2px solid var(--border-light);
-      border-radius: 12px;
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      border-radius: 6px;
       text-align: center;
       text-decoration: none;
-      color: var(--xc-primary);
+      color: var(--text-primary);
       font-weight: 700;
       font-size: 1.1rem;
-      transition: all 0.3s;
+      transition: all 0.2s;
       cursor: pointer;
+      font-family: var(--font-display);
     }
     
     .event-card:hover {
-      border-color: var(--accent);
-      background: linear-gradient(135deg, #fff 0%, #fffaf0 100%);
+      border-color: var(--text-primary);
+      background: var(--bg-secondary);
       transform: translateY(-4px);
-      box-shadow: 0 8px 24px rgba(255, 107, 53, 0.15);
-      color: var(--accent);
-    }
-    
-    /* Meet Grid */
-    .meet-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-      gap: 24px;
-    }
-    
-    .meet-card {
-      background: white;
-      border-radius: 12px;
-      padding: 24px;
-      text-decoration: none;
-      color: inherit;
-      border: 1px solid var(--border-light);
-      transition: all 0.3s;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-    
-    .meet-card:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.1);
-      border-color: var(--accent);
-    }
-    
-    .meet-card-title {
-      font-size: 1.3rem;
-      font-weight: 700;
-      margin: 0;
-      color: var(--xc-primary);
-    }
-    
-    .meet-card-date {
-      font-size: 0.95rem;
-      color: var(--text-secondary);
-      margin: 0;
-    }
-    
-    .meet-card-location {
-      font-size: 0.9rem;
-      color: var(--accent);
-      margin: 0;
-      font-weight: 600;
-    }
-    .navbar-nav {
-      font-size: 1.2rem;
-      font-weight: 600;
-      color: var(--text-secondary);
-      margin: 0;
-      padding: 0;
-      list-style: none;
-      display:flex;
-      align-items: center;
-    }
-    
-    /* Footer */
-    footer {
-  /* Remove the solid background color */
-  background: rgba(0, 40, 85, 0.85); /* Semi-transparent version of your primary blue */
-  backdrop-filter: blur(8px); /* Optional: Adds a glass effect */
-  color: white;
-  text-align: center;
-  padding: 40px 20px;
-  margin-top: 80px;
-  position: relative;
-  z-index: 1; /* Ensures footer content stays above the image */
-}
-.footer-with-bg {
-  position: relative;
-  overflow: hidden; /* Clips the image to footer boundaries */
-  padding: 60px 20px;
-  color: white;
-  text-align: center;
-}
-
-.footer-bg-img {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover; /* Ensures the mountain image fills the area */
-  z-index: -1; /* Puts it behind the text */
-  filter: brightness(0.5); /* Darkens the image so text is readable */
-}
-
-.footer-content {
-  position: relative;
-  z-index: 2;
-}
-    
-    .btn {
-      display: inline-block;
-      padding: 12px 28px;
-      background: var(--accent);
-      color: white;
-      text-decoration: none;
-      border-radius: 8px;
-      font-weight: 700;
-      transition: all 0.3s;
-      border: none;
-      cursor: pointer;
-    }
-    
-    .btn:hover {
-      background: var(--accent-dark);
-      transform: translateY(-2px);
-      box-shadow: 0 6px 16px rgba(255, 107, 53, 0.3);
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
     }
     
     @media (max-width: 768px) {
-      .hero-title {
-        font-size: 2.5rem;
+      .event-grid {
+        grid-template-columns: 1fr;
       }
-      
-      .hero-subtitle {
-        font-size: 1rem;
-      }
-      
-      /* Mobile menu handled by unified header styles */
-      
-      .section-title {
-        font-size: 1.8rem;
-      }
-      
-      main {
-        padding: 40px 15px;
+
+      .season-btn {
+        padding: 0.625rem 1.25rem;
+        font-size: 0.85rem;
       }
     }
   </style>
 </head>
 <body>
-  <div class="page-background"></div>
-  <img src="../assets/run.jpg" alt="" class="page-background-image" />
-  
   <div class="hero-section">
     <div class="hero-content">
-      <img src="../assets/Wvruns Logo.png" alt="Mountain State Miles Logo" class="hero-logo" />
+      <img src="/assets/1.png" alt="Mountain State Miles Logo" class="hero-logo" />
       <h1 class="hero-title">⚡ Track & Field</h1>
       <p class="hero-subtitle">Meet records, rankings, and results for West Virginia high school track and field.</p>
       
@@ -348,7 +96,7 @@
   <header>
     <nav class="navbar">
       <div class="navbar-content">
-        <a href="index.html" class="navbar-brand">Track </a>
+        <a href="index.html" class="navbar-brand">Track</a>
         <button class="mobile-menu-toggle" aria-label="Toggle menu">☰</button>
         <ul class="navbar-nav" id="main-nav">
           <li><a href="/home/" class="navbar-link">Home</a></li>
@@ -359,12 +107,13 @@
           <li><a href="rankings.html" class="navbar-link">Rankings</a></li>
           <li><a href="analytics.html" class="navbar-link">Analytics</a></li>
         </ul>
+        <button class="theme-toggle" aria-label="Switch theme">🌙</button>
       </div>
     </nav>
   </header>
   
-  <main>
-    <section class="section">
+  <main class="content-section">
+    <section>
       <h2 class="section-title">Event Categories</h2>
       <div class="event-grid">
         <a href="events.html#sprints" class="event-card">🏃 Sprints</a>
@@ -376,7 +125,7 @@
       </div>
     </section>
     
-    <section class="section">
+    <section>
       <h2 class="section-title">Recent Track Meets</h2>
       <div class="meet-grid" id="meet-list">
         <p>Loading recent meets...</p>
@@ -386,7 +135,6 @@
   
   <footer>
       <div class="row">
-          <!-- 1st Column -->
           <div class="footer-col">
                 <h4>General</h4>
                 <ul>
@@ -396,7 +144,6 @@
                 </ul>
             </div>
 
-          <!-- 2nd Column -->
           <div class="footer-col">
               <h4>Cross Country</h4>
               <ul>
@@ -408,7 +155,6 @@
               </ul>
           </div>
 
-          <!-- 3rd Column -->
           <div class="footer-col">
               <h4>Track</h4>
               <ul>
@@ -428,12 +174,10 @@
       </div>
   </footer>
   
-  <script src="../footer-toggle.js"></script>
-  
-  <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-  <script src="firebase-config.js"></script>
+  <script src="/assets/theme-toggle.js"></script>
+  
   <script>
     async function waitForFirebase() {
       let attempts = 0;
@@ -450,50 +194,26 @@
       const container = document.getElementById('meet-list');
       try {
         await waitForFirebase();
-        console.log('Loading meets from Track/meets...');
-        console.log('Firebase database:', window.firebaseDatabase);
-        
-        // Check root structure first
-        const rootSnapshot = await window.firebaseDatabase.ref().once('value');
-        console.log('Root snapshot:', rootSnapshot.val());
-        console.log('Root keys:', rootSnapshot.exists() ? Object.keys(rootSnapshot.val() || {}) : 'no data');
-        
-        // Try without orderBy first to see if data exists
         const snapshot = await window.firebaseDatabase.ref('Track/meets').once('value');
-        
-        console.log('Track/meets snapshot exists:', snapshot.exists());
-        console.log('Track/meets snapshot val:', snapshot.val());
-        
-        // Also try just 'meets' in case structure is different
         const meetsSnapshotAlt = await window.firebaseDatabase.ref('meets').once('value');
-        console.log('meets (no Track/) snapshot exists:', meetsSnapshotAlt.exists());
-        console.log('meets (no Track/) snapshot val:', meetsSnapshotAlt.val());
         
         const meets = [];
         if (snapshot.exists()) {
           snapshot.forEach(child => {
-            const meetData = child.val();
-            console.log('Meet found:', child.key, meetData);
-            meets.push({ id: child.key, ...meetData });
+            meets.push({ id: child.key, ...child.val() });
           });
         } else if (meetsSnapshotAlt.exists()) {
           meetsSnapshotAlt.forEach(child => {
-            const meetData = child.val();
-            console.log('Meet found (alt path):', child.key, meetData);
-            meets.push({ id: child.key, ...meetData });
+            meets.push({ id: child.key, ...child.val() });
           });
         }
         
-        console.log('Total meets found:', meets.length);
-        
-        // Sort by date descending
         meets.sort((a, b) => {
           const dateA = a.date || '';
           const dateB = b.date || '';
           return dateB.localeCompare(dateA);
         });
         
-        // Take last 10
         const recentMeets = meets.slice(0, 10);
         
         if (!recentMeets.length) {
@@ -523,7 +243,6 @@
     document.addEventListener('DOMContentLoaded', () => {
       setTimeout(loadRecentMeets, 100);
       
-      // Mobile menu toggle
       const menuToggle = document.querySelector('.mobile-menu-toggle');
       const navMenu = document.getElementById('main-nav');
       
@@ -532,7 +251,6 @@
           navMenu.classList.toggle('mobile-open');
         });
         
-        // Close menu when clicking outside
         document.addEventListener('click', (e) => {
           if (!navMenu.contains(e.target) && !menuToggle.contains(e.target)) {
             navMenu.classList.remove('mobile-open');

@@ -9,7 +9,7 @@
   <link rel="shortcut icon" href="assets/Favicon Generator/favicon.ico" />
   <link rel="apple-touch-icon" sizes="180x180" href="assets/Favicon Generator/apple-touch-icon.png" />
   <link rel="manifest" href="assets/Favicon Generator/site.webmanifest" />
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="/assets/main.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -414,20 +414,23 @@
   </style>
 </head>
 <body>
-  <nav class="navbar">
-    <div class="container">
+  <header>
+    <nav class="navbar">
       <div class="navbar-content">
-        <a href="index.html" class="navbar-brand">⚡ Track & Field</a>
-        <ul class="navbar-nav">
-          <li><a href="index.html" class="navbar-link">Home</a></li>
+        <a href="index.html" class="navbar-brand">Track</a>
+        <button class="mobile-menu-toggle" aria-label="Toggle menu">☰</button>
+        <ul class="navbar-nav" id="main-nav">
+          <li><a href="/home/index" class="navbar-link">Home</a></li>
+          <li><a href="index.html" class="navbar-link">Track</a></li>
           <li><a href="meets.html" class="navbar-link">Meets</a></li>
           <li><a href="events.html" class="navbar-link">Events</a></li>
           <li><a href="rankings.html" class="navbar-link">Rankings</a></li>
           <li><a href="analytics.html" class="navbar-link active">Analytics</a></li>
         </ul>
+        <button class="theme-toggle" aria-label="Switch theme">🌙</button>
       </div>
-    </div>
-  </nav>
+    </nav>
+  </header>
 
   <main class="analytics-container">
     <h1 style="text-align: center; margin-bottom: 1rem; color: var(--xc-primary);">📊 Track & Field Analytics & Insights</h1>
@@ -1556,5 +1559,6 @@
       initAnalytics();
     }
   </script>
+  <script src="/assets/theme-toggle.js"></script>
 </body>
 </html>

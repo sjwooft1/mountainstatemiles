@@ -772,6 +772,7 @@
         <button class="nav-btn" data-section="bulk-edit">⚙️ Bulk Edit</button>
         <button class="nav-btn" data-section="analytics">📈 Analytics</button>
         <button class="nav-btn" data-section="console">📋 Activity Console</button>
+        <button class="nav-btn" data-section="feedback">💬 Feedback</button>
         <button class="nav-btn" data-section="settings">⚙️ Settings</button>
       </div>
     </nav>
@@ -883,6 +884,7 @@
       'bulk-edit': 'Bulk Edit',
       'analytics': 'Analytics',
       'console': 'Activity Console',
+      'feedback': 'Feedback',
       'settings': 'Settings'
     };
     document.getElementById('page-title').textContent = titles[section] || section.charAt(0).toUpperCase() + section.slice(1);
@@ -899,6 +901,7 @@
         case 'bulk-edit': await renderBulkEdit(); break;
         case 'analytics': await renderAnalytics(); break;
         case 'console': await renderConsole(); break;
+        case 'feedback': await renderFeedback(); break;
         case 'settings': await renderSettings(); break;
       }
     } catch (error) {
@@ -1546,6 +1549,42 @@
     updateRecordCount(Object.values(stats).reduce((a, b) => a + b, 0));
   }
   
+  // ==========================================
+  // Feedback (site-wide submissions from /feedback page)
+  // ==========================================
+  async function renderFeedback() {
+    const snap = await window.firebaseDatabase.ref('feedback').once('value');
+    const items = [];
+    snap.forEach(child => {
+      items.push({ id: child.key, ...child.val() });
+    });
+    items.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+
+    const typeLabels = { feature: 'Feature request', change: 'Change/improvement', comment: 'Comment', results: 'Results feedback' };
+    const typeColors = { feature: 'var(--info)', change: 'var(--accent)', comment: 'var(--muted)', results: 'var(--warning)' };
+
+    if (!items.length) {
+      document.getElementById('content').innerHTML = '<div class="empty-state" style="padding: 40px; text-align: center; color: var(--muted);">No feedback submissions yet. Submissions from the public <a href="/feedback" target="_blank">Feedback page</a> will appear here.</div>';
+      return;
+    }
+
+    document.getElementById('content').innerHTML = `
+      <div style="margin-bottom: 16px; color: var(--muted); font-size: 0.9rem;">Showing ${items.length} submission(s) from the <a href="/feedback" target="_blank" style="color: var(--accent);">Feedback</a> page (newest first).</div>
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        ${items.map(item => `
+          <div style="background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 16px 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px; margin-bottom: 10px;">
+              <span style="display: inline-block; padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; background: ${typeColors[item.type] || 'var(--muted)'}; color: #fff;">${typeLabels[item.type] || item.type}</span>
+              <span style="color: var(--muted); font-size: 0.85rem;">${item.createdAt ? new Date(item.createdAt).toLocaleString() : '—'}</span>
+            </div>
+            <div style="white-space: pre-wrap; word-break: break-word; color: #e6f0f7; line-height: 1.5;">${(item.message || '').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
+            ${item.email ? `<div style="margin-top: 10px; font-size: 0.9rem; color: var(--muted);">📧 ${item.email.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>` : ''}
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }
+
   // ==========================================
   // Activity Console
   // ==========================================

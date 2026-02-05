@@ -10,266 +10,17 @@
     <link rel="shortcut icon" href="/assets/Favicon Generator/favicon.ico" />
     <link rel="apple-touch-icon" sizes="180x180" href="/assets/Favicon Generator/apple-touch-icon.png" />
     <link rel="manifest" href="/assets/Favicon Generator/site.webmanifest" />
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="/assets/main.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            padding-bottom: 60px;
-            background: linear-gradient(135deg, #0f1a4f 0%, #7d90e4 100%);
-            min-height: 100vh;
-        }
-
-        @media (min-width: 769px) {
-            body {
-                padding-bottom: 0;
-            }
-        }
-
-        .page-container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 2rem;
-        }
-
-        .page-header {
-            color: white;
-            text-align: center;
-            margin-bottom: 3rem;
-            padding-top: 2rem;
-        }
-
-        .page-header h1 {
-            font-size: 2.5rem;
-            font-weight: 800;
-            margin: 0 0 0.5rem;
-            color:#e0e7ff
-        }
-
-        .page-header p {
-            font-size: 1.1rem;
-            opacity: 0.9;
-            margin: 0;
-        }
-
-        .weather-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 2rem;
-            margin-bottom: 3rem;
-        }
-
-        .weather-card {
-            background: white;
-            border-radius: 1rem;
-            padding: 2rem;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-            transition: all 0.3s ease;
-        }
-
-        .weather-card:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-        }
-
-        .weather-card h3 {
-            color: #002855;
-            font-size: 1.5rem;
-            margin: 0 0 0.5rem;
-            font-weight: 700;
-        }
-
-        .weather-card .sport-label {
-            display: inline-block;
-            padding: 0.25rem 0.75rem;
-            border-radius: 2rem;
-            font-size: 0.8rem;
-            font-weight: 600;
-            margin-bottom: 1rem;
-        }
-
-        .weather-card .sport-label.xc {
-            background: #d1fae5;
-            color: #065f46;
-        }
-
-        .weather-card .sport-label.track {
-            background: #e0e7ff;
-            color: #3730a3;
-        }
-
-        .meet-info {
-            margin-bottom: 1.5rem;
-            padding-bottom: 1.5rem;
-            border-bottom: 1px solid #e5e7eb;
-        }
-
-        .meet-info p {
-            margin: 0.5rem 0;
-            color: #666;
-            font-size: 0.95rem;
-        }
-
-        .meet-info p strong {
-            color: #002855;
-            font-weight: 600;
-        }
-
-        .weather-content {
-            display: flex;
-            gap: 1.5rem;
-            align-items: start;
-        }
-
-        .weather-icon {
-            font-size: 3rem;
-            min-width: 80px;
-            text-align: center;
-        }
-
-        .weather-details {
-            flex: 1;
-        }
-
-        .weather-condition {
-            font-size: 1.2rem;
-            font-weight: 600;
-            color: #002855;
-            margin-bottom: 0.5rem;
-        }
-
-        .temperature {
-            font-size: 2rem;
-            font-weight: 700;
-            color: #667eea;
-            margin-bottom: 0.5rem;
-        }
-
-        .weather-info-row {
-            display: flex;
-            gap: 1.5rem;
-            margin-bottom: 0.75rem;
-            font-size: 0.95rem;
-            color: #666;
-        }
-
-        .weather-info-item {
-            flex: 1;
-        }
-
-        .weather-info-item span {
-            font-weight: 600;
-            color: #002855;
-        }
-
-        .loading-state {
-            text-align: center;
-            color: white;
-            font-size: 1.2rem;
-            padding: 3rem;
-        }
-
-        .error-state {
-            background: #fee;
-            color: #c33;
-            padding: 2rem;
-            border-radius: 1rem;
-            text-align: center;
-        }
-
-        .last-updated {
-            text-align: center;
-            color: rgba(255, 255, 255, 0.7);
-            font-size: 0.9rem;
-            margin-top: 2rem;
-        }
-
-        .section-title {
-            color: white;
-            font-size: 1.8rem;
-            font-weight: 700;
-            margin: 3rem 0 2rem;
-            border-bottom: 2px solid rgba(255, 255, 255, 0.3);
-            padding-bottom: 1rem;
-        }
-
-        .sport-selector {
-            display: flex;
-            justify-content: center;
-            gap: 1rem;
-            margin-bottom: 2rem;
-            flex-wrap: wrap;
-        }
-
-        .sport-button {
-            padding: 0.75rem 1.5rem;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
-            font-size: 1rem;
-            font-weight: 600;
-            border-radius: 2rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .sport-button:hover {
-            background: rgba(255, 255, 255, 0.2);
-            border-color: rgba(255, 255, 255, 0.6);
-        }
-
-        .sport-button.active {
-            background: white;
-            color: #15225b;
-            border-color: white;
-        }
-
-        @media (max-width: 768px) {
-            .page-header h1 {
-                font-size: 1.8rem;
-            }
-
-            .page-header p {
-                font-size: 0.95rem;
-            }
-
-            .weather-grid {
-                grid-template-columns: 1fr;
-                gap: 1.5rem;
-            }
-
-            .page-container {
-                padding: 1rem;
-            }
-
-            .weather-content {
-                flex-direction: column;
-            }
-
-            .weather-icon {
-                min-width: auto;
-            }
-
-            .sport-selector {
-                gap: 0.5rem;
-            }
-
-            .sport-button {
-                padding: 0.6rem 1.2rem;
-                font-size: 0.9rem;
-            }
-        }
-    </style>
 </head>
 <body>
     <header>
         <nav class="navbar">
             <div class="navbar-content">
-                <a href="/home/index" class="navbar-brand">🏔️ Mountain State Miles</a>
+                <a href="/home/index" class="navbar-brand">MSM</a>
                 <button class="mobile-menu-toggle" aria-label="Toggle menu">☰</button>
                 <ul class="navbar-nav" id="main-nav">
                     <li><a href="/home/index" class="navbar-link">Home</a></li>
@@ -278,6 +29,7 @@
                     <li><a href="/CrossCountry/xc" class="navbar-link">Cross Country</a></li>
                     <li><a href="/weather" class="navbar-link active">Weather</a></li>
                 </ul>
+                <button class="theme-toggle" aria-label="Switch theme">🌙</button>
             </div>
         </nav>
     </header>
@@ -307,6 +59,7 @@
                 <h4>General</h4>
                 <ul>
                     <li><a href="/home/index">Home</a></li>
+                    <li><a href="/feedback">Feedback</a></li>
                     <li><a href="/home/admin">Admin</a></li>
                     <li><a href="/news">News</a></li>
                 </ul>
@@ -347,7 +100,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
     <!-- Footer Toggle Script -->
-    <script src="footer-toggle.js"></script>
+    <script src="/assets/theme-toggle.js"></script>
 
     <script>
         // Initialize Firebase

@@ -6,277 +6,16 @@
   <title>Track Teams — Mountain State Miles</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link rel="stylesheet" href="../style.css">
-  <style>
-    * { box-sizing: border-box; }
-    
-    :root {
-      --primary: #002855;
-      --secondary: #0056b3;
-      --text-primary: #1a1a1a;
-      --text-secondary: #666;
-      --bg-light: #f8f9fa;
-      --border-light: #e0e0e0;
-      --accent: #ff6b35;
-      --accent-dark: #d9530a;
-    }
-    
-    html, body {
-      margin: 0;
-      padding: 0;
-      font-family: 'Inter', system-ui, -apple-system, sans-serif;
-      background: var(--bg-light);
-      color: var(--text-primary);
-      line-height: 1.6;
-    }
-    
-    /* Header styles now handled by unified header in ../style.css */
-    
-    .content-wrapper {
-      width: 100%;
-      position: relative;
-      z-index: 2;
-    }
-    
-    .page-background {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0, 40, 85, 0.8);
-      z-index: 0;
-    }
-    
-    .page-background-image {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      z-index: -1;
-      opacity: 0.7;
-    }
-    
-    main {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 60px 20px;
-    }
-    
-    .section {
-      margin-bottom: 80px;
-    }
-    
-    .section-title {
-      font-size: 2.2rem;
-      font-weight: 800;
-      margin: 0 0 40px;
-      color: var(--primary);
-      position: relative;
-      padding-bottom: 15px;
-    }
-    
-    .section-title::after {
-      content: '';
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      width: 80px;
-      height: 4px;
-      background: linear-gradient(90deg, var(--accent), var(--accent-dark));
-      border-radius: 2px;
-    }
-    
-    main {
-      padding: 20px;
-      position: relative;
-      z-index: 2;
-    }
-    
-    main h1 {
-      color: white;
-      text-shadow: 2px 2px 8px rgba(0,0,0,0.3);
-      margin-bottom: 10px;
-    }
-    
-    main p {
-      color: rgba(255,255,255,0.95);
-      font-size: 1.1rem;
-      text-shadow: 1px 1px 4px rgba(0,0,0,0.2);
-      margin-bottom: 20px;
-    }
-    
-    .teams-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 20px;
-      margin-top: 20px;
-    }
-    
-    .team-card {
-      background: linear-gradient(135deg, #ffffff 0%, #f8f9fa5e 100%);
-      border-radius: 30px;
-      padding: 20px;
-      text-align: center;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-      cursor: pointer;
-      border: 2px solid transparent;
-      position: relative;
-      overflow: hidden;
-    }
-    
-    .team-card::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 4px;
-      background: linear-gradient(90deg, #002855, #0056b3);
-      transform: scaleX(0);
-      transition: transform 0.3s ease;
-    }
-    
-    .team-card:hover::before {
-      transform: scaleX(1);
-    }
-    
-    .team-card:hover {
-      transform: translateY(-8px) scale(1.02);
-      box-shadow: 0 12px 24px rgba(0, 40, 85, 0.866);
-      border-color: #002855;
-    }
-    
-    .team-card img {
-      width: 80px;
-      height: 80px;
-      object-fit: contain;
-      margin-bottom: 10px;
-    }
-    
-    .team-card h3 {
-      margin: 10px 0 0 0;
-      color: #002855;
-      font-weight: 700;
-      font-size: 1.1rem;
-      transition: color 0.3s ease;
-    }
-    
-    .team-card:hover h3 {
-      color: #0056b3;
-    }
-    
-    .search-bar {
-      display: flex;
-      justify-content: center;
-      margin-top: 10px;
-    }
-    
-    .search-bar input {
-      width: 300px;
-      padding: 12px 16px;
-      border-radius: 10px;
-      border: 2px solid #e5e7eb;
-      font-size: 1em;
-      transition: all 0.3s ease;
-      box-shadow: 0px 0px 50px rgba(36, 36, 148, 0.696);
-    }
-    
-    .search-bar input:focus {
-      outline: none;
-      border-color: #134987;
-      box-shadow: 0 10px 20px rgba(11, 56, 154, 0.861);
-    }
-    
-    .empty-state {
-      text-align: center;
-      padding: 60px 20px;
-      color: rgba(255, 255, 255, 0.9);
-      grid-column: 1 / -1;
-    }
-    
-     /* Footer */
-    footer {
-  /* Remove the solid background color */
-  background: rgba(0, 40, 85, 0.85); /* Semi-transparent version of your primary blue */
-  backdrop-filter: blur(8px); /* Optional: Adds a glass effect */
-  color: white;
-  text-align: center;
-  padding: 40px 20px;
-  margin-top: 80px;
-  position: relative;
-  z-index: 1; /* Ensures footer content stays above the image */
-}
-.footer-with-bg {
-  position: relative;
-  overflow: hidden; /* Clips the image to footer boundaries */
-  padding: 60px 20px;
-  color: white;
-  text-align: center;
-}
-
-.footer-bg-img {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover; /* Ensures the mountain image fills the area */
-  z-index: -1; /* Puts it behind the text */
-  filter: brightness(0.5); /* Darkens the image so text is readable */
-}
-
-.footer-content {
-  position: relative;
-  z-index: 2;
-}
-    
-    .btn {
-      display: inline-block;
-      padding: 12px 28px;
-      background: var(--accent);
-      color: white;
-      text-decoration: none;
-      border-radius: 8px;
-      font-weight: 700;
-      transition: all 0.3s;
-      border: none;
-      cursor: pointer;
-    }
-    
-    .btn:hover {
-      background: var(--accent-dark);
-      transform: translateY(-2px);
-      box-shadow: 0 6px 16px rgba(255, 107, 53, 0.3);
-    }
-    
-    @media (max-width: 768px) {
-      .teams-grid {
-        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-        gap: 15px;
-      }
-      .search-bar input {
-        width: 100%;
-        max-width: 300px;
-      }
-      .team-card img {
-        width: 60px;
-        height: 60px;
-      }
-    }
-  </style>
+  <link rel="stylesheet" href="/assets/main.css">
 </head>
 <body>
   <header>
     <nav class="navbar">
       <div class="navbar-content">
-        <a href="index.html" class="navbar-brand">⚡ Track & Field</a>
+        <a href="index.html" class="navbar-brand">Track</a>
         <button class="mobile-menu-toggle" aria-label="Toggle menu">☰</button>
         <ul class="navbar-nav" id="main-nav">
-          <li><a href="/home/" class="navbar-link">Home</a></li>
+          <li><a href="/home/index" class="navbar-link">Home</a></li>
           <li><a href="index.html" class="navbar-link">Track</a></li>
           <li><a href="teams.html" class="navbar-link active">Teams</a></li>
           <li><a href="meets.html" class="navbar-link">Meets</a></li>
@@ -284,6 +23,7 @@
           <li><a href="rankings.html" class="navbar-link">Rankings</a></li>
           <li><a href="analytics.html" class="navbar-link">Analytics</a></li>
         </ul>
+        <button class="theme-toggle" aria-label="Switch theme">🌙</button>
       </div>
     </nav>
   </header>
@@ -357,7 +97,7 @@
   
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-  <script src="../footer-toggle.js"></script>
+  <script src="/assets/theme-toggle.js"></script>
   <script src="firebase-config.js"></script>
   <script>
     async function loadTeams() {
