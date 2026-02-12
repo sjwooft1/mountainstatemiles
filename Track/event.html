@@ -4,7 +4,13 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Event — Track & Field</title>
+<link rel="icon" type="image/png" href="../assets/Favicon Generator/favicon-96x96.png" sizes="96x96" />
+<link rel="icon" type="image/svg+xml" href="../assets/Favicon Generator/favicon.svg" />
+<link rel="shortcut icon" href="../assets/Favicon Generator/favicon.ico" />
+<link rel="apple-touch-icon" sizes="180x180" href="../assets/Favicon Generator/apple-touch-icon.png" />
+<link rel="manifest" href="../assets/Favicon Generator/site.webmanifest" />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/main.css">
 <style>
   * { box-sizing: border-box; }
   
@@ -167,7 +173,7 @@
 <body>
   <header>
     <nav class="navbar">
-      <a href="index.html" class="navbar-brand">⚡ Track & Field</a>
+      <a href="index.html" class="navbar-brand">Track & Field</a>
       <ul class="navbar-nav">
         <li><a href="/index.html" class="navbar-link">Home</a></li>
         <li><a href="index.html" class="navbar-link">Track</a></li>
@@ -571,6 +577,7 @@ async function render() {
     resultsContainer.innerHTML = '<p style="color: #dc3545;">⚠️ Error loading results. Please try again.</p>';
   }
 }
+
 
 // helper to get event id from slug
 async function getEventIdBySlug(slugVal) {

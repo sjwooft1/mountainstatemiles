@@ -4,6 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Track Meets — Mountain State Miles</title>
+  <link rel="icon" type="image/png" href="../assets/Favicon Generator/favicon-96x96.png" sizes="96x96" />
+  <link rel="icon" type="image/svg+xml" href="../assets/Favicon Generator/favicon.svg" />
+  <link rel="shortcut icon" href="../assets/Favicon Generator/favicon.ico" />
+  <link rel="apple-touch-icon" sizes="180x180" href="../assets/Favicon Generator/apple-touch-icon.png" />
+  <link rel="manifest" href="../assets/Favicon Generator/site.webmanifest" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/assets/main.css">
   
@@ -446,11 +451,7 @@
       </div>
     </div>
 
-    <div id="list-controls" class="filter-bar">
-      <button class="filter-chip active" onclick="filterList('all', this)">All Seasons</button>
-      <button class="filter-chip" onclick="filterList('indoor', this)">Indoor</button>
-      <button class="filter-chip" onclick="filterList('outdoor', this)">Outdoor</button>
-    </div>
+    
 
     <div id="meets-list" class="meets-grid">
       <div style="grid-column: 1/-1; text-align: center;">Loading meets...</div>
@@ -593,7 +594,7 @@
           title: meet.name,
           start: meet.date,
           url: `meet.html?slug=${meet.slug}`,
-          backgroundColor: meet.season === 'indoor' ? '#002855' : '#ff6b35',
+          backgroundColor: '#002855',
           borderColor: 'transparent'
         })),
         eventClick: function(info) {

@@ -4,20 +4,27 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>News & Recaps — Mountain State Miles</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/png" href="/assets/Favicon Generator/favicon-96x96.png" sizes="96x96" />
+  <link rel="icon" type="image/svg+xml" href="/assets/Favicon Generator/favicon.svg" />
+  <link rel="shortcut icon" href="/assets/Favicon Generator/favicon.ico" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/Favicon Generator/apple-touch-icon.png" />
+  <link rel="manifest" href="/assets/Favicon Generator/site.webmanifest" />
   <link rel="stylesheet" href="/assets/main.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
-
   <header>
     <nav class="navbar">
       <div class="navbar-content">
-        <a href="index.html" class="navbar-brand">Mountain State Miles</a>
+        <a href="/home/index" class="navbar-brand">MSM</a>
         <button class="mobile-menu-toggle" aria-label="Toggle menu">☰</button>
         <ul class="navbar-nav" id="main-nav">
           <li><a href="/home/index" class="navbar-link">Home</a></li>
-          <li><a href="news.html" class="navbar-link active">News</a></li>
+          <li><a href="/home/about" class="navbar-link">About</a></li>
           <li><a href="/feedback" class="navbar-link">Feedback</a></li>
+          <li><a href="/news" class="navbar-link active">News</a></li>
           <li><a href="/Track/index" class="navbar-link">Track & Field</a></li>
           <li><a href="/CrossCountry/xc" class="navbar-link">Cross Country</a></li>
           <li><a href="/weather" class="navbar-link">Weather</a></li>
@@ -26,41 +33,48 @@
       </div>
     </nav>
   </header>
-  
-  <main>
+
+  <main class="content-section">
     <div class="page-header">
       <h1 class="page-title">📰 News & Recaps</h1>
       <p class="page-subtitle">Weekly summaries and automated meet analysis</p>
     </div>
 
     <div id="news-container">
-      <div style="text-align: center; padding: 40px; color: #666;">Loading recaps...</div>
+      <div class="loading-state">Loading recaps...</div>
     </div>
-
   </main>
-  
+
   <footer>
     <div class="row">
       <div class="footer-col">
         <h4>General</h4>
         <ul>
           <li><a href="/home/index">Home</a></li>
+          <li><a href="/home/about">About</a></li>
           <li><a href="/feedback">Feedback</a></li>
           <li><a href="/home/admin">Admin</a></li>
-        </ul>
-      </div>
-      <div class="footer-col">
-        <h4>Track</h4>
-        <ul>
-          <li><a href="/Track/index.html">Home</a></li>
-          <li><a href="/Track/meets.html">Meets</a></li>
+          <li><a href="/news">News</a></li>
         </ul>
       </div>
       <div class="footer-col">
         <h4>Cross Country</h4>
         <ul>
-          <li><a href="/CrossCountry/xc.html">Home</a></li>
-          <li><a href="/CrossCountry/meets.html">Meets</a></li>
+          <li><a href="/CrossCountry/xc">Home</a></li>
+          <li><a href="/CrossCountry/meets">Meets</a></li>
+          <li><a href="/CrossCountry/schools">Schools</a></li>
+          <li><a href="/CrossCountry/rankings">Rankings</a></li>
+          <li><a href="/CrossCountry/analytics">Analytics</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Track</h4>
+        <ul>
+          <li><a href="/Track/index">Home</a></li>
+          <li><a href="/Track/meets">Meets</a></li>
+          <li><a href="/Track/teams">Teams</a></li>
+          <li><a href="/Track/rankings">Rankings</a></li>
+          <li><a href="/Track/analytics">Analytics</a></li>
         </ul>
       </div>
     </div>
@@ -142,7 +156,7 @@
         `).join('');
       } catch (error) {
         console.error('Error loading news:', error);
-        container.innerHTML = '<div style="text-align: center; padding: 40px; color: #dc3545;">⚠️ Error loading news. Please try again later.</div>';
+        container.innerHTML = '<div class="no-news" style="color: var(--danger);">⚠️ Error loading news. Please try again later.</div>';
       }
     }
 

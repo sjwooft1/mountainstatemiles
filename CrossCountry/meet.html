@@ -237,6 +237,18 @@
             return;
         }
 
+        // 4.5. Enrich results with school names (DB stores school_slug; we need school_name for display)
+        const schools = await window.getAllSchools();
+        const schoolSlugToName = {};
+        if (schools && schools.length) {
+          schools.forEach(s => { schoolSlugToName[s.slug || ''] = s.name || s.slug; });
+        }
+        allResults.forEach(r => {
+          if ((!r.school_name && !r.school) && r.school_slug) {
+            r.school_name = schoolSlugToName[r.school_slug] || r.school_slug;
+          }
+        });
+
         // 5. Initialize UI
         selectorDiv.style.display = "block";
         setupGenderTabs();
@@ -582,7 +594,7 @@
         renderTeamResults(teamScores);
         
         // Log any missing school data for debugging
-        const missingSchools = filteredData.filter(r => !r.school_name && !r.school);
+        const missingSchools = filteredData.filter(r => !r.school_name && !r.school && !r.school_slug);
         if (missingSchools.length > 0) {
             console.warn(`⚠️ ${missingSchools.length} runners missing school data:`, missingSchools.map(r => r.athlete_name || r.name));
         }
@@ -594,14 +606,14 @@
      * @returns {string} School name or "Unknown"
      */
     function getSchoolName(runner) {
-        // Try multiple possible field names
+        // Try multiple possible field names (DB often stores school_slug; school_name is enriched from schools list)
         return runner.school_name || 
                runner.school || 
                runner.schoolName ||
                runner.schoolname ||
                runner.team ||
                runner.team_name ||
-               'Unknown';
+               (runner.school_slug ? runner.school_slug : 'Unknown');
     }
 
     /**
@@ -627,79 +639,71 @@
     }
 
     /**
-     * Calculate team scores from individual results
-     * In cross country, lower score is better
-     * Score = sum of top 5 finishers' places
-     * Teams must have at least 5 runners to score
-     * Tiebreaker: If two teams tie, use 6th and 7th runners' places
+     * Calculate team scores from individual results (cross country rules)
+     * - First 5 runners from each team score; points = place (1st=1, 2nd=2, ...). Lowest score wins.
+     * - Teams with fewer than 5 finishers do not score; their runners are displaced (removed from
+     *   the field and everyone else bumps up into new scoring positions).
+     * - Tiebreaker: 6th runner's place, then 7th runner's place (lower wins).
      */
     function calculateTeamScores(results) {
         const teamMap = {};
-        
-        // Group results by normalized school name
         results.forEach(result => {
             const rawSchool = result.school_name || result.school || 'Unknown';
             const school = normalizeSchoolName(rawSchool);
-            if (!teamMap[school]) {
-                teamMap[school] = [];
-            }
+            if (!teamMap[school]) teamMap[school] = [];
             teamMap[school].push(result);
         });
 
-        // Calculate scores for each team
-        const scores = [];
-        Object.entries(teamMap).forEach(([school, athletes]) => {
-            // Sort athletes by place
-            const sorted = athletes.sort((a, b) => {
+        // Teams with at least 5 finishers can score; others are "incomplete"
+        const scoringTeamNames = new Set(
+            Object.entries(teamMap).filter(([, athletes]) => athletes.length >= 5).map(([s]) => s)
+        );
+
+        // Scoring field: only runners from teams with 5+ (incomplete teams' runners are displaced)
+        const scoringField = results
+            .filter(r => scoringTeamNames.has(normalizeSchoolName(r.school_name || r.school || 'Unknown')))
+            .sort((a, b) => {
                 const placeA = parseInt(a.place) || 999;
                 const placeB = parseInt(b.place) || 999;
-                return placeA - placeB;
+                if (placeA !== placeB) return placeA - placeB;
+                return (parseFloat(a.time) || 0) - (parseFloat(b.time) || 0);
             });
 
-            // Team must have at least 5 finishers to score
-            if (sorted.length < 5) {
-                console.log(`⚠️ Team "${school}" has only ${sorted.length} runners, skipping from team scores`);
-                return; // Skip this team
+        // Assign displaced scoring place (1, 2, 3, ...) to each runner in the scoring field
+        scoringField.forEach((runner, index) => {
+            runner.scoringPlace = index + 1;
+        });
+
+        const scores = [];
+        Object.entries(teamMap).forEach(([school, athletes]) => {
+            if (athletes.length < 5) {
+                console.log(`⚠️ Team "${school}" has only ${athletes.length} runners, skipping from team scores (displaced)`);
+                return;
             }
-
-            // Calculate main score from top 5 finishers
+            const sorted = athletes.slice().sort((a, b) => (a.scoringPlace || 999) - (b.scoringPlace || 999));
             const topFive = sorted.slice(0, 5);
-            const score = topFive.reduce((sum, athlete) => {
-                return sum + (parseInt(athlete.place) || 999);
-            }, 0);
-
-            // Get 6th and 7th runners for tiebreaker (if available)
-            const sixthRunner = sorted[5] ? parseInt(sorted[5].place) || 999 : 999;
-            const seventhRunner = sorted[6] ? parseInt(sorted[6].place) || 999 : 999;
+            const score = topFive.reduce((sum, a) => sum + (a.scoringPlace || 999), 0);
+            const sixthPlace = sorted[5]?.scoringPlace ?? 999;
+            const seventhPlace = sorted[6]?.scoringPlace ?? 999;
 
             scores.push({
                 school,
                 score,
-                sixthPlace: sixthRunner,
-                seventhPlace: seventhRunner,
+                sixthPlace,
+                seventhPlace,
                 athletes: topFive,
-                finishersCount: topFive.length,
+                finishersCount: 5,
                 totalAthletes: sorted.length,
-                allAthletes: sorted // Include all for reference
+                allAthletes: sorted
             });
-            
             console.log(`✅ Team "${school}" - Score: ${score}, Runners: ${sorted.length}`);
         });
 
-        // Sort by score (ascending - lower is better)
-        // Tiebreaker: if scores are equal, compare 6th runner, then 7th runner
         const sortedScores = scores.sort((a, b) => {
-            if (a.score !== b.score) {
-                return a.score - b.score;
-            }
-            // First tiebreaker: 6th runner
-            if (a.sixthPlace !== b.sixthPlace) {
-                return a.sixthPlace - b.sixthPlace;
-            }
-            // Second tiebreaker: 7th runner
+            if (a.score !== b.score) return a.score - b.score;
+            if (a.sixthPlace !== b.sixthPlace) return a.sixthPlace - b.sixthPlace;
             return a.seventhPlace - b.seventhPlace;
         });
-        
         console.log(`📊 Total teams with 5+ runners: ${sortedScores.length}`);
         return sortedScores;
     }
@@ -716,7 +720,7 @@
 
         const teamHTML = `
             <section class="results-table-container">
-                <h3 style="color: #002855; margin-bottom: 20px; font-size: 1.3rem;">🏆 Team Scores</h3>
+                <h3 style="color: white; margin-bottom: 20px; font-size: 1.3rem;">🏆 Team Scores</h3>
                 <table class="results-table">
                     <thead>
                         <tr>
@@ -741,7 +745,7 @@
                                 <td data-label="Top 5 Finishers">
                                     ${team.athletes.map(a => `
                                         <div style="font-size: 0.9rem; padding: 4px 0;">
-                                            <strong>#${a.place}</strong> ${a.athlete_name || a.name || 'Unknown'}
+                                            <strong>#${a.scoringPlace != null ? a.scoringPlace : a.place}</strong> ${a.athlete_name || a.name || 'Unknown'}
                                         </div>
                                     `).join('')}
                                 </td>
@@ -791,16 +795,16 @@
                             // Create the URL slug from the runner's name
                             const athleteSlug = slugify(runner.athlete_name || runner.name);
                             
-                            // Create the URL slug from the school name
-                            const rawSchool = runner.school_name || runner.school || 'Unknown';
-                            const schoolSlug = slugify(normalizeSchoolName(rawSchool));
+                            // Create the URL slug from the school name (DB stores school_slug; school_name enriched from schools list)
+                            const rawSchool = runner.school_name || runner.school || runner.school_slug || 'Unknown';
+                            const schoolSlug = runner.school_slug || slugify(normalizeSchoolName(rawSchool));
 
                             return `
                             <tr>
                                 <td data-label="Place">${runner.place || '-'}</td>
                                 <td data-label="Name">
                                     <!-- Use athleteSlug for the link as intended -->
-                                    <a href="athlete.html?slug=${athleteSlug}" style="font-weight:bold; color:#002855;">
+                                    <a href="athlete.html?slug=${athleteSlug}" style="font-weight:bold; color:white;">
                                         ${runner.athlete_name || runner.name || 'Unknown'}
                                     </a>
                                 </td>

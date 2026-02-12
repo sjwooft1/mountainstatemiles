@@ -171,7 +171,7 @@ class MeetAnalytics {
       const avgTime = totalTime / athletes.length;
       const topAthletes = athletes
         .sort((a, b) => (parseFloat(a.time) || 0) - (parseFloat(b.time) || 0))
-        .slice(0, 7);
+        .slice(0, 5);
 
       teamStats[team] = {
         athletes: athletes.length,
@@ -185,7 +185,7 @@ class MeetAnalytics {
   }
 
   /**
-   * Calculate cross country score (sum of top 7 finishes)
+   * Calculate cross country score (sum of top 5 finishers' places; lower is better)
    * @private
    */
   _calculateXCScore(athletes) {

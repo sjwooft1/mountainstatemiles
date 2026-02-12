@@ -338,6 +338,90 @@
       border-color: var(--accent);
       box-shadow: 0 0 0 3px rgba(255, 123, 45, 0.1);
     }
+    
+    .import-hint {
+      color: var(--muted);
+      font-size: 0.95rem;
+      margin: -8px 0 16px 0;
+    }
+    
+    .format-details {
+      margin-bottom: 16px;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    
+    .format-details summary {
+      cursor: pointer;
+      color: var(--accent);
+      font-weight: 600;
+    }
+    
+    .format-details .format-list {
+      margin: 8px 0 0 0;
+      line-height: 1.5;
+    }
+    
+    .import-tabs {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 20px;
+    }
+    
+    .import-tab {
+      padding: 10px 18px;
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--muted);
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    
+    .import-tab:hover {
+      background: var(--hover);
+      color: #e6f0f7;
+    }
+    
+    .import-tab.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+    
+    .import-tab-panel {
+      display: none;
+    }
+    
+    .import-tab-panel.active {
+      display: block;
+    }
+    
+    .paste-area {
+      width: 100%;
+      min-height: 200px;
+      padding: 16px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: #e6f0f7;
+      font-family: 'Consolas', 'Monaco', monospace;
+      font-size: 0.9rem;
+      line-height: 1.5;
+      resize: vertical;
+      box-sizing: border-box;
+    }
+    
+    .paste-area:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(255, 123, 45, 0.1);
+    }
+    
+    .paste-area::placeholder {
+      color: var(--muted);
+    }
   </style>
 </head>
 <body>
@@ -345,8 +429,8 @@
     <a href="admin.html" class="back-link">← Back to Admin</a>
     
     <div class="header">
-      <h1>📊 CSV Import</h1>
-      <p>Import track & field results from CSV files</p>
+      <h1>📊 Import Results</h1>
+      <p>Import track & field results from Athletic.net, CSV files, or pasted tables</p>
     </div>
     
     <div class="card">
@@ -358,14 +442,29 @@
     </div>
     
     <div class="card">
-      <h2 class="card-title">Step 2: Upload CSV File</h2>
-      <div class="upload-zone" id="upload-zone">
-        <div class="upload-icon">📁</div>
-        <div class="upload-text">Drag & drop your CSV file here</div>
-        <div class="upload-hint">or click to browse</div>
-        <input type="file" id="file-input" class="file-input" accept=".csv" />
+      <h2 class="card-title">Step 2: Add Results</h2>
+      <p class="import-hint">Works with Athletic.net exports, Excel CSV, or pasted results (e.g. copy a results table from a webpage).</p>
+      <details class="format-details">
+        <summary>Supported column names (Athletic.net &amp; generic)</summary>
+        <p class="format-list">First row = headers. We recognize: <strong>Event</strong>, <strong>Result</strong> (or Mark/Time), <strong>Team</strong> (or School), <strong>FirstName1</strong> &amp; <strong>LastName1</strong> (or a single Athlete/Name column), <strong>Place</strong>, <strong>Heat</strong>, <strong>Gender</strong>. Comma or tab separated.</p>
+      </details>
+      <div class="import-tabs">
+        <button type="button" class="import-tab active" data-tab="paste">Paste (Athletic.net / table)</button>
+        <button type="button" class="import-tab" data-tab="upload">Upload CSV file</button>
       </div>
-      <div id="file-info" style="display: none;"></div>
+      <div id="import-tab-paste" class="import-tab-panel active">
+        <textarea id="paste-area" class="paste-area" placeholder="Paste results here — from Athletic.net (copy table or export CSV), Excel, or any tab/comma-separated data. First row can be headers (e.g. Event, Result, Team, FirstName1, LastName1, Place)."></textarea>
+        <button type="button" class="btn btn-primary" id="parse-paste-btn" style="margin-top: 12px;">Parse & Preview</button>
+      </div>
+      <div id="import-tab-upload" class="import-tab-panel">
+        <div class="upload-zone" id="upload-zone">
+          <div class="upload-icon">📁</div>
+          <div class="upload-text">Drag & drop your CSV file here</div>
+          <div class="upload-hint">or click to browse</div>
+          <input type="file" id="file-input" class="file-input" accept=".csv,.txt" />
+        </div>
+        <div id="file-info" style="display: none;"></div>
+      </div>
     </div>
     
     <div class="card" id="preview-card" style="display: none;">
@@ -389,6 +488,97 @@
     let selectedFile = null;
     let parsedData = null;
     let selectedMeetId = null;
+    
+    // Column name mappings: Athletic.net and common names -> our schema
+    const COLUMN_MAP = {
+      athlete_name: ['athlete', 'athlete name', 'name', 'runner', 'competitor', 'firstname1', 'lastname1', 'first name', 'last name'],
+      school: ['team', 'school', 'team name', 'school name', 'affiliation'],
+      gender: ['gender', 'sex', 'm/f'],
+      mark: ['result', 'mark', 'time', 'distance', 'performance', 'score'],
+      event: ['event', 'event name', 'discipline'],
+      placement: ['place', 'placement', 'heatplace', 'overall place', 'finish', 'pos', 'position'],
+      heat: ['heat', 'heat/flight', 'flight', 'heat number'],
+      grade: ['grade', 'grade1', 'year', 'yr']
+    };
+    
+    function normalizeHeader(h) {
+      return (h || '').toString().trim().toLowerCase().replace(/\s+/g, ' ').replace(/[^\w\s]/g, '');
+    }
+    
+    function findMappedHeader(headers, field) {
+      const normalizedHeaders = headers.map(normalizeHeader);
+      const candidates = COLUMN_MAP[field];
+      for (const c of candidates) {
+        const i = normalizedHeaders.findIndex(h => h === c || h.replace(/\s/g, '').includes(c.replace(/\s/g, '')));
+        if (i !== -1) return i;
+      }
+      return -1;
+    }
+    
+    /** Parse CSV/paste text with header row; auto-detect delimiter; map to athlete_name, school, gender, mark, event, placement, heat */
+    function parseAndNormalizeResults(rawText) {
+      const lines = rawText.trim().split(/\r?\n/).filter(l => l.trim());
+      if (lines.length < 2) return [];
+      const first = lines[0];
+      const delim = first.includes('\t') ? '\t' : ',';
+      const parseRow = (line) => {
+        const parts = [];
+        let cur = '';
+        let inQuotes = false;
+        for (let i = 0; i < line.length; i++) {
+          const ch = line[i];
+          if (ch === '"') { inQuotes = !inQuotes; continue; }
+          if (!inQuotes && (ch === delim || ch === '\t')) { parts.push(cur.trim()); cur = ''; continue; }
+          cur += ch;
+        }
+        parts.push(cur.trim());
+        return parts;
+      };
+      const headerRow = parseRow(first);
+      const headers = headerRow.map(h => h.replace(/^"|"$/g, '').trim());
+      const idx = {
+        athlete_name: findMappedHeader(headers, 'athlete_name'),
+        school: findMappedHeader(headers, 'school'),
+        gender: findMappedHeader(headers, 'gender'),
+        mark: findMappedHeader(headers, 'mark'),
+        event: findMappedHeader(headers, 'event'),
+        placement: findMappedHeader(headers, 'placement'),
+        heat: findMappedHeader(headers, 'heat'),
+        grade: findMappedHeader(headers, 'grade')
+      };
+      const hasFirst = headers.some(h => normalizeHeader(h).includes('firstname') || normalizeHeader(h) === 'first name');
+      const hasLast = headers.some(h => normalizeHeader(h).includes('lastname') || normalizeHeader(h) === 'last name');
+      if (hasFirst && hasLast) {
+        const iFirst = headers.findIndex(h => normalizeHeader(h).includes('firstname') || normalizeHeader(h) === 'first name');
+        const iLast = headers.findIndex(h => normalizeHeader(h).includes('lastname') || normalizeHeader(h) === 'last name');
+        if (iFirst !== -1 && iLast !== -1) idx.athlete_name = [iFirst, iLast];
+      }
+      const out = [];
+      for (let i = 1; i < lines.length; i++) {
+        const cells = parseRow(lines[i]);
+        const get = (key) => {
+          const i = idx[key];
+          if (Array.isArray(i)) return (cells[i[0]] || '').trim() + ' ' + (cells[i[1]] || '').trim();
+          if (typeof i === 'number' && i >= 0 && cells[i] !== undefined) return (cells[i] || '').trim();
+          return '';
+        };
+        const athleteName = Array.isArray(idx.athlete_name)
+          ? (cells[idx.athlete_name[0]] || '').trim() + ' ' + (cells[idx.athlete_name[1]] || '').trim()
+          : get('athlete_name');
+        if (!athleteName) continue;
+        out.push({
+          athlete_name: athleteName.replace(/\s+/g, ' ').trim(),
+          school: get('school') || '',
+          gender: get('gender') || '',
+          mark: get('mark') || '',
+          event: get('event') || '',
+          placement: get('placement') || '',
+          heat: get('heat') || '',
+          grade: get('grade') || ''
+        });
+      }
+      return out;
+    }
     
     async function waitForFirebase() {
       let attempts = 0;
@@ -424,8 +614,37 @@
     
     document.getElementById('meet-select').addEventListener('change', (e) => {
       selectedMeetId = e.target.value;
-      if (selectedMeetId && selectedFile) {
-        parseAndPreview();
+    });
+    
+    document.querySelectorAll('.import-tab').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.import-tab').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.import-tab-panel').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('import-tab-' + btn.dataset.tab).classList.add('active');
+      });
+    });
+    
+    document.getElementById('parse-paste-btn').addEventListener('click', () => {
+      if (!selectedMeetId) {
+        showAlert('Please select a meet first', 'warning');
+        return;
+      }
+      const text = document.getElementById('paste-area').value.trim();
+      if (!text) {
+        showAlert('Paste some results first', 'warning');
+        return;
+      }
+      try {
+        parsedData = parseAndNormalizeResults(text);
+        if (parsedData.length === 0) {
+          showAlert('No rows parsed. Check that the first line has headers (e.g. Event, Result, Team, FirstName1, LastName1, Place) and data is tab- or comma-separated.', 'error');
+          return;
+        }
+        displayPreview(parsedData);
+      } catch (err) {
+        console.error(err);
+        showAlert('Parse error: ' + err.message, 'error');
       }
     });
     
@@ -447,10 +666,10 @@
       e.preventDefault();
       uploadZone.classList.remove('dragover');
       const file = e.dataTransfer.files[0];
-      if (file && file.name.endsWith('.csv')) {
+      if (file && (file.name.endsWith('.csv') || file.name.endsWith('.txt'))) {
         handleFile(file);
       } else {
-        showAlert('Please upload a CSV file', 'error');
+        showAlert('Please upload a CSV or TXT file', 'error');
       }
     });
     
@@ -489,18 +708,17 @@
       reader.onload = async (e) => {
         try {
           const csvText = e.target.result;
-          const headers = ['athlete_name', 'school', 'gender', 'mark', 'event', 'placement', 'heat'];
-          parsedData = parseCSV(csvText, headers);
+          parsedData = parseAndNormalizeResults(csvText);
           
           if (parsedData.length === 0) {
-            showAlert('No data found in CSV file', 'error');
+            showAlert('No data found. Use a header row (e.g. Event, Result, Team, FirstName1, LastName1, Place) and comma- or tab-separated values.', 'error');
             return;
           }
           
           displayPreview(parsedData);
         } catch (error) {
-          console.error('Error parsing CSV:', error);
-          showAlert('Error parsing CSV: ' + error.message, 'error');
+          console.error('Error parsing file:', error);
+          showAlert('Error parsing file: ' + error.message, 'error');
         }
       };
       reader.readAsText(selectedFile);

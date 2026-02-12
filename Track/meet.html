@@ -4,6 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Meet Results — Mountain State Miles</title>
+<link rel="icon" type="image/png" href="../assets/Favicon Generator/favicon-96x96.png" sizes="96x96" />
+<link rel="icon" type="image/svg+xml" href="../assets/Favicon Generator/favicon.svg" />
+<link rel="shortcut icon" href="../assets/Favicon Generator/favicon.ico" />
+<link rel="apple-touch-icon" sizes="180x180" href="../assets/Favicon Generator/apple-touch-icon.png" />
+<link rel="manifest" href="../assets/Favicon Generator/site.webmanifest" />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/main.css">
 <style>
@@ -322,7 +327,7 @@
 <body>
   <header>
     <nav class="navbar">
-      <a href="index.html" class="navbar-brand">⚡ Track & Field</a>
+      <a href="index.html" class="navbar-brand">Track Meets</a>
       <ul class="navbar-nav">
         <li><a href="/index.html" class="navbar-link">Home</a></li>
         <li><a href="index.html" class="navbar-link">Track</a></li>
@@ -850,35 +855,32 @@ document.addEventListener('DOMContentLoaded', () => {
 // ==========================================
 
 /**
- * Calculate team scores from individual results
- * In track, higher score is better (points based on placement)
- * 1st place = most points, descending
+ * Calculate team scores from individual results (standard track scoring)
+ * Dual meet (2 teams): 5-3-1 for 1st/2nd/3rd per event. Invitational (3+): 10-8-6-4-2-1 for places 1-6.
+ * Points summed across all events; higher total wins.
  */
 function calculateTeamScoresTrack(results) {
   const teamMap = {};
-  
-  // Group results by school
   results.forEach(result => {
     const school = result.athlete?.school || 'Unknown';
-    if (!teamMap[school]) {
-      teamMap[school] = [];
-    }
+    if (!teamMap[school]) teamMap[school] = [];
     teamMap[school].push(result);
   });
 
-  // Calculate scores for each team
+  const numTeams = Object.keys(teamMap).length;
+  const isDual = numTeams <= 2;
+  // Dual (2 teams): 1st=5, 2nd=3, 3rd=1. Invitational (3+): 1st=10, 2nd=8, 3rd=6, 4th=4, 5th=2, 6th=1
+  const pointsTable = isDual ? [0, 5, 3, 1] : [0, 10, 8, 6, 4, 2, 1];
+
   const scores = [];
   Object.entries(teamMap).forEach(([school, athleteResults]) => {
     let teamScore = 0;
-    
-    // Sum points from all athletes (lower placement = higher points)
     athleteResults.forEach(result => {
-      const placing = parseInt(result.placing || result.placement) || 999;
-      // Convert placement to points: 1st = 10 points, 2nd = 8, 3rd = 6, etc.
-      const points = Math.max(0, 11 - placing);
-      teamScore += points;
+      const place = parseInt(result.placing || result.placement, 10);
+      if (place >= 1 && place <= pointsTable.length - 1) {
+        teamScore += pointsTable[place];
+      }
     });
-
     scores.push({
       school,
       score: teamScore,
@@ -887,7 +889,6 @@ function calculateTeamScoresTrack(results) {
     });
   });
 
-  // Sort by score (descending - higher is better)
   return scores.sort((a, b) => b.score - a.score);
 }
 
