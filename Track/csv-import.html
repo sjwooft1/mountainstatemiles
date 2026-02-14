@@ -519,8 +519,12 @@
     function parseAndNormalizeResults(rawText) {
       const lines = rawText.trim().split(/\r?\n/).filter(l => l.trim());
       if (lines.length < 2) return [];
+      
+      // Detect delimiter
       const first = lines[0];
-      const delim = first.includes('\t') ? '\t' : ',';
+      const hasTab = first.includes('\t');
+      const delim = hasTab ? '\t' : ',';
+      
       const parseRow = (line) => {
         const parts = [];
         let cur = '';
@@ -528,44 +532,86 @@
         for (let i = 0; i < line.length; i++) {
           const ch = line[i];
           if (ch === '"') { inQuotes = !inQuotes; continue; }
-          if (!inQuotes && (ch === delim || ch === '\t')) { parts.push(cur.trim()); cur = ''; continue; }
+          if (!inQuotes && (ch === delim || (delim === '\t' && ch === '\t'))) { parts.push(cur.trim()); cur = ''; continue; }
           cur += ch;
         }
         parts.push(cur.trim());
         return parts;
       };
-      const headerRow = parseRow(first);
-      const headers = headerRow.map(h => h.replace(/^"|"$/g, '').trim());
-      const idx = {
-        athlete_name: findMappedHeader(headers, 'athlete_name'),
-        school: findMappedHeader(headers, 'school'),
-        gender: findMappedHeader(headers, 'gender'),
-        mark: findMappedHeader(headers, 'mark'),
-        event: findMappedHeader(headers, 'event'),
-        placement: findMappedHeader(headers, 'placement'),
-        heat: findMappedHeader(headers, 'heat'),
-        grade: findMappedHeader(headers, 'grade')
+      
+      const firstRow = parseRow(first);
+      
+      // Check if first row looks like headers
+      const normalizedFirst = firstRow.map(h => normalizeHeader(h));
+      const isHeaderRow = COLUMN_MAP.placement.some(h => normalizedFirst.includes(h)) ||
+                          COLUMN_MAP.athlete_name.some(h => normalizedFirst.some(nf => nf.includes(h))) ||
+                          firstRow.some(h => ['place', 'athlete', 'result', 'time', 'school', 'team', 'event', 'grade'].some(k => normalizeHeader(h).includes(k)));
+      
+      let idx = {
+        placement: -1,
+        athlete_name: -1,
+        school: -1,
+        gender: -1,
+        mark: -1,
+        event: -1,
+        heat: -1,
+        grade: -1
       };
-      const hasFirst = headers.some(h => normalizeHeader(h).includes('firstname') || normalizeHeader(h) === 'first name');
-      const hasLast = headers.some(h => normalizeHeader(h).includes('lastname') || normalizeHeader(h) === 'last name');
-      if (hasFirst && hasLast) {
-        const iFirst = headers.findIndex(h => normalizeHeader(h).includes('firstname') || normalizeHeader(h) === 'first name');
-        const iLast = headers.findIndex(h => normalizeHeader(h).includes('lastname') || normalizeHeader(h) === 'last name');
-        if (iFirst !== -1 && iLast !== -1) idx.athlete_name = [iFirst, iLast];
+      
+      let startRow = 0;
+      
+      if (isHeaderRow) {
+        // Parse header row
+        idx.placement = findMappedHeader(firstRow, 'placement');
+        idx.athlete_name = findMappedHeader(firstRow, 'athlete_name');
+        idx.school = findMappedHeader(firstRow, 'school');
+        idx.gender = findMappedHeader(firstRow, 'gender');
+        idx.mark = findMappedHeader(firstRow, 'mark');
+        idx.event = findMappedHeader(firstRow, 'event');
+        idx.heat = findMappedHeader(firstRow, 'heat');
+        idx.grade = findMappedHeader(firstRow, 'grade');
+        
+        // Handle FirstName/LastName pattern
+        const hasFirst = firstRow.some(h => normalizeHeader(h).includes('firstname'));
+        const hasLast = firstRow.some(h => normalizeHeader(h).includes('lastname'));
+        if (hasFirst && hasLast) {
+          const iFirst = firstRow.findIndex(h => normalizeHeader(h).includes('firstname'));
+          const iLast = firstRow.findIndex(h => normalizeHeader(h).includes('lastname'));
+          if (iFirst !== -1 && iLast !== -1) idx.athlete_name = [iFirst, iLast];
+        }
+        startRow = 1;
+      } else {
+        // No header row - try to auto-detect columns based on content patterns
+        // Assume: Place | Grade | Athlete | (blank) | Time | School
+        if (firstRow.length >= 5) {
+          // Try to detect which column is which by content
+          idx.placement = 0; // Usually first
+          idx.grade = 1;     // Usually second
+          idx.athlete_name = 2; // Usually third
+          idx.mark = 4;      // Usually fifth (skipping blank column)
+          idx.school = 5 < firstRow.length ? 5 : -1; // Usually sixth if exists
+        }
+        startRow = 0;
       }
+      
       const out = [];
-      for (let i = 1; i < lines.length; i++) {
+      for (let i = startRow; i < lines.length; i++) {
         const cells = parseRow(lines[i]);
+        
         const get = (key) => {
-          const i = idx[key];
-          if (Array.isArray(i)) return (cells[i[0]] || '').trim() + ' ' + (cells[i[1]] || '').trim();
-          if (typeof i === 'number' && i >= 0 && cells[i] !== undefined) return (cells[i] || '').trim();
+          const colIdx = idx[key];
+          if (Array.isArray(colIdx)) {
+            return ((cells[colIdx[0]] || '').trim() + ' ' + (cells[colIdx[1]] || '').trim()).trim();
+          }
+          if (typeof colIdx === 'number' && colIdx >= 0 && cells[colIdx] !== undefined) {
+            return (cells[colIdx] || '').trim();
+          }
           return '';
         };
-        const athleteName = Array.isArray(idx.athlete_name)
-          ? (cells[idx.athlete_name[0]] || '').trim() + ' ' + (cells[idx.athlete_name[1]] || '').trim()
-          : get('athlete_name');
+        
+        const athleteName = get('athlete_name');
         if (!athleteName) continue;
+        
         out.push({
           athlete_name: athleteName.replace(/\s+/g, ' ').trim(),
           school: get('school') || '',
@@ -735,6 +781,10 @@
         errors: data.filter(r => !r.athlete_name).length
       };
       
+      // Get unique events and heats from data
+      const uniqueEvents = [...new Set(data.map(r => r.event).filter(e => e))];
+      const uniqueHeats = [...new Set(data.map(r => r.heat).filter(h => h))];
+      
       previewContent.innerHTML = `
         <div class="stats-grid">
           <div class="stat-item">
@@ -751,16 +801,45 @@
           </div>
         </div>
         
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin-bottom: 20px;">
+          <div>
+            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--muted);">Gender (Men/Women)</label>
+            <select id="import-gender" class="meet-select">
+              <option value="">-- Auto-detect from data --</option>
+              <option value="M">Men</option>
+              <option value="W">Women</option>
+              <option value="Mixed">Mixed</option>
+            </select>
+          </div>
+          <div>
+            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--muted);">Event</label>
+            <select id="import-event" class="meet-select">
+              <option value="">-- Select event --</option>
+              ${uniqueEvents.map(e => `<option value="${e}">${e}</option>`).join('')}
+              <option value="__new__">+ Create new event</option>
+            </select>
+          </div>
+          <div>
+            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--muted);">Heat</label>
+            <select id="import-heat" class="meet-select">
+              <option value="">-- Auto-detect from data --</option>
+              ${uniqueHeats.map(h => `<option value="${h}">${h}</option>`).join('')}
+              <option value="__manual__">Manual entry per row</option>
+            </select>
+          </div>
+        </div>
+        
         <table class="preview-table">
           <thead>
             <tr>
               <th>Row</th>
               <th>Athlete</th>
               <th>School</th>
-              <th>Gender</th>
+              <th>Grade</th>
               <th>Event</th>
               <th>Mark</th>
               <th>Place</th>
+              <th>Heat</th>
             </tr>
           </thead>
           <tbody>
@@ -769,10 +848,11 @@
                 <td>${idx + 1}</td>
                 <td>${row.athlete_name || '<span style="color: var(--danger);">Missing</span>'}</td>
                 <td>${row.school || '—'}</td>
-                <td>${row.gender || '—'}</td>
+                <td>${row.grade || '—'}</td>
                 <td>${row.event || '—'}</td>
                 <td>${row.mark || '—'}</td>
                 <td>${row.placement || '—'}</td>
+                <td>${row.heat || '—'}</td>
               </tr>
             `).join('')}
           </tbody>
@@ -800,6 +880,11 @@
       const importContent = document.getElementById('import-content');
       importContent.innerHTML = '<div class="loading"></div> <span>Importing data...</span>';
       
+      // Get user selections from dropdowns
+      const selectedGender = document.getElementById('import-gender').value;
+      const selectedEvent = document.getElementById('import-event').value;
+      const selectedHeat = document.getElementById('import-heat').value;
+      
       try {
         await waitForFirebase();
         
@@ -815,25 +900,46 @@
         let imported = 0;
         let errors = [];
         
-        for (const row of parsedData) {
+        for (let rowIdx = 0; rowIdx < parsedData.length; rowIdx++) {
+          const row = parsedData[rowIdx];
           if (!row.athlete_name) {
-            errors.push(`Row ${parsedData.indexOf(row) + 1}: Missing athlete name`);
+            errors.push(`Row ${rowIdx + 1}: Missing athlete name`);
             continue;
           }
           
           // Find or create athlete
           let athleteId = await findOrCreateAthlete(row);
           if (!athleteId) {
-            errors.push(`Row ${parsedData.indexOf(row) + 1}: Could not create athlete`);
+            errors.push(`Row ${rowIdx + 1}: Could not create athlete`);
+            continue;
+          }
+          
+          // Determine event to use
+          let eventToUse = selectedEvent;
+          if (!eventToUse || eventToUse === '__new__') {
+            eventToUse = row.event;
+          }
+          
+          if (!eventToUse) {
+            errors.push(`Row ${rowIdx + 1}: No event specified`);
             continue;
           }
           
           // Find event
-          let eventId = await findOrCreateEvent(row.event);
+          let eventId = await findOrCreateEvent(eventToUse, selectedGender);
           if (!eventId) {
-            errors.push(`Row ${parsedData.indexOf(row) + 1}: Could not find/create event`);
+            errors.push(`Row ${rowIdx + 1}: Could not find/create event`);
             continue;
           }
+          
+          // Determine heat to use
+          let heatToUse = selectedHeat;
+          if (!heatToUse || heatToUse === '__manual__') {
+            heatToUse = row.heat;
+          }
+          
+          // Determine gender to use
+          let genderToUse = selectedGender || row.gender || '';
           
           // Create result
           const resultData = {
@@ -842,7 +948,8 @@
             event_id: eventId,
             mark: row.mark || '',
             placement: row.placement || null,
-            heat: row.heat || null
+            heat: heatToUse || null,
+            gender: genderToUse
           };
           
           await resultsRef.push(resultData);
@@ -906,7 +1013,7 @@
       return athleteId;
     }
     
-    async function findOrCreateEvent(eventName) {
+    async function findOrCreateEvent(eventName, gender) {
       if (!eventName) return null;
       
       const eventsRef = window.firebaseDatabase.ref('Track/events');
@@ -922,7 +1029,7 @@
           name: eventName,
           slug: eventName.toLowerCase().replace(/\s+/g, '-'),
           category: 'other',
-          gender: 'Mixed',
+          gender: gender || 'Mixed',
           season: 'outdoor'
         };
         const newRef = await eventsRef.push(newEvent);
