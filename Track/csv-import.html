@@ -785,80 +785,90 @@
       const uniqueEvents = [...new Set(data.map(r => r.event).filter(e => e))];
       const uniqueHeats = [...new Set(data.map(r => r.heat).filter(h => h))];
       
-      previewContent.innerHTML = `
-        <div class="stats-grid">
-          <div class="stat-item">
-            <div class="stat-number">${stats.total}</div>
-            <div class="stat-label">Total Rows</div>
-          </div>
-          <div class="stat-item">
-            <div class="stat-number" style="color: var(--success);">${stats.valid}</div>
-            <div class="stat-label">Valid Rows</div>
-          </div>
-          <div class="stat-item">
-            <div class="stat-number" style="color: ${stats.errors > 0 ? 'var(--danger)' : 'var(--success)'};">${stats.errors}</div>
-            <div class="stat-label">Errors</div>
-          </div>
-        </div>
+      // Load events from database
+      loadDatabaseEvents().then(dbEvents => {
+        const eventOptions = dbEvents.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
         
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin-bottom: 20px;">
-          <div>
-            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--muted);">Gender (Men/Women)</label>
-            <select id="import-gender" class="meet-select">
-              <option value="">-- Auto-detect from data --</option>
-              <option value="M">Men</option>
-              <option value="W">Women</option>
-              <option value="Mixed">Mixed</option>
-            </select>
+        previewContent.innerHTML = `
+          <div class="stats-grid">
+            <div class="stat-item">
+              <div class="stat-number">${stats.total}</div>
+              <div class="stat-label">Total Rows</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-number" style="color: var(--success);">${stats.valid}</div>
+              <div class="stat-label">Valid Rows</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-number" style="color: ${stats.errors > 0 ? 'var(--danger)' : 'var(--success)'};">${stats.errors}</div>
+              <div class="stat-label">Errors</div>
+            </div>
           </div>
-          <div>
-            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--muted);">Event</label>
-            <select id="import-event" class="meet-select">
-              <option value="">-- Select event --</option>
-              ${uniqueEvents.map(e => `<option value="${e}">${e}</option>`).join('')}
-              <option value="__new__">+ Create new event</option>
-            </select>
+          
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin-bottom: 20px;">
+            <div>
+              <label style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--muted);">Gender (Men/Women)</label>
+              <select id="import-gender" class="meet-select">
+                <option value="">-- Auto-detect from data --</option>
+                <option value="M">Men</option>
+                <option value="W">Women</option>
+                <option value="Mixed">Mixed</option>
+              </select>
+            </div>
+            <div>
+              <label style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--muted);">Event</label>
+              <select id="import-event" class="meet-select">
+                <option value="">-- Select event --</option>
+                ${eventOptions}
+                <option value="">---</option>
+                ${uniqueEvents.map(e => `<option value="new:${e}">${e} (create new)</option>`).join('')}
+              </select>
+            </div>
+            <div>
+              <label style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--muted);">Heat</label>
+              <select id="import-heat" class="meet-select">
+                <option value="">-- Auto-detect from data --</option>
+                ${uniqueHeats.map(h => `<option value="${h}">${h}</option>`).join('')}
+                <option value="__manual__">Manual entry</option>
+              </select>
+            </div>
+            <div>
+              <label style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--muted);">Heat Number (if manual)</label>
+              <input type="text" id="import-heat-number" class="meet-select" placeholder="e.g., 1, 2, A, B" style="margin-bottom: 0;">
+            </div>
           </div>
-          <div>
-            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--muted);">Heat</label>
-            <select id="import-heat" class="meet-select">
-              <option value="">-- Auto-detect from data --</option>
-              ${uniqueHeats.map(h => `<option value="${h}">${h}</option>`).join('')}
-              <option value="__manual__">Manual entry per row</option>
-            </select>
-          </div>
-        </div>
-        
-        <table class="preview-table">
-          <thead>
-            <tr>
-              <th>Row</th>
-              <th>Athlete</th>
-              <th>School</th>
-              <th>Grade</th>
-              <th>Event</th>
-              <th>Mark</th>
-              <th>Place</th>
-              <th>Heat</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${data.slice(0, 10).map((row, idx) => `
-              <tr style="${!row.athlete_name ? 'opacity: 0.5;' : ''}">
-                <td>${idx + 1}</td>
-                <td>${row.athlete_name || '<span style="color: var(--danger);">Missing</span>'}</td>
-                <td>${row.school || '—'}</td>
-                <td>${row.grade || '—'}</td>
-                <td>${row.event || '—'}</td>
-                <td>${row.mark || '—'}</td>
-                <td>${row.placement || '—'}</td>
-                <td>${row.heat || '—'}</td>
+          
+          <table class="preview-table">
+            <thead>
+              <tr>
+                <th>Row</th>
+                <th>Athlete</th>
+                <th>School</th>
+                <th>Grade</th>
+                <th>Event</th>
+                <th>Mark</th>
+                <th>Place</th>
+                <th>Heat</th>
               </tr>
-            `).join('')}
-          </tbody>
-        </table>
-        ${data.length > 10 ? `<p style="text-align: center; color: var(--muted); margin-top: 16px;">Showing first 10 of ${data.length} rows</p>` : ''}
-      `;
+            </thead>
+            <tbody>
+              ${data.slice(0, 10).map((row, idx) => `
+                <tr style="${!row.athlete_name ? 'opacity: 0.5;' : ''}">
+                  <td>${idx + 1}</td>
+                  <td>${row.athlete_name || '<span style="color: var(--danger);">Missing</span>'}</td>
+                  <td>${row.school || '—'}</td>
+                  <td>${row.grade || '—'}</td>
+                  <td>${row.event || '—'}</td>
+                  <td>${row.mark || '—'}</td>
+                  <td>${row.placement || '—'}</td>
+                  <td>${row.heat || '—'}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+          ${data.length > 10 ? `<p style="text-align: center; color: var(--muted); margin-top: 16px;">Showing first 10 of ${data.length} rows</p>` : ''}
+        `;
+      });
       
       previewCard.style.display = 'block';
       
@@ -874,6 +884,21 @@
       importCard.style.display = 'block';
     }
     
+    async function loadDatabaseEvents() {
+      try {
+        await waitForFirebase();
+        const snapshot = await window.firebaseDatabase.ref('Track/events').once('value');
+        const events = [];
+        snapshot.forEach(child => {
+          events.push({ id: child.key, ...child.val() });
+        });
+        return events.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+      } catch (error) {
+        console.error('Error loading events:', error);
+        return [];
+      }
+    }
+    
     async function importData() {
       if (!parsedData || !selectedMeetId) return;
       
@@ -884,6 +909,7 @@
       const selectedGender = document.getElementById('import-gender').value;
       const selectedEvent = document.getElementById('import-event').value;
       const selectedHeat = document.getElementById('import-heat').value;
+      const manualHeatNumber = document.getElementById('import-heat-number').value;
       
       try {
         await waitForFirebase();
@@ -916,8 +942,8 @@
           
           // Determine event to use
           let eventToUse = selectedEvent;
-          if (!eventToUse || eventToUse === '__new__') {
-            eventToUse = row.event;
+          if (!eventToUse || eventToUse.startsWith('new:')) {
+            eventToUse = eventToUse.startsWith('new:') ? eventToUse.substring(4) : row.event;
           }
           
           if (!eventToUse) {
@@ -925,8 +951,16 @@
             continue;
           }
           
-          // Find event
-          let eventId = await findOrCreateEvent(eventToUse, selectedGender);
+          // Find event (check if it's a database ID or event name)
+          let eventId;
+          if (selectedEvent && !selectedEvent.startsWith('new:')) {
+            // It's a database ID
+            eventId = selectedEvent;
+          } else {
+            // It's an event name, find or create
+            eventId = await findOrCreateEvent(eventToUse, selectedGender);
+          }
+          
           if (!eventId) {
             errors.push(`Row ${rowIdx + 1}: Could not find/create event`);
             continue;
@@ -934,8 +968,10 @@
           
           // Determine heat to use
           let heatToUse = selectedHeat;
-          if (!heatToUse || heatToUse === '__manual__') {
-            heatToUse = row.heat;
+          if (selectedHeat === '__manual__') {
+            heatToUse = manualHeatNumber || '';
+          } else if (!heatToUse) {
+            heatToUse = row.heat || '';
           }
           
           // Determine gender to use
@@ -1090,3 +1126,4 @@
   </script>
 </body>
 </html>
+``` 
