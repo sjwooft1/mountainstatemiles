@@ -903,7 +903,6 @@
       if (!parsedData || !selectedMeetId) return;
       
       const importContent = document.getElementById('import-content');
-      importContent.innerHTML = '<div class="loading"></div> <span>Importing data...</span>';
       
       // Get user selections from dropdowns
       const selectedGender = document.getElementById('import-gender').value;
@@ -921,104 +920,170 @@
           throw new Error('Meet not found');
         }
         
-        // Process and import data
-        const resultsRef = window.firebaseDatabase.ref('Track/results');
+        // Setup progress tracking
         let imported = 0;
         let errors = [];
+        const total = parsedData.length;
+        const batchSize = 10; // Process 10 at a time
         
-        for (let rowIdx = 0; rowIdx < parsedData.length; rowIdx++) {
-          const row = parsedData[rowIdx];
-          if (!row.athlete_name) {
-            errors.push(`Row ${rowIdx + 1}: Missing athlete name`);
-            continue;
-          }
+        // Render progress UI
+        const progressId = 'import-progress-' + Date.now();
+        importContent.innerHTML = `
+          <div id="${progressId}" style="margin-bottom: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <span style="font-weight: 600;">Progress: <span id="progress-count">0</span>/${total}</span>
+              <span id="progress-percent" style="color: var(--muted); font-size: 0.9rem;">0%</span>
+            </div>
+            <div style="width: 100%; height: 8px; background: var(--card); border-radius: 4px; overflow: hidden;">
+              <div id="progress-bar" style="height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-hover)); width: 0%; transition: width 0.3s ease; border-radius: 4px;"></div>
+            </div>
+            <div id="progress-status" style="margin-top: 12px; color: var(--muted); font-size: 0.9rem;">Starting import...</div>
+          </div>
+        `;
+        
+        const resultsRef = window.firebaseDatabase.ref('Track/results');
+        
+        // Process data in batches
+        for (let batch = 0; batch < parsedData.length; batch += batchSize) {
+          const batchData = parsedData.slice(batch, Math.min(batch + batchSize, parsedData.length));
           
-          // Find or create athlete
-          let athleteId = await findOrCreateAthlete(row);
-          if (!athleteId) {
-            errors.push(`Row ${rowIdx + 1}: Could not create athlete`);
-            continue;
-          }
+          // Process batch in parallel
+          const batchPromises = batchData.map(async (row, idx) => {
+            try {
+              if (!row.athlete_name) {
+                errors.push({ row: batch + idx + 1, error: 'Missing athlete name' });
+                return false;
+              }
+              
+              // Find or create athlete
+              let athleteId = await findOrCreateAthlete(row);
+              if (!athleteId) {
+                errors.push({ row: batch + idx + 1, error: 'Could not create athlete' });
+                return false;
+              }
+              
+              // Determine event to use
+              let eventToUse = selectedEvent;
+              if (!eventToUse || eventToUse.startsWith('new:')) {
+                eventToUse = eventToUse.startsWith('new:') ? eventToUse.substring(4) : row.event;
+              }
+              
+              if (!eventToUse) {
+                errors.push({ row: batch + idx + 1, error: 'No event specified' });
+                return false;
+              }
+              
+              // Find event (check if it's a database ID or event name)
+              let eventId;
+              if (selectedEvent && !selectedEvent.startsWith('new:') && selectedEvent) {
+                eventId = selectedEvent;
+              } else {
+                eventId = await findOrCreateEvent(eventToUse, selectedGender);
+              }
+              
+              if (!eventId) {
+                errors.push({ row: batch + idx + 1, error: 'Could not find/create event' });
+                return false;
+              }
+              
+              // Determine heat to use
+              let heatToUse = selectedHeat;
+              if (selectedHeat === '__manual__') {
+                heatToUse = manualHeatNumber || '';
+              } else if (!heatToUse) {
+                heatToUse = row.heat || '';
+              }
+              
+              // Determine gender to use
+              let genderToUse = selectedGender || row.gender || '';
+              
+              // Create result
+              const resultData = {
+                athlete_id: athleteId,
+                meet_id: selectedMeetId,
+                event_id: eventId,
+                mark: row.mark || '',
+                placement: row.placement || null,
+                heat: heatToUse || null,
+                gender: genderToUse,
+                timestamp: new Date().toISOString()
+              };
+              
+              await resultsRef.push(resultData);
+              return true;
+            } catch (err) {
+              errors.push({ row: batch + idx + 1, error: err.message });
+              return false;
+            }
+          });
           
-          // Determine event to use
-          let eventToUse = selectedEvent;
-          if (!eventToUse || eventToUse.startsWith('new:')) {
-            eventToUse = eventToUse.startsWith('new:') ? eventToUse.substring(4) : row.event;
-          }
+          // Wait for batch to complete
+          const results = await Promise.all(batchPromises);
+          imported += results.filter(r => r).length;
           
-          if (!eventToUse) {
-            errors.push(`Row ${rowIdx + 1}: No event specified`);
-            continue;
-          }
-          
-          // Find event (check if it's a database ID or event name)
-          let eventId;
-          if (selectedEvent && !selectedEvent.startsWith('new:')) {
-            // It's a database ID
-            eventId = selectedEvent;
-          } else {
-            // It's an event name, find or create
-            eventId = await findOrCreateEvent(eventToUse, selectedGender);
-          }
-          
-          if (!eventId) {
-            errors.push(`Row ${rowIdx + 1}: Could not find/create event`);
-            continue;
-          }
-          
-          // Determine heat to use
-          let heatToUse = selectedHeat;
-          if (selectedHeat === '__manual__') {
-            heatToUse = manualHeatNumber || '';
-          } else if (!heatToUse) {
-            heatToUse = row.heat || '';
-          }
-          
-          // Determine gender to use
-          let genderToUse = selectedGender || row.gender || '';
-          
-          // Create result
-          const resultData = {
-            athlete_id: athleteId,
-            meet_id: selectedMeetId,
-            event_id: eventId,
-            mark: row.mark || '',
-            placement: row.placement || null,
-            heat: heatToUse || null,
-            gender: genderToUse
-          };
-          
-          await resultsRef.push(resultData);
-          imported++;
+          // Update progress
+          const progress = ((batch + batchSize) / total) * 100;
+          document.getElementById('progress-count').textContent = imported;
+          document.getElementById('progress-percent').textContent = Math.min(100, Math.round(progress)) + '%';
+          document.getElementById('progress-bar').style.width = Math.min(100, Math.round(progress)) + '%';
+          document.getElementById('progress-status').textContent = `Processing: ${imported}/${total} records imported...`;
         }
         
+        // Final update
+        document.getElementById('progress-count').textContent = imported;
+        document.getElementById('progress-percent').textContent = '100%';
+        document.getElementById('progress-bar').style.width = '100%';
+        
+        // Show results
         showAlert(`✅ Successfully imported ${imported} results!`, 'success');
         
-        if (errors.length > 0) {
-          const errorDiv = document.createElement('div');
-          errorDiv.className = 'error-list';
-          errorDiv.innerHTML = '<h3 style="margin-top: 0;">Errors:</h3>' + 
-            errors.map(e => `<div class="error-item">${e}</div>`).join('');
-          document.getElementById('import-content').appendChild(errorDiv);
-        }
-        
-        importContent.innerHTML = `
-          <div class="alert alert-success">
+        let resultHTML = `
+          <div class="alert alert-success" style="margin-bottom: 20px;">
             <span>✅</span>
             <div>
               <strong>Import Complete!</strong><br>
               ${imported} results imported successfully.
-              ${errors.length > 0 ? `${errors.length} rows had errors.` : ''}
+              ${errors.length > 0 ? `<br>${errors.length} rows had errors.` : ''}
             </div>
           </div>
-          <button class="btn btn-secondary" onclick="location.reload()" style="width: 100%; margin-top: 20px;">
-            Import Another File
-          </button>
         `;
+        
+        if (errors.length > 0) {
+          resultHTML += `
+            <div style="margin-bottom: 20px;">
+              <h3 style="margin-top: 0; color: var(--warning);">⚠️ Import Errors (${errors.length})</h3>
+              <div class="error-list" style="max-height: 400px;">
+                ${errors.map(e => `<div class="error-item">Row ${e.row}: ${e.error}</div>`).join('')}
+              </div>
+            </div>
+          `;
+        }
+        
+        resultHTML += `
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 20px;">
+            <button class="btn btn-secondary" onclick="location.reload()" style="width: 100%; padding: 12px;">
+              Import Another
+            </button>
+            <button class="btn btn-primary" onclick="window.location.href='results.html'" style="width: 100%; padding: 12px;">
+              View Results
+            </button>
+          </div>
+        `;
+        
+        importContent.innerHTML = resultHTML;
+        
       } catch (error) {
         console.error('Import error:', error);
         showAlert('Error importing data: ' + error.message, 'error');
-        importContent.innerHTML = '<button class="btn btn-secondary" onclick="location.reload()">Try Again</button>';
+        importContent.innerHTML = `
+          <div class="alert alert-error" style="margin-bottom: 20px;">
+            <span>❌</span>
+            <span>${error.message}</span>
+          </div>
+          <button class="btn btn-secondary" onclick="location.reload()" style="width: 100%; padding: 12px;">
+            Try Again
+          </button>
+        `;
       }
     }
     
@@ -1126,4 +1191,3 @@
   </script>
 </body>
 </html>
-``` 
