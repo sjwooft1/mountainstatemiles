@@ -1455,6 +1455,33 @@
       formData[input.name] = value;
     });
     
+    // Validate required fields for results
+    if (currentSection === 'results') {
+      if (!formData.athlete_id || formData.athlete_id.trim() === '') {
+        alert('❌ Error: Please select an Athlete');
+        return;
+      }
+      if (!formData.event_id || formData.event_id.trim() === '') {
+        alert('❌ Error: Please select an Event');
+        return;
+      }
+      if (!formData.meet_id || formData.meet_id.trim() === '') {
+        alert('❌ Error: Please select a Meet');
+        return;
+      }
+      if (!formData.mark || formData.mark.trim() === '') {
+        alert('❌ Error: Please enter a Mark/Time');
+        return;
+      }
+    }
+    
+    // Remove empty values to avoid Firebase key errors
+    Object.keys(formData).forEach(key => {
+      if (formData[key] === '' || formData[key] === null) {
+        delete formData[key];
+      }
+    });
+    
     try {
       if (editingId) {
         await currentOptions.onUpdate(editingId, formData);
@@ -1731,24 +1758,636 @@
   }
   
   async function renderResults() {
-    const snapshot = await window.firebaseDatabase.ref('Track/results').once('value');
-    const data = [];
-    snapshot.forEach(child => {
-      data.push({ id: child.key, ...child.val() });
+    const [resultsSnap, athletesSnap, eventsSnap, meetsSnap] = await Promise.all([
+      window.firebaseDatabase.ref('Track/results').once('value'),
+      window.firebaseDatabase.ref('Track/athletes').once('value'),
+      window.firebaseDatabase.ref('Track/events').once('value'),
+      window.firebaseDatabase.ref('Track/meets').once('value')
+    ]);
+    
+    // Build lookup maps
+    const athletesMap = {};
+    const eventsMap = {};
+    const meetsMap = {};
+    
+    athletesSnap.forEach(child => {
+      const athlete = child.val();
+      athletesMap[child.key] = {
+        name: `${athlete.first_name} ${athlete.last_name}`,
+        school: athlete.school || '',
+        grade: athlete.grade || ''
+      };
     });
     
-    renderGrid('Results', [
-      { key: 'athlete_id', label: 'Athlete ID', type: 'text' },
-      { key: 'meet_id', label: 'Meet ID', type: 'text' },
-      { key: 'event_id', label: 'Event ID', type: 'text' },
+    eventsSnap.forEach(child => {
+      const event = child.val();
+      eventsMap[child.key] = {
+        name: event.name || 'Unknown',
+        gender: event.gender || '',
+        category: event.category || ''
+      };
+    });
+    
+    meetsSnap.forEach(child => {
+      const meet = child.val();
+      meetsMap[child.key] = {
+        name: meet.name || 'Unknown',
+        date: meet.date || ''
+      };
+    });
+    
+    // Build results array with resolved names
+    const data = [];
+    resultsSnap.forEach(child => {
+      const result = child.val();
+      const athlete = athletesMap[result.athlete_id] || {};
+      const event = eventsMap[result.event_id] || {};
+      const meet = meetsMap[result.meet_id] || {};
+      
+      data.push({
+        id: child.key,
+        athlete_id: result.athlete_id,
+        athlete_name: athlete.name || '—',
+        athlete_school: athlete.school || '—',
+        event_id: result.event_id,
+        event_name: event.name || '—',
+        event_gender: event.gender || '—',
+        meet_id: result.meet_id,
+        meet_name: meet.name || '—',
+        meet_date: meet.date || '—',
+        mark: result.mark || '—',
+        placement: result.placement || '—',
+        heat: result.heat || '—',
+        gender: result.gender || '—',
+        timestamp: result.timestamp || ''
+      });
+    });
+    
+    // Store maps globally for filtering
+    window.currentAthletesMap = athletesMap;
+    window.currentEventsMap = eventsMap;
+    window.currentMeetsMap = meetsMap;
+    window.currentRawData = data;
+    
+    currentData = data;
+    currentColumns = [
+      { key: 'athlete_name', label: 'Athlete', type: 'text' },
+      { key: 'event_name', label: 'Event', type: 'text' },
+      { key: 'meet_name', label: 'Meet', type: 'text' },
       { key: 'mark', label: 'Mark', type: 'text' },
-      { key: 'placement', label: 'Placement', type: 'number' },
+      { key: 'placement', label: 'Place', type: 'number' },
       { key: 'heat', label: 'Heat', type: 'text' }
-    ], data, {
+    ];
+    
+    currentOptions = {
       onCreate: (row) => createRecord('Track/results', row),
       onUpdate: (id, updates) => updateRecord(`Track/results/${id}`, updates),
       onDelete: (id) => deleteRecord(`Track/results/${id}`)
+    };
+    
+    // Render advanced results view
+    document.getElementById('content').innerHTML = `
+      <div class="grid-container" style="height: 100%; display: flex; flex-direction: column;">
+        <div class="grid-header">
+          <h3 style="display:flex; align-items:center; gap:10px;">
+            Results Management 
+            <span style="font-size:0.8em; color:var(--muted); font-weight:normal;">(${data.length})</span>
+          </h3>
+          <div class="grid-actions">
+            <label style="display:flex; align-items:center; gap:8px; padding:8px 12px; border:1px solid var(--border); border-radius:6px; background:var(--card); cursor:pointer; white-space:nowrap;">
+              <input type="checkbox" id="toggle-ids" onchange="toggleResultsIDDisplay()">
+              <span style="font-size:0.9rem;">Show IDs</span>
+            </label>
+            <button class="btn btn-secondary" onclick="openAdvancedFilter()">🔍 Advanced Filter</button>
+            <button class="btn btn-primary" onclick="openAddResultModal()">+ Add</button>
+            <button class="btn btn-secondary" onclick="exportToCSV('results')">📥 Export</button>
+          </div>
+        </div>
+        
+        <div id="filter-bar" style="padding: 12px 20px; background: var(--card); border-bottom: 1px solid var(--border); display: none; flex-wrap: wrap; gap: 12px; align-items: center;">
+          <span style="font-size: 0.9rem; color: var(--muted);">Active Filters:</span>
+          <div id="active-filters" style="display: flex; gap: 8px; flex-wrap: wrap;"></div>
+          <button class="btn btn-secondary btn-small" onclick="clearAllFilters()">Clear All</button>
+        </div>
+        
+        <div class="grid-scroll" style="flex:1;">
+          <table class="grid-table">
+            <thead>
+              <tr>
+                <th style="width: 30px;"><input type="checkbox" id="select-all" onchange="toggleSelectAll()"></th>
+                <th class="sortable" onclick="sortTable('athlete_name')">Athlete</th>
+                <th class="sortable" onclick="sortTable('event_name')">Event</th>
+                <th class="sortable" onclick="sortTable('meet_name')">Meet</th>
+                <th class="sortable" onclick="sortTable('mark')">Mark</th>
+                <th class="sortable" onclick="sortTable('placement')">Place</th>
+                <th class="sortable" onclick="sortTable('heat')">Heat</th>
+                <th style="width: 120px;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="results-grid-body">
+              ${renderResultsRows(data)}
+            </tbody>
+          </table>
+        </div>
+        
+        <div id="bulk-actions-bar" style="padding: 12px 20px; background: var (--card); border-top: 1px solid var(--border); display: none; gap: 12px; align-items: center;">
+          <span id="selection-count" style="color: var(--muted); font-size: 0.9rem;"></span>
+          <button class="btn btn-danger btn-small" onclick="bulkDeleteResults()">🗑️ Delete Selected</button>
+          <button class="btn btn-secondary btn-small" onclick="bulkExportResults()">📥 Export Selected</button>
+        </div>
+      </div>
+      
+      <style>
+        .result-row input[type="checkbox"] {
+          cursor: pointer;
+        }
+        
+        .result-row.selected {
+          background: rgba(255, 123, 45, 0.1);
+        }
+        
+        .id-cell {
+          font-size: 0.75rem;
+          color: var (--muted);
+          font-family: monospace;
+          display: none;
+          padding: 4px 0;
+          word-break: break-all;
+        }
+        
+        .id-cell.visible {
+          display: block;
+        }
+        
+        .filter-tag {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          padding: 4px 10px;
+          background: rgba(255, 123, 45, 0.2);
+          border: 1px solid var(--accent);
+          border-radius: 20px;
+          font-size: 0.85rem;
+          color: var(--accent);
+        }
+        
+        .filter-tag button {
+          background: none;
+          border: none;
+          color: var(--accent);
+          cursor: pointer;
+          font-size: 1rem;
+          padding: 0;
+          line-height: 1;
+        }
+        
+        .filter-tag button:hover {
+          color: var(--accent-hover);
+        }
+      </style>
+    `;
+    
+    updateRecordCount(data.length);
+  }
+  
+  function renderResultsRows(data) {
+    return data.map(row => `
+      <tr class="result-row" data-id="${row.id}">
+        <td style="width: 30px;"><input type="checkbox" class="row-checkbox" onchange="updateSelectionCount()"></td>
+        <td>
+          <div>${row.athlete_name}</div>
+          <div class="id-cell" id="id-${row.athlete_id}">${row.athlete_id}</div>
+        </td>
+        <td>
+          <div>${row.event_name} <span style="font-size:0.8em; color:var(--muted);">(${row.event_gender})</span></div>
+          <div class="id-cell" id="id-${row.event_id}">${row.event_id}</div>
+        </td>
+        <td>
+          <div>${row.meet_name}</div>
+          <div style="font-size:0.85rem; color:var(--muted);">${row.meet_date}</div>
+          <div class="id-cell" id="id-${row.meet_id}">${row.meet_id}</div>
+        </td>
+        <td><strong>${row.mark}</strong></td>
+        <td>${row.placement}</td>
+        <td>${row.heat}</td>
+        <td>
+          <button class="btn btn-secondary btn-small" onclick="openEditResultModal('${row.id}')">Edit</button>
+          <button class="btn btn-danger btn-small" onclick="confirmDelete('${row.id}')">Del</button>
+        </td>
+      </tr>
+    `).join('');
+  }
+  
+  function toggleResultsIDDisplay() {
+    const showIds = document.getElementById('toggle-ids').checked;
+    const idCells = document.querySelectorAll('.id-cell');
+    idCells.forEach(cell => {
+      if (showIds) {
+        cell.classList.add('visible');
+      } else {
+        cell.classList.remove('visible');
+      }
     });
+  }
+  
+  function toggleSelectAll() {
+    const isChecked = document.getElementById('select-all').checked;
+    document.querySelectorAll('.row-checkbox').forEach(checkbox => {
+      checkbox.checked = isChecked;
+    });
+    updateSelectionCount();
+  }
+  
+  function updateSelectionCount() {
+    const selected = document.querySelectorAll('.row-checkbox:checked').length;
+    const bulkBar = document.getElementById('bulk-actions-bar');
+    const selectionCount = document.getElementById('selection-count');
+    
+    if (selected > 0) {
+      bulkBar.style.display = 'flex';
+      selectionCount.textContent = `${selected} result(s) selected`;
+    } else {
+      bulkBar.style.display = 'none';
+    }
+  }
+  
+  function openAdvancedFilter() {
+    const athletes = [...new Set(currentRawData.map(r => r.athlete_name))].sort();
+    const events = [...new Set(currentRawData.map(r => r.event_name))].sort();
+    const meets = [...new Set(currentRawData.map(r => r.meet_name))].sort();
+    const genders = [...new Set(currentRawData.map(r => r.event_gender).filter(g => g))].sort();
+    
+    const filterHTML = `
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-height: 80vh; overflow-y: auto;">
+        <!-- BASIC FILTERS -->
+        <div style="padding: 16px; background: var(--card); border-radius: 8px;">
+          <h4 style="margin: 0 0 12px 0; color: var(--accent); font-size: 0.9rem; text-transform: uppercase;">Basic Filters</h4>
+          
+          <div class="form-group">
+            <label class="form-label" style="margin-bottom: 8px; display: block; font-size: 0.85rem;">Athletes</label>
+            <div style="max-height: 150px; overflow-y: auto; border: 1px solid var(--border); border-radius: 6px; padding: 8px;">
+              ${athletes.map((a, i) => `
+                <label style="display: flex; align-items: center; gap: 8px; padding: 6px; cursor: pointer; border-radius: 4px; transition: all 0.2s;">
+                  <input type="checkbox" class="filter-athlete" value="${a}" onchange="applyAdvancedFilters()">
+                  <span style="font-size: 0.9rem;">${a}</span>
+                </label>
+              `).join('')}
+            </div>
+          </div>
+        </div>
+        
+        <div style="padding: 16px; background: var(--card); border-radius: 8px;">
+          <h4 style="margin: 0 0 12px 0; color: var (--accent); font-size: 0.9rem; text-transform: uppercase;">Meets</h4>
+          
+          <div class="form-group">
+            <label class="form-label" style="margin-bottom: 8px; display: block; font-size: 0.85rem;">Select Meets</label>
+            <div style="max-height: 150px; overflow-y: auto; border: 1px solid var(--border); border-radius: 6px; padding: 8px;">
+              ${meets.map(m => `
+                <label style="display: flex; align-items: center; gap: 8px; padding: 6px; cursor: pointer; border-radius: 4px; transition: all 0.2s;">
+                  <input type="checkbox" class="filter-meet" value="${m}" onchange="applyAdvancedFilters()">
+                  <span style="font-size: 0.9rem;">${m}</span>
+                </label>
+              `).join('')}
+            </div>
+          </div>
+        </div>
+        
+        <div style="padding: 16px; background: var(--card); border-radius: 8px;">
+          <h4 style="margin: 0 0 12px 0; color: var(--accent); font-size: 0.9rem; text-transform: uppercase;">Events</h4>
+          
+          <div class="form-group">
+            <label class="form-label" style="margin-bottom: 8px; display: block; font-size: 0.85rem;">Select Events</label>
+            <div style="max-height: 150px; overflow-y: auto; border: 1px solid var(--border); border-radius: 6px; padding: 8px;">
+              ${events.map(e => `
+                <label style="display: flex; align-items: center; gap: 8px; padding: 6px; cursor: pointer; border-radius: 4px; transition: all 0.2s;">
+                  <input type="checkbox" class="filter-event" value="${e}" onchange="applyAdvancedFilters()">
+                  <span style="font-size: 0.9rem;">${e}</span>
+                </label>
+              `).join('')}
+            </div>
+          </div>
+        </div>
+        
+        <div style="padding: 16px; background: var(--card); border-radius: 8px;">
+          <h4 style="margin: 0 0 12px 0; color: var(--accent); font-size: 0.9rem; text-transform: uppercase;">Gender</h4>
+          
+          <div class="form-group">
+            <label class="form-label" style="margin-bottom: 8px; display: block; font-size: 0.85rem;">Select Gender</label>
+            <div style="border: 1px solid var(--border); border-radius: 6px; padding: 8px;">
+              ${genders.map(g => `
+                <label style="display: flex; align-items: center; gap: 8px; padding: 6px; cursor: pointer; border-radius: 4px; transition: all 0.2s;">
+                  <input type="checkbox" class="filter-gender" value="${g}" onchange="applyAdvancedFilters()">
+                  <span style="font-size: 0.9rem;">${g}</span>
+                </label>
+              `).join('')}
+            </div>
+          </div>
+        </div>
+
+        <!-- ADVANCED PERFORMANCE FILTERS -->
+        <div style="padding: 16px; background: var(--card); border-radius: 8px; grid-column: 1 / -1;">
+          <h4 style="margin: 0 0 12px 0; color: var(--accent); font-size: 0.9rem; text-transform: uppercase;">⚡ Advanced Performance Filters</h4>
+          <p style="margin: 0 0 12px 0; color: var(--muted); font-size: 0.85rem;">Filter by time/distance thresholds and placement ranges</p>
+          
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
+            <!-- Time Range Filter -->
+            <div>
+              <label class="form-label" style="font-size: 0.85rem;">Mark Range (TIME)</label>
+              <div style="border: 1px solid var(--border); border-radius: 6px; padding: 12px; background: rgba(255,123,45,0.05);">
+                <div style="margin-bottom: 8px;">
+                  <label style="font-size: 0.8rem; color: var(--muted);">Faster Than</label>
+                  <input type="text" id="filter-time-max" class="form-input" placeholder="e.g., 25.00 or 5:30" onchange="applyAdvancedFilters()" style="font-size: 0.85rem; padding: 8px;">
+                </div>
+                <div>
+                  <label style="font-size: 0.8rem; color: var(--muted);">Slower Than</label>
+                  <input type="text" id="filter-time-min" class="form-input" placeholder="e.g., 27.50 or 6:00" onchange="applyAdvancedFilters()" style="font-size: 0.85rem; padding: 8px;">
+                </div>
+              </div>
+            </div>
+
+            <!-- Distance Range Filter -->
+            <div>
+              <label class="form-label" style="font-size: 0.85rem;">Mark Range (DISTANCE)</label>
+              <div style="border: 1px solid var(--border); border-radius: 6px; padding: 12px; background: rgba(255,123,45,0.05);">
+                <div style="margin-bottom: 8px;">
+                  <label style="font-size: 0.8rem; color: var(--muted);">Further Than</label>
+                  <input type="text" id="filter-dist-min" class="form-input" placeholder="e.g., 20' or 6.0m" onchange="applyAdvancedFilters()" style="font-size: 0.85rem; padding: 8px;">
+                </div>
+                <div>
+                  <label style="font-size: 0.8rem; color: var(--muted);">Closer Than</label>
+                  <input type="text" id="filter-dist-max" class="form-input" placeholder="e.g., 25' or 7.5m" onchange="applyAdvancedFilters()" style="font-size: 0.85rem; padding: 8px;">
+                </div>
+              </div>
+            </div>
+
+            <!-- Placement Filter -->
+            <div>
+              <label class="form-label" style="font-size: 0.85rem;">Placement Range</label>
+              <div style="border: 1px solid var(--border); border-radius: 6px; padding: 12px; background: rgba(255,123,45,0.05);">
+                <div style="margin-bottom: 8px;">
+                  <label style="font-size: 0.8rem; color: var(--muted);">Better Than (Place)</label>
+                  <input type="number" id="filter-place-max" class="form-input" placeholder="e.g., 5" min="1" onchange="applyAdvancedFilters()" style="font-size: 0.85rem; padding: 8px;">
+                </div>
+                <div>
+                  <label style="font-size: 0.8rem; color: var(--muted);">Worse Than (Place)</label>
+                  <input type="number" id="filter-place-min" class="form-input" placeholder="e.g., 15" min="1" onchange="applyAdvancedFilters()" style="font-size: 0.85rem; padding: 8px;">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Smart Presets -->
+          <div style="margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap;">
+            <button class="btn btn-secondary btn-small" onclick="setFilterPreset('top5')" style="font-size: 0.8rem;">Top 5</button>
+            <button class="btn btn-secondary btn-small" onclick="setFilterPreset('top10')" style="font-size: 0.8rem;">Top 10</button>
+            <button class="btn btn-secondary btn-small" onclick="setFilterPreset('pr')" style="font-size: 0.8rem;">Personal Records</button>
+            <button class="btn btn-secondary btn-small" onclick="setFilterPreset('dq')" style="font-size: 0.8rem;">No Mark</button>
+            <button class="btn btn-secondary btn-small" onclick="clearAdvancedFilters()" style="font-size: 0.8rem;">🔄 Clear All</button>
+          </div>
+        </div>
+
+        <!-- FILTER SUMMARY -->
+        <div style="padding: 16px; background: var(--card); border-radius: 8px; grid-column: 1 / -1;">
+          <h4 style="margin: 0 0 8px 0; color: var(--accent); font-size: 0.85rem; text-transform: uppercase;">Filter Summary</h4>
+          <div id="filter-summary" style="font-size: 0.9rem; color: var(--muted); min-height: 20px;">No filters applied. Click filters above to begin.</div>
+        </div>
+      </div>
+    `;
+    
+    openModal('⚡ Super Advanced Filters', filterHTML, 'Apply Filters');
+  }
+  
+  function setFilterPreset(preset) {
+    // Clear previous filters first
+    document.querySelectorAll('.filter-athlete, .filter-event, .filter-meet, .filter-gender').forEach(c => c.checked = false);
+    document.getElementById('filter-time-max').value = '';
+    document.getElementById('filter-time-min').value = '';
+    document.getElementById('filter-dist-min').value = '';
+    document.getElementById('filter-dist-max').value = '';
+    document.getElementById('filter-place-max').value = '';
+    document.getElementById('filter-place-min').value = '';
+    
+    if (preset === 'top5') {
+      document.getElementById('filter-place-max').value = '5';
+    } else if (preset === 'top10') {
+      document.getElementById('filter-place-max').value = '10';
+    } else if (preset === 'pr') {
+      // Mark records - would need more complex logic
+      alert('PRs preset requires additional implementation. Use time/distance filters instead.');
+    } else if (preset === 'dq') {
+      // No mark - these are results without a mark
+      alert('DQ filter requires results without marks. Use manual selection for now.');
+    }
+    
+    applyAdvancedFilters();
+  }
+  
+  function clearAdvancedFilters() {
+    document.querySelectorAll('.filter-athlete, .filter-event, .filter-meet, .filter-gender').forEach(c => c.checked = false);
+    document.getElementById('filter-time-max').value = '';
+    document.getElementById('filter-time-min').value = '';
+    document.getElementById('filter-dist-min').value = '';
+    document.getElementById('filter-dist-max').value = '';
+    document.getElementById('filter-place-max').value = '';
+    document.getElementById('filter-place-min').value = '';
+    document.getElementById('filter-summary').textContent = 'No filters applied. Click filters above to begin.';
+  }
+  
+  function parseTimeToSeconds(timeStr) {
+    if (!timeStr || timeStr.trim() === '') return null;
+    
+    timeStr = timeStr.trim();
+    
+    // Handle MM:SS format (e.g., 5:30)
+    if (timeStr.includes(':')) {
+      const parts = timeStr.split(':');
+      if (parts.length === 2) {
+        const mins = parseFloat(parts[0]);
+        const secs = parseFloat(parts[1]);
+        if (!isNaN(mins) && !isNaN(secs)) {
+          return mins * 60 + secs;
+        }
+      }
+      // Handle HH:MM:SS format (e.g., 1:15:30)
+      if (parts.length === 3) {
+        const hours = parseFloat(parts[0]);
+        const mins = parseFloat(parts[1]);
+        const secs = parseFloat(parts[2]);
+        if (!isNaN(hours) && !isNaN(mins) && !isNaN(secs)) {
+          return hours * 3600 + mins * 60 + secs;
+        }
+      }
+    }
+    
+    // Handle plain seconds (e.g., 25.00)
+    const num = parseFloat(timeStr);
+    if (!isNaN(num)) return num;
+    
+    return null;
+  }
+  
+  function parseDistanceToFeet(distStr) {
+    if (!distStr || distStr.trim() === '') return null;
+    
+    distStr = distStr.trim().toUpperCase();
+    
+    // Handle feet notation (e.g., 20' or 20ft or 20 feet)
+    const feetMatch = distStr.match(/^([\d.]+)\s*('|ft|feet)?$/);
+    if (feetMatch) {
+      return parseFloat(feetMatch[1]);
+    }
+    
+    // Handle meters (e.g., 6.0m or 6.0 meters)
+    const metersMatch = distStr.match(/^([\d.]+)\s*(m|meters)?$/);
+    if (metersMatch) {
+      // Convert meters to feet (1m ≈ 3.28084 feet)
+      return parseFloat(metersMatch[1]) * 3.28084;
+    }
+    
+    return null;
+  }
+  
+  function applyAdvancedFilters() {
+    const selectedAthletes = Array.from(document.querySelectorAll('.filter-athlete:checked')).map(c => c.value);
+    const selectedEvents = Array.from(document.querySelectorAll('.filter-event:checked')).map(c => c.value);
+    const selectedMeets = Array.from(document.querySelectorAll('.filter-meet:checked')).map(c => c.value);
+    const selectedGenders = Array.from(document.querySelectorAll('.filter-gender:checked')).map(c => c.value);
+    
+    // Performance filters
+    const timeMax = parseTimeToSeconds(document.getElementById('filter-time-max').value);
+    const timeMin = parseTimeToSeconds(document.getElementById('filter-time-min').value);
+    const distMin = parseDistanceToFeet(document.getElementById('filter-dist-min').value);
+    const distMax = parseDistanceToFeet(document.getElementById('filter-dist-max').value);
+    const placeMax = parseInt(document.getElementById('filter-place-max').value) || null;
+    const placeMin = parseInt(document.getElementById('filter-place-min').value) || null;
+    
+    window.activeFilters = {
+      athletes: selectedAthletes,
+      events: selectedEvents,
+      meets: selectedMeets,
+      genders: selectedGenders,
+      timeMax,
+      timeMin,
+      distMin,
+      distMax,
+      placeMax,
+      placeMin
+    };
+    
+    updateFilterSummary();
+  }
+  
+  function updateFilterSummary() {
+    const filters = window.activeFilters;
+    const parts = [];
+    
+    if (filters.athletes.length > 0) {
+      parts.push(`👤 ${filters.athletes.length} athlete(s)`);
+    }
+    if (filters.events.length > 0) {
+      parts.push(`🏃 ${filters.events.length} event(s)`);
+    }
+    if (filters.meets.length > 0) {
+      parts.push(`🏟️ ${filters.meets.length} meet(s)`);
+    }
+    if (filters.genders.length > 0) {
+      parts.push(`⚧ ${filters.genders.join(', ')}`);
+    }
+    if (filters.timeMax !== null) {
+      const mins = Math.floor(filters.timeMax / 60);
+      const secs = (filters.timeMax % 60).toFixed(2);
+      parts.push(`⏱️ Faster than ${mins}:${secs}`);
+    }
+    if (filters.timeMin !== null) {
+      const mins = Math.floor(filters.timeMin / 60);
+      const secs = (filters.timeMin % 60).toFixed(2);
+      parts.push(`⏱️ Slower than ${mins}:${secs}`);
+    }
+    if (filters.distMin !== null) {
+      parts.push(`📏 Further than ${filters.distMin.toFixed(1)}ft`);
+    }
+    if (filters.distMax !== null) {
+      parts.push(`📏 Closer than ${filters.distMax.toFixed(1)}ft`);
+    }
+    if (filters.placeMax !== null) {
+      parts.push(`🥇 Place ≤ ${filters.placeMax}`);
+    }
+    if (filters.placeMin !== null) {
+      parts.push(`📊 Place ≥ ${filters.placeMin}`);
+    }
+    
+    const summary = document.getElementById('filter-summary');
+    if (parts.length === 0) {
+      summary.textContent = 'No filters applied. Click filters above to begin.';
+    } else {
+      summary.innerHTML = parts.map(p => `<span style="display: inline-block; background: rgba(255,123,45,0.2); padding: 4px 8px; border-radius: 4px; margin-right: 8px; margin-bottom: 4px;">${p}</span>`).join('');
+    }
+  }
+  
+  function filterResultsByActiveFilters() {
+    const filters = window.activeFilters;
+    let filtered = window.currentRawData;
+    
+    if (filters) {
+      if (filters.athletes.length > 0) {
+        filtered = filtered.filter(r => filters.athletes.includes(r.athlete_name));
+      }
+      if (filters.events.length > 0) {
+        filtered = filtered.filter(r => filters.events.includes(r.event_name));
+      }
+      if (filters.meets.length > 0) {
+        filtered = filtered.filter(r => filters.meets.includes(r.meet_name));
+      }
+      if (filters.genders.length > 0) {
+        filtered = filtered.filter(r => filters.genders.includes(r.event_gender));
+      }
+      
+      // Time filters - parse mark as time
+      if (filters.timeMax !== null || filters.timeMin !== null) {
+        filtered = filtered.filter(r => {
+          const markSeconds = parseTimeToSeconds(r.mark);
+          if (markSeconds === null) return false;
+          if (filters.timeMax !== null && markSeconds >= filters.timeMax) return false;
+          if (filters.timeMin !== null && markSeconds <= filters.timeMin) return false;
+          return true;
+        });
+      }
+      
+      // Distance filters - parse mark as distance
+      if (filters.distMin !== null || filters.distMax !== null) {
+        filtered = filtered.filter(r => {
+          const markFeet = parseDistanceToFeet(r.mark);
+          if (markFeet === null) return false;
+          if (filters.distMin !== null && markFeet <= filters.distMin) return false;
+          if (filters.distMax !== null && markFeet >= filters.distMax) return false;
+          return true;
+        });
+      }
+      
+      // Placement filters
+      if (filters.placeMax !== null || filters.placeMin !== null) {
+        filtered = filtered.filter(r => {
+          const place = parseInt(r.placement);
+          if (isNaN(place)) return false;
+          if (filters.placeMax !== null && place > filters.placeMax) return false;
+          if (filters.placeMin !== null && place < filters.placeMin) return false;
+          return true;
+        });
+      }
+    }
+    
+    currentData = filtered;
+    document.getElementById('results-grid-body').innerHTML = renderResultsRows(filtered);
+    updateRecordCount(filtered.length);
+    
+    // Show filter bar if filters are active
+    if (filters && Object.values(filters).some(v => {
+      if (Array.isArray(v)) return v.length > 0;
+      return v !== null;
+    })) {
+      document.getElementById('filter-bar').style.display = 'flex';
+      renderActiveFilterTags();
+    }
   }
   
   async function renderTeams() {
@@ -2386,6 +3025,236 @@
   // Load initial section
   loadSection('dashboard');
   
+  function bulkDeleteResults() {
+    const selected = Array.from(document.querySelectorAll('.row-checkbox:checked')).map(c => 
+      c.closest('tr').dataset.id
+    );
+    
+    if (!confirm(`Delete ${selected.length} result(s)? This cannot be undone.`)) return;
+    
+    Promise.all(selected.map(id => deleteRecord(`Track/results/${id}`))).then(() => {
+      renderResults();
+    }).catch(err => alert('Error: ' + err.message));
+  }
+  
+  function bulkExportResults() {
+    const selected = Array.from(document.querySelectorAll('.row-checkbox:checked')).map(c => 
+      c.closest('tr').dataset.id
+    );
+    
+    const selectedData = currentData.filter(r => selected.includes(r.id));
+    const headers = ['Athlete', 'School', 'Event', 'Meet', 'Date', 'Mark', 'Place', 'Heat'];
+    const rows = selectedData.map(r => [
+      r.athlete_name,
+      r.athlete_school,
+      r.event_name,
+      r.meet_name,
+      r.meet_date,
+      r.mark,
+      r.placement,
+      r.heat
+    ]);
+    
+    const csv = [headers, ...rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(','))].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `results-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+  
+  function openAddResultModal() {
+    editingId = null;
+    const athletes = Object.entries(window.currentAthletesMap).map(([id, a]) => `
+      <option value="${id}">${a.name} (${a.school})</option>
+    `).join('');
+    const events = Object.entries(window.currentEventsMap).map(([id, e]) => `
+      <option value="${id}">${e.name} (${e.gender})</option>
+    `).join('');
+    const meets = Object.entries(window.currentMeetsMap).map(([id, m]) => `
+      <option value="${id}">${m.name} - ${m.date}</option>
+    `).join('');
+    
+    const formHTML = `
+      <div class="form-group">
+        <label class="form-label">Athlete *</label>
+        <select name="athlete_id" class="form-input" required>
+          <option value="">-- Select Athlete --</option>
+          ${athletes}
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Event *</label>
+        <select name="event_id" class="form-input" required>
+          <option value="">-- Select Event --</option>
+          ${events}
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Meet *</label>
+        <select name="meet_id" class="form-input" required>
+          <option value="">-- Select Meet --</option>
+          ${meets}
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Mark/Time *</label>
+        <input type="text" name="mark" class="form-input" placeholder="e.g., 7.36, 18:30.45" required>
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div class="form-group">
+          <label class="form-label">Placement</label>
+          <input type="number" name="placement" class="form-input" placeholder="e.g., 1, 2, 3">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Heat</label>
+          <input type="text" name="heat" class="form-input" placeholder="e.g., 1, A, B">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Gender</label>
+        <select name="gender" class="form-input">
+          <option value="">-- Auto --</option>
+          <option value="M">Men</option>
+          <option value="W">Women</option>
+        </select>
+      </div>
+    `;
+    
+    openModal('Add Result', formHTML, 'Create');
+  }
+  
+  function openEditResultModal(id) {
+    editingId = id;
+    const record = currentData.find(r => r.id === id);
+    if (!record) return;
+    
+    const athletes = Object.entries(window.currentAthletesMap).map(([aid, a]) => `
+      <option value="${aid}" ${record.athlete_id === aid ? 'selected' : ''}>${a.name} (${a.school})</option>
+    `).join('');
+    const events = Object.entries(window.currentEventsMap).map(([eid, e]) => `
+      <option value="${eid}" ${record.event_id === eid ? 'selected' : ''}>${e.name} (${e.gender})</option>
+    `).join('');
+    const meets = Object.entries(window.currentMeetsMap).map(([mid, m]) => `
+      <option value="${mid}" ${record.meet_id === mid ? 'selected' : ''}>${m.name} - ${m.date}</option>
+    `).join('');
+    
+    const formHTML = `
+      <div class="form-group">
+        <label class="form-label">Athlete *</label>
+        <select name="athlete_id" class="form-input" required>
+          <option value="">-- Select Athlete --</option>
+          ${athletes}
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Event *</label>
+        <select name="event_id" class="form-input" required>
+          <option value="">-- Select Event --</option>
+          ${events}
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Meet *</label>
+        <select name="meet_id" class="form-input" required>
+          <option value="">-- Select Meet --</option>
+          ${meets}
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Mark/Time *</label>
+        <input type="text" name="mark" class="form-input" value="${record.mark}" required>
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div class="form-group">
+          <label class="form-label">Placement</label>
+          <input type="number" name="placement" class="form-input" value="${record.placement}">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Heat</label>
+          <input type="text" name="heat" class="form-input" value="${record.heat}">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Gender</label>
+        <select name="gender" class="form-input">
+          <option value="">-- Auto --</option>
+          <option value="M" ${record.gender === 'M' ? 'selected' : ''}>Men</option>
+          <option value="W" ${record.gender === 'W' ? 'selected' : ''}>Women</option>
+        </select>
+      </div>
+    `;
+    
+    openModal('Edit Result', formHTML, 'Update');
+  }
+  
+  function removeFilter(type, value) {
+    if (!window.activeFilters) return;
+    
+    const filters = window.activeFilters;
+    const map = { athlete: 'athletes', event: 'events', meet: 'meets', gender: 'genders' };
+    const key = map[type];
+    
+    filters[key] = filters[key].filter(v => v !== value);
+    
+    if (Object.values(filters).every(arr => Array.isArray(arr) ? arr.length === 0 : arr === null)) {
+      clearAllFilters();
+    } else {
+      filterResultsByActiveFilters();
+    }
+  }
+  
+  function renderActiveFilterTags() {
+    const filters = window.activeFilters;
+    const container = document.getElementById('active-filters');
+    const tags = [];
+    
+    if (filters.athletes.length > 0) {
+      tags.push(...filters.athletes.map(a => ({ type: 'athlete', value: a })));
+    }
+    if (filters.events.length > 0) {
+      tags.push(...filters.events.map(e => ({ type: 'event', value: e })));
+    }
+    if (filters.meets.length > 0) {
+      tags.push(...filters.meets.map(m => ({ type: 'meet', value: m })));
+    }
+    if (filters.genders.length > 0) {
+      tags.push(...filters.genders.map(g => ({ type: 'gender', value: g })));
+    }
+    
+    container.innerHTML = tags.map(tag => `
+      <span class="filter-tag">
+        ${tag.value}
+        <button onclick="removeFilter('${tag.type}', '${tag.value.replace(/'/g, "\\'")}')">✕</button>
+      </span>
+    `).join('');
+  }
+  
+  function clearAllFilters() {
+    window.activeFilters = null;
+    document.getElementById('filter-bar').style.display = 'none';
+    document.getElementById('active-filters').innerHTML = '';
+    filterResultsByActiveFilters();
+  }
+  
+  // Make all functions globally accessible
+  window.bulkDeleteResults = bulkDeleteResults;
+  window.bulkExportResults = bulkExportResults;
+  window.openAddResultModal = openAddResultModal;
+  window.openEditResultModal = openEditResultModal;
+  window.removeFilter = removeFilter;
+  window.renderActiveFilterTags = renderActiveFilterTags;
+  window.clearAllFilters = clearAllFilters;
+  window.toggleResultsIDDisplay = toggleResultsIDDisplay;
+  window.toggleSelectAll = toggleSelectAll;
+  window.updateSelectionCount = updateSelectionCount;
+  window.openAdvancedFilter = openAdvancedFilter;
+  window.setFilterPreset = setFilterPreset;
+  window.clearAdvancedFilters = clearAdvancedFilters;
+  window.applyAdvancedFilters = applyAdvancedFilters;
+  window.filterResultsByActiveFilters = filterResultsByActiveFilters;
 </script>
 </body>
 </html>

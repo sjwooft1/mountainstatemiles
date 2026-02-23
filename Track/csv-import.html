@@ -1042,11 +1042,18 @@
                 meet_id: selectedMeetId,
                 event_id: eventId,
                 mark: row.mark || '',
-                placement: row.placement || null,
+                placement: row.placement ? parseInt(row.placement) : null,
                 heat: heatToUse || null,
                 gender: genderToUse,
                 timestamp: new Date().toISOString()
               };
+              
+              // Remove null/undefined/empty values to avoid Firebase errors
+              Object.keys(resultData).forEach(key => {
+                if (resultData[key] === null || resultData[key] === undefined || resultData[key] === '') {
+                  delete resultData[key];
+                }
+              });
               
               await resultsRef.push(resultData);
               return true;
@@ -1230,3 +1237,4 @@
   </script>
 </body>
 </html>
+``` 
