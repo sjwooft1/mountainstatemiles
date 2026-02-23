@@ -520,10 +520,15 @@
       const lines = rawText.trim().split(/\r?\n/).filter(l => l.trim());
       if (lines.length < 2) return [];
       
-      // Detect delimiter
+      // Detect delimiter - try tab first, then comma
       const first = lines[0];
-      const hasTab = first.includes('\t');
-      const delim = hasTab ? '\t' : ',';
+      let delim = '\t';
+      let hasDelim = first.includes('\t');
+      
+      if (!hasDelim && first.includes(',')) {
+        delim = ',';
+        hasDelim = true;
+      }
       
       const parseRow = (line) => {
         const parts = [];
@@ -532,20 +537,40 @@
         for (let i = 0; i < line.length; i++) {
           const ch = line[i];
           if (ch === '"') { inQuotes = !inQuotes; continue; }
-          if (!inQuotes && (ch === delim || (delim === '\t' && ch === '\t'))) { parts.push(cur.trim()); cur = ''; continue; }
+          if (!inQuotes && ch === delim) { parts.push(cur.trim()); cur = ''; continue; }
           cur += ch;
         }
         parts.push(cur.trim());
         return parts;
       };
       
-      const firstRow = parseRow(first);
+      // If no delimiter found, assume space-separated (like Athletic.net format)
+      // But we need to be smart about it - use regex to split on multiple spaces
+      const parseRowSmart = (line) => {
+        if (hasDelim) {
+          return parseRow(line);
+        }
+        // For Athletic.net format: "1.	Kendell Chilton	11	24.05	Gah. Lincoln"
+        // Split by tabs or multiple spaces, handling the place number with period
+        return line.split(/[\t]+/).map(s => s.trim()).filter(s => s.length > 0);
+      };
+      
+      const firstRow = parseRowSmart(first);
+      
+      // For Athletic.net results, the format is typically:
+      // Place | Name | Grade | Mark | School
+      // Check if this looks like Athletic.net data (first col is a number, second is a name)
+      const isAthletic = firstRow.length >= 5 && 
+                         /^\d+\.?$/.test(firstRow[0].replace('.', '')) &&
+                         isNaN(firstRow[1]);
       
       // Check if first row looks like headers
       const normalizedFirst = firstRow.map(h => normalizeHeader(h));
-      const isHeaderRow = COLUMN_MAP.placement.some(h => normalizedFirst.includes(h)) ||
-                          COLUMN_MAP.athlete_name.some(h => normalizedFirst.some(nf => nf.includes(h))) ||
-                          firstRow.some(h => ['place', 'athlete', 'result', 'time', 'school', 'team', 'event', 'grade'].some(k => normalizeHeader(h).includes(k)));
+      const isHeaderRow = !isAthletic && (
+        COLUMN_MAP.placement.some(h => normalizedFirst.includes(h)) ||
+        COLUMN_MAP.athlete_name.some(h => normalizedFirst.some(nf => nf.includes(h))) ||
+        firstRow.some(h => ['place', 'athlete', 'result', 'time', 'school', 'team', 'event', 'grade'].some(k => normalizeHeader(h).includes(k)))
+      );
       
       let idx = {
         placement: -1,
@@ -560,8 +585,17 @@
       
       let startRow = 0;
       
-      if (isHeaderRow) {
-        // Parse header row
+      if (isAthletic) {
+        // Athletic.net format: Place | Name | Grade | Mark | School
+        console.log('✅ Detected Athletic.net format');
+        idx.placement = 0;
+        idx.athlete_name = 1;
+        idx.grade = 2;
+        idx.mark = 3;
+        idx.school = 4;
+        startRow = 0;
+      } else if (isHeaderRow) {
+        // Parse header row with named columns
         idx.placement = findMappedHeader(firstRow, 'placement');
         idx.athlete_name = findMappedHeader(firstRow, 'athlete_name');
         idx.school = findMappedHeader(firstRow, 'school');
@@ -581,22 +615,22 @@
         }
         startRow = 1;
       } else {
-        // No header row - try to auto-detect columns based on content patterns
-        // Assume: Place | Grade | Athlete | (blank) | Time | School
+        // Try to auto-detect: assume Place | Name | Grade | Mark | School
         if (firstRow.length >= 5) {
-          // Try to detect which column is which by content
-          idx.placement = 0; // Usually first
-          idx.grade = 1;     // Usually second
-          idx.athlete_name = 2; // Usually third
-          idx.mark = 4;      // Usually fifth (skipping blank column)
-          idx.school = 5 < firstRow.length ? 5 : -1; // Usually sixth if exists
+          idx.placement = 0;
+          idx.athlete_name = 1;
+          idx.grade = 2;
+          idx.mark = 3;
+          idx.school = 4;
         }
         startRow = 0;
       }
       
       const out = [];
       for (let i = startRow; i < lines.length; i++) {
-        const cells = parseRow(lines[i]);
+        const cells = parseRowSmart(lines[i]);
+        
+        if (cells.length < 2) continue; // Skip empty or malformed rows
         
         const get = (key) => {
           const colIdx = idx[key];
@@ -612,13 +646,17 @@
         const athleteName = get('athlete_name');
         if (!athleteName) continue;
         
+        // Clean up placement - remove trailing period if present
+        let placement = get('placement') || '';
+        placement = placement.replace(/\.$/, '');
+        
         out.push({
           athlete_name: athleteName.replace(/\s+/g, ' ').trim(),
           school: get('school') || '',
           gender: get('gender') || '',
           mark: get('mark') || '',
           event: get('event') || '',
-          placement: get('placement') || '',
+          placement: placement || '',
           heat: get('heat') || '',
           grade: get('grade') || ''
         });
@@ -774,6 +812,7 @@
       const previewCard = document.getElementById('preview-card');
       const previewContent = document.getElementById('preview-content');
       const importCard = document.getElementById('import-card');
+      const importContentDiv = document.getElementById('import-content');
       
       const stats = {
         total: data.length,
@@ -872,7 +911,7 @@
       
       previewCard.style.display = 'block';
       
-      importContent.innerHTML = `
+      importContentDiv.innerHTML = `
         <p style="margin-bottom: 20px; color: var(--muted);">
           Ready to import ${stats.valid} valid results. ${stats.errors > 0 ? `${stats.errors} rows will be skipped due to errors.` : ''}
         </p>

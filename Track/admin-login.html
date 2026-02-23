@@ -90,9 +90,10 @@
   
   <div class="login-box">
     <h2>Track Admin Login</h2>
+    <input type="text" id="username" placeholder="Enter Username">
     <input type="password" id="password" placeholder="Enter Password">
     <button class="btn" onclick="checkLogin()">Login</button>
-    <p id="error" class="error">Incorrect password.</p>
+    <p id="error" class="error">Incorrect username or password.</p>
   </div>
   
   <script src="/assets/theme-toggle.js"></script>
@@ -103,14 +104,30 @@
     }
 
     function checkLogin() {
-      const pass = document.getElementById("password").value;
-      if (pass === "phsisbest") {
+      const username = document.getElementById("username").value.trim();
+      const password = document.getElementById("password").value;
+      
+      // Credentials
+      const validUsername = "admin";
+      const validPassword = "phsisbest";
+      
+      if (username === validUsername && password === validPassword) {
         localStorage.setItem("&#116; &#114; &#97; &#99; &#107; &#97; &#100; &#109; &#105; &#110;", "&#116; &#114; &#117; &#101;");
+        localStorage.setItem("&#97; &#100; &#109; &#105; &#110; &#117; &#115; &#101; &#114;", username);
         window.location.replace("admin.html");
       } else {
         document.getElementById("error").style.display = "block";
+        document.getElementById("username").value = "";
+        document.getElementById("password").value = "";
       }
     }
+    
+    // Handle Enter key
+    document.getElementById("username").addEventListener("keydown", function(event) {
+      if (event.key === "Enter") {
+        document.getElementById("password").focus();
+      }
+    });
     
     const passwordInput = document.getElementById("password");
     passwordInput.addEventListener("keydown", function(event) {

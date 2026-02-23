@@ -769,6 +769,7 @@
       <div class="nav-section-title">Tools</div>
       <div class="nav-section" id="tools-nav">
         <a href="csv-import.html" class="nav-btn" style="text-decoration: none; display: block;">📊 CSV Import</a>
+        <button class="nav-btn" data-section="manual-entry">✏️ Manual Entry</button>
         <button class="nav-btn" data-section="bulk-edit">⚙️ Bulk Edit</button>
         <button class="nav-btn" data-section="analytics">📈 Analytics</button>
         <button class="nav-btn" data-section="console">📋 Activity Console</button>
@@ -881,6 +882,7 @@
       'athletes': 'Athletes',
       'results': 'Results',
       'teams': 'Teams',
+      'manual-entry': 'Manual Entry',
       'bulk-edit': 'Bulk Edit',
       'analytics': 'Analytics',
       'console': 'Activity Console',
@@ -898,6 +900,7 @@
         case 'athletes': await renderAthletes(); break;
         case 'results': await renderResults(); break;
         case 'teams': await renderTeams(); break;
+        case 'manual-entry': await renderManualEntry(); break;
         case 'bulk-edit': await renderBulkEdit(); break;
         case 'analytics': await renderAnalytics(); break;
         case 'console': await renderConsole(); break;
@@ -961,7 +964,286 @@
     updateRecordCount(Object.values(stats).reduce((a, b) => a + b, 0));
   }
   
-  // ...existing code...
+  // ==========================================
+  // Bulk Edit
+  // ==========================================
+  async function renderBulkEdit() {
+    document.getElementById('content').innerHTML = `
+      <div style="background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 24px;">
+        <h3 style="margin: 0 0 16px 0;">Bulk Edit Features Coming Soon</h3>
+        <p style="color: var(--muted); margin-bottom: 20px;">Update multiple records at once by filtering results.</p>
+        <button class="btn btn-secondary" onclick="loadSection('analytics')">View Analytics Instead</button>
+      </div>
+    `;
+  }
+  
+  // ==========================================
+  // Manual Entry
+  // ==========================================
+  async function renderManualEntry() {
+    const [meetsSnap, eventsSnap, athletesSnap] = await Promise.all([
+      window.firebaseDatabase.ref('Track/meets').once('value'),
+      window.firebaseDatabase.ref('Track/events').once('value'),
+      window.firebaseDatabase.ref('Track/athletes').once('value')
+    ]);
+    
+    const meets = [];
+    const events = [];
+    const athletes = [];
+    
+    meetsSnap.forEach(child => meets.push({ id: child.key, ...child.val() }));
+    eventsSnap.forEach(child => events.push({ id: child.key, ...child.val() }));
+    athletesSnap.forEach(child => athletes.push({ id: child.key, ...child.val() }));
+    
+    document.getElementById('content').innerHTML = `
+      <div style="display: grid; gap: 20px; max-width: 800px;">
+        <div style="background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 24px;">
+          <h2 style="margin: 0 0 20px 0;">✏️ Manual Result Entry</h2>
+          <p style="color: var(--muted); margin-bottom: 20px;">Quickly add individual track results without using CSV import.</p>
+          
+          <div style="display: grid; gap: 16px;">
+            <div class="form-group">
+              <label class="form-label">Meet *</label>
+              <select id="manual-meet" class="form-input">
+                <option value="">-- Select Meet --</option>
+                ${meets.map(m => `<option value="${m.id}">${m.name} (${m.date})</option>`).join('')}
+              </select>
+            </div>
+            
+            <div class="form-group">
+              <label class="form-label">Event *</label>
+              <select id="manual-event" class="form-input">
+                <option value="">-- Select Event --</option>
+                ${events.map(e => `<option value="${e.id}">${e.name} (${e.gender})</option>`).join('')}
+              </select>
+            </div>
+            
+            <div class="form-group">
+              <label class="form-label">Athlete *</label>
+              <div style="display: flex; gap: 8px;">
+                <select id="manual-athlete" class="form-input" style="flex: 1;">
+                  <option value="">-- Select Athlete --</option>
+                  ${athletes.map(a => `<option value="${a.id}">${a.first_name} ${a.last_name} (${a.school})</option>`).join('')}
+                </select>
+                <button class="btn btn-secondary" onclick="openNewAthleteModal()" title="Add new athlete">+</button>
+              </div>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+              <div class="form-group">
+                <label class="form-label">Mark/Time *</label>
+                <input type="text" id="manual-mark" class="form-input" placeholder="e.g., 7.36, 18:30.45">
+              </div>
+              
+              <div class="form-group">
+                <label class="form-label">Placement</label>
+                <input type="number" id="manual-placement" class="form-input" placeholder="e.g., 1, 2, 3">
+              </div>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+              <div class="form-group">
+                <label class="form-label">Heat</label>
+                <input type="text" id="manual-heat" class="form-input" placeholder="e.g., 1, 2, A, B">
+              </div>
+              
+              <div class="form-group">
+                <label class="form-label">Gender</label>
+                <select id="manual-gender" class="form-input">
+                  <option value="">-- Auto --</option>
+                  <option value="M">Men</option>
+                  <option value="W">Women</option>
+                </select>
+              </div>
+            </div>
+            
+            <div style="display: flex; gap: 12px; margin-top: 8px;">
+              <button class="btn btn-primary" onclick="submitManualResult()" style="flex: 1; justify-content: center;">✅ Submit Result</button>
+              <button class="btn btn-secondary" onclick="clearManualForm()" style="flex: 1; justify-content: center;">🔄 Clear Form</button>
+            </div>
+          </div>
+        </div>
+        
+        <div id="manual-status-container"></div>
+        <div id="manual-recent-container"></div>
+      </div>
+    `;
+    
+    loadManualRecentResults();
+  }
+  
+  async function submitManualResult() {
+    const meetId = document.getElementById('manual-meet').value;
+    const eventId = document.getElementById('manual-event').value;
+    const athleteId = document.getElementById('manual-athlete').value;
+    const mark = document.getElementById('manual-mark').value.trim();
+    const placement = document.getElementById('manual-placement').value || null;
+    const heat = document.getElementById('manual-heat').value.trim() || null;
+    const gender = document.getElementById('manual-gender').value || '';
+    
+    // Validation
+    if (!meetId) {
+      showStatusMessage('Please select a meet', 'error');
+      return;
+    }
+    if (!eventId) {
+      showStatusMessage('Please select an event', 'error');
+      return;
+    }
+    if (!athleteId) {
+      showStatusMessage('Please select or create an athlete', 'error');
+      return;
+    }
+    if (!mark) {
+      showStatusMessage('Please enter a mark/time', 'error');
+      return;
+    }
+    
+    try {
+      const resultData = {
+        athlete_id: athleteId,
+        meet_id: meetId,
+        event_id: eventId,
+        mark: mark,
+        placement: placement ? parseInt(placement) : null,
+        heat: heat,
+        gender: gender,
+        timestamp: new Date().toISOString()
+      };
+      
+      const ref = await window.firebaseDatabase.ref('Track/results').push(resultData);
+      
+      // Log the activity
+      if (adminLogger) {
+        await adminLogger.logCreate('results', ref.key, resultData);
+      }
+      
+      showStatusMessage('✅ Result submitted successfully!', 'success');
+      clearManualForm();
+      await loadManualRecentResults();
+    } catch (error) {
+      showStatusMessage('Error: ' + error.message, 'error');
+    }
+  }
+  
+  function showStatusMessage(message, type) {
+    const container = document.getElementById('manual-status-container');
+    container.innerHTML = `
+      <div style="background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 16px 20px; display: flex; align-items: center; gap: 12px; color: ${type === 'success' ? 'var(--success)' : 'var(--danger)'};">
+        <span style="font-size: 1.2rem;">${type === 'success' ? '✅' : '❌'}</span>
+        <span>${message}</span>
+      </div>
+    `;
+    
+    setTimeout(() => {
+      if (container.innerHTML.includes(message)) {
+        container.innerHTML = '';
+      }
+    }, 5000);
+  }
+  
+  function clearManualForm() {
+    document.getElementById('manual-meet').value = '';
+    document.getElementById('manual-event').value = '';
+    document.getElementById('manual-athlete').value = '';
+    document.getElementById('manual-mark').value = '';
+    document.getElementById('manual-placement').value = '';
+    document.getElementById('manual-heat').value = '';
+    document.getElementById('manual-gender').value = '';
+  }
+  
+  async function loadManualRecentResults() {
+    try {
+      const snapshot = await window.firebaseDatabase.ref('Track/results').orderByChild('timestamp').limitToLast(5).once('value');
+      const results = [];
+      snapshot.forEach(child => {
+        results.push({ id: child.key, ...child.val() });
+      });
+      results.reverse();
+      
+      if (results.length === 0) {
+        document.getElementById('manual-recent-container').innerHTML = '';
+        return;
+      }
+      
+      // Load related data
+      const [athletesSnap, eventsSnap, meetsSnap] = await Promise.all([
+        window.firebaseDatabase.ref('Track/athletes').once('value'),
+        window.firebaseDatabase.ref('Track/events').once('value'),
+        window.firebaseDatabase.ref('Track/meets').once('value')
+      ]);
+      
+      const athletes = {};
+      const events = {};
+      const meets = {};
+      
+      athletesSnap.forEach(child => athletes[child.key] = child.val());
+      eventsSnap.forEach(child => events[child.key] = child.val());
+      meetsSnap.forEach(child => meets[child.key] = child.val());
+      
+      const html = `
+        <div style="background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 24px;">
+          <h3 style="margin: 0 0 16px 0;">📋 Recent Results (Last 5)</h3>
+          <div style="display: flex; flex-direction: column; gap: 12px;">
+            ${results.map(r => {
+              const athlete = athletes[r.athlete_id];
+              const event = events[r.event_id];
+              const meet = meets[r.meet_id];
+              return `
+                <div style="background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                  <div>
+                    <div style="font-weight: 600;">${athlete?.first_name} ${athlete?.last_name}</div>
+                    <div style="font-size: 0.85rem; color: var(--muted);">${event?.name || 'Unknown Event'} • ${meet?.name || 'Unknown Meet'}</div>
+                  </div>
+                  <div style="text-align: right;">
+                    <div style="font-weight: 600; color: var(--accent);">${r.mark}</div>
+                    <div style="font-size: 0.85rem; color: var(--muted);">
+                      ${r.placement ? 'Place: ' + r.placement : ''}
+                      ${r.heat ? (r.placement ? ' • ' : '') + 'Heat: ' + r.heat : ''}
+                    </div>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `;
+      
+      document.getElementById('manual-recent-container').innerHTML = html;
+    } catch (error) {
+      console.error('Error loading recent results:', error);
+    }
+  }
+  
+  function openNewAthleteModal() {
+    const athleteName = prompt('Enter athlete name (First Last):');
+    if (!athleteName) return;
+    
+    const school = prompt('Enter school:') || '';
+    const grade = prompt('Enter grade (9-12):') || '';
+    
+    const nameParts = athleteName.trim().split(/\s+/);
+    const first_name = nameParts[0];
+    const last_name = nameParts.slice(1).join(' ');
+    
+    window.firebaseDatabase.ref('Track/athletes').push({
+      first_name,
+      last_name,
+      school,
+      grade
+    }).then(ref => {
+      // Add to dropdown and select it
+      const select = document.getElementById('manual-athlete');
+      const option = document.createElement('option');
+      option.value = ref.key;
+      option.textContent = `${first_name} ${last_name} (${school})`;
+      select.appendChild(option);
+      select.value = ref.key;
+      showStatusMessage('✅ Athlete created!', 'success');
+    }).catch(error => {
+      showStatusMessage('Error: ' + error.message, 'error');
+    });
+  }
   
   // ==========================================
   // Grid Rendering
@@ -1493,16 +1775,6 @@
       onUpdate: null,
       onDelete: null
     });
-  }
-  
-  async function renderBulkEdit() {
-    document.getElementById('content').innerHTML = `
-      <div style="background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 24px;">
-        <h3 style="margin: 0 0 16px 0;">Bulk Edit Features Coming Soon</h3>
-        <p style="color: var(--muted); margin-bottom: 20px;">Update multiple records at once by filtering results.</p>
-        <button class="btn btn-secondary" onclick="loadSection('analytics')">View Analytics Instead</button>
-      </div>
-    `;
   }
   
   async function renderAnalytics() {

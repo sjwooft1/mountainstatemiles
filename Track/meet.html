@@ -1,934 +1,766 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Meet Results — Mountain State Miles</title>
-<link rel="icon" type="image/png" href="../assets/Favicon Generator/favicon-96x96.png" sizes="96x96" />
-<link rel="icon" type="image/svg+xml" href="../assets/Favicon Generator/favicon.svg" />
-<link rel="shortcut icon" href="../assets/Favicon Generator/favicon.ico" />
-<link rel="apple-touch-icon" sizes="180x180" href="../assets/Favicon Generator/apple-touch-icon.png" />
-<link rel="manifest" href="../assets/Favicon Generator/site.webmanifest" />
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/assets/main.css">
-<style>
-  * { box-sizing: border-box; }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Meet Results | Mountain State Miles</title>
   
-  :root {
-    --primary: #002855;
-    --secondary: #0056b3;
-    --text-primary: #1a1a1a;
-    --text-secondary: #666;
-    --bg-light: #f8f9fa;
-    --border-light: #e0e0e0;
-    --accent: #ff6b35;
-    --accent-dark: #d9530a;
-  }
+  <!-- Favicon Links -->
+  <link rel="icon" type="image/png" href="../assets/Favicon Generator/favicon-96x96.png" sizes="96x96" />
+  <link rel="icon" type="image/svg+xml" href="../assets/Favicon Generator/favicon.svg" />
+  <link rel="shortcut icon" href="../assets/Favicon Generator/favicon.ico" />
+  <link rel="apple-touch-icon" sizes="180x180" href="../assets/Favicon Generator/apple-touch-icon.png" />
+  <link rel="manifest" href="../assets/Favicon Generator/site.webmanifest" />
   
-  html, body {
-    margin: 0;
-    padding: 0;
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
-    background: var(--bg-light);
-    color: var(--text-primary);
-    line-height: 1.6;
-  }
+  <meta name="description" content="Track & field results, times, rankings, and meet data — Mountain State Miles." />
+  <meta name="keywords" content="WV Track, Track Results, West Virginia Running, Track & Field, Mountain State Miles" />
+  <meta name="author" content="Mountain State Miles" />
+  <link rel="stylesheet" href="/assets/main.css">
   
-  header {
-    background: white;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    position: sticky;
-    top: 0;
-    z-index: 100;
-  }
-  
-  .navbar {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0 20px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    height: 70px;
-  }
-  
-  .navbar-brand {
-    font-size: 1.3rem;
-    font-weight: 700;
-    color: var(--primary);
-    text-decoration: none;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  
-  .navbar-nav {
-    display: flex;
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    gap: 30px;
-  }
-  
-  .navbar-link {
-    color: var(--text-primary);
-    text-decoration: none;
-    font-weight: 500;
-    transition: color 0.3s;
-    position: relative;
-  }
-  
-  .navbar-link:hover,
-  .navbar-link.active {
-    color: var(--secondary);
-  }
-  
-  .navbar-link.active::after {
-    content: '';
-    position: absolute;
-    bottom: -5px;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: var(--accent);
-    border-radius: 2px;
-  }
-  
-  main {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 60px 20px;
-  }
-  
-  .section-title {
-    font-size: 2.2rem;
-    font-weight: 800;
-    margin: 0 0 40px;
-    color: var(--primary);
-    position: relative;
-    padding-bottom: 15px;
-  }
-  
-  .section-title::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 80px;
-    height: 4px;
-    background: linear-gradient(90deg, var(--accent), var(--accent-dark));
-    border-radius: 2px;
-  }
+  <!-- URL Parameter Script in the Head -->
+  <script>
+    window.addEventListener("DOMContentLoaded", () => {
+      const params = new URLSearchParams(window.location.search);
+      const slug = params.get("slug");
+      if (slug) {
+        document.title = `${slug.replace(/-/g, " ")} – Meet Results | Mountain State Miles`;
+      }
+    });
+  </script>
 
-    .meet-desc {
-    font-size: 1.2rem;
-    color: #000000bd;
-    font-weight: 500;
-    margin-bottom: 25px;
-  }
-  .meet-desc::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 80px;
-    height: 4px;
-    background: linear-gradient(90deg, var(--accent), var(--accent-dark));
-    border-radius: 2px;
-  }
-  .meet-meta {
-  font-size: 1.2rem;
-  color: var(secondary);
-  font-weight: 600;
-  margin-bottom: 15px;
-  margin-top: -30px; /* Pulls it closer to the title */
-}
-  .event-block {
-    margin-bottom: 40px;
-  }
-  
-  .event-block h3 {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: var(--primary);
-    margin-bottom: 20px;
-  }
-  
-   /* Footer */
-    footer {
-  /* Remove the solid background color */
-  background: rgba(0, 40, 85, 0.85); /* Semi-transparent version of your primary blue */
-  backdrop-filter: blur(8px); /* Optional: Adds a glass effect */
-  color: white;
-  text-align: center;
-  padding: 40px 20px;
-  margin-top: 80px;
-  position: relative;
-  z-index: 1; /* Ensures footer content stays above the image */
-}
-.footer-with-bg {
-  position: relative;
-  overflow: hidden; /* Clips the image to footer boundaries */
-  padding: 60px 20px;
-  color: white;
-  text-align: center;
-}
+  <style>
+    #selector {
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      margin: 30px 0;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
 
-.footer-bg-img {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover; /* Ensures the mountain image fills the area */
-  z-index: -1; /* Puts it behind the text */
-  filter: brightness(0.5); /* Darkens the image so text is readable */
-}
+    .tabs-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 24px;
+      border-bottom: 2px solid #e0e0e0;
+    }
 
-.footer-content {
-  position: relative;
-  z-index: 2;
-}
-  
-  .btn {
-    display: inline-block;
-    padding: 12px 28px;
-    background: var(--accent);
-    color: white;
-    text-decoration: none;
-    border-radius: 8px;
-    font-weight: 700;
-    transition: all 0.3s;
-    border: none;
-    cursor: pointer;
-  }
-  
-  .btn:hover {
-    background: var(--accent-dark);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(255, 107, 53, 0.3);
-  }
+    .gender-tab {
+      padding: 12px 24px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 1rem;
+      color: #666;
+      transition: all 0.3s;
+      border-bottom: 3px solid transparent;
+      margin-bottom: -2px;
+    }
 
-  /* === WEATHER WIDGET STYLING === */
+    .gender-tab:hover {
+      color: var(--secondary);
+    }
 
-  .weather-widget {
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(245, 250, 255, 0.95) 100%);
-    backdrop-filter: blur(10px);
-    border-radius: 16px;
-    padding: 24px;
-    margin: 20px 0;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
-    border: 1px solid rgba(255, 255, 255, 0.5);
-  }
+    .gender-tab.active {
+      color: var(--secondary);
+      border-bottom-color: var(--secondary);
+    }
 
-  .weather-content {
-    display: flex;
-    align-items: center;
-    gap: 24px;
-  }
+    #select-heading {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 8px;
+    }
 
-  .weather-icon {
-    font-size: 4rem;
-    line-height: 1;
-    flex-shrink: 0;
-  }
+    #select-sub {
+      font-size: 0.95rem;
+      color: #666;
+      margin-bottom: 20px;
+    }
 
-  .weather-info {
-    flex-grow: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
+    .race-buttons {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 12px;
+    }
 
-  .weather-location {
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: var(--primary);
-  }
+    .race-button {
+      padding: 12px 16px;
+      border: 2px solid #ddd;
+      background: white;
+      color: #666;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.2s;
+      font-size: 0.95rem;
+    }
 
-  .weather-conditions {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: var(--primary);
-  }
+    .race-button:hover {
+      border-color: var(--secondary);
+      color: var(--secondary);
+    }
 
-  .weather-temps {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 1.25rem;
-    font-weight: 700;
-  }
+    .race-button.primary {
+      background: var(--secondary);
+      color: white;
+      border-color: var(--secondary);
+    }
 
-  .temp-high {
-    color: #d97706;
-  }
+    .race-button.secondary {
+      background: white;
+      color: #666;
+      border-color: #ddd;
+    }
 
-  .temp-divider {
-    color: #9ca3af;
-  }
+    .results-box {
+      margin-top: 30px;
+    }
 
-  .temp-low {
-    color: #0891b2;
-  }
+    .results-table-container {
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 30px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      overflow-x: auto;
+    }
 
-  .weather-details {
-    display: flex;
-    gap: 24px;
-    flex-wrap: wrap;
-  }
+    .results-table-container h3 {
+      margin-top: 0;
+      margin-bottom: 20px;
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--primary);
+    }
 
-  .detail-item {
-    font-size: 0.95rem;
-    color: #4b5563;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
+    .results-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.95rem;
+    }
 
-  .weather-timestamp {
-    font-size: 0.8rem;
-    color: #9ca3af;
-    margin-top: 8px;
-  }
+    .results-table thead {
+      background: var(--primary);
+      color: white;
+    }
 
-  /* Responsive weather widget */
-  @media (max-width: 768px) {
-    .weather-widget {
+    .results-table th {
+      padding: 14px 16px;
+      text-align: left;
+      font-weight: 700;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border: none;
+    }
+
+    .results-table tbody tr {
+      border-bottom: 1px solid #e0e0e0;
+      transition: background 0.2s;
+    }
+
+    .results-table tbody tr:hover {
+      background: #f8f9fa;
+    }
+
+    .results-table td {
+      padding: 14px 16px;
+      border: none;
+    }
+
+    .results-table td[data-label]::before {
+      content: attr(data-label);
+      font-weight: 700;
+      color: #666;
+      display: none;
+    }
+
+    .results-table a {
+      color: var(--secondary);
+      text-decoration: none;
+      font-weight: 600;
+      transition: color 0.2s;
+    }
+
+    .results-table a:hover {
+      color: var(--primary);
+      text-decoration: underline;
+    }
+
+    #error {
+      background: #fff3cd;
+      border: 1px solid #ffc107;
+      color: #856404;
       padding: 16px;
+      border-radius: 8px;
+      margin: 20px 0;
+      display: none;
     }
 
-    .weather-content {
-      flex-direction: column;
-      text-align: center;
-      gap: 16px;
+    #error.show {
+      display: block;
     }
 
-    .weather-icon {
-      font-size: 3.5rem;
-    }
+    @media (max-width: 768px) {
+      .race-buttons {
+        grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+      }
 
-    .weather-conditions {
-      font-size: 1.25rem;
-    }
+      .results-table {
+        font-size: 0.85rem;
+      }
 
-    .weather-temps {
-      justify-content: center;
-      font-size: 1.1rem;
-    }
+      .results-table th,
+      .results-table td {
+        padding: 10px 8px;
+      }
 
-    .weather-details {
-      justify-content: center;
-      gap: 16px;
+      .results-table-container {
+        padding: 16px;
+      }
     }
-  }
-</style>
+  </style>
 </head>
+
 <body>
   <header>
     <nav class="navbar">
-      <a href="index.html" class="navbar-brand">Track Meets</a>
-      <ul class="navbar-nav">
-        <li><a href="/index.html" class="navbar-link">Home</a></li>
-        <li><a href="index.html" class="navbar-link">Track</a></li>
-        <li><a href="meets.html" class="navbar-link active">Meets</a></li>
-        <li><a href="events.html" class="navbar-link">Events</a></li>
-        <li><a href="rankings.html" class="navbar-link">Rankings</a></li>
-        <li><a href="analytics.html" class="navbar-link">Analytics</a></li>
-      </ul>
+      <div class="navbar-content">
+        <a href="index.html" class="navbar-brand">⚡ Track & Field</a>
+        <button class="mobile-menu-toggle" aria-label="Toggle menu">☰</button>
+        <ul class="navbar-nav" id="main-nav">
+          <li><a href="/home/index.html" class="navbar-link">Home</a></li>
+          <li><a href="index.html" class="navbar-link">Track</a></li>
+          <li><a href="meets.html" class="navbar-link active">Meets</a></li>
+          <li><a href="events.html" class="navbar-link">Events</a></li>
+          <li><a href="rankings.html" class="navbar-link">Rankings</a></li>
+          <li><a href="analytics.html" class="navbar-link">Analytics</a></li>
+        </ul>
+        <button class="theme-toggle" aria-label="Switch theme">🌙</button>
+      </div>
     </nav>
+    <div class="content-section" style="padding-top: 0.5rem; padding-bottom: 0.5rem;">
+      <a href="meets.html" class="btn btn-sm">← Back to Meets</a>
+    </div>
   </header>
-  
-  <main>
-    <h1 class="section-title" id="meet-title">Loading...</h1>
-    <p class="meet-meta" id="meet-meta">Loading details...</p>
+
+  <main class="content-section">
+    <h1 id="meet-title">Meet Results</h1>
+    <div id="meet-meta" class="meet-metadata"></div>
     <div id="weather-widget" class="weather-widget" style="display:none;"></div>
-    <p class="meet-desc" id="meet-description">Loading description...</p> 
-    <div id="event-results">Loading results...</div>
+    <div id="error" class="error-message"></div>
+
+    <div id="selector" style="display:none;">
+      <div class="tabs-row" role="tablist" aria-label="Gender tabs">
+        <button id="tab-mens" class="gender-tab active">MEN</button>
+        <button id="tab-womens" class="gender-tab">WOMEN</button>
+      </div>
+      <div id="select-heading">Select an Event</div>
+      <div id="select-sub">Choose which event results you want to view for this meet.</div>
+      <div id="event-button-wrap" class="race-buttons"></div>
+    </div>
+
+    <div id="results-box" class="results-box"></div>
   </main>
 
   <footer>
-      <div class="row">
-          <!-- 1st Column -->
-          <div class="footer-col">
-              <h4>General</h4>
-              <ul>
-                  <li><a href="/home/index.html">Home</a></li>
-                  <li><a href="/home/about.html">About</a></li>
-                  <li><a href="/home/admin.html">Admin</a></li>
-              </ul>
-          </div>
-
-          <!-- 2nd Column -->
-          <div class="footer-col">
-              <h4>Cross Country</h4>
-              <ul>
-                  <li><a href="/CrossCountry/xc.html">Home</a></li>
-                  <li><a href="/CrossCountry/meets.html">Meets</a></li>
-                  <li><a href="/CrossCountry/schools.html">Schools</a></li>
-                  <li><a href="/CrossCountry/rankings.html">Rankings</a></li>
-                  <li><a href="/CrossCountry/analytics.html">Analytics</a></li>
-              </ul>
-          </div>
-
-          <!-- 3rd Column -->
-          <div class="footer-col">
-              <h4>Track</h4>
-              <ul>
-                  <li><a href="/Track/index.html">Home</a></li>
-                  <li><a href="/Track/meets.html">Meets</a></li>
-                  <li><a href="/Track/teams.html">Teams</a></li>
-                  <li><a href="/Track/rankings.html">Rankings</a></li>
-                  <li><a href="/Track/analytics.html">Analytics</a></li>
-              </ul>
-          </div>
+    <div class="row">
+      <div class="footer-col">
+        <h4>General</h4>
+        <ul>
+          <li><a href="/home/index.html">Home</a></li>
+          <li><a href="/home/admin.html">Admin</a></li>
+          <li><a href="/news.html">News</a></li>
+        </ul>
       </div>
-      <hr>
-      <div class="row">
-          <div class="footer-bottom">
-              <div style="margin-bottom: 1rem;">
-                  <a href="https://github.com/sjwooft1/mountainstatemiles" target="_blank" rel="noopener noreferrer">
-                      <i class="fab fa-github" style="font-size: 1.5rem;"></i>
-                      <span>GitHub Repository</span>
-                  </a>
-              </div>
-              <p>&#169; 2026 Mountain State Miles — Built by runners, for runners.</p>
-          </div>
+
+      <div class="footer-col">
+        <h4>Cross Country</h4>
+        <ul>
+          <li><a href="/CrossCountry/xc.html">Home</a></li>
+          <li><a href="/CrossCountry/meets.html">Meets</a></li>
+          <li><a href="/CrossCountry/schools.html">Schools</a></li>
+          <li><a href="/CrossCountry/rankings.html">Rankings</a></li>
+          <li><a href="/CrossCountry/analytics.html">Analytics</a></li>
+        </ul>
       </div>
+
+      <div class="footer-col">
+        <h4>Track</h4>
+        <ul>
+          <li><a href="/Track/index.html">Home</a></li>
+          <li><a href="/Track/meets.html">Meets</a></li>
+          <li><a href="/Track/teams.html">Teams</a></li>
+          <li><a href="/Track/rankings.html">Rankings</a></li>
+          <li><a href="/Track/analytics.html">Analytics</a></li>
+        </ul>
+      </div>
+    </div>
+    <hr>
+    <div class="row">
+      <div class="footer-bottom">
+        <p>&#169; 2026 Mountain State Miles — Built by runners, for runners.</p>
+      </div>
+    </div>
   </footer>
 
-<!-- Firebase SDK -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-analytics-compat.js"></script>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/handsontable@latest/dist/handsontable.full.min.css">
-<script src="https://cdn.jsdelivr.net/npm/handsontable@latest/dist/handsontable.full.min.js"></script>
-<script src="firebase-config.js"></script>
-<script>
-async function waitForFirebase() {
-  let attempts = 0;
-  while (typeof window.firebaseDatabase === 'undefined' && attempts < 50) {
-    await new Promise(resolve => setTimeout(resolve, 100));
-    attempts++;
-  }
-  if (typeof window.firebaseDatabase === 'undefined') {
-    throw new Error('Firebase database not initialized');
-  }
-}
+  <script src="/assets/theme-toggle.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <script src="firebase-config.js"></script>
 
-const params = new URLSearchParams(window.location.search);
-const slug = params.get("slug");
+  <script>
+    // ==========================================
+    // UTILITY & FORMATTING FUNCTIONS
+    // ==========================================
 
-async function loadMeet() {
-  try {
-    await waitForFirebase();
-    console.log('Loading meet with slug:', slug);
-    
-    // Try to find meet by slug first
-    let meet = null;
-    const allMeetsSnapshot = await window.firebaseDatabase.ref("Track/meets").once("value");
-    
-    console.log('All meets snapshot exists:', allMeetsSnapshot.exists());
-    
-    allMeetsSnapshot.forEach(child => {
-      const meetData = child.val();
-      console.log('Checking meet:', child.key, meetData);
-      if (meetData.slug === slug || child.key === slug) {
-        meet = { id: child.key, ...meetData };
-        console.log('Found meet:', meet);
-      }
-    });
-
-  // Load Title
-document.getElementById("meet-title").textContent =
-  meet?.name ?? "Meet Not Found";
-
-// Load Description
-document.getElementById("meet-description").textContent =
-  meet?.description ?? "No description available";
-
-// Load Location and Date combined
-const location = meet?.location ?? "No location";
-const date = meet?.date ?? "No date";
-
-// This combines them into "Location • Date"
-document.getElementById("meet-meta").textContent = `${location} • ${date}`;
-
-// Load weather for the meet location if date is in the future
-if (meet?.location && meet?.date) {
-  loadWeatherForMeet(meet.location, meet.date);
-}
-
-  if (!meet) {
-    console.log('Meet not found with slug:', slug);
-    document.getElementById("event-results").innerHTML = "<p>Meet not found. Check console for details.</p>";
-    return;
-  }
-
-  // Load results for this meet
-  console.log('Loading results for meet:', meet.id);
-  const allResultsSnapshot = await window.firebaseDatabase.ref("Track/results").once("value");
-  
-  const results = [];
-  allResultsSnapshot.forEach(child => {
-    const resultData = child.val();
-    if (resultData.meet_id === meet.id) {
-      console.log('Found result:', child.key, resultData);
-      results.push({ id: child.key, ...resultData });
+    function formatMark(mark, eventName = '') {
+      if (!mark) return '—';
+      return String(mark);
     }
-  });
-  
-  console.log('Total results found:', results.length);
 
-  if (!results || !results.length) {
-    document.getElementById("event-results").innerHTML = "<p>No results found.</p>";
-    return;
-  }
+    function slugify(name) {
+      if (!name) return '';
+      return name.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+    }
 
-  // Load athletes and events for results
-  const athleteIds = [...new Set(results.map(r => r.athlete_id).filter(Boolean))];
-  const eventIds = [...new Set(results.map(r => r.event_id).filter(Boolean))];
-  
-  const athletesMap = {};
-  const eventsMap = {};
-  
-  // Load athletes
-  if (athleteIds.length > 0) {
-      const athletesSnapshot = await window.firebaseDatabase.ref("Track/athletes").once("value");
-    athletesSnapshot.forEach(child => {
-      if (athleteIds.includes(child.key)) {
-        athletesMap[child.key] = { id: child.key, ...child.val() };
+    // ==========================================
+    // STATE MANAGEMENT
+    // ==========================================
+    
+    let currentMeetData = null;
+    let allResults = [];
+    let activeGender = 'M';
+    let activeEvent = null;
+
+    // ==========================================
+    // MAIN INITIALIZATION
+    // ==========================================
+
+    window.addEventListener("DOMContentLoaded", async () => {
+      const params = new URLSearchParams(window.location.search);
+      const slug = params.get("slug");
+
+      const errorDiv = document.getElementById("error");
+      const selectorDiv = document.getElementById("selector");
+
+      if (!slug) {
+        errorDiv.classList.add("show");
+        errorDiv.textContent = "No meet specified. Please return to the Meets page.";
+        return;
+      }
+
+      try {
+        await waitForFirebase();
+
+        // Load meet
+        const meetsSnapshot = await window.firebaseDatabase.ref('Track/meets').once('value');
+        meetsSnapshot.forEach(child => {
+          const meetData = child.val();
+          if (meetData.slug === slug || child.key === slug) {
+            currentMeetData = { id: child.key, ...meetData };
+          }
+        });
+
+        if (!currentMeetData) {
+          throw new Error('Meet not found');
+        }
+
+        // Update header
+        document.getElementById('meet-title').textContent = currentMeetData.name;
+        document.getElementById('meet-meta').innerHTML = `
+          <strong>Date:</strong> ${currentMeetData.date || 'TBA'} <span style="margin:0 10px">|</span> 
+          <strong>Location:</strong> ${currentMeetData.location || 'Unknown'}
+        `;
+
+        // Load weather
+        if (currentMeetData.location && currentMeetData.date) {
+          loadWeatherForMeet(currentMeetData.location, currentMeetData.date);
+        }
+
+        // Load results
+        const resultsSnapshot = await window.firebaseDatabase.ref('Track/results').once('value');
+        const athletesSnapshot = await window.firebaseDatabase.ref('Track/athletes').once('value');
+        const eventsSnapshot = await window.firebaseDatabase.ref('Track/events').once('value');
+
+        const athletesMap = {};
+        const eventsMap = {};
+
+        athletesSnapshot.forEach(child => {
+          athletesMap[child.key] = { id: child.key, ...child.val() };
+        });
+
+        eventsSnapshot.forEach(child => {
+          eventsMap[child.key] = { id: child.key, ...child.val() };
+        });
+
+        resultsSnapshot.forEach(child => {
+          const resultData = child.val();
+          if (resultData.meet_id === currentMeetData.id) {
+            const athlete = athletesMap[resultData.athlete_id] || {};
+            const event = eventsMap[resultData.event_id] || {};
+            allResults.push({
+              id: child.key,
+              ...resultData,
+              athlete_name: `${athlete.first_name || ''} ${athlete.last_name || ''}`.trim(),
+              athlete_school: athlete.school || '',
+              event_name: event.name || 'Unknown',
+              gender: event.gender || resultData.gender || ''
+            });
+          }
+        });
+
+        if (allResults.length === 0) {
+          errorDiv.classList.add("show");
+          errorDiv.textContent = 'No results uploaded yet for this meet.';
+          return;
+        }
+
+        // Initialize UI
+        selectorDiv.style.display = 'block';
+        setupGenderTabs();
+        document.getElementById('tab-mens').click();
+
+      } catch (err) {
+        console.error(err);
+        errorDiv.classList.add("show");
+        errorDiv.textContent = 'Error loading meet: ' + err.message;
       }
     });
-  }
-  
-  // Load events
-  if (eventIds.length > 0) {
-      const eventsSnapshot = await window.firebaseDatabase.ref("Track/events").once("value");
-    eventsSnapshot.forEach(child => {
-      if (eventIds.includes(child.key)) {
-        eventsMap[child.key] = { id: child.key, ...child.val() };
+
+    async function waitForFirebase() {
+      let attempts = 0;
+      while (typeof window.firebaseDatabase === 'undefined' && attempts < 50) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        attempts++;
       }
-    });
-  }
+    }
 
-  // Attach athlete and event data to results
-  results.forEach(r => {
-    r.athlete = athletesMap[r.athlete_id] || {};
-    r.event = eventsMap[r.event_id] || {};
-  });
+    // ==========================================
+    // UI LOGIC (TABS & BUTTONS)
+    // ==========================================
 
-  // Sort by placing
-  results.sort((a, b) => {
-    const placeA = a.placing || a.placement || 999;
-    const placeB = b.placing || b.placement || 999;
-    return placeA - placeB;
-  });
+    function setupGenderTabs() {
+      const btnMens = document.getElementById('tab-mens');
+      const btnWomens = document.getElementById('tab-womens');
 
-  // Group by event
-  const groups = {};
-  results.forEach(r => {
-    const eventName = r.event?.name || 'Unknown Event';
-    if (!groups[eventName]) groups[eventName] = [];
-    groups[eventName].push(r);
-  });
+      const resetTabs = () => {
+        [btnMens, btnWomens].forEach(b => b.classList.remove('active'));
+      };
 
-  // Calculate team scores
-  const teamScores = calculateTeamScoresTrack(results);
+      btnMens.addEventListener('click', () => {
+        resetTabs();
+        btnMens.classList.add('active');
+        activeGender = 'M';
+        updateEventButtons();
+      });
 
-  const container = document.getElementById("event-results");
-  container.innerHTML = Object.entries(groups)
-    .map(([eventName, rows], idx) => `
-      <div class="event-block">
-        <h3>${eventName}</h3>
-        <div id="meet-grid-${idx}" style="height: 300px; width: 100%;"></div>
-      </div>
-    `).join("");
+      btnWomens.addEventListener('click', () => {
+        resetTabs();
+        btnWomens.classList.add('active');
+        activeGender = 'W';
+        updateEventButtons();
+      });
+    }
 
-  // Display team results
-  if (teamScores && teamScores.length > 0) {
-    container.innerHTML += renderTeamResultsTrack(teamScores);
-  }
+    function updateEventButtons() {
+      const container = document.getElementById('event-button-wrap');
+      container.innerHTML = '';
+      document.getElementById('results-box').innerHTML = '';
 
-  // Initialize grids for each event
-  Object.entries(groups).forEach(([eventName, rows], idx) => {
-    setTimeout(() => {
-      const gridId = `meet-grid-${idx}`;
-      const gridElement = document.getElementById(gridId);
-      if (!gridElement) return;
+      const relevantResults = allResults.filter(r => 
+        (r.gender || '').toUpperCase() === activeGender
+      );
 
-      const headers = ['Place', 'Athlete', 'School', 'Mark'];
-      const rowData = rows.map(r => [
-        r.placing || r.placement || '',
-        `${r.athlete.first_name || ''} ${r.athlete.last_name || ''}`.trim(),
-        r.athlete.school || '',
-        r.mark || '',
-        r.athlete.id || ''
-      ]);
+      if (relevantResults.length === 0) {
+        container.innerHTML = '<div style="color:#ccc; grid-column: 1/-1; text-align:center;">No events for this category.</div>';
+        return;
+      }
 
-      const columnDefs = [
-        { data: 0, title: 'Place', type: 'text', readOnly: true, width: 80 },
-        {
-          data: 1,
-          title: 'Athlete',
-          type: 'text',
-          readOnly: true,
-          renderer: function(instance, td, row, col, prop, value, cellProperties) {
-            Handsontable.renderers.TextRenderer.apply(this, arguments);
-            const athleteId = instance.getDataAtRow(row)[4];
-            if (athleteId) {
-              td.innerHTML = `<a href="athlete.html?id=${athleteId}" style="color: #0056b3; text-decoration: none;">${value || ''}</a>`;
+      const events = [...new Set(relevantResults.map(r => r.event_name))].sort();
+
+      events.forEach((eventName, index) => {
+        const btn = document.createElement('button');
+        btn.className = 'race-button secondary';
+        btn.textContent = eventName;
+
+        btn.onclick = () => {
+          Array.from(container.children).forEach(c => {
+            c.classList.remove('primary');
+            c.classList.add('secondary');
+          });
+          btn.classList.remove('secondary');
+          btn.classList.add('primary');
+
+          activeEvent = eventName;
+          renderResultsForEvent();
+        };
+
+        container.appendChild(btn);
+
+        if (index === 0) btn.click();
+      });
+    }
+
+    function renderResultsForEvent() {
+      const filteredResults = allResults.filter(r =>
+        (r.gender || '').toUpperCase() === activeGender &&
+        r.event_name === activeEvent
+      );
+
+      filteredResults.sort((a, b) => {
+        const placeA = parseInt(a.placement) || 999;
+        const placeB = parseInt(b.placement) || 999;
+        if (placeA !== placeB) return placeA - placeB;
+        return 0;
+      });
+
+      const teamScores = calculateTeamScores(filteredResults);
+
+      renderResultsTable(filteredResults);
+      if (teamScores.length > 0) {
+        renderTeamResults(teamScores);
+      }
+    }
+
+    function calculateTeamScores(results) {
+      const teamMap = {};
+
+      results.forEach(result => {
+        const school = result.athlete_school || 'Unknown';
+        if (!teamMap[school]) teamMap[school] = [];
+        teamMap[school].push(result);
+      });
+
+      const scores = [];
+
+      Object.entries(teamMap).forEach(([school, athletes]) => {
+        const pointsTable = [0, 10, 8, 6, 4, 2, 1];
+        let teamScore = 0;
+
+        athletes.forEach(result => {
+          const place = parseInt(result.placement);
+          if (place >= 1 && place <= 6) {
+            teamScore += pointsTable[place];
+          }
+        });
+
+        scores.push({
+          school,
+          score: teamScore,
+          athletes: athletes.length
+        });
+      });
+
+      return scores.sort((a, b) => b.score - a.score);
+    }
+
+    function renderResultsTable(results) {
+      const resultsBox = document.getElementById('results-box');
+
+      if (!results || results.length === 0) {
+        resultsBox.innerHTML = '<p>No results found.</p>';
+        return;
+      }
+
+      const tableHTML = `
+        <div class="results-table-container">
+          <table class="results-table">
+            <thead>
+              <tr>
+                <th>Place</th>
+                <th>Athlete</th>
+                <th>School</th>
+                <th>Mark</th>
+                <th>Heat</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${results.map(result => `
+                <tr>
+                  <td data-label="Place" style="font-weight: 700;">${result.placement || '—'}</td>
+                  <td data-label="Athlete" style="font-weight: 600;">
+                    <a href="athlete.html?id=${result.athlete_id}">${result.athlete_name}</a>
+                  </td>
+                  <td data-label="School">${result.athlete_school}</td>
+                  <td data-label="Mark" style="font-weight: 600;">${formatMark(result.mark)}</td>
+                  <td data-label="Heat">${result.heat || '—'}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+
+      resultsBox.innerHTML = tableHTML;
+    }
+
+    function renderTeamResults(teamScores) {
+      const resultsBox = document.getElementById('results-box');
+
+      const teamHTML = `
+        <div class="results-table-container">
+          <h3>🏆 Team Scores</h3>
+          <table class="results-table">
+            <thead>
+              <tr>
+                <th>Place</th>
+                <th>School</th>
+                <th>Team Score</th>
+                <th>Athletes</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${teamScores.map((team, index) => `
+                <tr>
+                  <td data-label="Place" style="font-weight: 700;">${index + 1}</td>
+                  <td data-label="School" style="font-weight: 600;">${team.school}</td>
+                  <td data-label="Team Score" style="font-weight: 700; color: #0056b3; font-size: 1.1rem;">${team.score}</td>
+                  <td data-label="Athletes">${team.athletes}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+
+      resultsBox.innerHTML = teamHTML + resultsBox.innerHTML;
+    }
+
+    // ==========================================
+    // WEATHER WIDGET FUNCTIONS
+    // ==========================================
+
+    const schoolCoordinatesMap = {
+      'grafton high school': { lat: 39.34, lon: -80.03 },
+      'parkersburg high school': { lat: 39.27, lon: -81.56 },
+      'morgantown high school': { lat: 39.64, lon: -79.96 },
+      'bridgeport high school': { lat: 39.29, lon: -80.26 },
+      'buckhannon sampson high school': { lat: 38.99, lon: -80.23 },
+      'cabell midland high school': { lat: 38.54, lon: -82.45 },
+      'huntington high school': { lat: 38.42, lon: -82.45 },
+      'hurricane high school': { lat: 38.49, lon: -82.48 },
+      'martinsburg high school': { lat: 39.47, lon: -77.97 },
+      'university high school': { lat: 39.64, lon: -79.96 }
+    };
+
+    function getCoordinatesForLocation(location) {
+      if (!location) return null;
+      const normalized = location.toLowerCase().trim();
+      return schoolCoordinatesMap[normalized] || null;
+    }
+
+    async function loadWeatherForMeet(location, meetDate) {
+      try {
+        const weatherWidget = document.getElementById('weather-widget');
+        const coordinates = getCoordinatesForLocation(location);
+        
+        if (!coordinates) return;
+
+        const meetDateObj = new Date(meetDate);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        const weatherDate = meetDateObj <= today ? 'today' : meetDate;
+
+        const weather = await fetchWeatherData(coordinates.lat, coordinates.lon, weatherDate);
+        
+        if (weather) {
+          weatherWidget.style.display = 'block';
+          renderWeatherWidget(weather, location, weather.isTodayWeather);
+        }
+      } catch (err) {
+        console.error('Weather error:', err);
+      }
+    }
+
+    async function fetchWeatherData(lat, lon, dateOrType) {
+      try {
+        const response = await fetch(
+          `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,temperature_2m_min,weather_code,precipitation_sum,wind_speed_10m_max&temperature_unit=fahrenheit&timezone=auto`
+        );
+        const data = await response.json();
+        
+        if (data.daily) {
+          const dailyData = data.daily;
+          let weatherIndex = 0;
+          let isTodayWeather = true;
+          
+          if (dateOrType !== 'today') {
+            const foundIndex = dailyData.time.indexOf(dateOrType);
+            if (foundIndex !== -1) {
+              weatherIndex = foundIndex;
+              isTodayWeather = false;
             }
           }
-        },
-        { data: 2, title: 'School', type: 'text', readOnly: true },
-        { data: 3, title: 'Mark', type: 'text', readOnly: true, width: 120 }
-      ];
-
-      new Handsontable(gridElement, {
-        data: rowData,
-        colHeaders: headers,
-        columns: columnDefs,
-        rowHeaders: true,
-        licenseKey: 'non-commercial-and-evaluation',
-        height: 'auto',
-        maxHeight: '300px',
-        stretchH: 'all',
-        columnSorting: true,
-        filters: true,
-        dropdownMenu: true,
-        contextMenu: true,
-        manualColumnResize: true
-      });
-    }, idx * 50);
-  });
-  } catch (error) {
-    console.error('Error loading meet:', error);
-    document.getElementById("meet-title").textContent = "Error Loading Meet";
-    document.getElementById("event-results").innerHTML = '<p style="color: #dc3545;">⚠️ Error loading meet data. Please check your connection and try again.</p>';
-  }
-}
-
-// ==========================================
-// WEATHER WIDGET FUNCTIONS
-// ==========================================
-
-/**
- * Map school names to their geographic coordinates for weather lookup
- */
-const schoolCoordinatesMap = {
-  'grafton high school': { lat: 39.34, lon: -80.03 },
-  'parkersburg high school': { lat: 39.27, lon: -81.56 },
-  'parkersburg south high school': { lat: 39.27, lon: -81.56 },
-  'track & field complex at milan park': { lat: 39.64, lon: -79.96 },
-  'bridgeport high school': { lat: 39.29, lon: -80.26 },
-  'buckhannon sampson high school': { lat: 38.99, lon: -80.23 },
-  'cabell midland high school': { lat: 38.54, lon: -82.45 },
-  'capital high school': { lat: 38.35, lon: -81.64 },
-  'george washington high school': { lat: 38.35, lon: -81.64 },
-  'hedgesville high school': { lat: 39.18, lon: -78.05 },
-  'huntington high school': { lat: 38.42, lon: -82.45 },
-  'hurricane high school': { lat: 38.49, lon: -82.48 },
-  'jefferson high school': { lat: 39.33, lon: -77.74 },
-  'martinsburg high school': { lat: 39.47, lon: -77.97 },
-  'musselman high school': { lat: 39.48, lon: -78.03 },
-  'oak hill high school': { lat: 38.41, lon: -81.60 },
-  'preston high school': { lat: 39.34, lon: -80.03 },
-  'riverside high school': { lat: 38.46, lon: -81.75 },
-  'spring mills high school': { lat: 39.47, lon: -77.97 },
-  'spring valley high school': { lat: 38.42, lon: -82.45 },
-  'st albans high school': { lat: 38.54, lon: -81.83 },
-  'university high school': { lat: 39.64, lon: -79.96 },
-  'washington high school': { lat: 38.35, lon: -81.64 },
-  'wheeling park high school': { lat: 40.07, lon: -80.71 },
-  'woodrow wilson high school': { lat: 37.78, lon: -81.19 },
-  'tyler consolidated track complex': { lat: 39.27, lon: -81.56 },
-  'laidley lield': {lat: 38.34 , lon: -81.6326},
-  'williamstown high school': {lat: 39.40, lon: -81.45},
-  'john marshall high school': {lat: 39.94, lon: -80.75},
-  'doddridge county high school': {lat: 39.27, lon: -81.56},
-  'clay-battelle high school': {lat: 39.72, lon: -80.22},
-  'sissonville high school': {lat: 38.47, lon: -81.67},
-  'north marion high school': {lat: 38.34, lon: -81.6326},
-};
-
-/**
- * Get coordinates for a location (school or city)
- */
-function getCoordinatesForLocation(location) {
-  if (!location) return null;
-  
-  const normalized = location.toLowerCase().trim();
-  
-  // Check if it's a school name
-  if (schoolCoordinatesMap[normalized]) {
-    console.log('✅ Found coordinates in map for:', location);
-    return schoolCoordinatesMap[normalized];
-  }
-  
-  return null;
-}
-
-/**
- * Get weather for the meet location
- * Uses Open-Meteo API (free, no API key required)
- */
-async function loadWeatherForMeet(location, meetDate) {
-  try {
-    const weatherWidget = document.getElementById('weather-widget');
-    console.log('🌤️ Weather loading for:', location, meetDate);
-    
-    // Get coordinates for the location
-    const coordinates = getCoordinatesForLocation(location);
-    
-    if (!coordinates) {
-      console.log('Could not find coordinates for location:', location);
-      return;
-    }
-
-    console.log('📍 Found coordinates:', coordinates);
-
-    // Determine which date to show weather for
-    const meetDateObj = new Date(meetDate);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    // If meet is today or in the past, show today's weather
-    // If meet is in the future, show the meet day's forecast
-    const weatherDate = meetDateObj <= today ? 'today' : meetDate;
-    console.log('Weather date:', weatherDate, '(Meet date:', meetDate, ', Today:', today.toISOString().split('T')[0], ')');
-
-    // Fetch weather data
-    const weather = await fetchWeatherData(coordinates.lat, coordinates.lon, weatherDate);
-    
-    if (weather) {
-      console.log('✅ Weather data received:', weather);
-      weatherWidget.style.display = 'block';
-      renderWeatherWidget(weather, location, weather.isTodayWeather);
-      
-      // Update weather every 10 minutes
-      setInterval(() => {
-        fetchWeatherData(coordinates.lat, coordinates.lon, weatherDate).then(w => {
-          if (w) renderWeatherWidget(w, location, w.isTodayWeather);
-        });
-      }, 600000); // 10 minutes
-    } else {
-      console.log('❌ No weather data received');
-    }
-  } catch (err) {
-    console.error('Error loading weather:', err);
-  }
-}
-
-/**
- * Fetch weather data from Open-Meteo API
- */
-async function fetchWeatherData(lat, lon, dateOrType) {
-  try {
-    console.log('📡 Fetching weather for:', dateOrType);
-    
-    const response = await fetch(
-      `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,temperature_2m_min,weather_code,precipitation_sum,wind_speed_10m_max&temperature_unit=fahrenheit&timezone=auto`
-    );
-    const data = await response.json();
-    
-    if (data.daily) {
-      const dailyData = data.daily;
-      console.log('Available dates:', dailyData.time.slice(0, 5));
-      
-      let weatherIndex = -1;
-      let isTodayWeather = false;
-      
-      if (dateOrType === 'today') {
-        // Use today's weather (first index)
-        weatherIndex = 0;
-        isTodayWeather = true;
-        console.log('✅ Using today\'s weather at index 0');
-      } else {
-        // Look for the specific meet date
-        weatherIndex = dailyData.time.indexOf(dateOrType);
-        if (weatherIndex !== -1) {
-          console.log('✅ Found meet date at index:', weatherIndex);
-        } else {
-          // If exact date not found, use today's weather
-          console.log('⚠️ Meet date not found, using today\'s forecast');
-          weatherIndex = 0;
-          isTodayWeather = true;
+          
+          return {
+            date: dateOrType === 'today' ? dailyData.time[0] : dateOrType,
+            maxTemp: dailyData.temperature_2m_max[weatherIndex],
+            minTemp: dailyData.temperature_2m_min[weatherIndex],
+            weatherCode: dailyData.weather_code[weatherIndex],
+            precipitation: dailyData.precipitation_sum[weatherIndex],
+            windSpeed: dailyData.wind_speed_10m_max[weatherIndex],
+            isTodayWeather: isTodayWeather
+          };
         }
+        return null;
+      } catch (err) {
+        console.error('Weather fetch error:', err);
+        return null;
       }
-      
-      return {
-        date: dateOrType === 'today' ? dailyData.time[0] : dateOrType,
-        maxTemp: dailyData.temperature_2m_max[weatherIndex],
-        minTemp: dailyData.temperature_2m_min[weatherIndex],
-        weatherCode: dailyData.weather_code[weatherIndex],
-        precipitation: dailyData.precipitation_sum[weatherIndex],
-        windSpeed: dailyData.wind_speed_10m_max[weatherIndex],
-        timezone: data.timezone,
-        isTodayWeather: isTodayWeather
-      };
     }
-    console.log('❌ No daily data received');
-    return null;
-  } catch (err) {
-    console.error('Weather fetch error:', err);
-    return null;
-  }
-}
 
-/**
- * Get weather icon and description from weather code
- */
-function getWeatherDetails(code) {
-  const weatherMap = {
-    0: { icon: '☀️', description: 'Clear' },
-    1: { icon: '🌤️', description: 'Mostly Clear' },
-    2: { icon: '⛅', description: 'Partly Cloudy' },
-    3: { icon: '☁️', description: 'Overcast' },
-    45: { icon: '🌫️', description: 'Foggy' },
-    48: { icon: '🌫️', description: 'Foggy' },
-    51: { icon: '🌦️', description: 'Light Drizzle' },
-    53: { icon: '🌧️', description: 'Drizzle' },
-    55: { icon: '🌧️', description: 'Heavy Drizzle' },
-    61: { icon: '🌧️', description: 'Light Rain' },
-    63: { icon: '🌧️', description: 'Rain' },
-    65: { icon: '⛈️', description: 'Heavy Rain' },
-    71: { icon: '❄️', description: 'Light Snow' },
-    73: { icon: '❄️', description: 'Snow' },
-    75: { icon: '❄️', description: 'Heavy Snow' },
-    77: { icon: '❄️', description: 'Snow' },
-    80: { icon: '🌧️', description: 'Light Showers' },
-    81: { icon: '⛈️', description: 'Showers' },
-    82: { icon: '⛈️', description: 'Heavy Showers' },
-    85: { icon: '🌨️', description: 'Snow Showers' },
-    86: { icon: '🌨️', description: 'Heavy Snow Showers' },
-    95: { icon: '⛈️', description: 'Thunderstorm' },
-    96: { icon: '⛈️', description: 'Hail Thunderstorm' },
-    99: { icon: '⛈️', description: 'Hail Thunderstorm' }
-  };
-  
-  return weatherMap[code] || { icon: '❓', description: 'Unknown' };
-}
+    function getWeatherDetails(code) {
+      const weatherMap = {
+        0: { icon: '☀️', description: 'Clear' },
+        1: { icon: '🌤️', description: 'Mostly Clear' },
+        2: { icon: '⛅', description: 'Partly Cloudy' },
+        3: { icon: '☁️', description: 'Overcast' },
+        45: { icon: '🌫️', description: 'Foggy' },
+        51: { icon: '🌦️', description: 'Drizzle' },
+        61: { icon: '🌧️', description: 'Rain' },
+        80: { icon: '🌧️', description: 'Showers' },
+        95: { icon: '⛈️', description: 'Thunderstorm' }
+      };
+      
+      return weatherMap[code] || { icon: '❓', description: 'Unknown' };
+    }
 
-/**
- * Render the weather widget
- */
-function renderWeatherWidget(weather, location, isTodayWeather) {
-  const widget = document.getElementById('weather-widget');
-  const { icon, description } = getWeatherDetails(weather.weatherCode);
-  
-  const maxTemp = Math.round(weather.maxTemp);
-  const minTemp = Math.round(weather.minTemp);
-  const windSpeed = Math.round(weather.windSpeed);
-  const precipitation = Math.round(weather.precipitation * 100) / 100;
-  
-  const weatherLabel = isTodayWeather ? '📍 Current Weather' : '⛅ Meet Day Forecast';
-  
-  widget.innerHTML = `
-    <div class="weather-content">
-      <div class="weather-icon">${icon}</div>
-      <div class="weather-info">
-        <div class="weather-label">${weatherLabel}</div>
-        <div class="weather-location">🌍 ${location}</div>
-        <div class="weather-conditions">${description}</div>
-        <div class="weather-temps">
-          <span class="temp-high">${maxTemp}°F</span>
-          <span class="temp-divider">/</span>
-          <span class="temp-low">${minTemp}°F</span>
+    function renderWeatherWidget(weather, location, isTodayWeather) {
+      const widget = document.getElementById('weather-widget');
+      const { icon, description } = getWeatherDetails(weather.weatherCode);
+      
+      const maxTemp = Math.round(weather.maxTemp);
+      const minTemp = Math.round(weather.minTemp);
+      const windSpeed = Math.round(weather.windSpeed);
+      const precipitation = Math.round(weather.precipitation * 100) / 100;
+      
+      const weatherLabel = isTodayWeather ? '📍 Current Weather' : '⛅ Meet Day Forecast';
+      
+      widget.innerHTML = `
+        <div class="weather-content">
+          <div class="weather-icon">${icon}</div>
+          <div class="weather-info">
+            <div class="weather-label">${weatherLabel}</div>
+            <div class="weather-location">🌍 ${location}</div>
+            <div class="weather-conditions">${description}</div>
+            <div class="weather-temps">
+              <span class="temp-high">${maxTemp}°F</span>
+              <span class="temp-divider">/</span>
+              <span class="temp-low">${minTemp}°F</span>
+            </div>
+            <div class="weather-details">
+              <span class="detail-item">💨 ${windSpeed} mph</span>
+              <span class="detail-item">💧 ${precipitation}"</span>
+            </div>
+            <div class="weather-timestamp">Updated: ${new Date().toLocaleTimeString()}</div>
+          </div>
         </div>
-        <div class="weather-details">
-          <span class="detail-item">💨 ${windSpeed} mph</span>
-          <span class="detail-item">💧 ${precipitation}"</span>
-        </div>
-        <div class="weather-timestamp">Updated: ${new Date().toLocaleTimeString()}</div>
-      </div>
-    </div>
-  `;
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-  setTimeout(loadMeet, 100);
-});
-
-// ==========================================
-// TEAM SCORING FUNCTIONS FOR TRACK
-// ==========================================
-
-/**
- * Calculate team scores from individual results (standard track scoring)
- * Dual meet (2 teams): 5-3-1 for 1st/2nd/3rd per event. Invitational (3+): 10-8-6-4-2-1 for places 1-6.
- * Points summed across all events; higher total wins.
- */
-function calculateTeamScoresTrack(results) {
-  const teamMap = {};
-  results.forEach(result => {
-    const school = result.athlete?.school || 'Unknown';
-    if (!teamMap[school]) teamMap[school] = [];
-    teamMap[school].push(result);
-  });
-
-  const numTeams = Object.keys(teamMap).length;
-  const isDual = numTeams <= 2;
-  // Dual (2 teams): 1st=5, 2nd=3, 3rd=1. Invitational (3+): 1st=10, 2nd=8, 3rd=6, 4th=4, 5th=2, 6th=1
-  const pointsTable = isDual ? [0, 5, 3, 1] : [0, 10, 8, 6, 4, 2, 1];
-
-  const scores = [];
-  Object.entries(teamMap).forEach(([school, athleteResults]) => {
-    let teamScore = 0;
-    athleteResults.forEach(result => {
-      const place = parseInt(result.placing || result.placement, 10);
-      if (place >= 1 && place <= pointsTable.length - 1) {
-        teamScore += pointsTable[place];
-      }
-    });
-    scores.push({
-      school,
-      score: teamScore,
-      athletes: athleteResults,
-      athleteCount: athleteResults.length
-    });
-  });
-
-  return scores.sort((a, b) => b.score - a.score);
-}
-
-/**
- * Render team results for track
- */
-function renderTeamResultsTrack(teamScores) {
-  if (!teamScores || teamScores.length === 0) {
-    return '';
-  }
-
-  return `
-    <div class="event-block" style="margin-top: 40px;">
-      <h3>🏆 Team Results</h3>
-      <div style="background: white; border-radius: 8px; padding: 20px; overflow-x: auto;">
-        <table style="width: 100%; border-collapse: collapse;">
-          <thead>
-            <tr style="background-color: #002855; color: white;">
-              <th style="padding: 12px; text-align: left; font-weight: 700;">Team Placement</th>
-              <th style="padding: 12px; text-align: left; font-weight: 700;">School</th>
-              <th style="padding: 12px; text-align: left; font-weight: 700;">Team Score</th>
-              <th style="padding: 12px; text-align: left; font-weight: 700;">Athletes</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${teamScores.map((team, index) => `
-              <tr style="border-bottom: 1px solid #ddd;">
-                <td style="padding: 12px; font-weight: 700;">${index + 1}</td>
-                <td style="padding: 12px; font-weight: 600;">${team.school}</td>
-                <td style="padding: 12px; font-weight: 700; color: #0056b3;">${team.score}</td>
-                <td style="padding: 12px;">${team.athleteCount}</td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  `;
-}
-</script>
-
+      `;
+    }
+  </script>
 </body>
 </html>
