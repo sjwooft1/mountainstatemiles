@@ -128,6 +128,32 @@ const selectGender = document.getElementById('select-gender');
 const btnLoad = document.getElementById('btn-load');
 const rankingsContainer = document.getElementById('rankings-container');
 
+// Field events that use feet/inches notation
+const FIELD_EVENTS = ['long jump', 'high jump', 'triple jump', 'pole vault', 'shot put', 'discus', 'javelin', 'hammer'];
+
+function isFieldEvent(eventName) {
+  if (!eventName) return false;
+  const normalized = eventName.toLowerCase();
+  return FIELD_EVENTS.some(fe => normalized.includes(fe));
+}
+
+function formatMarkForDisplay(mark, eventName) {
+  if (!mark) return '';
+  
+  // If it's a field event with feet/inches notation, convert to display format
+  if (isFieldEvent(eventName)) {
+    // Match patterns like: 20' 7.5" or 20ft 7.5in or 20-7.5
+    const match = mark.toString().match(/(\d+)[^\d]*(\d+(?:\.\d+)?)/);
+    if (match) {
+      const feet = match[1];
+      const inches = match[2];
+      return `${feet}ft ${inches}in`;
+    }
+  }
+  
+  return mark;
+}
+
 async function initEvents() {
   try {
     await waitForFirebase();
@@ -253,7 +279,7 @@ async function loadRankings() {
   const headers = ['Rank', 'Mark', 'Athlete', 'School', 'Meet'];
   const rowData = filteredResults.map((r, idx) => [
     idx + 1,
-    r.mark || '',
+    formatMarkForDisplay(r.mark, r.event?.name),
     `${r.athlete.first_name || ''} ${r.athlete.last_name || ''}`.trim() || 'Unknown',
     r.athlete.school || '',
     r.meet?.name || '',

@@ -489,7 +489,6 @@
     let parsedData = null;
     let selectedMeetId = null;
     
-    // Column name mappings: Athletic.net and common names -> our schema
     const COLUMN_MAP = {
       athlete_name: ['athlete', 'athlete name', 'name', 'runner', 'competitor', 'firstname1', 'lastname1', 'first name', 'last name'],
       school: ['team', 'school', 'team name', 'school name', 'affiliation'],
@@ -501,6 +500,40 @@
       grade: ['grade', 'grade1', 'year', 'yr']
     };
     
+    // Field events that use feet/inches notation
+    const FIELD_EVENTS = ['long jump', 'high jump', 'triple jump', 'pole vault', 'shot put', 'discus', 'javelin', 'hammer'];
+    
+    function isFieldEvent(eventName) {
+      if (!eventName) return false;
+      const normalized = eventName.toLowerCase();
+      return FIELD_EVENTS.some(fe => normalized.includes(fe));
+    }
+    
+    function formatFieldEventMark(mark, eventName) {
+      if (!mark || !isFieldEvent(eventName)) return mark;
+
+      // Normalize fancy quotes to straight quotes
+      mark = mark
+        .replace(/[']/g, "'")
+        .replace(/[""]/g, '"')
+        .trim();
+
+      // Match patterns like:
+      // 50' 0"
+      // 50 0
+      // 50-0
+      // 50'0
+      // 50ft 0in
+      const match = mark.match(/(\d+)[^\d]*(\d+(?:\.\d+)?)/);
+
+      if (!match) return mark; // fallback if not matched
+
+      const feet = match[1];
+      const inches = match[2];
+
+      return `${feet}ft ${inches}in`;
+    }
+    
     function normalizeHeader(h) {
       return (h || '').toString().trim().toLowerCase().replace(/\s+/g, ' ').replace(/[^\w\s]/g, '');
     }
@@ -509,8 +542,8 @@
 
   // Normalize fancy quotes to straight quotes
   mark = mark
-    .replace(/[’]/g, "'")
-    .replace(/[“”]/g, '"')
+    .replace(/[']/g, "'")
+    .replace(/[""]/g, '"')
     .trim();
 
   // Match patterns like:
@@ -685,7 +718,7 @@
           athlete_name: athleteName.replace(/\s+/g, ' ').trim(),
           school: get('school') || '',
           gender: get('gender') || '',
-          mark: get('mark') || '',
+          mark: formatFieldEventMark(get('mark') || '', get('event') || ''),
           event: get('event') || '',
           placement: placement || '',
           heat: get('heat') || '',
