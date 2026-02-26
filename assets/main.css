@@ -267,6 +267,7 @@ a:hover {
   text-decoration: none;
   letter-spacing: -0.02em;
   border: none;
+  padding-right: 15px;
 }
 
 .navbar-brand:hover {
@@ -378,10 +379,11 @@ main {
 .section-title {
   font-size: 2.5rem;
   font-weight: 800;
-  margin: 0 0 40px;
+  margin: 20px 0 30px;
   color: var(--text-primary);
   position: relative;
   text-align: center;
+
 }
 
 /* ============================================

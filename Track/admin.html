@@ -760,7 +760,7 @@
       <div class="nav-section" id="main-nav">
         <button class="nav-btn active" data-section="dashboard">📊 Dashboard</button>
         <button class="nav-btn" data-section="meets">🏃 Meets</button>
-        <button class="nav-btn" data-section="events">⚡ Events</button>
+        <button class="nav-btn" data-section="events">Events</button>
         <button class="nav-btn" data-section="athletes">👤 Athletes</button>
         <button class="nav-btn" data-section="results">🏆 Results</button>
         <button class="nav-btn" data-section="teams">🏫 Teams</button>
@@ -955,7 +955,7 @@
         <h3 style="margin: 0 0 16px 0;">Quick Links</h3>
         <div style="display: flex; gap: 12px; flex-wrap: wrap;">
           <button class="btn btn-primary" onclick="loadSection('meets')">📊 Manage Meets</button>
-          <button class="btn btn-primary" onclick="loadSection('events')">⚡ Manage Events</button>
+          <button class="btn btn-primary" onclick="loadSection('events')">Manage Events</button>
           <button class="btn btn-primary" onclick="loadSection('athletes')">👤 Manage Athletes</button>
           <button class="btn btn-primary" onclick="loadSection('results')">🏆 Manage Results</button>
         </div>
@@ -1457,27 +1457,24 @@
     
     // Validate required fields for results
     if (currentSection === 'results') {
-      if (!formData.athlete_id || formData.athlete_id.trim() === '') {
-        alert('❌ Error: Please select an Athlete');
-        return;
-      }
-      if (!formData.event_id || formData.event_id.trim() === '') {
-        alert('❌ Error: Please select an Event');
-        return;
-      }
-      if (!formData.meet_id || formData.meet_id.trim() === '') {
-        alert('❌ Error: Please select a Meet');
-        return;
-      }
-      if (!formData.mark || formData.mark.trim() === '') {
-        alert('❌ Error: Please enter a Mark/Time');
-        return;
+      const requiredFields = {
+        athlete_id: 'Athlete',
+        event_id: 'Event',
+        meet_id: 'Meet',
+        mark: 'Mark/Time'
+      };
+      
+      for (const [field, label] of Object.entries(requiredFields)) {
+        if (!formData[field] || String(formData[field]).trim() === '') {
+          alert(`❌ Error: Please select/enter ${label}`);
+          return;
+        }
       }
     }
     
-    // Remove empty values to avoid Firebase key errors
+    // Remove empty/null values to avoid Firebase key errors
     Object.keys(formData).forEach(key => {
-      if (formData[key] === '' || formData[key] === null) {
+      if (formData[key] === '' || formData[key] === null || formData[key] === undefined) {
         delete formData[key];
       }
     });
@@ -1491,6 +1488,7 @@
       closeModal();
       await loadSection(currentSection);
     } catch (error) {
+      console.error('Form submission error:', error);
       alert('Error: ' + error.message);
     }
   }
@@ -2086,7 +2084,7 @@
 
         <!-- ADVANCED PERFORMANCE FILTERS -->
         <div style="padding: 16px; background: var(--card); border-radius: 8px; grid-column: 1 / -1;">
-          <h4 style="margin: 0 0 12px 0; color: var(--accent); font-size: 0.9rem; text-transform: uppercase;">⚡ Advanced Performance Filters</h4>
+          <h4 style="margin: 0 0 12px 0; color: var(--accent); font-size: 0.9rem; text-transform: uppercase;">Advanced Performance Filters</h4>
           <p style="margin: 0 0 12px 0; color: var(--muted); font-size: 0.85rem;">Filter by time/distance thresholds and placement ranges</p>
           
           <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
@@ -2154,7 +2152,7 @@
       </div>
     `;
     
-    openModal('⚡ Super Advanced Filters', filterHTML, 'Apply Filters');
+    openModal('Super Advanced Filters', filterHTML, 'Apply Filters');
   }
   
   function setFilterPreset(preset) {

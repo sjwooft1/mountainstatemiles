@@ -398,7 +398,7 @@ async function render() {
       const headers = ['Mark', 'Athlete', 'School', 'Placing'];
       const rowData = rows.map(r => [
         formatMark(r.mark),
-        `${r.athlete.first_name || ''} ${r.athlete.last_name || ''}`.trim(),
+        `${r.athlete.first_name || ''} ${r.athlete.last_name || ''}`.trim() || 'Unknown Athlete',
         r.athlete.school || '',
         r.placing || r.placement || '',
         r.athlete.id || ''
@@ -512,7 +512,7 @@ async function render() {
         const headers = ['Mark', 'Athlete', 'School', 'Meet'];
         const rowData = seasonRows.map(r => [
           formatMark(r.mark),
-          `${r.athlete.first_name || ''} ${r.athlete.last_name || ''}`.trim(),
+          `${r.athlete.first_name || ''} ${r.athlete.last_name || ''}`.trim() || 'Unknown Athlete',
           r.athlete.school || '',
           r.meet.name || '',
           r.athlete.id || '',

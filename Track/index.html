@@ -19,7 +19,7 @@
   <div class="hero-section">
     <div class="hero-content">
       <img src="/assets/1.png" alt="Mountain State Miles Logo" class="hero-logo" />
-      <h1 class="hero-title">⚡ Track & Field</h1>
+      <h1 class="hero-title">Track & Field</h1>
       <p class="hero-subtitle">Meet records, rankings, and results for West Virginia high school track and field.</p>
       
       
@@ -145,7 +145,7 @@
           return dateB.localeCompare(dateA);
         });
         
-        const recentMeets = meets.slice(0, 10);
+        const recentMeets = meets.slice(10);
         
         if (!recentMeets.length) {
           container.innerHTML = '<p>No recent track meets found.</p>';

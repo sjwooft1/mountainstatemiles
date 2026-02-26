@@ -23,15 +23,109 @@
     * { box-sizing: border-box; }
     
     :root {
-      --primary: #000000;
-      --secondary: #1a1a1a;
-      --accent: #000000;
-      --accent-dark: #1a1a1a;
-      --bg-light: #ffffff;
-      --text-primary: #000000;
-      --text-secondary: #666666;
-      --border: #e0e0e0;
-    }
+  /* Light Mode (Default) */
+  --primary: #000000;
+  --primary-light: #1a1a1a;
+  --primary-lighter: #333333;
+  --accent: #ffffff;
+  --accent-dark: #f5f5f5;
+  --border: #403e3e;
+  --border-light: #f0f0f0;
+  --text-primary: #000000;
+  --text-secondary: #252424;
+  --text-tertiary: #999999;
+  --bg-primary: #ffffff;
+  --bg-secondary: #f9f9f9;
+  --bg-dark: #000000;
+  --shadow-light: rgba(0, 0, 0, 0.08);
+  --shadow-medium: rgba(0, 0, 0, 0.1);
+  
+  /* Semantics */
+  --success: #10b981;
+  --danger: #ef4444;
+  --warning: #f59e0b;
+  
+  /* Typography */
+  --font-display: 'Aqeon Demo', sans-serif;
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  
+  /* Spacing Scale */
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  --spacing-2xl: 3rem;
+  --spacing-3xl: 4rem;
+  
+  /* Transitions */
+  --transition: 200ms ease-in-out;
+  
+  /* Border Radius */
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 6px;
+  --radius-xl: 8px;
+}
+
+/* Dark Mode */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --primary: #ffffff;
+    --primary-light: #f0f0f0;
+    --primary-lighter: #e0e0e0;
+    --accent: #1a1a1a;
+    --accent-dark: #2a2a2a;
+    --border: #404040;
+    --border-light: #303030;
+    --text-primary: #ffffff;
+    --text-secondary: #b0b0b0;
+    --text-tertiary: #808080;
+    --bg-primary: #1a1a1a;
+    --bg-secondary: #252525;
+    --bg-dark: #0a0a0a;
+    --shadow-light: rgba(0, 0, 0, 0.3);
+    --shadow-medium: rgba(0, 0, 0, 0.5);
+  }
+}
+
+/* Explicit Dark Mode Class */
+html[data-theme="dark"] {
+  --primary: #ffffff;
+  --primary-light: #f0f0f0;
+  --primary-lighter: #e0e0e0;
+  --accent: #1a1a1a;
+  --accent-dark: #2a2a2a;
+  --border: #404040;
+  --border-light: #303030;
+  --text-primary: #ffffff;
+  --text-secondary: #b0b0b0;
+  --text-tertiary: #808080;
+  --bg-primary: #1a1a1a;
+  --bg-secondary: #252525;
+  --bg-dark: #0a0a0a;
+  --shadow-light: rgba(0, 0, 0, 0.3);
+  --shadow-medium: rgba(0, 0, 0, 0.5);
+}
+
+/* Explicit Light Mode Class */
+html[data-theme="light"] {
+  --primary: #000000;
+  --primary-light: #1a1a1a;
+  --primary-lighter: #333333;
+  --accent: #ffffff;
+  --accent-dark: #f5f5f5;
+  --border: #e0e0e0;
+  --border-light: #f0f0f0;
+  --text-primary: #000000;
+  --text-secondary: #666666;
+  --text-tertiary: #999999;
+  --bg-primary: #ffffff;
+  --bg-secondary: #f9f9f9;
+  --bg-dark: #000000;
+  --shadow-light: rgba(0, 0, 0, 0.08);
+  --shadow-medium: rgba(0, 0, 0, 0.1);
+}
     
     html, body {
       margin: 0;
@@ -43,7 +137,7 @@
 
     /* Navbar styling matches your existing style.css */
     .navbar {
-      background: white;
+      background: var(--bg-secondary);
       box-shadow: 0 2px 8px rgba(0,0,0,0.05);
       padding: 15px 20px;
       display: flex;
@@ -58,13 +152,14 @@
     }
     .navbar-brand { font-weight: 800; font-size: 1.25rem; color: var(--primary); text-decoration: none; }
     .navbar-nav { display: flex; list-style: none; gap: 20px; padding: 0; }
-    .navbar-link { text-decoration: none; color: var(--text-secondary); font-weight: 600; }
-    .navbar-link.active { color: var(--accent); }
+    .navbar-link { text-decoration: none; color: rgb(121, 116, 116); font-weight: 600; }
+    .navbar-link.active { color: var(--primary); }
 
     main {
       max-width: 1200px;
       margin: 0 auto;
       padding: 40px 20px;
+      background: var(--accent);
     }
     
     .section-header {
@@ -108,7 +203,7 @@
     
     .view-btn.active {
       background: var(--primary);
-      color: white;
+      color: var(--accent-dark);
     }
 
     /* Calendar Styling */
@@ -125,10 +220,12 @@
       cursor: pointer;
       border: none;
       padding: 2px 4px;
+      color: var(--primary)
     }
     
     .fc-event-title {
       font-weight: 600;
+      color: var(--secondary)
     }
 
     /* List Grid Styling */
@@ -139,12 +236,12 @@
     }
     
     .meet-card {
-      background: var(--bg-light);
+      background: var(--accent);
       border-radius: 6px;
       padding: 24px;
       text-decoration: none;
-      color: inherit;
-      border: 1px solid var(--border);
+      color: var(--text-primary);
+      border: 1px solid var(--text-primary);
       transition: all 0.2s;
       display: flex;
       flex-direction: column;
@@ -154,7 +251,7 @@
     .meet-card:hover {
       transform: translateY(-4px);
       box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
-      border-color: var(--primary);
+      border-color: var(--);
     }
 
     .meet-card-title { 
@@ -397,15 +494,19 @@
     <nav class="navbar">
       <div class="navbar-content">
         <a href="index.html" class="navbar-brand">Track</a>
-        <ul class="navbar-nav">
-          <li><a href="index.html" class="navbar-link">Home</a></li>
+        <button class="mobile-menu-toggle" aria-label="Toggle menu">☰</button>
+        <ul class="navbar-nav" id="main-nav">
+          <li><a href="/home/index" class="navbar-link">Home</a></li>
+          <li><a href="index.html" class="navbar-link">Track</a></li>
           <li><a href="meets.html" class="navbar-link active">Meets</a></li>
           <li><a href="events.html" class="navbar-link">Events</a></li>
+          <li><a href="rankings.html" class="navbar-link">Rankings</a></li>
+          <li><a href="analytics.html" class="navbar-link">Analytics</a></li>
         </ul>
+        <button class="theme-toggle" aria-label="Switch theme">🌙</button>
       </div>
     </nav>
   </header>
-  
   <main>
     <div class="section-header">
       <h2 class="section-title">Track Meets</h2>
@@ -511,6 +612,7 @@
       </div>
   </footer>
   
+  <script src="/assets/theme-toggle.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
   <script src="firebase-config.js"></script>

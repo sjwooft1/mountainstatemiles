@@ -232,13 +232,6 @@ async function loadRankings() {
     rows = rows.filter(r => (r.event?.gender ?? '') === '' || true);
   }
 
-  } catch (error) {
-    console.error('Error loading rankings:', error);
-    rankingsContainer.innerHTML = '<p style="color: #dc3545;">⚠️ Error loading rankings. Please try again.</p>';
-    document.getElementById('rankings-grid').style.display = 'none';
-    return;
-  }
-
   if (!rows.length) { 
     rankingsContainer.innerHTML = '<p>No rankings found.</p>'; 
     document.getElementById('rankings-grid').style.display = 'none';
@@ -258,10 +251,10 @@ async function loadRankings() {
   }
 
   const headers = ['Rank', 'Mark', 'Athlete', 'School', 'Meet'];
-  const rowData = rows.map((r, idx) => [
+  const rowData = filteredResults.map((r, idx) => [
     idx + 1,
     r.mark || '',
-    `${r.athlete.first_name || ''} ${r.athlete.last_name || ''}`.trim(),
+    `${r.athlete.first_name || ''} ${r.athlete.last_name || ''}`.trim() || 'Unknown',
     r.athlete.school || '',
     r.meet?.name || '',
     r.athlete.id
@@ -304,6 +297,13 @@ async function loadRankings() {
       manualColumnResize: true
     });
   }, 100);
+
+  } catch (error) {
+    console.error('Error loading rankings:', error);
+    rankingsContainer.innerHTML = '<p style="color: #dc3545;">⚠️ Error loading rankings. Please try again.</p>';
+    document.getElementById('rankings-grid').style.display = 'none';
+    return;
+  }
 }
 
 document.addEventListener('DOMContentLoaded', () => {

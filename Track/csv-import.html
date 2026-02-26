@@ -504,6 +504,30 @@
     function normalizeHeader(h) {
       return (h || '').toString().trim().toLowerCase().replace(/\s+/g, ' ').replace(/[^\w\s]/g, '');
     }
+    function normalizeFieldEventMark(mark) {
+  if (!mark) return '';
+
+  // Normalize fancy quotes to straight quotes
+  mark = mark
+    .replace(/[’]/g, "'")
+    .replace(/[“”]/g, '"')
+    .trim();
+
+  // Match patterns like:
+  // 50' 0"
+  // 50 0
+  // 50-0
+  // 50'0
+  // 50ft 0in
+  const match = mark.match(/(\d+)[^\d]+(\d+)/);
+
+  if (!match) return mark; // fallback if not matched
+
+  const feet = match[1];
+  const inches = match[2];
+
+  return `${feet}' ${inches}"`;
+}
     
     function findMappedHeader(headers, field) {
       const normalizedHeaders = headers.map(normalizeHeader);
@@ -518,7 +542,7 @@
     /** Parse CSV/paste text with header row; auto-detect delimiter; map to athlete_name, school, gender, mark, event, placement, heat */
     function parseAndNormalizeResults(rawText) {
       const lines = rawText.trim().split(/\r?\n/).filter(l => l.trim());
-      if (lines.length < 2) return [];
+      if (lines.length < 1) return [];
       
       // Detect delimiter - try tab first, then comma
       const first = lines[0];
@@ -544,8 +568,7 @@
         return parts;
       };
       
-      // If no delimiter found, assume space-separated (like Athletic.net format)
-      // But we need to be smart about it - use regex to split on multiple spaces
+      // Parse rows intelligently
       const parseRowSmart = (line) => {
         if (hasDelim) {
           return parseRow(line);
@@ -557,19 +580,17 @@
       
       const firstRow = parseRowSmart(first);
       
-      // For Athletic.net results, the format is typically:
-      // Place | Name | Grade | Mark | School
-      // Check if this looks like Athletic.net data (first col is a number, second is a name)
-      const isAthletic = firstRow.length >= 5 && 
-                         /^\d+\.?$/.test(firstRow[0].replace('.', '')) &&
-                         isNaN(firstRow[1]);
+      // Check if this looks like Athletic.net data (numeric place, then name)
+      // Format: Place | Name | Grade | Mark | School
+      const looksLikeAthletic = firstRow.length >= 4 && 
+                                /^\d+\.?$/.test(firstRow[0].replace('.', '')) &&
+                                isNaN(firstRow[1]);
       
-      // Check if first row looks like headers
+      // Check if first row looks like headers (contains header keywords)
       const normalizedFirst = firstRow.map(h => normalizeHeader(h));
-      const isHeaderRow = !isAthletic && (
-        COLUMN_MAP.placement.some(h => normalizedFirst.includes(h)) ||
-        COLUMN_MAP.athlete_name.some(h => normalizedFirst.some(nf => nf.includes(h))) ||
-        firstRow.some(h => ['place', 'athlete', 'result', 'time', 'school', 'team', 'event', 'grade'].some(k => normalizeHeader(h).includes(k)))
+      const headerKeywords = ['place', 'athlete', 'result', 'time', 'school', 'team', 'event', 'grade', 'name', 'mark', 'distance'];
+      const isHeaderRow = headerKeywords.some(keyword => 
+        normalizedFirst.some(nf => nf.includes(keyword))
       );
       
       let idx = {
@@ -585,9 +606,9 @@
       
       let startRow = 0;
       
-      if (isAthletic) {
-        // Athletic.net format: Place | Name | Grade | Mark | School
-        console.log('✅ Detected Athletic.net format');
+      if (looksLikeAthletic && !isHeaderRow) {
+        // Athletic.net format without headers: Place | Name | Grade | Mark | School
+        console.log('✅ Detected Athletic.net format (headerless)');
         idx.placement = 0;
         idx.athlete_name = 1;
         idx.grade = 2;
@@ -596,6 +617,7 @@
         startRow = 0;
       } else if (isHeaderRow) {
         // Parse header row with named columns
+        console.log('✅ Detected header row format');
         idx.placement = findMappedHeader(firstRow, 'placement');
         idx.athlete_name = findMappedHeader(firstRow, 'athlete_name');
         idx.school = findMappedHeader(firstRow, 'school');
@@ -615,15 +637,24 @@
         }
         startRow = 1;
       } else {
-        // Try to auto-detect: assume Place | Name | Grade | Mark | School
-        if (firstRow.length >= 5) {
+        // No clear format detected - try Athletic.net pattern anyway as fallback
+        console.log('⚠️ No clear format detected - assuming Athletic.net (Place | Name | Grade | Mark | School)');
+        if (firstRow.length >= 4) {
           idx.placement = 0;
           idx.athlete_name = 1;
           idx.grade = 2;
           idx.mark = 3;
           idx.school = 4;
+          startRow = 0;
+        } else if (firstRow.length === 3) {
+          // Fallback for minimal data: Place | Name | Mark
+          idx.placement = 0;
+          idx.athlete_name = 1;
+          idx.mark = 2;
+          startRow = 0;
+        } else {
+          return [];
         }
-        startRow = 0;
       }
       
       const out = [];
@@ -1042,18 +1073,11 @@
                 meet_id: selectedMeetId,
                 event_id: eventId,
                 mark: row.mark || '',
-                placement: row.placement ? parseInt(row.placement) : null,
+                placement: row.placement || null,
                 heat: heatToUse || null,
                 gender: genderToUse,
                 timestamp: new Date().toISOString()
               };
-              
-              // Remove null/undefined/empty values to avoid Firebase errors
-              Object.keys(resultData).forEach(key => {
-                if (resultData[key] === null || resultData[key] === undefined || resultData[key] === '') {
-                  delete resultData[key];
-                }
-              });
               
               await resultsRef.push(resultData);
               return true;
@@ -1237,4 +1261,3 @@
   </script>
 </body>
 </html>
-``` 

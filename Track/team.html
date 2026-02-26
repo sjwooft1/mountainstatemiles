@@ -26,7 +26,7 @@
   <header>
     <nav class="navbar">
       <div class="navbar-content">
-        <a href="index.html" class="navbar-brand">⚡ Track & Field</a>
+        <a href="index.html" class="navbar-brand">Track & Field</a>
         <button class="mobile-menu-toggle" aria-label="Toggle menu">☰</button>
         <ul class="navbar-nav" id="main-nav">
           <li><a href="/home/" class="navbar-link">Home</a></li>
@@ -349,8 +349,8 @@
         if (allAthletes.length > 0) {
           // Sort by name
           allAthletes.sort((a, b) => {
-            const nameA = (a.name || a.athlete_name || '').toLowerCase();
-            const nameB = (b.name || b.athlete_name || '').toLowerCase();
+            const nameA = (`${a.first_name || ''} ${a.last_name || ''}`.trim()).toLowerCase();
+            const nameB = (`${b.first_name || ''} ${b.last_name || ''}`.trim()).toLowerCase();
             return nameA.localeCompare(nameB);
           });
           
@@ -365,19 +365,14 @@
               </thead>
               <tbody>
                 ${allAthletes.map(athlete => {
-                  const name = athlete.athlete_name || athlete.name || 'Name Unknown'; 
+                  const name = `${athlete.first_name || ''} ${athlete.last_name || ''}`.trim() || 'Name Unknown'; 
                   let gradYear = athlete.grad_year || athlete.graduation_year || athlete.class;
                   gradYear = gradYear ? `C/o ${gradYear}` : 'N/A';
                   const gender = athlete.gender === 'M' ? 'Male' : (athlete.gender === 'F' ? 'Female' : 'N/A');
-                  const slug = athlete.athlete_slug || athlete.slug;
                   
-                  const link = slug 
-                      ? `<a href="athlete.html?slug=${slug}" style="color: var(--xc-primary); font-weight: 600;">${name}</a>`
-                      : name;
-
                   return `
                     <tr>
-                      <td data-label="Name">${link}</td>
+                      <td data-label="Name">${name}</td>
                       <td data-label="Gender">${gender}</td>
                       <td data-label="Graduation Year">${gradYear}</td>
                     </tr>
