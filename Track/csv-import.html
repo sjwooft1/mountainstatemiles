@@ -1,1296 +1,347 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>CSV Import — Track Admin</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <style>
-    * { box-sizing: border-box; }
-    
-    :root {
-      --bg: #0a0e1a;
-      --panel: #0f1626;
-      --card: #151f2e;
-      --accent: #ff7b2d;
-      --accent-hover: #ff8c42;
-      --muted: #9fb4c8;
-      --border: rgba(255,255,255,0.08);
-      --hover: rgba(255,255,255,0.05);
-      --success: #28a745;
-      --danger: #dc3545;
-      --warning: #ffc107;
-      --info: #007bff;
-    }
-    
-    html, body {
-      height: 100%;
-      margin: 0;
-      padding: 0;
-      font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
-      background: var(--bg);
-      color: #e6f0f7;
-    }
-    
-    .container {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 40px 20px;
-    }
-    
-    .header {
-      margin-bottom: 40px;
-      text-align: center;
-    }
-    
-    .header h1 {
-      font-size: 2.5rem;
-      font-weight: 800;
-      margin: 0 0 10px;
-      background: linear-gradient(90deg, var(--accent), var(--accent-hover));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-    
-    .header p {
-      color: var(--muted);
-      font-size: 1.1rem;
-    }
-    
-    .card {
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 30px;
-      margin-bottom: 24px;
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
-    }
-    
-    .card-title {
-      font-size: 1.3rem;
-      font-weight: 700;
-      margin: 0 0 20px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    
-    .upload-zone {
-      border: 2px dashed var(--border);
-      border-radius: 12px;
-      padding: 60px 20px;
-      text-align: center;
-      transition: all 0.3s;
-      cursor: pointer;
-      background: var(--card);
-    }
-    
-    .upload-zone:hover {
-      border-color: var(--accent);
-      background: rgba(255, 123, 45, 0.05);
-    }
-    
-    .upload-zone.dragover {
-      border-color: var(--accent);
-      background: rgba(255, 123, 45, 0.1);
-      transform: scale(1.02);
-    }
-    
-    .upload-icon {
-      font-size: 4rem;
-      margin-bottom: 20px;
-    }
-    
-    .upload-text {
-      font-size: 1.2rem;
-      font-weight: 600;
-      margin-bottom: 10px;
-    }
-    
-    .upload-hint {
-      color: var(--muted);
-      font-size: 0.9rem;
-    }
-    
-    .file-input {
-      display: none;
-    }
-    
-    .btn {
-      padding: 12px 24px;
-      border: none;
-      border-radius: 8px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s;
-      font-size: 1rem;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-    }
-    
-    .btn-primary {
-      background: var(--accent);
-      color: #fff;
-    }
-    
-    .btn-primary:hover {
-      background: var(--accent-hover);
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(255, 123, 45, 0.3);
-    }
-    
-    .btn-secondary {
-      background: transparent;
-      color: var(--muted);
-      border: 1px solid var(--border);
-    }
-    
-    .btn-secondary:hover {
-      background: var(--hover);
-      color: #fff;
-    }
-    
-    .btn-success {
-      background: var(--success);
-      color: #fff;
-    }
-    
-    .btn-success:hover {
-      background: #218838;
-    }
-    
-    .btn-danger {
-      background: var(--danger);
-      color: #fff;
-    }
-    
-    .file-info {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 16px;
-      background: var(--card);
-      border-radius: 8px;
-      margin-top: 20px;
-    }
-    
-    .file-info-name {
-      font-weight: 600;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    
-    .file-info-size {
-      color: var(--muted);
-      font-size: 0.9rem;
-    }
-    
-    .preview-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
-      background: var(--card);
-      border-radius: 8px;
-      overflow: hidden;
-    }
-    
-    .preview-table thead {
-      background: var(--panel);
-    }
-    
-    .preview-table th {
-      padding: 12px 16px;
-      text-align: left;
-      font-weight: 600;
-      color: var(--muted);
-      font-size: 0.85rem;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      border-bottom: 2px solid var(--border);
-    }
-    
-    .preview-table td {
-      padding: 12px 16px;
-      border-bottom: 1px solid var(--border);
-    }
-    
-    .preview-table tbody tr:hover {
-      background: var(--hover);
-    }
-    
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 16px;
-      margin-top: 20px;
-    }
-    
-    .stat-item {
-      background: var(--card);
-      padding: 20px;
-      border-radius: 8px;
-      text-align: center;
-      border: 1px solid var(--border);
-    }
-    
-    .stat-number {
-      font-size: 2rem;
-      font-weight: 700;
-      color: var(--accent);
-      margin: 0;
-    }
-    
-    .stat-label {
-      color: var(--muted);
-      font-size: 0.9rem;
-      margin-top: 8px;
-    }
-    
-    .alert {
-      padding: 16px 20px;
-      border-radius: 8px;
-      margin-bottom: 20px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-    
-    .alert-success {
-      background: rgba(40, 167, 69, 0.1);
-      border: 1px solid rgba(40, 167, 69, 0.3);
-      color: #28a745;
-    }
-    
-    .alert-error {
-      background: rgba(220, 53, 69, 0.1);
-      border: 1px solid rgba(220, 53, 69, 0.3);
-      color: #dc3545;
-    }
-    
-    .alert-warning {
-      background: rgba(255, 193, 7, 0.1);
-      border: 1px solid rgba(255, 193, 7, 0.3);
-      color: #ffc107;
-    }
-    
-    .error-list {
-      background: var(--card);
-      border-radius: 8px;
-      padding: 20px;
-      margin-top: 20px;
-      max-height: 300px;
-      overflow-y: auto;
-    }
-    
-    .error-item {
-      padding: 8px 12px;
-      margin-bottom: 8px;
-      background: rgba(220, 53, 69, 0.1);
-      border-left: 3px solid var(--danger);
-      border-radius: 4px;
-      font-size: 0.9rem;
-    }
-    
-    .loading {
-      display: inline-block;
-      width: 20px;
-      height: 20px;
-      border: 3px solid var(--border);
-      border-top-color: var(--accent);
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-    }
-    
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-    
-    .back-link {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      color: var(--muted);
-      text-decoration: none;
-      margin-bottom: 20px;
-      transition: color 0.2s;
-    }
-    
-    .back-link:hover {
-      color: #fff;
-    }
-    
-    .meet-select {
-      width: 100%;
-      padding: 12px;
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      color: #e6f0f7;
-      font-size: 1rem;
-      margin-bottom: 20px;
-    }
-    
-    .meet-select:focus {
-      outline: none;
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(255, 123, 45, 0.1);
-    }
-    
-    .import-hint {
-      color: var(--muted);
-      font-size: 0.95rem;
-      margin: -8px 0 16px 0;
-    }
-    
-    .format-details {
-      margin-bottom: 16px;
-      color: var(--muted);
-      font-size: 0.9rem;
-    }
-    
-    .format-details summary {
-      cursor: pointer;
-      color: var(--accent);
-      font-weight: 600;
-    }
-    
-    .format-details .format-list {
-      margin: 8px 0 0 0;
-      line-height: 1.5;
-    }
-    
-    .import-tabs {
-      display: flex;
-      gap: 4px;
-      margin-bottom: 20px;
-    }
-    
-    .import-tab {
-      padding: 10px 18px;
-      border: 1px solid var(--border);
-      background: var(--card);
-      color: var(--muted);
-      border-radius: 8px;
-      cursor: pointer;
-      font-weight: 600;
-      transition: all 0.2s;
-    }
-    
-    .import-tab:hover {
-      background: var(--hover);
-      color: #e6f0f7;
-    }
-    
-    .import-tab.active {
-      background: var(--accent);
-      color: #fff;
-      border-color: var(--accent);
-    }
-    
-    .import-tab-panel {
-      display: none;
-    }
-    
-    .import-tab-panel.active {
-      display: block;
-    }
-    
-    .paste-area {
-      width: 100%;
-      min-height: 200px;
-      padding: 16px;
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      color: #e6f0f7;
-      font-family: 'Consolas', 'Monaco', monospace;
-      font-size: 0.9rem;
-      line-height: 1.5;
-      resize: vertical;
-      box-sizing: border-box;
-    }
-    
-    .paste-area:focus {
-      outline: none;
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(255, 123, 45, 0.1);
-    }
-    
-    .paste-area::placeholder {
-      color: var(--muted);
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Track Admin — Advanced Results Import</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --bg:#0b1220;
+  --panel:#111a2d;
+  --card:#16223a;
+  --accent:#ff5722;
+  --accent2:#ff7b42;
+  --success:#28a745;
+  --danger:#dc3545;
+  --warning:#ffc107;
+  --text:#e8f1ff;
+  --muted:#9fb4c8;
+  --border:rgba(255,255,255,0.08);
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:Inter,system-ui;
+  background:var(--bg);
+  color:var(--text);
+}
+.container{
+  max-width:1200px;
+  margin:auto;
+  padding:40px 20px;
+}
+.card{
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:30px;
+  margin-bottom:24px;
+}
+h1{
+  font-weight:800;
+  font-size:2.3rem;
+  background:linear-gradient(90deg,var(--accent),var(--accent2));
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+}
+h2{
+  margin-top:0;
+  font-size:1.3rem;
+}
+select, textarea, input{
+  width:100%;
+  padding:12px;
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:8px;
+  color:var(--text);
+  font-size:0.95rem;
+}
+textarea{
+  min-height:200px;
+  resize:vertical;
+  font-family:monospace;
+}
+button{
+  padding:12px 20px;
+  border:none;
+  border-radius:8px;
+  font-weight:600;
+  cursor:pointer;
+}
+.btn-primary{
+  background:var(--accent);
+  color:white;
+}
+.btn-primary:hover{
+  background:var(--accent2);
+}
+.btn-secondary{
+  background:transparent;
+  border:1px solid var(--border);
+  color:var(--muted);
+}
+.stat-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+  gap:16px;
+  margin-bottom:20px;
+}
+.stat{
+  background:var(--card);
+  padding:20px;
+  border-radius:8px;
+  text-align:center;
+}
+.stat-number{
+  font-size:1.8rem;
+  font-weight:700;
+}
+.preview-table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:20px;
+}
+.preview-table th,
+.preview-table td{
+  padding:10px;
+  border-bottom:1px solid var(--border);
+  font-size:0.85rem;
+}
+.preview-table th{
+  color:var(--muted);
+  text-transform:uppercase;
+}
+.alert{
+  padding:14px;
+  border-radius:8px;
+  margin-bottom:12px;
+}
+.success{background:rgba(40,167,69,.1);border:1px solid rgba(40,167,69,.3)}
+.error{background:rgba(220,53,69,.1);border:1px solid rgba(220,53,69,.3)}
+.warning{background:rgba(255,193,7,.1);border:1px solid rgba(255,193,7,.3)}
+.progress-bar{
+  height:8px;
+  background:var(--card);
+  border-radius:6px;
+  overflow:hidden;
+}
+.progress-fill{
+  height:100%;
+  background:linear-gradient(90deg,var(--accent),var(--accent2));
+  width:0%;
+  transition:.3s;
+}
+</style>
 </head>
 <body>
-  <div class="container">
-    <a href="admin.html" class="back-link">← Back to Admin</a>
-    
-    <div class="header">
-      <h1>📊 Import Results</h1>
-      <p>Import track & field results from Athletic.net, CSV files, or pasted tables</p>
-    </div>
-    
-    <div class="card">
-      <h2 class="card-title">Step 1: Select Meet</h2>
-      <select id="meet-select" class="meet-select">
-        <option value="">Loading meets...</option>
-      </select>
-      <button class="btn btn-secondary" onclick="createNewMeet()">+ Create New Meet</button>
-    </div>
-    
-    <div class="card">
-      <h2 class="card-title">Step 2: Add Results</h2>
-      <p class="import-hint">Works with Athletic.net exports, Excel CSV, or pasted results (e.g. copy a results table from a webpage).</p>
-      <details class="format-details">
-        <summary>Supported column names (Athletic.net &amp; generic)</summary>
-        <p class="format-list">First row = headers. We recognize: <strong>Event</strong>, <strong>Result</strong> (or Mark/Time), <strong>Team</strong> (or School), <strong>FirstName1</strong> &amp; <strong>LastName1</strong> (or a single Athlete/Name column), <strong>Place</strong>, <strong>Heat</strong>, <strong>Gender</strong>. Comma or tab separated.</p>
-      </details>
-      <div class="import-tabs">
-        <button type="button" class="import-tab active" data-tab="paste">Paste (Athletic.net / table)</button>
-        <button type="button" class="import-tab" data-tab="upload">Upload CSV file</button>
-      </div>
-      <div id="import-tab-paste" class="import-tab-panel active">
-        <textarea id="paste-area" class="paste-area" placeholder="Paste results here — from Athletic.net (copy table or export CSV), Excel, or any tab/comma-separated data. First row can be headers (e.g. Event, Result, Team, FirstName1, LastName1, Place)."></textarea>
-        <button type="button" class="btn btn-primary" id="parse-paste-btn" style="margin-top: 12px;">Parse & Preview</button>
-      </div>
-      <div id="import-tab-upload" class="import-tab-panel">
-        <div class="upload-zone" id="upload-zone">
-          <div class="upload-icon">📁</div>
-          <div class="upload-text">Drag & drop your CSV file here</div>
-          <div class="upload-hint">or click to browse</div>
-          <input type="file" id="file-input" class="file-input" accept=".csv,.txt" />
-        </div>
-        <div id="file-info" style="display: none;"></div>
-      </div>
-    </div>
-    
-    <div class="card" id="preview-card" style="display: none;">
-      <h2 class="card-title">Step 3: Preview Data</h2>
-      <div id="preview-content"></div>
-    </div>
-    
-    <div class="card" id="import-card" style="display: none;">
-      <h2 class="card-title">Step 4: Import</h2>
-      <div id="import-content"></div>
-    </div>
-    
-    <div id="alerts"></div>
-  </div>
-  
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-  <script src="firebase-config.js"></script>
-  <script src="firebase-helpers.js"></script>
-  <script>
-    let selectedFile = null;
-    let parsedData = null;
-    let selectedMeetId = null;
-    
-    const COLUMN_MAP = {
-      athlete_name: ['athlete', 'athlete name', 'name', 'runner', 'competitor', 'firstname1', 'lastname1', 'first name', 'last name'],
-      school: ['team', 'school', 'team name', 'school name', 'affiliation'],
-      gender: ['gender', 'sex', 'm/f'],
-      mark: ['result', 'mark', 'time', 'distance', 'performance', 'score'],
-      event: ['event', 'event name', 'discipline'],
-      placement: ['place', 'placement', 'heatplace', 'overall place', 'finish', 'pos', 'position'],
-      heat: ['heat', 'heat/flight', 'flight', 'heat number'],
-      grade: ['grade', 'grade1', 'year', 'yr']
-    };
-    
-    // Field events that use feet/inches notation
-    const FIELD_EVENTS = ['long jump', 'high jump', 'triple jump', 'pole vault', 'shot put', 'discus', 'javelin', 'hammer'];
-    
-    function isFieldEvent(eventName) {
-      if (!eventName) return false;
-      const normalized = eventName.toLowerCase();
-      return FIELD_EVENTS.some(fe => normalized.includes(fe));
-    }
-    
-    function formatFieldEventMark(mark, eventName) {
-      if (!mark || !isFieldEvent(eventName)) return mark;
+<div class="container">
 
-      // Normalize fancy quotes to straight quotes
-      mark = mark
-        .replace(/[']/g, "'")
-        .replace(/[""]/g, '"')
-        .trim();
+<h1>Advanced Results Import</h1>
 
-      // Match patterns like:
-      // 50' 0"
-      // 50 0
-      // 50-0
-      // 50'0
-      // 50ft 0in
-      const match = mark.match(/(\d+)[^\d]*(\d+(?:\.\d+)?)/);
+<!-- STEP 1 -->
+<div class="card">
+<h2>Step 1 — Select Meet & Event</h2>
+<select id="meetSelect"></select>
+<br><br>
+<select id="eventSelect">
+<option value="">Select event (required)</option>
+</select>
+</div>
 
-      if (!match) return mark; // fallback if not matched
+<!-- STEP 2 -->
+<div class="card">
+<h2>Step 2 — Paste Results</h2>
+<textarea id="pasteArea" placeholder="Paste Athletic.net table or CSV here..."></textarea>
+<br><br>
+<button class="btn-primary" onclick="parseData()">Parse & Validate</button>
+</div>
 
-      const feet = match[1];
-      const inches = match[2];
+<!-- PREVIEW -->
+<div class="card" id="previewCard" style="display:none">
+<h2>Step 3 — Validation & Preview</h2>
+<div id="stats"></div>
+<div id="alerts"></div>
+<div id="previewTable"></div>
+</div>
 
-      return `${feet}ft ${inches}in`;
-    }
-    
-    function normalizeHeader(h) {
-      return (h || '').toString().trim().toLowerCase().replace(/\s+/g, ' ').replace(/[^\w\s]/g, '');
-    }
-    function normalizeFieldEventMark(mark) {
-  if (!mark) return '';
+<!-- IMPORT -->
+<div class="card" id="importCard" style="display:none">
+<h2>Step 4 — Import</h2>
+<div id="progressContainer"></div>
+<br>
+<button class="btn-primary" onclick="importData()">Import Valid Results</button>
+</div>
 
-  // Normalize fancy quotes to straight quotes
-  mark = mark
-    .replace(/[']/g, "'")
-    .replace(/[""]/g, '"')
-    .trim();
+</div>
 
-  // Match patterns like:
-  // 50' 0"
-  // 50 0
-  // 50-0
-  // 50'0
-  // 50ft 0in
-  const match = mark.match(/(\d+)[^\d]+(\d+)/);
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="firebase-config.js"></script>
 
-  if (!match) return mark; // fallback if not matched
+<script>
+let parsedRows=[]
+let validRows=[]
+let selectedMeet=null
+let selectedEvent=null
 
-  const feet = match[1];
-  const inches = match[2];
+const FIELD_EVENTS=[
+"long jump","high jump","triple jump","pole vault",
+"shot put","discus","javelin","hammer"
+]
 
-  return `${feet}' ${inches}"`;
+function isFieldEvent(name){
+  return FIELD_EVENTS.some(e=>name.toLowerCase().includes(e))
 }
-    
-    function findMappedHeader(headers, field) {
-      const normalizedHeaders = headers.map(normalizeHeader);
-      const candidates = COLUMN_MAP[field];
-      for (const c of candidates) {
-        const i = normalizedHeaders.findIndex(h => h === c || h.replace(/\s/g, '').includes(c.replace(/\s/g, '')));
-        if (i !== -1) return i;
-      }
-      return -1;
+
+function normalizeDistance(mark){
+  if(!mark) return ""
+  const m=mark.match(/(\d+)[^\d]+(\d+(?:\.\d+)?)/)
+  if(!m) return mark.trim()
+  return m[1]+"ft "+m[2]+"in"
+}
+
+function normalizeTime(mark){
+  if(!mark) return ""
+  return mark.replace(/[^\d\.\:]/g,"").trim()
+}
+
+function smartSplit(line){
+  if(line.includes("\t")) return line.split("\t")
+  if(line.includes(",")) return line.split(",")
+  return line.trim().split(/\s{2,}/)
+}
+
+function parseData(){
+  selectedMeet=document.getElementById("meetSelect").value
+  selectedEvent=document.getElementById("eventSelect").value
+  if(!selectedMeet||!selectedEvent){
+    alert("Select meet and event first.")
+    return
+  }
+
+  const text=document.getElementById("pasteArea").value.trim()
+  if(!text){alert("Paste data first.");return}
+
+  const lines=text.split(/\r?\n/).filter(l=>l.trim())
+  parsedRows=[]
+  validRows=[]
+  let duplicates=new Set()
+
+  lines.forEach((line,i)=>{
+    const cols=smartSplit(line)
+    if(cols.length<3) return
+
+    let name=cols[1]?.trim()
+    let mark=cols[3]?.trim()||cols[2]?.trim()
+    let school=cols[4]||""
+    let place=cols[0]?.replace(".","")
+
+    if(!name) return
+
+    if(isFieldEvent(selectedEvent)){
+      mark=normalizeDistance(mark)
+    }else{
+      mark=normalizeTime(mark)
     }
-    
-    /** Parse CSV/paste text with header row; auto-detect delimiter; map to athlete_name, school, gender, mark, event, placement, heat */
-    function parseAndNormalizeResults(rawText) {
-      const lines = rawText.trim().split(/\r?\n/).filter(l => l.trim());
-      if (lines.length < 1) return [];
-      
-      // Detect delimiter - try tab first, then comma
-      const first = lines[0];
-      let delim = '\t';
-      let hasDelim = first.includes('\t');
-      
-      if (!hasDelim && first.includes(',')) {
-        delim = ',';
-        hasDelim = true;
-      }
-      
-      const parseRow = (line) => {
-        const parts = [];
-        let cur = '';
-        let inQuotes = false;
-        for (let i = 0; i < line.length; i++) {
-          const ch = line[i];
-          if (ch === '"') { inQuotes = !inQuotes; continue; }
-          if (!inQuotes && ch === delim) { parts.push(cur.trim()); cur = ''; continue; }
-          cur += ch;
-        }
-        parts.push(cur.trim());
-        return parts;
-      };
-      
-      // Parse rows intelligently
-      const parseRowSmart = (line) => {
-        if (hasDelim) {
-          return parseRow(line);
-        }
-        // For Athletic.net format: "1.	Kendell Chilton	11	24.05	Gah. Lincoln"
-        // Split by tabs or multiple spaces, handling the place number with period
-        return line.split(/[\t]+/).map(s => s.trim()).filter(s => s.length > 0);
-      };
-      
-      const firstRow = parseRowSmart(first);
-      
-      // Check if this looks like Athletic.net data (numeric place, then name)
-      // Format: Place | Name | Grade | Mark | School
-      const looksLikeAthletic = firstRow.length >= 4 && 
-                                /^\d+\.?$/.test(firstRow[0].replace('.', '')) &&
-                                isNaN(firstRow[1]);
-      
-      // Check if first row looks like headers (contains header keywords)
-      const normalizedFirst = firstRow.map(h => normalizeHeader(h));
-      const headerKeywords = ['place', 'athlete', 'result', 'time', 'school', 'team', 'event', 'grade', 'name', 'mark', 'distance'];
-      const isHeaderRow = headerKeywords.some(keyword => 
-        normalizedFirst.some(nf => nf.includes(keyword))
-      );
-      
-      let idx = {
-        placement: -1,
-        athlete_name: -1,
-        school: -1,
-        gender: -1,
-        mark: -1,
-        event: -1,
-        heat: -1,
-        grade: -1
-      };
-      
-      let startRow = 0;
-      
-      if (looksLikeAthletic && !isHeaderRow) {
-        // Athletic.net format without headers: Place | Name | Grade | Mark | School
-        console.log('✅ Detected Athletic.net format (headerless)');
-        idx.placement = 0;
-        idx.athlete_name = 1;
-        idx.grade = 2;
-        idx.mark = 3;
-        idx.school = 4;
-        startRow = 0;
-      } else if (isHeaderRow) {
-        // Parse header row with named columns
-        console.log('✅ Detected header row format');
-        idx.placement = findMappedHeader(firstRow, 'placement');
-        idx.athlete_name = findMappedHeader(firstRow, 'athlete_name');
-        idx.school = findMappedHeader(firstRow, 'school');
-        idx.gender = findMappedHeader(firstRow, 'gender');
-        idx.mark = findMappedHeader(firstRow, 'mark');
-        idx.event = findMappedHeader(firstRow, 'event');
-        idx.heat = findMappedHeader(firstRow, 'heat');
-        idx.grade = findMappedHeader(firstRow, 'grade');
-        
-        // Handle FirstName/LastName pattern
-        const hasFirst = firstRow.some(h => normalizeHeader(h).includes('firstname'));
-        const hasLast = firstRow.some(h => normalizeHeader(h).includes('lastname'));
-        if (hasFirst && hasLast) {
-          const iFirst = firstRow.findIndex(h => normalizeHeader(h).includes('firstname'));
-          const iLast = firstRow.findIndex(h => normalizeHeader(h).includes('lastname'));
-          if (iFirst !== -1 && iLast !== -1) idx.athlete_name = [iFirst, iLast];
-        }
-        startRow = 1;
-      } else {
-        // No clear format detected - try Athletic.net pattern anyway as fallback
-        console.log('⚠️ No clear format detected - assuming Athletic.net (Place | Name | Grade | Mark | School)');
-        if (firstRow.length >= 4) {
-          idx.placement = 0;
-          idx.athlete_name = 1;
-          idx.grade = 2;
-          idx.mark = 3;
-          idx.school = 4;
-          startRow = 0;
-        } else if (firstRow.length === 3) {
-          // Fallback for minimal data: Place | Name | Mark
-          idx.placement = 0;
-          idx.athlete_name = 1;
-          idx.mark = 2;
-          startRow = 0;
-        } else {
-          return [];
-        }
-      }
-      
-      const out = [];
-      for (let i = startRow; i < lines.length; i++) {
-        const cells = parseRowSmart(lines[i]);
-        
-        if (cells.length < 2) continue; // Skip empty or malformed rows
-        
-        const get = (key) => {
-          const colIdx = idx[key];
-          if (Array.isArray(colIdx)) {
-            return ((cells[colIdx[0]] || '').trim() + ' ' + (cells[colIdx[1]] || '').trim()).trim();
-          }
-          if (typeof colIdx === 'number' && colIdx >= 0 && cells[colIdx] !== undefined) {
-            return (cells[colIdx] || '').trim();
-          }
-          return '';
-        };
-        
-        const athleteName = get('athlete_name');
-        if (!athleteName) continue;
-        
-        // Clean up placement - remove trailing period if present
-        let placement = get('placement') || '';
-        placement = placement.replace(/\.$/, '');
-        
-        out.push({
-          athlete_name: athleteName.replace(/\s+/g, ' ').trim(),
-          school: get('school') || '',
-          gender: get('gender') || '',
-          mark: formatFieldEventMark(get('mark') || '', get('event') || ''),
-          event: get('event') || '',
-          placement: placement || '',
-          heat: get('heat') || '',
-          grade: get('grade') || ''
-        });
-      }
-      return out;
+
+    const key=name+"|"+mark
+    const isDup=duplicates.has(key)
+    duplicates.add(key)
+
+    const row={
+      name,mark,school,place,
+      valid:!isDup && !!mark,
+      error:isDup?"Duplicate entry":""
     }
-    
-    async function waitForFirebase() {
-      let attempts = 0;
-      while (typeof window.firebaseDatabase === 'undefined' && attempts < 50) {
-        await new Promise(resolve => setTimeout(resolve, 100));
-        attempts++;
-      }
-    }
-    
-    async function loadMeets() {
-      const select = document.getElementById('meet-select');
-      try {
-        await waitForFirebase();
-        const snapshot = await window.firebaseDatabase.ref('Track/meets').once('value');
-        const meets = [];
-        snapshot.forEach(child => {
-          meets.push({ id: child.key, ...child.val() });
-        });
-        
-        meets.sort((a, b) => {
-          const dateA = a.date || '';
-          const dateB = b.date || '';
-          return dateB.localeCompare(dateA);
-        });
-        
-        select.innerHTML = '<option value="">-- Select a meet --</option>' + 
-          meets.map(m => `<option value="${m.id}">${m.name || 'Unnamed Meet'} (${m.date || 'No date'})</option>`).join('');
-      } catch (error) {
-        console.error('Error loading meets:', error);
-        select.innerHTML = '<option value="">Error loading meets</option>';
-      }
-    }
-    
-    document.getElementById('meet-select').addEventListener('change', (e) => {
-      selectedMeetId = e.target.value;
-    });
-    
-    document.querySelectorAll('.import-tab').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('.import-tab').forEach(b => b.classList.remove('active'));
-        document.querySelectorAll('.import-tab-panel').forEach(p => p.classList.remove('active'));
-        btn.classList.add('active');
-        document.getElementById('import-tab-' + btn.dataset.tab).classList.add('active');
-      });
-    });
-    
-    document.getElementById('parse-paste-btn').addEventListener('click', () => {
-      if (!selectedMeetId) {
-        showAlert('Please select a meet first', 'warning');
-        return;
-      }
-      const text = document.getElementById('paste-area').value.trim();
-      if (!text) {
-        showAlert('Paste some results first', 'warning');
-        return;
-      }
-      try {
-        parsedData = parseAndNormalizeResults(text);
-        if (parsedData.length === 0) {
-          showAlert('No rows parsed. Check that the first line has headers (e.g. Event, Result, Team, FirstName1, LastName1, Place) and data is tab- or comma-separated.', 'error');
-          return;
-        }
-        displayPreview(parsedData);
-      } catch (err) {
-        console.error(err);
-        showAlert('Parse error: ' + err.message, 'error');
-      }
-    });
-    
-    const uploadZone = document.getElementById('upload-zone');
-    const fileInput = document.getElementById('file-input');
-    
-    uploadZone.addEventListener('click', () => fileInput.click());
-    
-    uploadZone.addEventListener('dragover', (e) => {
-      e.preventDefault();
-      uploadZone.classList.add('dragover');
-    });
-    
-    uploadZone.addEventListener('dragleave', () => {
-      uploadZone.classList.remove('dragover');
-    });
-    
-    uploadZone.addEventListener('drop', (e) => {
-      e.preventDefault();
-      uploadZone.classList.remove('dragover');
-      const file = e.dataTransfer.files[0];
-      if (file && (file.name.endsWith('.csv') || file.name.endsWith('.txt'))) {
-        handleFile(file);
-      } else {
-        showAlert('Please upload a CSV or TXT file', 'error');
-      }
-    });
-    
-    fileInput.addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (file) {
-        handleFile(file);
-      }
-    });
-    
-    function handleFile(file) {
-      selectedFile = file;
-      const fileInfo = document.getElementById('file-info');
-      fileInfo.style.display = 'block';
-      fileInfo.innerHTML = `
-        <div class="file-info">
-          <div class="file-info-name">
-            <span>📄</span>
-            <span>${file.name}</span>
-          </div>
-          <div class="file-info-size">${(file.size / 1024).toFixed(2)} KB</div>
-        </div>
-      `;
-      
-      if (selectedMeetId) {
-        parseAndPreview();
-      } else {
-        showAlert('Please select a meet first', 'warning');
-      }
-    }
-    
-    async function parseAndPreview() {
-      if (!selectedFile || !selectedMeetId) return;
-      
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-        try {
-          const csvText = e.target.result;
-          parsedData = parseAndNormalizeResults(csvText);
-          
-          if (parsedData.length === 0) {
-            showAlert('No data found. Use a header row (e.g. Event, Result, Team, FirstName1, LastName1, Place) and comma- or tab-separated values.', 'error');
-            return;
-          }
-          
-          displayPreview(parsedData);
-        } catch (error) {
-          console.error('Error parsing file:', error);
-          showAlert('Error parsing file: ' + error.message, 'error');
-        }
-      };
-      reader.readAsText(selectedFile);
-    }
-    
-    function displayPreview(data) {
-      const previewCard = document.getElementById('preview-card');
-      const previewContent = document.getElementById('preview-content');
-      const importCard = document.getElementById('import-card');
-      const importContentDiv = document.getElementById('import-content');
-      
-      const stats = {
-        total: data.length,
-        valid: data.filter(r => r.athlete_name).length,
-        errors: data.filter(r => !r.athlete_name).length
-      };
-      
-      // Get unique events and heats from data
-      const uniqueEvents = [...new Set(data.map(r => r.event).filter(e => e))];
-      const uniqueHeats = [...new Set(data.map(r => r.heat).filter(h => h))];
-      
-      // Load events from database
-      loadDatabaseEvents().then(dbEvents => {
-        const eventOptions = dbEvents.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
-        
-        previewContent.innerHTML = `
-          <div class="stats-grid">
-            <div class="stat-item">
-              <div class="stat-number">${stats.total}</div>
-              <div class="stat-label">Total Rows</div>
-            </div>
-            <div class="stat-item">
-              <div class="stat-number" style="color: var(--success);">${stats.valid}</div>
-              <div class="stat-label">Valid Rows</div>
-            </div>
-            <div class="stat-item">
-              <div class="stat-number" style="color: ${stats.errors > 0 ? 'var(--danger)' : 'var(--success)'};">${stats.errors}</div>
-              <div class="stat-label">Errors</div>
-            </div>
-          </div>
-          
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin-bottom: 20px;">
-            <div>
-              <label style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--muted);">Gender (Men/Women)</label>
-              <select id="import-gender" class="meet-select">
-                <option value="">-- Auto-detect from data --</option>
-                <option value="M">Men</option>
-                <option value="W">Women</option>
-                <option value="Mixed">Mixed</option>
-              </select>
-            </div>
-            <div>
-              <label style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--muted);">Event</label>
-              <select id="import-event" class="meet-select">
-                <option value="">-- Select event --</option>
-                ${eventOptions}
-                <option value="">---</option>
-                ${uniqueEvents.map(e => `<option value="new:${e}">${e} (create new)</option>`).join('')}
-              </select>
-            </div>
-            <div>
-              <label style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--muted);">Heat</label>
-              <select id="import-heat" class="meet-select">
-                <option value="">-- Auto-detect from data --</option>
-                ${uniqueHeats.map(h => `<option value="${h}">${h}</option>`).join('')}
-                <option value="__manual__">Manual entry</option>
-              </select>
-            </div>
-            <div>
-              <label style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--muted);">Heat Number (if manual)</label>
-              <input type="text" id="import-heat-number" class="meet-select" placeholder="e.g., 1, 2, A, B" style="margin-bottom: 0;">
-            </div>
-          </div>
-          
-          <table class="preview-table">
-            <thead>
-              <tr>
-                <th>Row</th>
-                <th>Athlete</th>
-                <th>School</th>
-                <th>Grade</th>
-                <th>Event</th>
-                <th>Mark</th>
-                <th>Place</th>
-                <th>Heat</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${data.slice(0, 10).map((row, idx) => `
-                <tr style="${!row.athlete_name ? 'opacity: 0.5;' : ''}">
-                  <td>${idx + 1}</td>
-                  <td>${row.athlete_name || '<span style="color: var(--danger);">Missing</span>'}</td>
-                  <td>${row.school || '—'}</td>
-                  <td>${row.grade || '—'}</td>
-                  <td>${row.event || '—'}</td>
-                  <td>${row.mark || '—'}</td>
-                  <td>${row.placement || '—'}</td>
-                  <td>${row.heat || '—'}</td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-          ${data.length > 10 ? `<p style="text-align: center; color: var(--muted); margin-top: 16px;">Showing first 10 of ${data.length} rows</p>` : ''}
-        `;
-      });
-      
-      previewCard.style.display = 'block';
-      
-      importContentDiv.innerHTML = `
-        <p style="margin-bottom: 20px; color: var(--muted);">
-          Ready to import ${stats.valid} valid results. ${stats.errors > 0 ? `${stats.errors} rows will be skipped due to errors.` : ''}
-        </p>
-        <button class="btn btn-primary" onclick="importData()" style="width: 100%; justify-content: center; padding: 16px;">
-          📥 Import ${stats.valid} Results
-        </button>
-      `;
-      
-      importCard.style.display = 'block';
-    }
-    
-    async function loadDatabaseEvents() {
-      try {
-        await waitForFirebase();
-        const snapshot = await window.firebaseDatabase.ref('Track/events').once('value');
-        const events = [];
-        snapshot.forEach(child => {
-          events.push({ id: child.key, ...child.val() });
-        });
-        return events.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-      } catch (error) {
-        console.error('Error loading events:', error);
-        return [];
-      }
-    }
-    
-    async function importData() {
-      if (!parsedData || !selectedMeetId) return;
-      
-      const importContent = document.getElementById('import-content');
-      
-      // Get user selections from dropdowns
-      const selectedGender = document.getElementById('import-gender').value;
-      const selectedEvent = document.getElementById('import-event').value;
-      const selectedHeat = document.getElementById('import-heat').value;
-      const manualHeatNumber = document.getElementById('import-heat-number').value;
-      
-      try {
-        await waitForFirebase();
-        
-        // Get meet info
-        const meetSnapshot = await window.firebaseDatabase.ref(`Track/meets/${selectedMeetId}`).once('value');
-        const meet = meetSnapshot.val();
-        if (!meet) {
-          throw new Error('Meet not found');
-        }
-        
-        // Setup progress tracking
-        let imported = 0;
-        let errors = [];
-        const total = parsedData.length;
-        const batchSize = 10; // Process 10 at a time
-        
-        // Render progress UI
-        const progressId = 'import-progress-' + Date.now();
-        importContent.innerHTML = `
-          <div id="${progressId}" style="margin-bottom: 20px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-              <span style="font-weight: 600;">Progress: <span id="progress-count">0</span>/${total}</span>
-              <span id="progress-percent" style="color: var(--muted); font-size: 0.9rem;">0%</span>
-            </div>
-            <div style="width: 100%; height: 8px; background: var(--card); border-radius: 4px; overflow: hidden;">
-              <div id="progress-bar" style="height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-hover)); width: 0%; transition: width 0.3s ease; border-radius: 4px;"></div>
-            </div>
-            <div id="progress-status" style="margin-top: 12px; color: var(--muted); font-size: 0.9rem;">Starting import...</div>
-          </div>
-        `;
-        
-        const resultsRef = window.firebaseDatabase.ref('Track/results');
-        
-        // Process data in batches
-        for (let batch = 0; batch < parsedData.length; batch += batchSize) {
-          const batchData = parsedData.slice(batch, Math.min(batch + batchSize, parsedData.length));
-          
-          // Process batch in parallel
-          const batchPromises = batchData.map(async (row, idx) => {
-            try {
-              if (!row.athlete_name) {
-                errors.push({ row: batch + idx + 1, error: 'Missing athlete name' });
-                return false;
-              }
-              
-              // Find or create athlete
-              let athleteId = await findOrCreateAthlete(row);
-              if (!athleteId) {
-                errors.push({ row: batch + idx + 1, error: 'Could not create athlete' });
-                return false;
-              }
-              
-              // Determine event to use
-              let eventToUse = selectedEvent;
-              if (!eventToUse || eventToUse.startsWith('new:')) {
-                eventToUse = eventToUse.startsWith('new:') ? eventToUse.substring(4) : row.event;
-              }
-              
-              if (!eventToUse) {
-                errors.push({ row: batch + idx + 1, error: 'No event specified' });
-                return false;
-              }
-              
-              // Find event (check if it's a database ID or event name)
-              let eventId;
-              if (selectedEvent && !selectedEvent.startsWith('new:') && selectedEvent) {
-                eventId = selectedEvent;
-              } else {
-                eventId = await findOrCreateEvent(eventToUse, selectedGender);
-              }
-              
-              if (!eventId) {
-                errors.push({ row: batch + idx + 1, error: 'Could not find/create event' });
-                return false;
-              }
-              
-              // Determine heat to use
-              let heatToUse = selectedHeat;
-              if (selectedHeat === '__manual__') {
-                heatToUse = manualHeatNumber || '';
-              } else if (!heatToUse) {
-                heatToUse = row.heat || '';
-              }
-              
-              // Determine gender to use
-              let genderToUse = selectedGender || row.gender || '';
-              
-              // Create result
-              const resultData = {
-                athlete_id: athleteId,
-                meet_id: selectedMeetId,
-                event_id: eventId,
-                mark: row.mark || '',
-                placement: row.placement || null,
-                heat: heatToUse || null,
-                gender: genderToUse,
-                timestamp: new Date().toISOString()
-              };
-              
-              await resultsRef.push(resultData);
-              return true;
-            } catch (err) {
-              errors.push({ row: batch + idx + 1, error: err.message });
-              return false;
-            }
-          });
-          
-          // Wait for batch to complete
-          const results = await Promise.all(batchPromises);
-          imported += results.filter(r => r).length;
-          
-          // Update progress
-          const progress = ((batch + batchSize) / total) * 100;
-          document.getElementById('progress-count').textContent = imported;
-          document.getElementById('progress-percent').textContent = Math.min(100, Math.round(progress)) + '%';
-          document.getElementById('progress-bar').style.width = Math.min(100, Math.round(progress)) + '%';
-          document.getElementById('progress-status').textContent = `Processing: ${imported}/${total} records imported...`;
-        }
-        
-        // Final update
-        document.getElementById('progress-count').textContent = imported;
-        document.getElementById('progress-percent').textContent = '100%';
-        document.getElementById('progress-bar').style.width = '100%';
-        
-        // Show results
-        showAlert(`✅ Successfully imported ${imported} results!`, 'success');
-        
-        let resultHTML = `
-          <div class="alert alert-success" style="margin-bottom: 20px;">
-            <span>✅</span>
-            <div>
-              <strong>Import Complete!</strong><br>
-              ${imported} results imported successfully.
-              ${errors.length > 0 ? `<br>${errors.length} rows had errors.` : ''}
-            </div>
-          </div>
-        `;
-        
-        if (errors.length > 0) {
-          resultHTML += `
-            <div style="margin-bottom: 20px;">
-              <h3 style="margin-top: 0; color: var(--warning);">⚠️ Import Errors (${errors.length})</h3>
-              <div class="error-list" style="max-height: 400px;">
-                ${errors.map(e => `<div class="error-item">Row ${e.row}: ${e.error}</div>`).join('')}
-              </div>
-            </div>
-          `;
-        }
-        
-        resultHTML += `
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 20px;">
-            <button class="btn btn-secondary" onclick="location.reload()" style="width: 100%; padding: 12px;">
-              Import Another
-            </button>
-            <button class="btn btn-primary" onclick="window.location.href='results.html'" style="width: 100%; padding: 12px;">
-              View Results
-            </button>
-          </div>
-        `;
-        
-        importContent.innerHTML = resultHTML;
-        
-      } catch (error) {
-        console.error('Import error:', error);
-        showAlert('Error importing data: ' + error.message, 'error');
-        importContent.innerHTML = `
-          <div class="alert alert-error" style="margin-bottom: 20px;">
-            <span>❌</span>
-            <span>${error.message}</span>
-          </div>
-          <button class="btn btn-secondary" onclick="location.reload()" style="width: 100%; padding: 12px;">
-            Try Again
-          </button>
-        `;
-      }
-    }
-    
-    async function findOrCreateAthlete(row) {
-      const athletesRef = window.firebaseDatabase.ref('Track/athletes');
-      const snapshot = await athletesRef.orderByChild('first_name').equalTo(row.athlete_name.split(' ')[0]).once('value');
-      
-      let athleteId = null;
-      snapshot.forEach(child => {
-        const athlete = child.val();
-        if (athlete.last_name === row.athlete_name.split(' ').slice(1).join(' ')) {
-          athleteId = child.key;
-        }
-      });
-      
-      if (!athleteId) {
-        const nameParts = row.athlete_name.split(' ');
-        const newAthlete = {
-          first_name: nameParts[0] || '',
-          last_name: nameParts.slice(1).join(' ') || '',
-          school: row.school || '',
-          grade: row.grade || ''
-        };
-        const newRef = await athletesRef.push(newAthlete);
-        athleteId = newRef.key;
-      }
-      
-      return athleteId;
-    }
-    
-    async function findOrCreateEvent(eventName, gender) {
-      if (!eventName) return null;
-      
-      const eventsRef = window.firebaseDatabase.ref('Track/events');
-      const snapshot = await eventsRef.orderByChild('name').equalTo(eventName).once('value');
-      
-      let eventId = null;
-      snapshot.forEach(child => {
-        eventId = child.key;
-      });
-      
-      if (!eventId) {
-        const newEvent = {
-          name: eventName,
-          slug: eventName.toLowerCase().replace(/\s+/g, '-'),
-          category: 'other',
-          gender: gender || 'Mixed',
-          season: 'outdoor'
-        };
-        const newRef = await eventsRef.push(newEvent);
-        eventId = newRef.key;
-      }
-      
-      return eventId;
-    }
-    
-    function showAlert(message, type) {
-      const alerts = document.getElementById('alerts');
-      const alert = document.createElement('div');
-      alert.className = `alert alert-${type}`;
-      alert.innerHTML = `<span>${type === 'success' ? '✅' : type === 'error' ? '❌' : '⚠️'}</span><span>${message}</span>`;
-      alerts.appendChild(alert);
-      
-      setTimeout(() => {
-        alert.remove();
-      }, 5000);
-    }
-    
-    function createNewMeet() {
-      const name = prompt('Enter meet name:');
-      if (!name) return;
-      
-      const date = prompt('Enter meet date (YYYY-MM-DD):');
-      if (!date) return;
-      
-      const location = prompt('Enter location (optional):') || '';
-      const season = prompt('Enter season (indoor/outdoor):', 'outdoor') || 'outdoor';
-      
-      const slug = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-      
-      waitForFirebase().then(() => {
-        const meetRef = window.firebaseDatabase.ref('Track/meets').push();
-        meetRef.set({
-          name: name,
-          slug: slug,
-          date: date,
-          location: location,
-          season: season
-        }).then(() => {
-          showAlert('Meet created successfully!', 'success');
-          loadMeets();
-          document.getElementById('meet-select').value = meetRef.key;
-          selectedMeetId = meetRef.key;
-        });
-      });
-    }
-    
-    // Initialize
-    document.addEventListener('DOMContentLoaded', () => {
-      if (localStorage.getItem('trackAdmin') !== 'true') {
-        window.location.replace('admin-login.html');
-      }
-      loadMeets();
-    });
-  </script>
+
+    parsedRows.push(row)
+    if(row.valid) validRows.push(row)
+  })
+
+  renderPreview()
+}
+
+function renderPreview(){
+  document.getElementById("previewCard").style.display="block"
+  document.getElementById("importCard").style.display="block"
+
+  document.getElementById("stats").innerHTML=`
+  <div class="stat-grid">
+  <div class="stat"><div class="stat-number">${parsedRows.length}</div>Total</div>
+  <div class="stat"><div class="stat-number" style="color:var(--success)">${validRows.length}</div>Valid</div>
+  <div class="stat"><div class="stat-number" style="color:var(--danger)">${parsedRows.length-validRows.length}</div>Errors</div>
+  </div>
+  `
+
+  const errors=parsedRows.filter(r=>!r.valid)
+  document.getElementById("alerts").innerHTML=
+    errors.length?`<div class="alert error">${errors.length} rows have issues.</div>`:""
+
+  document.getElementById("previewTable").innerHTML=`
+  <table class="preview-table">
+  <thead>
+  <tr><th>Name</th><th>Mark</th><th>Place</th><th>School</th><th>Status</th></tr>
+  </thead>
+  <tbody>
+  ${parsedRows.slice(0,20).map(r=>`
+  <tr style="${!r.valid?'opacity:.4':''}">
+  <td>${r.name}</td>
+  <td>${r.mark}</td>
+  <td>${r.place||"-"}</td>
+  <td>${r.school||"-"}</td>
+  <td>${r.valid?"OK":r.error}</td>
+  </tr>`).join("")}
+  </tbody></table>
+  `
+}
+
+async function importData(){
+  const ref=firebase.database().ref("Track/results")
+  let imported=0
+
+  document.getElementById("progressContainer").innerHTML=
+  `<div class="progress-bar"><div id="progressFill" class="progress-fill"></div></div>`
+
+  for(let i=0;i<validRows.length;i++){
+    const row=validRows[i]
+    await ref.push({
+      meet_id:selectedMeet,
+      event_id:selectedEvent,
+      athlete_name:row.name,
+      mark:row.mark,
+      placement:row.place||null,
+      school:row.school||"",
+      timestamp:new Date().toISOString()
+    })
+    imported++
+    document.getElementById("progressFill").style.width=
+      Math.round((imported/validRows.length)*100)+"%"
+  }
+
+  alert("Import complete: "+imported+" results added.")
+}
+
+async function loadData(){
+  const meetSnap=await firebase.database().ref("Track/meets").once("value")
+  const meetSelect=document.getElementById("meetSelect")
+  meetSelect.innerHTML="<option value=''>Select meet</option>"
+  meetSnap.forEach(c=>{
+    meetSelect.innerHTML+=`<option value="${c.key}">${c.val().name}</option>`
+  })
+
+  const eventSnap=await firebase.database().ref("Track/events").once("value")
+  const eventSelect=document.getElementById("eventSelect")
+  eventSelect.innerHTML="<option value=''>Select event</option>"
+  eventSnap.forEach(c=>{
+    eventSelect.innerHTML+=`<option value="${c.key}">${c.val().name}</option>`
+  })
+}
+
+loadData()
+</script>
 </body>
 </html>
