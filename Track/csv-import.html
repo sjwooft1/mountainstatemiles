@@ -217,7 +217,9 @@ function smartSplit(line){
 
 function parseData(){
   selectedMeet=document.getElementById("meetSelect").value
-  selectedEvent=document.getElementById("eventSelect").value
+  const eventSelect = document.getElementById("eventSelect");
+selectedEvent = eventSelect.value;
+const selectedEventName = eventSelect.options[eventSelect.selectedIndex].dataset.name || "";
   if(!selectedMeet||!selectedEvent){
     alert("Select meet and event first.")
     return
@@ -242,7 +244,7 @@ function parseData(){
 
     if(!name) return
 
-    if(isFieldEvent(selectedEvent)){
+    if(isFieldEvent(selectedEventName)){
       mark=normalizeDistance(mark)
     }else{
       mark=normalizeTime(mark)
@@ -337,7 +339,9 @@ async function loadData(){
   const eventSelect=document.getElementById("eventSelect")
   eventSelect.innerHTML="<option value=''>Select event</option>"
   eventSnap.forEach(c=>{
-    eventSelect.innerHTML+=`<option value="${c.key}">${c.val().name}</option>`
+    eventSelect.innerHTML+=`<option value="${c.key}" data-name="${c.val().name}">
+  ${c.val().name}
+</option>`
   })
 }
 
