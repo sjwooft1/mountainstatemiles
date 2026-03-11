@@ -10,9 +10,280 @@
 <link rel="apple-touch-icon" sizes="180x180" href="../assets/Favicon Generator/apple-touch-icon.png" />
 <link rel="manifest" href="../assets/Favicon Generator/site.webmanifest" />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/handsontable@latest/dist/handsontable.full.min.css">
-<script src="https://cdn.jsdelivr.net/npm/handsontable@latest/dist/handsontable.full.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <link rel="stylesheet" href="/assets/main.css">
+<style>
+  /* Match Live Results page styling */
+  .filter-bar {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-bottom: 20px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+    align-items: flex-end;
+  }
+
+  .filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .filter-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .filter-input {
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-weight: 500;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .filter-input:hover {
+    border-color: var(--text-primary);
+    background: var(--bg-secondary);
+  }
+
+  .filter-input:focus {
+    outline: none;
+    border-color: var(--text-primary);
+    box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
+  }
+
+  .filter-input.btn-load {
+    cursor: pointer;
+    font-weight: 600;
+    background: var(--text-primary);
+    color: var(--bg-primary);
+    border-color: var(--text-primary);
+  }
+
+  .filter-input.btn-load:hover {
+    background: var(--primary-light);
+    border-color: var(--primary-light);
+    color: var(--bg-primary);
+  }
+
+  .results-container {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .result-card {
+    background: var(--bg-primary);
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    padding: 0;
+    overflow: hidden;
+    transition: all 0.3s;
+    display: grid;
+    grid-template-columns: 80px 1fr 120px;
+  }
+
+  .result-card:hover {
+    border-color: var(--text-primary);
+    box-shadow: 0 8px 24px var(--shadow-medium);
+    transform: translateY(-4px);
+  }
+
+  .result-rank {
+    background: linear-gradient(135deg, var(--text-primary) 0%, var(--primary-light) 100%);
+    color: var(--bg-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.75rem;
+    font-weight: 800;
+    padding: 20px;
+    text-align: center;
+    min-height: 100%;
+  }
+
+  .result-rank-number {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .result-rank-medal {
+    font-size: 1.5rem;
+  }
+
+  .result-content {
+    padding: 16px 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .result-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+  }
+
+  .result-info {
+    display: flex;
+    gap: 16px;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    flex-wrap: wrap;
+  }
+
+  .result-info-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .result-time {
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+    color: white;
+    padding: 16px 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    min-height: 100%;
+    text-align: center;
+    gap: 4px;
+  }
+
+  .result-time-label {
+    font-size: 0.7rem;
+    opacity: 0.9;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .result-time-value {
+    font-size: 1.3rem;
+  }
+
+  .athlete-link {
+    color: var(--text-primary);
+    text-decoration: none;
+    font-weight: 600;
+    border-bottom: 2px solid var(--border);
+    transition: all 0.2s;
+  }
+
+  .athlete-link:hover {
+    border-bottom-color: var(--text-primary);
+  }
+
+  @media (max-width: 768px) {
+    .result-card {
+      grid-template-columns: 60px 1fr;
+    }
+
+    .result-time {
+      grid-column: 1 / -1;
+      padding: 12px;
+      border-top: 1px solid var(--border);
+    }
+
+    .result-rank {
+      padding: 12px;
+      font-size: 1.3rem;
+    }
+
+    .result-title {
+      font-size: 1rem;
+    }
+
+    .result-info {
+      font-size: 0.85rem;
+    }
+
+    .filter-bar {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .filter-input.btn-load {
+      grid-column: 1 / -1;
+    }
+  }
+
+  .loading-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-secondary);
+  }
+
+  .loading-spinner {
+    display: inline-block;
+    width: 40px;
+    height: 40px;
+    border: 4px solid var(--border);
+    border-top-color: var(--text-primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-secondary);
+  }
+
+  .empty-state-icon {
+    font-size: 3rem;
+    margin-bottom: 16px;
+    opacity: 0.5;
+  }
+
+  .stats-bar {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .stat-item {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 16px;
+    text-align: center;
+  }
+
+  .stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+
+  .stat-label {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 4px;
+  }
+</style>
 </head>
 <body>
   <header>
@@ -36,28 +307,50 @@
   <main class="content-section">
     <h1 class="section-title">Rankings</h1>
 
-    <div class="filter-controls">
-      <select id="select-event" class="season-btn"><option>Loading events…</option></select>
-      <select id="select-season" class="season-btn">
-        <option value="">All seasons</option>
-        <option value="indoor">Indoor</option>
-        <option value="outdoor">Outdoor</option>
-      </select>
-      <select id="select-gender" class="season-btn">
-        <option value="">All genders</option>
-        <option value="M">Boys / M</option>
-        <option value="F">Girls / F</option>
-      </select>
-      <button id="btn-load" class="btn">Load</button>
+    <div class="filter-bar">
+      <div class="filter-group">
+        <label class="filter-label" for="select-event">Event</label>
+        <select id="select-event" class="filter-input"><option>Loading events…</option></select>
+      </div>
+      <div class="filter-group">
+        <label class="filter-label" for="select-season">Season</label>
+        <select id="select-season" class="filter-input">
+          <option value="">All seasons</option>
+          <option value="indoor">Indoor</option>
+          <option value="outdoor">Outdoor</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label class="filter-label" for="select-gender">Gender</label>
+        <select id="select-gender" class="filter-input">
+          <option value="">All genders</option>
+          <option value="M">Boys / M</option>
+          <option value="F">Girls / F</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label class="filter-label">&nbsp;</label>
+        <button type="button" id="btn-load" class="filter-input btn-load">Load</button>
+      </div>
     </div>
 
-    <div id="rankings-container">Select filters and click Load.</div>
-    <div id="rankings-grid" style="height: 500px; width: 100%; display: none;"></div>
+    <div id="stats-bar" class="stats-bar" style="display: none;">
+      <div class="stat-item">
+        <div class="stat-value" id="stat-count">0</div>
+        <div class="stat-label">Results</div>
+      </div>
+    </div>
+
+    <div id="rankings-container" class="results-container">
+      <div class="empty-state">
+        <div class="empty-state-icon">📊</div>
+        <p>Select event and filters above, then click Load to view rankings.</p>
+      </div>
+    </div>
   </main>
 
   <footer>
       <div class="row">
-          <!-- 1st Column -->
           <div class="footer-col">
               <h4>General</h4>
               <ul>
@@ -67,7 +360,6 @@
               </ul>
           </div>
 
-          <!-- 2nd Column -->
           <div class="footer-col">
               <h4>Cross Country</h4>
               <ul>
@@ -79,7 +371,6 @@
               </ul>
           </div>
 
-          <!-- 3rd Column -->
           <div class="footer-col">
               <h4>Track</h4>
               <ul>
@@ -110,232 +401,284 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-analytics-compat.js"></script>
 <script src="firebase-config.js"></script>
-<script>
-async function waitForFirebase() {
-  let attempts = 0;
-  while (typeof window.firebaseDatabase === 'undefined' && attempts < 50) {
-    await new Promise(resolve => setTimeout(resolve, 100));
-    attempts++;
-  }
-  if (typeof window.firebaseDatabase === 'undefined') {
-    throw new Error('Firebase database not initialized');
-  }
-}
-
-const selectEvent = document.getElementById('select-event');
-const selectSeason = document.getElementById('select-season');
-const selectGender = document.getElementById('select-gender');
-const btnLoad = document.getElementById('btn-load');
-const rankingsContainer = document.getElementById('rankings-container');
-
-// Field events that use feet/inches notation
-const FIELD_EVENTS = ['long jump', 'high jump', 'triple jump', 'pole vault', 'shot put', 'discus', 'javelin', 'hammer'];
-
-function isFieldEvent(eventName) {
-  if (!eventName) return false;
-  const normalized = eventName.toLowerCase();
-  return FIELD_EVENTS.some(fe => normalized.includes(fe));
-}
-
-function formatMarkForDisplay(mark, eventName) {
-  if (!mark) return '';
-  
-  // If it's a field event with feet/inches notation, convert to display format
-  if (isFieldEvent(eventName)) {
-    // Match patterns like: 20' 7.5" or 20ft 7.5in or 20-7.5
-    const match = mark.toString().match(/(\d+)[^\d]*(\d+(?:\.\d+)?)/);
-    if (match) {
-      const feet = match[1];
-      const inches = match[2];
-      return `${feet}ft ${inches}in`;
-    }
-  }
-  
-  return mark;
-}
-
-async function initEvents() {
-  try {
-    await waitForFirebase();
-    console.log('Loading events for rankings...');
-    const snapshot = await window.firebaseDatabase.ref('Track/events').once('value');
-    
-    console.log('Events snapshot exists:', snapshot.exists());
-    console.log('Events snapshot val:', snapshot.val());
-    
-    const events = [];
-    snapshot.forEach(child => {
-      const eventData = child.val();
-      console.log('Event found:', child.key, eventData);
-      events.push({ id: child.key, ...eventData });
-    });
-    
-    console.log('Total events found:', events.length);
-    
-    events.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-    selectEvent.innerHTML = `<option value="">-- choose event --</option>` + events.map(e => `<option value="${e.id}" data-slug="${e.slug || e.id}">${e.name || 'Unnamed Event'} (${e.category || 'N/A'})</option>`).join('');
-  } catch (error) {
-    console.error('Error loading events:', error);
-    selectEvent.innerHTML = '<option value="">Error loading events</option>';
-  }
-}
-btnLoad.addEventListener('click', loadRankings);
-
-async function loadRankings() {
-  const eventId = selectEvent.value;
-  const season = selectSeason.value;
-  const gender = selectGender.value;
-
-  if (!eventId) { rankingsContainer.innerHTML = '<p>Please pick an event.</p>'; return; }
-
-  try {
-    await waitForFirebase();
-    // Fetch results for this event
-    const resultsSnapshot = await window.firebaseDatabase.ref('Track/results')
-      .orderByChild('event_id')
-      .equalTo(eventId)
-      .limitToFirst(200)
-      .once('value');
-    
-    const results = [];
-    resultsSnapshot.forEach(child => {
-      const val = child.val();
-      // Skip results that are excluded from rankings
-      if (val.exclude_from_rankings === true) return;
-      results.push({ id: child.key, ...val });
-    });
-    
-    // Load meets and athletes
-    const meetIds = [...new Set(results.map(r => r.meet_id).filter(Boolean))];
-    const athleteIds = [...new Set(results.map(r => r.athlete_id).filter(Boolean))];
-    
-    const meetsMap = {};
-    const athletesMap = {};
-    
-    if (meetIds.length > 0) {
-      const meetsSnapshot = await window.firebaseDatabase.ref('Track/meets').once('value');
-      meetsSnapshot.forEach(child => {
-        if (meetIds.includes(child.key)) {
-          meetsMap[child.key] = { id: child.key, ...child.val() };
-        }
-      });
-    }
-    
-    if (athleteIds.length > 0) {
-      const athletesSnapshot = await window.firebaseDatabase.ref('Track/athletes').once('value');
-      athletesSnapshot.forEach(child => {
-        if (athleteIds.includes(child.key)) {
-          athletesMap[child.key] = { id: child.key, ...child.val() };
-        }
-      });
-    }
-    
-    // Attach meet and athlete data
-    results.forEach(r => {
-      r.meet = meetsMap[r.meet_id] || {};
-      r.athlete = athletesMap[r.athlete_id] || {};
-    });
-    
-    // Filter by season if specified
-    let filteredResults = results;
-    if (season) {
-      filteredResults = results.filter(r => r.meet && r.meet.season === season);
-    }
-    
-    // Sort by mark
-    filteredResults.sort((a, b) => {
-      const markA = parseFloat(a.mark) || Infinity;
-      const markB = parseFloat(b.mark) || Infinity;
-      return markA - markB;
-    });
-    
-    const data = filteredResults.slice(0, 200);
-
-  let rows = data || [];
-  if (season) rows = rows.filter(r => r.meet?.season === season);
-  if (gender) {
-    // If event record has gender, we might filter by event; otherwise skip — this is a best-effort filter.
-    rows = rows.filter(r => (r.event?.gender ?? '') === '' || true);
-  }
-
-  if (!rows.length) { 
-    rankingsContainer.innerHTML = '<p>No rankings found.</p>'; 
-    document.getElementById('rankings-grid').style.display = 'none';
-    return; 
-  }
-
-  rankingsContainer.innerHTML = '';
-  const gridContainer = document.getElementById('rankings-grid');
-  gridContainer.style.display = 'block';
-
-  if (window.rankingsHot) {
-    try {
-      window.rankingsHot.destroy();
-    } catch (e) {
-      console.warn('Error destroying Handsontable:', e);
-    }
-  }
-
-  const headers = ['Rank', 'Mark', 'Athlete', 'School', 'Meet'];
-  const rowData = filteredResults.map((r, idx) => [
-    idx + 1,
-    formatMarkForDisplay(r.mark, r.event?.name),
-    `${r.athlete.first_name || ''} ${r.athlete.last_name || ''}`.trim() || 'Unknown',
-    r.athlete.school || '',
-    r.meet?.name || '',
-    r.athlete.id
-  ]);
-
-  const columnDefs = [
-    { data: 0, title: 'Rank', type: 'numeric', readOnly: true, width: 80 },
-    { data: 1, title: 'Mark', type: 'text', readOnly: true },
-    {
-      data: 2,
-      title: 'Athlete',
-      type: 'text',
-      readOnly: true,
-      renderer: function(instance, td, row, col, prop, value, cellProperties) {
-        Handsontable.renderers.TextRenderer.apply(this, arguments);
-        const athleteId = instance.getDataAtRow(row)[5];
-        if (athleteId) {
-          td.innerHTML = `<a href="athlete.html?id=${athleteId}" style="color: #0056b3; text-decoration: none;">${value || ''}</a>`;
-        }
-      }
-    },
-    { data: 3, title: 'School', type: 'text', readOnly: true },
-    { data: 4, title: 'Meet', type: 'text', readOnly: true }
-  ];
-
-  setTimeout(() => {
-    window.rankingsHot = new Handsontable(gridContainer, {
-      data: rowData,
-      colHeaders: headers,
-      columns: columnDefs,
-      rowHeaders: true,
-      licenseKey: 'non-commercial-and-evaluation',
-      height: 'auto',
-      maxHeight: '500px',
-      stretchH: 'all',
-      columnSorting: true,
-      filters: true,
-      dropdownMenu: true,
-      contextMenu: true,
-      manualColumnResize: true
-    });
-  }, 100);
-
-  } catch (error) {
-    console.error('Error loading rankings:', error);
-    rankingsContainer.innerHTML = '<p style="color: #dc3545;">⚠️ Error loading rankings. Please try again.</p>';
-    document.getElementById('rankings-grid').style.display = 'none';
-    return;
-  }
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-  setTimeout(initEvents, 100);
-});
-</script>
 <script src="/assets/theme-toggle.js"></script>
+
+<script>
+  async function waitForFirebase() {
+    let attempts = 0;
+    while (typeof window.firebaseDatabase === 'undefined' && attempts < 50) {
+      await new Promise(resolve => setTimeout(resolve, 100));
+      attempts++;
+    }
+    if (typeof window.firebaseDatabase === 'undefined') {
+      throw new Error('Firebase database not initialized');
+    }
+  }
+
+  const selectEvent = document.getElementById('select-event');
+  const selectSeason = document.getElementById('select-season');
+  const selectGender = document.getElementById('select-gender');
+  const btnLoad = document.getElementById('btn-load');
+  const rankingsContainer = document.getElementById('rankings-container');
+
+  const FIELD_EVENTS = ['long jump', 'high jump', 'triple jump', 'pole vault', 'shot put', 'discus', 'javelin', 'hammer'];
+
+  function isFieldEvent(eventName) {
+    if (!eventName) return false;
+    const normalized = eventName.toLowerCase();
+    return FIELD_EVENTS.some(fe => normalized.includes(fe));
+  }
+
+  function parseMarkValue(mark, eventName) {
+    if (!mark) return Infinity;
+    
+    if (['DNS', 'SCR', 'NH', 'ND', 'DQ'].includes(mark.toString().toUpperCase())) {
+      return Infinity;
+    }
+    
+    const markStr = mark.toString();
+    
+    if (isFieldEvent(eventName)) {
+      const match = markStr.match(/(\d+)[^\d]*(\d+(?:\.\d+)?)/);
+      if (match) {
+        const feet = parseFloat(match[1]);
+        const inches = parseFloat(match[2]);
+        return feet + (inches / 12);
+      }
+    }
+    
+    if (markStr.includes(':')) {
+      const parts = markStr.split(':');
+      if (parts.length === 2) {
+        const minutes = parseFloat(parts[0]) || 0;
+        const seconds = parseFloat(parts[1]) || 0;
+        return minutes * 60 + seconds;
+      }
+    }
+    
+    return parseFloat(markStr) || Infinity;
+  }
+
+  function formatMarkForDisplay(mark, eventName) {
+    if (!mark) return '—';
+    
+    if (isFieldEvent(eventName)) {
+      const match = mark.toString().match(/(\d+)[^\d]*(\d+(?:\.\d+)?)/);
+      if (match) {
+        const feet = match[1];
+        const inches = match[2];
+        return `${feet}ft ${inches}in`;
+      }
+    }
+    
+    return mark;
+  }
+
+  async function initEvents() {
+    try {
+      await waitForFirebase();
+      const snapshot = await window.firebaseDatabase.ref('Track/events').once('value');
+      
+      const events = [];
+      snapshot.forEach(child => {
+        const eventData = child.val();
+        events.push({ id: child.key, ...eventData });
+      });
+      
+      events.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+      selectEvent.innerHTML = `<option value="">-- choose event --</option>` + events.map(e => `<option value="${e.id}" data-slug="${e.slug || e.id}">${e.name || 'Unnamed Event'} (${e.category || 'N/A'})</option>`).join('');
+    } catch (error) {
+      console.error('Error loading events:', error);
+      selectEvent.innerHTML = '<option value="">Error loading events</option>';
+    }
+  }
+
+  function getMedalIcon(rank) {
+    switch (rank) {
+      case 1: return '🥇';
+      case 2: return '🥈';
+      case 3: return '🥉';
+      default: return '';
+    }
+  }
+
+  function renderRankingsTable(filteredResults, eventName) {
+    if (!filteredResults || filteredResults.length === 0) {
+      rankingsContainer.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-state-icon">📊</div>
+          <h3>No rankings found</h3>
+          <p>No rankings found for the selected filters.</p>
+        </div>
+      `;
+      document.getElementById('stats-bar').style.display = 'none';
+      return;
+    }
+
+    document.getElementById('stats-bar').style.display = 'grid';
+    document.getElementById('stat-count').textContent = filteredResults.length;
+
+    const html = filteredResults.map((result, index) => {
+      const rank = index + 1;
+      const medal = getMedalIcon(rank);
+      const athleteName = ((result.athlete?.first_name || '') + ' ' + (result.athlete?.last_name || '')).trim() || '—';
+      const mark = formatMarkForDisplay(result.mark, eventName);
+      return `
+        <div class="result-card">
+          <div class="result-rank">
+            <div class="result-rank-number">
+              ${medal ? `<div class="result-rank-medal">${medal}</div>` : ''}
+              <div>#${rank}</div>
+            </div>
+          </div>
+          <div class="result-content">
+            <div class="result-title">
+              <a href="athlete.html?id=${result.athlete_id || ''}" class="athlete-link">${athleteName}</a>
+            </div>
+            <div class="result-info">
+              <div class="result-info-item">
+                <i class="fas fa-school"></i>
+                <span>${result.athlete?.school || '—'}</span>
+              </div>
+              <div class="result-info-item">
+                <i class="fas fa-flag"></i>
+                <span>${result.meet?.name || '—'}</span>
+              </div>
+            </div>
+          </div>
+          <div class="result-time">
+            <div class="result-time-label">Mark</div>
+            <div class="result-time-value">${mark}</div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    rankingsContainer.innerHTML = html;
+  }
+
+  async function loadRankings() {
+    const eventId = selectEvent.value;
+    const season = selectSeason.value;
+    const gender = selectGender.value;
+
+    if (!eventId) { 
+      rankingsContainer.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-state-icon">⚠️</div>
+          <h3>Select an event</h3>
+          <p>Please select an event above, then click Load.</p>
+        </div>
+      `;
+      document.getElementById('stats-bar').style.display = 'none';
+      return; 
+    }
+
+    rankingsContainer.innerHTML = `
+      <div class="loading-state">
+        <div class="loading-spinner"></div>
+        <p>Loading rankings...</p>
+      </div>
+    `;
+
+    try {
+      await waitForFirebase();
+
+      const eventSnapshot = await window.firebaseDatabase.ref('Track/events').child(eventId).once('value');
+      const eventData = eventSnapshot.val() || {};
+      const eventName = eventData.name || 'Unknown Event';
+
+      const resultsSnapshot = await window.firebaseDatabase.ref('Track/results')
+        .orderByChild('event_id')
+        .equalTo(eventId)
+        .limitToFirst(200)
+        .once('value');
+      
+      const results = [];
+      resultsSnapshot.forEach(child => {
+        const val = child.val();
+        if (val.exclude_from_rankings === true) return;
+        results.push({ id: child.key, ...val });
+      });
+      
+      const meetIds = [...new Set(results.map(r => r.meet_id).filter(Boolean))];
+      const athleteIds = [...new Set(results.map(r => r.athlete_id).filter(Boolean))];
+      
+      const meetsMap = {};
+      const athletesMap = {};
+      
+      if (meetIds.length > 0) {
+        const meetsSnapshot = await window.firebaseDatabase.ref('Track/meets').once('value');
+        meetsSnapshot.forEach(child => {
+          if (meetIds.includes(child.key)) {
+            meetsMap[child.key] = { id: child.key, ...child.val() };
+          }
+        });
+      }
+      
+      if (athleteIds.length > 0) {
+        const athletesSnapshot = await window.firebaseDatabase.ref('Track/athletes').once('value');
+        athletesSnapshot.forEach(child => {
+          if (athleteIds.includes(child.key)) {
+            athletesMap[child.key] = { id: child.key, ...child.val() };
+          }
+        });
+      }
+      
+      results.forEach(r => {
+        r.meet = meetsMap[r.meet_id] || {};
+        r.athlete = athletesMap[r.athlete_id] || {};
+      });
+      
+      let filteredResults = results;
+      if (season) {
+        filteredResults = results.filter(r => r.meet && r.meet.season === season);
+      }
+      
+      filteredResults.sort((a, b) => {
+        const markA = parseMarkValue(a.mark, eventName);
+        const markB = parseMarkValue(b.mark, eventName);
+        if (isFieldEvent(eventName)) {
+          return markB - markA;
+        }
+        return markA - markB;
+      });
+      
+      renderRankingsTable(filteredResults, eventName);
+
+    } catch (error) {
+      console.error('Error loading rankings:', error);
+      rankingsContainer.innerHTML = `
+        <div class="empty-state" style="color: var(--danger);">
+          <div class="empty-state-icon">⚠️</div>
+          <h3>Error</h3>
+          <p>Error loading rankings. Please try again.</p>
+        </div>
+      `;
+      document.getElementById('stats-bar').style.display = 'none';
+    }
+  }
+
+  btnLoad.addEventListener('click', loadRankings);
+
+  document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(initEvents, 100);
+    
+    const menuToggle = document.querySelector('.mobile-menu-toggle');
+    const navMenu = document.getElementById('main-nav');
+    
+    if (menuToggle && navMenu) {
+      menuToggle.addEventListener('click', () => {
+        navMenu.classList.toggle('mobile-open');
+      });
+      
+      document.addEventListener('click', (e) => {
+        if (!navMenu.contains(e.target) && !menuToggle.contains(e.target)) {
+          navMenu.classList.remove('mobile-open');
+        }
+      });
+    }
+  });
+</script>
 </body>
 </html>

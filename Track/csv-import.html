@@ -3,23 +3,23 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Track Admin — Advanced Results Import</title>
+<title>Track Meet Import Engine</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
 
 <style>
 :root{
-  --bg:#0b1220;
-  --panel:#111a2d;
-  --card:#16223a;
+  --bg:#0c1424;
+  --panel:#111c32;
+  --card:#162540;
   --accent:#ff5722;
-  --accent2:#ff7b42;
-  --success:#28a745;
-  --danger:#dc3545;
-  --warning:#ffc107;
-  --text:#e8f1ff;
+  --accent2:#ff784e;
+  --success:#22c55e;
+  --danger:#ef4444;
+  --warning:#f59e0b;
+  --text:#e6edf7;
   --muted:#9fb4c8;
-  --border:rgba(255,255,255,0.08);
+  --border:rgba(255,255,255,.08);
 }
 *{box-sizing:border-box}
 body{
@@ -29,7 +29,7 @@ body{
   color:var(--text);
 }
 .container{
-  max-width:1200px;
+  max-width:1300px;
   margin:auto;
   padding:40px 20px;
 }
@@ -37,31 +37,27 @@ body{
   background:var(--panel);
   border:1px solid var(--border);
   border-radius:14px;
-  padding:30px;
+  padding:28px;
   margin-bottom:24px;
 }
 h1{
+  font-size:2.2rem;
   font-weight:800;
-  font-size:2.3rem;
   background:linear-gradient(90deg,var(--accent),var(--accent2));
   -webkit-background-clip:text;
   -webkit-text-fill-color:transparent;
 }
-h2{
-  margin-top:0;
-  font-size:1.3rem;
-}
-select, textarea, input{
+textarea, select{
   width:100%;
   padding:12px;
   background:var(--card);
   border:1px solid var(--border);
   border-radius:8px;
   color:var(--text);
-  font-size:0.95rem;
+  font-size:.95rem;
 }
 textarea{
-  min-height:200px;
+  min-height:250px;
   resize:vertical;
   font-family:monospace;
 }
@@ -79,25 +75,19 @@ button{
 .btn-primary:hover{
   background:var(--accent2);
 }
-.btn-secondary{
-  background:transparent;
-  border:1px solid var(--border);
-  color:var(--muted);
-}
 .stat-grid{
   display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
-  gap:16px;
-  margin-bottom:20px;
+  grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+  gap:18px;
 }
 .stat{
   background:var(--card);
-  padding:20px;
-  border-radius:8px;
+  padding:18px;
+  border-radius:10px;
   text-align:center;
 }
 .stat-number{
-  font-size:1.8rem;
+  font-size:1.7rem;
   font-weight:700;
 }
 .preview-table{
@@ -107,23 +97,15 @@ button{
 }
 .preview-table th,
 .preview-table td{
-  padding:10px;
+  padding:8px;
   border-bottom:1px solid var(--border);
-  font-size:0.85rem;
+  font-size:.82rem;
 }
 .preview-table th{
-  color:var(--muted);
   text-transform:uppercase;
+  color:var(--muted);
 }
-.alert{
-  padding:14px;
-  border-radius:8px;
-  margin-bottom:12px;
-}
-.success{background:rgba(40,167,69,.1);border:1px solid rgba(40,167,69,.3)}
-.error{background:rgba(220,53,69,.1);border:1px solid rgba(220,53,69,.3)}
-.warning{background:rgba(255,193,7,.1);border:1px solid rgba(255,193,7,.3)}
-.progress-bar{
+.progress{
   height:8px;
   background:var(--card);
   border-radius:6px;
@@ -135,45 +117,41 @@ button{
   width:0%;
   transition:.3s;
 }
+.error{color:var(--danger)}
+.success{color:var(--success)}
+.warning{color:var(--warning)}
 </style>
 </head>
 <body>
 <div class="container">
 
-<h1>Advanced Results Import</h1>
+<h1>Meet Results Import Engine</h1>
 
-<!-- STEP 1 -->
 <div class="card">
-<h2>Step 1 — Select Meet & Event</h2>
-<select id="meetSelect"></select>
-<br><br>
-<select id="eventSelect">
-<option value="">Select event (required)</option>
+<h3>Select Meet</h3>
+<select id="meetSelect">
+<option value="">Loading meets...</option>
 </select>
 </div>
 
-<!-- STEP 2 -->
 <div class="card">
-<h2>Step 2 — Paste Results</h2>
-<textarea id="pasteArea" placeholder="Paste Athletic.net table or CSV here..."></textarea>
+<h3>Paste Full Meet Results</h3>
+<textarea id="pasteArea" placeholder="Paste entire Athletic.net boys or girls results here..."></textarea>
 <br><br>
-<button class="btn-primary" onclick="parseData()">Parse & Validate</button>
+<button class="btn-primary" onclick="parseMeet()">Parse Meet</button>
 </div>
 
-<!-- PREVIEW -->
 <div class="card" id="previewCard" style="display:none">
-<h2>Step 3 — Validation & Preview</h2>
+<h3>Validation Summary</h3>
 <div id="stats"></div>
-<div id="alerts"></div>
-<div id="previewTable"></div>
+<div id="preview"></div>
 </div>
 
-<!-- IMPORT -->
 <div class="card" id="importCard" style="display:none">
-<h2>Step 4 — Import</h2>
-<div id="progressContainer"></div>
+<h3>Import</h3>
+<div class="progress"><div id="progressFill" class="progress-fill"></div></div>
 <br>
-<button class="btn-primary" onclick="importData()">Import Valid Results</button>
+<button class="btn-primary" onclick="importMeet()">Import Valid Results</button>
 </div>
 
 </div>
@@ -185,84 +163,106 @@ button{
 <script>
 let parsedRows=[]
 let validRows=[]
-let selectedMeet=null
-let selectedEvent=null
+let eventMap={}
 
-const FIELD_EVENTS=[
-"long jump","high jump","triple jump","pole vault",
-"shot put","discus","javelin","hammer"
+const FIELD_KEYWORDS=[
+"shot put","discus","javelin","hammer",
+"long jump","triple jump","high jump","pole vault"
 ]
 
 function isFieldEvent(name){
-  return FIELD_EVENTS.some(e=>name.toLowerCase().includes(e))
+  if(!name) return false
+  return FIELD_KEYWORDS.some(k=>name.toLowerCase().includes(k))
 }
 
 function normalizeDistance(mark){
-  if(!mark) return ""
-  const m=mark.match(/(\d+)[^\d]+(\d+(?:\.\d+)?)/)
-  if(!m) return mark.trim()
+  const m = mark.match(/(\d+)[^\d]+(\d+(?:\.\d+)?)/)
+  if(!m) return mark
   return m[1]+"ft "+m[2]+"in"
 }
 
 function normalizeTime(mark){
-  if(!mark) return ""
-  return mark.replace(/[^\d\.\:]/g,"").trim()
+  return mark.replace(/[^\d\:\.]/g,"")
 }
 
-function smartSplit(line){
-  if(line.includes("\t")) return line.split("\t")
-  if(line.includes(",")) return line.split(",")
-  return line.trim().split(/\s{2,}/)
+async function loadMeets(){
+  const snap = await firebase.database().ref("Track/meets").once("value")
+  const sel = document.getElementById("meetSelect")
+  sel.innerHTML="<option value=''>Select Meet</option>"
+  snap.forEach(c=>{
+    sel.innerHTML+=`<option value="${c.key}">${c.val().name}</option>`
+  })
 }
 
-function parseData(){
-  selectedMeet=document.getElementById("meetSelect").value
-  const eventSelect = document.getElementById("eventSelect");
-selectedEvent = eventSelect.value;
-const selectedEventName = eventSelect.options[eventSelect.selectedIndex].dataset.name || "";
-  if(!selectedMeet||!selectedEvent){
-    alert("Select meet and event first.")
-    return
-  }
+async function loadEvents(){
+  const snap = await firebase.database().ref("Track/events").once("value")
+  snap.forEach(c=>{
+    eventMap[c.val().name]=c.key
+  })
+}
+
+async function parseMeet(){
+
+  const meetId=document.getElementById("meetSelect").value
+  if(!meetId){alert("Select meet first");return}
 
   const text=document.getElementById("pasteArea").value.trim()
-  if(!text){alert("Paste data first.");return}
+  if(!text){alert("Paste results first");return}
 
-  const lines=text.split(/\r?\n/).filter(l=>l.trim())
   parsedRows=[]
   validRows=[]
-  let duplicates=new Set()
 
-  lines.forEach((line,i)=>{
-    const cols=smartSplit(line)
-    if(cols.length<3) return
+  const lines=text.split(/\r?\n/)
+  let currentEvent=null
+  let currentRound=null
 
-    let name=cols[1]?.trim()
-    let mark=cols[3]?.trim()||cols[2]?.trim()
-    let school=cols[4]||""
-    let place=cols[0]?.replace(".","")
+  for(let i=0;i<lines.length;i++){
+    let line=lines[i].trim()
+    if(!line) continue
 
-    if(!name) return
+    const header=line.match(/^(.+?) - (Finals|Prelims)$/i)
+    if(header){
+      currentEvent=header[1].trim()
+      currentRound=header[2]
+      continue
+    }
 
-    if(isFieldEvent(selectedEventName)){
+    if(line.toLowerCase().includes("field series")) continue
+    if(!currentEvent) continue
+
+    const row=line.match(/^(\d+)?\.?\s*(\d+|-)?\s+(.+?)\s+(.+)$/)
+    if(!row) continue
+
+    const place=row[1]||null
+    const grade=row[2]||null
+    const name=row[3].trim()
+    let mark=row[4].trim()
+
+    if(["DNS","SCR","NH","ND"].includes(mark)){
+      // keep mark
+    } else if(isFieldEvent(currentEvent)){
       mark=normalizeDistance(mark)
-    }else{
+    } else {
       mark=normalizeTime(mark)
     }
 
-    const key=name+"|"+mark
-    const isDup=duplicates.has(key)
-    duplicates.add(key)
+    const eventId=eventMap[currentEvent]||null
 
-    const row={
-      name,mark,school,place,
-      valid:!isDup && !!mark,
-      error:isDup?"Duplicate entry":""
+    const obj={
+      meet_id:meetId,
+      event_name:currentEvent,
+      event_id:eventId,
+      round:currentRound,
+      athlete_name:name,
+      grade,
+      mark,
+      placement:place,
+      valid:!!eventId
     }
 
-    parsedRows.push(row)
-    if(row.valid) validRows.push(row)
-  })
+    parsedRows.push(obj)
+    if(obj.valid) validRows.push(obj)
+  }
 
   renderPreview()
 }
@@ -273,79 +273,54 @@ function renderPreview(){
 
   document.getElementById("stats").innerHTML=`
   <div class="stat-grid">
-  <div class="stat"><div class="stat-number">${parsedRows.length}</div>Total</div>
-  <div class="stat"><div class="stat-number" style="color:var(--success)">${validRows.length}</div>Valid</div>
-  <div class="stat"><div class="stat-number" style="color:var(--danger)">${parsedRows.length-validRows.length}</div>Errors</div>
+    <div class="stat"><div class="stat-number">${parsedRows.length}</div>Total Rows</div>
+    <div class="stat"><div class="stat-number success">${validRows.length}</div>Valid</div>
+    <div class="stat"><div class="stat-number error">${parsedRows.length-validRows.length}</div>Invalid</div>
   </div>
   `
 
-  const errors=parsedRows.filter(r=>!r.valid)
-  document.getElementById("alerts").innerHTML=
-    errors.length?`<div class="alert error">${errors.length} rows have issues.</div>`:""
-
-  document.getElementById("previewTable").innerHTML=`
+  document.getElementById("preview").innerHTML=`
   <table class="preview-table">
   <thead>
-  <tr><th>Name</th><th>Mark</th><th>Place</th><th>School</th><th>Status</th></tr>
+  <tr>
+  <th>Event</th>
+  <th>Name</th>
+  <th>Mark</th>
+  <th>Round</th>
+  <th>Status</th>
+  </tr>
   </thead>
   <tbody>
-  ${parsedRows.slice(0,20).map(r=>`
-  <tr style="${!r.valid?'opacity:.4':''}">
-  <td>${r.name}</td>
+  ${parsedRows.slice(0,40).map(r=>`
+  <tr>
+  <td>${r.event_name}</td>
+  <td>${r.athlete_name}</td>
   <td>${r.mark}</td>
-  <td>${r.place||"-"}</td>
-  <td>${r.school||"-"}</td>
-  <td>${r.valid?"OK":r.error}</td>
-  </tr>`).join("")}
-  </tbody></table>
+  <td>${r.round}</td>
+  <td>${r.valid?'<span class="success">OK</span>':'<span class="error">Missing Event</span>'}</td>
+  </tr>
+  `).join("")}
+  </tbody>
+  </table>
   `
 }
 
-async function importData(){
+async function importMeet(){
   const ref=firebase.database().ref("Track/results")
-  let imported=0
-
-  document.getElementById("progressContainer").innerHTML=
-  `<div class="progress-bar"><div id="progressFill" class="progress-fill"></div></div>`
+  let count=0
 
   for(let i=0;i<validRows.length;i++){
-    const row=validRows[i]
-    await ref.push({
-      meet_id:selectedMeet,
-      event_id:selectedEvent,
-      athlete_name:row.name,
-      mark:row.mark,
-      placement:row.place||null,
-      school:row.school||"",
-      timestamp:new Date().toISOString()
-    })
-    imported++
+    await ref.push(validRows[i])
+    count++
     document.getElementById("progressFill").style.width=
-      Math.round((imported/validRows.length)*100)+"%"
+      Math.round((count/validRows.length)*100)+"%"
   }
 
-  alert("Import complete: "+imported+" results added.")
+  alert("Import complete: "+count+" results added.")
 }
 
-async function loadData(){
-  const meetSnap=await firebase.database().ref("Track/meets").once("value")
-  const meetSelect=document.getElementById("meetSelect")
-  meetSelect.innerHTML="<option value=''>Select meet</option>"
-  meetSnap.forEach(c=>{
-    meetSelect.innerHTML+=`<option value="${c.key}">${c.val().name}</option>`
-  })
-
-  const eventSnap=await firebase.database().ref("Track/events").once("value")
-  const eventSelect=document.getElementById("eventSelect")
-  eventSelect.innerHTML="<option value=''>Select event</option>"
-  eventSnap.forEach(c=>{
-    eventSelect.innerHTML+=`<option value="${c.key}" data-name="${c.val().name}">
-  ${c.val().name}
-</option>`
-  })
-}
-
-loadData()
+loadMeets()
+loadEvents()
 </script>
 </body>
 </html>

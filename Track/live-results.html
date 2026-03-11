@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Live Results — Track & Field</title>
+  
+  <link rel="icon" type="image/png" href="../assets/Favicon Generator/favicon-96x96.png" sizes="96x96" />
+  <link rel="icon" type="image/svg+xml" href="../assets/Favicon Generator/favicon.svg" />
+  <link rel="shortcut icon" href="../assets/Favicon Generator/favicon.ico" />
+  <link rel="apple-touch-icon" sizes="180x180" href="../assets/Favicon Generator/apple-touch-icon.png" />
+  <link rel="manifest" href="../assets/Favicon Generator/site.webmanifest" />
+  
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="/assets/main.css">
+  
+  <style>
+    /* Live Results Specific Styling */
+    .live-banner {
+      background: linear-gradient(90deg, #ef4444 0%, #dc2626 100%);
+      color: white;
+      padding: 12px 16px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+    }
+
+    .live-indicator {
+      width: 12px;
+      height: 12px;
+      background: white;
+      border-radius: 50%;
+      animation: pulse 1s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% {
+        box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7);
+      }
+      50% {
+        box-shadow: 0 0 0 8px rgba(255, 255, 255, 0);
+      }
+    }
+
+    .live-timestamp {
+      font-size: 0.85rem;
+      margin-left: auto;
+      opacity: 0.9;
+    }
+
+    /* Relay/Team Results Cards */
+    .results-container {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .result-card {
+      background: var(--bg-primary);
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      padding: 0;
+      overflow: hidden;
+      transition: all 0.3s;
+      display: grid;
+      grid-template-columns: 80px 1fr 120px;
+    }
+
+    .result-card:hover {
+      border-color: var(--text-primary);
+      box-shadow: 0 8px 24px var(--shadow-medium);
+      transform: translateY(-4px);
+    }
+
+    .result-rank {
+      background: linear-gradient(135deg, var(--text-primary) 0%, var(--primary-light) 100%);
+      color: var(--bg-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.75rem;
+      font-weight: 800;
+      padding: 20px;
+      text-align: center;
+      min-height: 100%;
+    }
+
+    .result-rank-number {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .result-rank-medal {
+      font-size: 1.5rem;
+    }
+
+    .result-content {
+      padding: 16px 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .result-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin: 0;
+    }
+
+    .result-info {
+      display: flex;
+      gap: 16px;
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      flex-wrap: wrap;
+    }
+
+    .result-info-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .result-time {
+      background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+      color: white;
+      padding: 16px 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      min-height: 100%;
+      text-align: center;
+      gap: 4px;
+    }
+
+    .result-time-label {
+      font-size: 0.7rem;
+      opacity: 0.9;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .result-time-value {
+      font-size: 1.3rem;
+    }
+
+    /* Compact view for mobile */
+    @media (max-width: 768px) {
+      .result-card {
+        grid-template-columns: 60px 1fr;
+      }
+
+      .result-time {
+        grid-column: 1 / -1;
+        padding: 12px;
+        border-top: 1px solid var(--border);
+      }
+
+      .result-rank {
+        padding: 12px;
+        font-size: 1.3rem;
+      }
+
+      .result-title {
+        font-size: 1rem;
+      }
+
+      .result-info {
+        font-size: 0.85rem;
+      }
+    }
+
+    /* Filter Bar */
+    .filter-bar {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin-bottom: 20px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+      align-items: flex-end;
+    }
+
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .filter-label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .filter-input {
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      font-weight: 500;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .filter-input:hover {
+      border-color: var(--text-primary);
+      background: var(--bg-secondary);
+    }
+
+    .filter-input:focus {
+      outline: none;
+      border-color: var(--text-primary);
+      box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Loading State */
+    .loading-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-secondary);
+    }
+
+    .loading-spinner {
+      display: inline-block;
+      width: 40px;
+      height: 40px;
+      border: 4px solid var(--border);
+      border-top-color: var(--text-primary);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Empty State */
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-secondary);
+    }
+
+    .empty-state-icon {
+      font-size: 3rem;
+      margin-bottom: 16px;
+      opacity: 0.5;
+    }
+
+    /* Stats Section */
+    .stats-bar {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .stat-item {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 16px;
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .stat-label {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-top: 4px;
+    }
+
+    /* Today's meets buttons */
+    .meet-select-section {
+      margin-bottom: 24px;
+    }
+    .meet-select-label {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 12px;
+      display: block;
+    }
+    .meet-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .meet-btn {
+      padding: 12px 20px;
+      border: 2px solid var(--border);
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.95rem;
+      transition: all 0.2s;
+    }
+    .meet-btn:hover {
+      border-color: var(--text-primary);
+      background: var(--bg-secondary);
+    }
+    .meet-btn.active {
+      background: var(--text-primary);
+      color: var(--bg-primary);
+      border-color: var(--text-primary);
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <nav class="navbar">
+      <div class="navbar-content">
+        <a href="index.html" class="navbar-brand">Track & Field</a>
+        <button class="mobile-menu-toggle" aria-label="Toggle menu">☰</button>
+        <ul class="navbar-nav" id="main-nav">
+          <li><a href="/home/index.html" class="navbar-link">Home</a></li>
+          <li><a href="index.html" class="navbar-link">Track</a></li>
+          <li><a href="meets.html" class="navbar-link">Meets</a></li>
+          <li><a href="events.html" class="navbar-link">Events</a></li>
+          <li><a href="rankings.html" class="navbar-link">Rankings</a></li>
+          <li><a href="analytics.html" class="navbar-link">Analytics</a></li>
+        </ul>
+        <button class="theme-toggle" aria-label="Switch theme">🌙</button>
+      </div>
+    </nav>
+  </header>
+
+  <main class="content-section">
+    <h1 class="section-title">Live Results</h1>
+
+    <div id="live-banner" class="live-banner" style="display: none;">
+      <div class="live-indicator"></div>
+      <span>LIVE RESULTS - Updates every 30 seconds</span>
+      <div class="live-timestamp" id="live-timestamp"></div>
+    </div>
+
+    <div id="meet-select-section" class="meet-select-section" style="display: none;">
+      <label class="meet-select-label">Today's meets</label>
+      <div id="meet-buttons" class="meet-buttons"></div>
+    </div>
+
+    <div class="filter-bar">
+      <div class="filter-group">
+        <label class="filter-label">Event</label>
+        <select id="filter-event" class="filter-input">
+          <option value="">All Events</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label class="filter-label">Gender</label>
+        <select id="filter-gender" class="filter-input">
+          <option value="">All</option>
+          <option value="M">Men</option>
+          <option value="W">Women</option>
+          <option value="Mixed">Mixed</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label class="filter-label">Sort By</label>
+        <select id="sort-by" class="filter-input">
+          <option value="rank">Rank (Best First)</option>
+          <option value="time">Time (Fastest)</option>
+          <option value="distance">Distance (Farthest)</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="stats-bar" class="stats-bar" style="display: none;">
+      <div class="stat-item">
+        <div class="stat-value" id="stat-results">0</div>
+        <div class="stat-label">Results</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" id="stat-schools">0</div>
+        <div class="stat-label">Schools</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" id="stat-leaders">0</div>
+        <div class="stat-label">Leaders</div>
+      </div>
+    </div>
+
+    <div id="results-container" class="results-container">
+      <div class="loading-state">
+        <div class="loading-spinner"></div>
+        <p>Loading live results...</p>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="row">
+      <div class="footer-col">
+        <h4>General</h4>
+        <ul>
+          <li><a href="/home/index.html">Home</a></li>
+          <li><a href="/home/admin.html">Admin</a></li>
+          <li><a href="/news.html">News</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Track</h4>
+        <ul>
+          <li><a href="/Track/index.html">Home</a></li>
+          <li><a href="/Track/meets.html">Meets</a></li>
+          <li><a href="/Track/teams.html">Teams</a></li>
+          <li><a href="/Track/rankings.html">Rankings</a></li>
+          <li><a href="/Track/analytics.html">Analytics</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Resources</h4>
+        <ul>
+          <li><a href="/home/about.html">About</a></li>
+          <li><a href="/feedback.html">Feedback</a></li>
+          <li><a href="https://github.com/sjwooft1/mountainstatemiles" target="_blank">GitHub</a></li>
+        </ul>
+      </div>
+    </div>
+    <hr>
+    <div class="row">
+      <div class="footer-bottom">
+        <p>&#169; 2026 Mountain State Miles — Built by runners, for runners.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="/assets/theme-toggle.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <script src="firebase-config.js"></script>
+
+  <script>
+    // ==========================================
+    // LIVE RESULTS SYSTEM
+    // ==========================================
+
+    let currentResults = [];
+    let filteredResults = [];
+    let allEvents = [];
+    let autoRefreshInterval = null;
+    let liveSource = null;
+    let selectedMeetId = null;
+    let todayMeets = [];
+
+    async function waitForFirebase() {
+      let attempts = 0;
+      while (typeof window.firebaseDatabase === 'undefined' && attempts < 50) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        attempts++;
+      }
+    }
+
+    // Get stored live results source from localStorage
+    function getLiveResultsSource() {
+      return localStorage.getItem('live-results-source');
+    }
+
+    // Store live results source
+    function setLiveResultsSource(source) {
+      localStorage.setItem('live-results-source', source);
+    }
+
+    function getTodayString() {
+      const d = new Date();
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
+
+    async function loadTodayMeets() {
+      const section = document.getElementById('meet-select-section');
+      const container = document.getElementById('meet-buttons');
+      const resultsContainer = document.getElementById('results-container');
+      const filterBar = document.querySelector('.filter-bar');
+      const statsBar = document.getElementById('stats-bar');
+      try {
+        await waitForFirebase();
+        const snapshot = await window.firebaseDatabase.ref('Track/meets').once('value');
+        const meets = [];
+        if (snapshot.exists()) {
+          snapshot.forEach(child => {
+            meets.push({ id: child.key, ...child.val() });
+          });
+        }
+        const today = getTodayString();
+        todayMeets = meets.filter(m => (m.date || '').split('T')[0] === today);
+        todayMeets.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+
+        if (todayMeets.length === 0) {
+          section.style.display = 'none';
+          if (filterBar) filterBar.style.display = 'none';
+          if (statsBar) statsBar.style.display = 'none';
+          resultsContainer.innerHTML = `
+            <div class="empty-state">
+              <div class="empty-state-icon">📅</div>
+              <h3>No meets today</h3>
+              <p>There are no track meets scheduled for today. <a href="meets.html">View all meets</a>.</p>
+            </div>
+          `;
+          return;
+        }
+
+        section.style.display = 'block';
+        if (filterBar) filterBar.style.display = 'grid';
+        container.innerHTML = todayMeets.map(meet => `
+          <button type="button" class="meet-btn" data-meet-id="${meet.id}">${meet.name || 'Unnamed Meet'}</button>
+        `).join('');
+
+        container.querySelectorAll('.meet-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            selectedMeetId = btn.getAttribute('data-meet-id');
+            container.querySelectorAll('.meet-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            applyFilters();
+            updateStats();
+            renderResults();
+          });
+        });
+
+        if (!selectedMeetId && todayMeets.length > 0) {
+          selectedMeetId = todayMeets[0].id;
+          const firstBtn = container.querySelector('.meet-btn');
+          if (firstBtn) firstBtn.classList.add('active');
+        }
+        await loadResults();
+      } catch (err) {
+        console.error('Error loading today\'s meets:', err);
+        section.style.display = 'none';
+        resultsContainer.innerHTML = `
+          <div class="empty-state" style="color: var(--danger);">
+            <div class="empty-state-icon">⚠️</div>
+            <h3>Error</h3>
+            <p>Failed to load meets. Please try again.</p>
+          </div>
+        `;
+      }
+    }
+
+    // Load from Lakeshore Athletic Services or similar external source
+    async function fetchExternalResults(url) {
+      try {
+        // Proxy request through a CORS-friendly service or parse HTML
+        const response = await fetch(url);
+        const html = await response.text();
+        
+        // Parse HTML to extract results (simplified parsing)
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        
+        // Look for result rows/entries in the document
+        const results = [];
+        const rows = doc.querySelectorAll('[data-result], tr[class*="result"], .result-row');
+        
+        rows.forEach((row, idx) => {
+          const cells = row.querySelectorAll('td, .cell');
+          if (cells.length >= 3) {
+            results.push({
+              rank: idx + 1,
+              team: cells[0]?.textContent?.trim() || 'Team ' + (idx + 1),
+              time: cells[1]?.textContent?.trim() || '—',
+              mark: cells[1]?.textContent?.trim() || '—',
+              athletes: cells[2]?.textContent?.trim() || 'Athletes'
+            });
+          }
+        });
+        
+        return results;
+      } catch (error) {
+        console.error('Error fetching external results:', error);
+        return [];
+      }
+    }
+
+    // Load results from Firebase
+    async function loadResults() {
+      try {
+        await waitForFirebase();
+
+        const resultsSnapshot = await window.firebaseDatabase.ref('Track/results').once('value');
+        const athletesSnapshot = await window.firebaseDatabase.ref('Track/athletes').once('value');
+        const eventsSnapshot = await window.firebaseDatabase.ref('Track/events').once('value');
+        const meetsSnapshot = await window.firebaseDatabase.ref('Track/meets').once('value');
+
+        const athletesMap = {};
+        const eventsMap = {};
+        const meetsMap = {};
+
+        athletesSnapshot.forEach(child => {
+          athletesMap[child.key] = { id: child.key, ...child.val() };
+        });
+
+        eventsSnapshot.forEach(child => {
+          const event = child.val();
+          eventsMap[child.key] = { id: child.key, ...event };
+          if (!allEvents.find(e => e.id === child.key)) {
+            allEvents.push({ id: child.key, name: event.name, gender: event.gender });
+          }
+        });
+
+        meetsSnapshot.forEach(child => {
+          meetsMap[child.key] = { id: child.key, ...child.val() };
+        });
+
+        currentResults = [];
+        resultsSnapshot.forEach(child => {
+          const result = child.val();
+          const athlete = athletesMap[result.athlete_id] || {};
+          const event = eventsMap[result.event_id] || {};
+          const meet = meetsMap[result.meet_id] || {};
+
+          currentResults.push({
+            id: child.key,
+            meetId: result.meet_id || null,
+            rank: result.placement || '—',
+            team: athlete.school || 'No School',
+            athlete: `${athlete.first_name || ''} ${athlete.last_name || ''}`.trim(),
+            event: event.name || 'Unknown Event',
+            gender: event.gender || '',
+            time: result.mark || '—',
+            mark: result.mark || '—',
+            heat: result.heat || '—',
+            meet: meet.name || 'Live Meet',
+            timestamp: result.timestamp || new Date().toISOString()
+          });
+        });
+
+        // Sort by timestamp (newest first)
+        currentResults.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+        updateEventFilter();
+        applyFilters();
+        updateStats();
+        renderResults();
+
+        // Update live banner timestamp
+        document.getElementById('live-timestamp').textContent = new Date().toLocaleTimeString();
+
+      } catch (error) {
+        console.error('Error loading results:', error);
+        showError('Failed to load results: ' + error.message);
+      }
+    }
+
+    function updateEventFilter() {
+      const select = document.getElementById('filter-event');
+      const currentValue = select.value;
+      
+      select.innerHTML = '<option value="">All Events</option>' +
+        allEvents.map(e => `<option value="${e.id}">${e.name} (${e.gender})</option>`).join('');
+      
+      select.value = currentValue;
+    }
+
+    function applyFilters() {
+      const eventFilter = document.getElementById('filter-event').value;
+      const genderFilter = document.getElementById('filter-gender').value;
+      const sortBy = document.getElementById('sort-by').value;
+
+      filteredResults = currentResults.filter(r => {
+        if (selectedMeetId && r.meetId !== selectedMeetId) return false;
+        if (eventFilter && r.event !== allEvents.find(e => e.id === eventFilter)?.name) return false;
+        if (genderFilter && r.gender !== genderFilter) return false;
+        return true;
+      });
+
+      // Sort results
+      if (sortBy === 'time') {
+        filteredResults.sort((a, b) => parseFloat(a.time) - parseFloat(b.time));
+      } else if (sortBy === 'distance') {
+        filteredResults.sort((a, b) => parseFloat(b.time) - parseFloat(a.time));
+      } else {
+        filteredResults.sort((a, b) => parseInt(a.rank) - parseInt(b.rank));
+      }
+
+      renderResults();
+    }
+
+    function getMedalIcon(rank) {
+      switch (rank) {
+        case 1: return '🥇';
+        case 2: return '🥈';
+        case 3: return '🥉';
+        default: return '';
+      }
+    }
+
+    function renderResults() {
+      const container = document.getElementById('results-container');
+
+      if (filteredResults.length === 0) {
+        const msg = selectedMeetId
+          ? 'No results for this meet yet. Check back later or try another meet.'
+          : 'Check your filters or check back when new results are available.';
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">📊</div>
+            <h3>No Results Found</h3>
+            <p>${msg}</p>
+          </div>
+        `;
+        document.getElementById('stats-bar').style.display = 'none';
+        return;
+      }
+
+      document.getElementById('stats-bar').style.display = 'grid';
+
+      const html = filteredResults.map((result, idx) => {
+        const rank = parseInt(result.rank) || (idx + 1);
+        const medal = getMedalIcon(rank);
+        
+        return `
+          <div class="result-card">
+            <div class="result-rank">
+              <div class="result-rank-number">
+                ${medal ? `<div class="result-rank-medal">${medal}</div>` : ''}
+                <div>#${rank}</div>
+              </div>
+            </div>
+            <div class="result-content">
+              <div class="result-title">${result.team}</div>
+              <div class="result-info">
+                <div class="result-info-item">
+                  <i class="fas fa-user"></i>
+                  <span>${result.athlete}</span>
+                </div>
+                <div class="result-info-item">
+                  <i class="fas fa-flag"></i>
+                  <span>${result.event}</span>
+                </div>
+                <div class="result-info-item">
+                  <i class="fas fa-clock"></i>
+                  <span>${result.meet}</span>
+                </div>
+              </div>
+            </div>
+            <div class="result-time">
+              <div class="result-time-label">Time/Mark</div>
+              <div class="result-time-value">${result.time}</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      container.innerHTML = html;
+    }
+
+    function updateStats() {
+      const uniqueSchools = new Set(filteredResults.map(r => r.team)).size;
+      const leaders = new Set(filteredResults.filter(r => parseInt(r.rank) <= 3).map(r => r.team)).size;
+
+      document.getElementById('stat-results').textContent = filteredResults.length;
+      document.getElementById('stat-schools').textContent = uniqueSchools;
+      document.getElementById('stat-leaders').textContent = leaders;
+    }
+
+    function showError(message) {
+      const container = document.getElementById('results-container');
+      container.innerHTML = `
+        <div class="empty-state" style="color: var(--danger);">
+          <div class="empty-state-icon">⚠️</div>
+          <h3>Error</h3>
+          <p>${message}</p>
+        </div>
+      `;
+    }
+
+    // Event listeners
+    document.getElementById('filter-event').addEventListener('change', applyFilters);
+    document.getElementById('filter-gender').addEventListener('change', applyFilters);
+    document.getElementById('sort-by').addEventListener('change', applyFilters);
+
+    // Initialize
+    window.addEventListener('DOMContentLoaded', async () => {
+      await loadTodayMeets();
+
+      // Auto-refresh every 30 seconds (reload results for selected meet)
+      autoRefreshInterval = setInterval(() => {
+        if (selectedMeetId) loadResults();
+      }, 30000);
+
+      // Show live banner when we have today's meets
+      if (todayMeets.length > 0) {
+        document.getElementById('live-banner').style.display = 'flex';
+      }
+
+      // Mobile menu
+      const menuToggle = document.querySelector('.mobile-menu-toggle');
+      const navMenu = document.getElementById('main-nav');
+      
+      if (menuToggle && navMenu) {
+        menuToggle.addEventListener('click', () => {
+          navMenu.classList.toggle('mobile-open');
+        });
+      }
+    });
+
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', () => {
+      if (autoRefreshInterval) clearInterval(autoRefreshInterval);
+    });
+  </script>
+</body>
+</html>

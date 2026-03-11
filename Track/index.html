@@ -57,9 +57,9 @@
     </section>
     
     <section>
-      <h2 class="section-title">Recent Track Meets</h2>
+      <h2 class="section-title" id="meet-section-title">Today's Track Meets</h2>
       <div class="meet-grid" id="meet-list">
-        <p>Loading recent meets...</p>
+        <p>Loading today's meets...</p>
       </div>
     </section>
   </main>
@@ -121,8 +121,17 @@
       }
     }
     
+    function todayString() {
+      const d = new Date();
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    }
+
     async function loadRecentMeets() {
       const container = document.getElementById('meet-list');
+      const titleEl = document.getElementById('meet-section-title');
       try {
         await waitForFirebase();
         const snapshot = await window.firebaseDatabase.ref('Track/meets').once('value');
@@ -139,26 +148,28 @@
           });
         }
         
-        meets.sort((a, b) => {
+        const today = todayString();
+        const todaysMeets = meets.filter(m => (m.date || '').split('T')[0] === today);
+        todaysMeets.sort((a, b) => {
           const dateA = a.date || '';
           const dateB = b.date || '';
           return dateB.localeCompare(dateA);
         });
         
-        const recentMeets = meets.slice(10);
+        if (titleEl) titleEl.textContent = "Today's Track Meets";
         
-        if (!recentMeets.length) {
-          container.innerHTML = '<p>No recent track meets found.</p>';
+        if (!todaysMeets.length) {
+          container.innerHTML = '<p>No track meets scheduled for today. <a href="meets.html">View all meets</a>.</p>';
           return;
         }
         
         function formatDate(str) {
           if (!str) return 'Date TBD';
-          const [y, m, d] = str.split('-');
+          const [y, m, d] = (str.split('T')[0] || str).split('-');
           return new Date(y, m - 1, d).toLocaleDateString();
         }
         
-        container.innerHTML = recentMeets.map(meet => `
+        container.innerHTML = todaysMeets.map(meet => `
           <a href="meet.html?slug=${encodeURIComponent(meet.slug || meet.id)}" class="meet-card">
             <h3 class="meet-card-title">${meet.name || 'Unnamed Meet'}</h3>
             <p class="meet-card-date">📅 ${formatDate(meet.date)}</p>
@@ -167,7 +178,8 @@
         `).join('');
       } catch (error) {
         console.error('Error loading meets:', error);
-        container.innerHTML = '<p style="color: #dc3545; padding: 20px; text-align: center;">⚠️ Error loading recent meets. Please check your connection and try again.</p>';
+        if (titleEl) titleEl.textContent = "Today's Track Meets";
+        container.innerHTML = '<p style="color: #dc3545; padding: 20px; text-align: center;">⚠️ Error loading meets. Please check your connection and try again.</p>';
       }
     }
     
