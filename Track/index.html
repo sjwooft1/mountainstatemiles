@@ -179,7 +179,7 @@
       } catch (error) {
         console.error('Error loading meets:', error);
         if (titleEl) titleEl.textContent = "Today's Track Meets";
-        container.innerHTML = '<p style="color: #dc3545; padding: 20px; text-align: center;">⚠️ Error loading meets. Please check your connection and try again.</p>';
+        container.innerHTML = '<p style="color: #dc3545; padding: 20px; text-align: center;">No meets scheduled for today.</p>';
       }
     }
     

@@ -1667,25 +1667,45 @@
               <button onclick="toggleMeetView('list')" id="btn-list" class="btn btn-primary btn-small">List</button>
               <button onclick="toggleMeetView('calendar')" id="btn-cal" class="btn btn-secondary btn-small">Calendar</button>
             </div>
-            
+            <!-- Quick filters for meets -->
+            <select id="meets-filter-season" class="form-input" style="width:auto; min-width: 140px; font-size:0.85rem; padding:6px 10px;">
+              <option value="">All seasons</option>
+              <option value="indoor">Indoor</option>
+              <option value="outdoor">Outdoor</option>
+            </select>
+            <input id="meets-filter-search" class="form-input" placeholder="Search name / location…" style="min-width: 180px; font-size:0.85rem; padding:6px 10px;" />
+            <button class="btn btn-secondary btn-small" onclick="clearMeetsFilters()" style="font-size:0.8rem;">Clear</button>
+            <label style="display:flex; align-items:center; gap:8px; padding:8px 12px; border:1px solid var(--border); border-radius:6px; background:var(--card); cursor:pointer; white-space:nowrap;">
+              <input type="checkbox" id="meets-select-all" onchange="toggleMeetsSelectAll()">
+              <span style="font-size:0.9rem;">Select All</span>
+            </label>
             <button class="btn btn-primary" onclick="openAddModal()">+ Add Meet</button>
+            <button class="btn btn-danger btn-small" id="meets-bulk-delete" style="display:none;" onclick="openMeetsBulkDeleteModal()">🗑️ Delete Selected</button>
           </div>
+        </div>
+
+        <!-- Active Filters Bar -->
+        <div id="meets-filter-bar" style="padding: 12px 20px; background: var(--card); border-bottom: 1px solid var(--border); display: none; flex-wrap: wrap; gap: 12px; align-items: center;">
+          <span style="font-size: 0.9rem; color: var(--muted);">Active Filters:</span>
+          <div id="meets-active-filters" style="display: flex; gap: 8px; flex-wrap: wrap;"></div>
         </div>
 
         <div id="meet-list-view" class="grid-scroll" style="flex:1;">
           <table class="grid-table">
             <thead>
               <tr>
-                <th>Name</th>
-                <th>Date</th>
-                <th>Season</th>
-                <th>Location</th>
+                <th style="width: 30px;"><input type="checkbox" id="meets-checkbox-all" onchange="toggleMeetsSelectAll()"></th>
+                <th class="sortable" onclick="sortMeetsTable('name')">Name</th>
+                <th class="sortable" onclick="sortMeetsTable('date')">Date</th>
+                <th class="sortable" onclick="sortMeetsTable('season')">Season</th>
+                <th class="sortable" onclick="sortMeetsTable('location')">Location</th>
                 <th style="width:120px;">Actions</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody id="meet-list-body">
               ${data.map(row => `
-                <tr>
+                <tr class="meets-row" data-id="${row.id}">
+                  <td style="width: 30px;"><input type="checkbox" class="meets-checkbox" onchange="updateMeetsSelectionCount()"></td>
                   <td><strong>${row.name}</strong><br><span style="font-size:0.8em; color:var(--muted)">${row.slug}</span></td>
                   <td>${row.date}</td>
                   <td><span style="padding:2px 6px; border-radius:4px; font-size:0.8em; background:${row.season === 'indoor' ? '#0f3460' : '#4a2511'}">${row.season}</span></td>
@@ -1703,7 +1723,24 @@
         <div id="meet-calendar-view" style="flex:1; padding:20px; background:white; color:black; display:none; overflow-y:auto;">
           <div id="admin-calendar"></div>
         </div>
+
+        <!-- Bulk Actions Bar -->
+        <div id="meets-bulk-actions-bar" style="padding: 12px 20px; background: var (--card); border-top: 1px solid var(--border); display: none; gap: 12px; align-items: center;">
+          <span id="meets-selection-count" style="color: var(--muted); font-size: 0.9rem;"></span>
+          <button class="btn btn-danger btn-small" onclick="openMeetsBulkDeleteModal()">🗑️ Delete Selected</button>
+          <button class="btn btn-secondary btn-small" onclick="bulkExportMeets()">📥 Export Selected</button>
+          <button class="btn btn-secondary btn-small" onclick="openMeetsBulkEditModal()">✏️ Bulk Edit</button>
+        </div>
       </div>
+
+      <style>
+        .meets-row input[type="checkbox"] {
+          cursor: pointer;
+        }
+        .meets-row.selected {
+          background: rgba(255, 123, 45, 0.1);
+        }
+      </style>
     `;
 
     // Initialize Calendar immediately but hidden
@@ -1725,9 +1762,7 @@
                     color: meet.season === 'indoor' ? '#002855' : '#ff6b35'
                 })),
                 dateClick: function(info) {
-                    // Pre-fill date when clicking on calendar
                     openAddModal();
-                    // Wait for modal to open then fill date
                     setTimeout(() => {
                         const dateInput = document.querySelector('input[name="date"]');
                         if(dateInput) dateInput.value = info.dateStr;
@@ -1740,9 +1775,269 @@
             window.adminCalendar.render();
         }
     }, 100);
+
+    // Wire meets quick filters after DOM is ready
+    const seasonSel = document.getElementById('meets-filter-season');
+    const searchInput = document.getElementById('meets-filter-search');
+    if (seasonSel) {
+      seasonSel.onchange = applyMeetsFilters;
+    }
+    if (searchInput) {
+      searchInput.oninput = function () {
+        clearTimeout(window._meetsSearchTimer);
+        window._meetsSearchTimer = setTimeout(applyMeetsFilters, 150);
+      };
+    }
   }
 
-  // --- HELPER FUNCTION FOR TOGGLING ---
+  // ==========================================
+  // MEETS BULK OPERATIONS
+  // ==========================================
+  function toggleMeetsSelectAll() {
+    const isChecked = document.getElementById('meets-checkbox-all').checked;
+    document.querySelectorAll('.meets-checkbox').forEach(checkbox => {
+      checkbox.checked = isChecked;
+    });
+    updateMeetsSelectionCount();
+  }
+
+  function updateMeetsSelectionCount() {
+    const selected = document.querySelectorAll('.meets-checkbox:checked').length;
+    const bulkBar = document.getElementById('meets-bulk-actions-bar');
+    const selectionCount = document.getElementById('meets-selection-count');
+    
+    if (selected > 0) {
+      bulkBar.style.display = 'flex';
+      selectionCount.textContent = `${selected} meet(s) selected`;
+      document.querySelectorAll('.meets-row').forEach(row => {
+        if (row.querySelector('.meets-checkbox:checked')) {
+          row.classList.add('selected');
+        } else {
+          row.classList.remove('selected');
+        }
+      });
+    } else {
+      bulkBar.style.display = 'none';
+      document.querySelectorAll('.meets-row').forEach(row => row.classList.remove('selected'));
+    }
+  }
+
+  function openMeetsBulkEditModal() {
+    const selectedRows = Array.from(document.querySelectorAll('.meets-checkbox:checked'))
+      .map(cb => cb.closest('.meets-row'))
+      .filter(Boolean);
+    if (!selectedRows.length) {
+      alert('Select at least one meet first.');
+      return;
+    }
+    const ids = selectedRows.map(row => row.getAttribute('data-id'));
+
+    const body = `
+      <div class="form-group">
+        <label class="form-label">New Season <span style="color: var(--muted); font-size:0.8rem;">(leave blank to keep current)</span></label>
+        <select class="form-input" name="bulk_season">
+          <option value="">-- Keep current --</option>
+          <option value="indoor">Indoor</option>
+          <option value="outdoor">Outdoor</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">New Location <span style="color: var(--muted); font-size:0.8rem;">(leave blank to keep current)</span></label>
+        <input type="text" class="form-input" name="bulk_location" placeholder="e.g., Charleston, WV">
+      </div>
+      <p style="font-size:0.85rem; color: var(--warning); margin-top: 4px;">
+        These changes will be applied to <strong>${ids.length}</strong> selected meet(s). Only fields you fill in will be updated.
+      </p>
+    `;
+
+    const template = document.getElementById('modal-template');
+    const clone = template.content.cloneNode(true);
+    clone.querySelector('#modal-title').textContent = 'Bulk Edit Meets';
+    clone.querySelector('#modal-body').innerHTML = body;
+    const submitBtn = clone.querySelector('#modal-submit');
+    submitBtn.textContent = 'Apply to Selected';
+    submitBtn.onclick = function () { handleMeetsBulkEditSubmit(ids); };
+    const overlay = clone.querySelector('.modal-overlay');
+    document.body.appendChild(overlay);
+    window.currentModal = overlay;
+  }
+
+  async function handleMeetsBulkEditSubmit(ids) {
+    const modal = window.currentModal;
+    if (!modal || !ids || !ids.length) return;
+
+    const season = modal.querySelector('input[name="bulk_season"], select[name="bulk_season"]').value.trim();
+    const location = modal.querySelector('input[name="bulk_location"]').value.trim();
+
+    const updates = {};
+    if (season) updates.season = season;
+    if (location) updates.location = location;
+
+    if (!Object.keys(updates).length) {
+      alert('Enter at least one field to update.');
+      return;
+    }
+
+    try {
+      await Promise.all(
+        ids.map(id => updateRecord(`Track/meets/${id}`, updates))
+      );
+      closeModal();
+      await loadSection('meets');
+    } catch (err) {
+      console.error('Bulk edit error:', err);
+      alert('Error applying bulk edits: ' + err.message);
+    }
+  }
+
+  function openMeetsBulkDeleteModal() {
+    const selectedRows = Array.from(document.querySelectorAll('.meets-checkbox:checked'))
+      .map(cb => cb.closest('.meets-row'))
+      .filter(Boolean);
+    if (!selectedRows.length) {
+      alert('Select at least one meet first.');
+      return;
+    }
+    const ids = selectedRows.map(row => row.getAttribute('data-id'));
+    const names = selectedRows.map(row => row.querySelector('strong').textContent);
+
+    const body = `
+      <p style="color: var(--danger); font-weight: 600; margin-bottom: 16px;">⚠️ This action cannot be undone!</p>
+      <p style="margin-bottom: 16px;">You are about to delete the following ${ids.length} meet(s):</p>
+      <div style="background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 12px; max-height: 200px; overflow-y: auto; margin-bottom: 16px;">
+        <ul style="margin: 0; padding-left: 20px;">
+          ${names.map(name => `<li style="color: #e6f0f7; margin-bottom: 4px;">${name}</li>`).join('')}
+        </ul>
+      </div>
+      <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+        <input type="checkbox" id="confirm-delete-meets" style="cursor: pointer;">
+        <span style="font-size: 0.9rem;">I understand this will delete these meets and all related data</span>
+      </label>
+    `;
+
+    const template = document.getElementById('modal-template');
+    const clone = template.content.cloneNode(true);
+    clone.querySelector('#modal-title').textContent = 'Delete Meets';
+    clone.querySelector('#modal-body').innerHTML = body;
+    const submitBtn = clone.querySelector('#modal-submit');
+    submitBtn.textContent = 'Delete Permanently';
+    submitBtn.style.background = 'var(--danger)';
+    submitBtn.onclick = function () { 
+      if (document.getElementById('confirm-delete-meets').checked) {
+        handleMeetsBulkDelete(ids);
+      } else {
+        alert('Please confirm by checking the box.');
+      }
+    };
+    const overlay = clone.querySelector('.modal-overlay');
+    document.body.appendChild(overlay);
+    window.currentModal = overlay;
+  }
+
+  async function handleMeetsBulkDelete(ids) {
+    try {
+      await Promise.all(ids.map(id => deleteRecord(`Track/meets/${id}`)));
+      closeModal();
+      await loadSection('meets');
+    } catch (err) {
+      console.error('Bulk delete error:', err);
+      alert('Error: ' + err.message);
+    }
+  }
+
+  function bulkExportMeets() {
+    const selectedRows = Array.from(document.querySelectorAll('.meets-checkbox:checked'))
+      .map(cb => cb.closest('.meets-row'))
+      .filter(Boolean);
+    
+    const selectedData = currentData.filter(r => selectedRows.some(row => row.getAttribute('data-id') === r.id));
+    const headers = ['Name', 'Slug', 'Date', 'Season', 'Location', 'Description'];
+    const rows = selectedData.map(r => [
+      r.name,
+      r.slug,
+      r.date,
+      r.season,
+      r.location || '',
+      r.description || ''
+    ]);
+    
+    const csv = [headers, ...rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(','))].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `meets-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function clearMeetsFilters() {
+    const seasonSel = document.getElementById('meets-filter-season');
+    const searchInput = document.getElementById('meets-filter-search');
+    if (seasonSel) seasonSel.value = '';
+    if (searchInput) searchInput.value = '';
+    applyMeetsFilters();
+  }
+
+  function applyMeetsFilters() {
+    if (!window.currentData || currentSection !== 'meets') return;
+    const seasonSel = document.getElementById('meets-filter-season');
+    const searchInput = document.getElementById('meets-filter-search');
+    const season = seasonSel ? seasonSel.value : '';
+    const q = (searchInput ? searchInput.value : '').toLowerCase().trim();
+
+    const all = window.currentData.slice();
+    const filtered = all.filter(row => {
+      if (season && row.season !== season) return false;
+      if (q) {
+        const hay = `${row.name || ''} ${row.slug || ''} ${row.location || ''}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+
+    const tbody = document.getElementById('meet-list-body');
+    if (tbody) {
+      tbody.innerHTML = filtered.map(row => `
+        <tr class="meets-row" data-id="${row.id}">
+          <td style="width: 30px;"><input type="checkbox" class="meets-checkbox" onchange="updateMeetsSelectionCount()"></td>
+          <td><strong>${row.name}</strong><br><span style="font-size:0.8em; color:var(--muted)">${row.slug}</span></td>
+          <td>${row.date}</td>
+          <td><span style="padding:2px 6px; border-radius:4px; font-size:0.8em; background:${row.season === 'indoor' ? '#0f3460' : '#4a2511'}">${row.season}</span></td>
+          <td>${row.location || '—'}</td>
+          <td>
+            <button class="btn btn-secondary btn-small" onclick="openEditModal('${row.id}')">Edit</button>
+            <button class="btn btn-danger btn-small" onclick="confirmDelete('${row.id}')">Del</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+    document.getElementById('meets-checkbox-all').checked = false;
+    updateMeetsSelectionCount();
+    updateRecordCount(filtered.length);
+  }
+
+  function sortMeetsTable(column) {
+    if (!window.currentData || currentSection !== 'meets') return;
+    if (!window._meetsSort) window._meetsSort = { column: null, dir: 'asc' };
+    const state = window._meetsSort;
+    if (state.column === column) {
+      state.dir = state.dir === 'asc' ? 'desc' : 'asc';
+    } else {
+      state.column = column;
+      state.dir = 'asc';
+    }
+
+    window.currentData.sort((a, b) => {
+      const aVal = a[column] || '';
+      const bVal = b[column] || '';
+      const cmp = aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
+      return state.dir === 'asc' ? cmp : -cmp;
+    });
+
+    applyMeetsFilters();
+  }
+
   window.toggleMeetView = function(view) {
     const listView = document.getElementById('meet-list-view');
     const calView = document.getElementById('meet-calendar-view');
@@ -1763,7 +2058,7 @@
       btnList.classList.remove('btn-primary');
       btnCal.classList.add('btn-primary');
       btnCal.classList.remove('btn-secondary');
-      if(window.adminCalendar) window.adminCalendar.render(); // Re-render to fix size issues
+      if(window.adminCalendar) window.adminCalendar.render();
     }
   }
   
@@ -1908,11 +2203,31 @@
               <span style="font-size:0.9rem;">Show IDs</span>
             </label>
             <button class="btn btn-secondary" onclick="openAdvancedFilter()">🔍 Advanced Filter</button>
+            <button class="btn btn-secondary" onclick="openBulkEditModal()">🛠 Bulk Edit</button>
             <button class="btn btn-primary" onclick="openAddResultModal()">+ Add</button>
-            <button class="btn btn-secondary" onclick="exportToCSV('results')">📥 Export</button>
+            <button class="btn btn-secondary" onclick="exportToCSV('results')">📥 Export All</button>
           </div>
         </div>
-        
+
+        <!-- Quick inline filters -->
+        <div id="results-quick-filters" style="padding: 10px 20px; background: var(--panel); border-bottom: 1px solid var(--border); display: flex; flex-wrap: wrap; gap: 10px; align-items: center;">
+          <span style="font-size: 0.9rem; color: var(--muted);">Quick Filters:</span>
+          <select id="filter-meet-quick" class="form-input" style="width:auto; min-width: 160px; font-size:0.85rem; padding:6px 10px;">
+            <option value="">All meets</option>
+          </select>
+          <select id="filter-event-quick" class="form-input" style="width:auto; min-width: 160px; font-size:0.85rem; padding:6px 10px;">
+            <option value="">All events</option>
+          </select>
+          <select id="filter-gender-quick" class="form-input" style="width:auto; min-width: 120px; font-size:0.85rem; padding:6px 10px;">
+            <option value="">Any gender</option>
+            <option value="M">Men/Boys</option>
+            <option value="W">Women/Girls</option>
+          </select>
+          <input id="filter-search-quick" class="form-input" placeholder="Search athlete / school…" style="flex:1; min-width:160px; font-size:0.85rem; padding:6px 10px;" />
+          <button class="btn btn-secondary btn-small" onclick="clearQuickResultsFilters()" style="font-size:0.8rem;">Clear</button>
+        </div>
+
+        <!-- Advanced filter tags bar -->
         <div id="filter-bar" style="padding: 12px 20px; background: var(--card); border-bottom: 1px solid var(--border); display: none; flex-wrap: wrap; gap: 12px; align-items: center;">
           <span style="font-size: 0.9rem; color: var(--muted);">Active Filters:</span>
           <div id="active-filters" style="display: flex; gap: 8px; flex-wrap: wrap;"></div>
@@ -1939,7 +2254,7 @@
           </table>
         </div>
         
-        <div id="bulk-actions-bar" style="padding: 12px 20px; background: var (--card); border-top: 1px solid var(--border); display: none; gap: 12px; align-items: center;">
+        <div id="bulk-actions-bar" style="padding: 12px 20px; background: var(--card); border-top: 1px solid var(--border); display: none; gap: 12px; align-items: center;">
           <span id="selection-count" style="color: var(--muted); font-size: 0.9rem;"></span>
           <button class="btn btn-danger btn-small" onclick="bulkDeleteResults()">🗑️ Delete Selected</button>
           <button class="btn btn-secondary btn-small" onclick="bulkExportResults()">📥 Export Selected</button>
@@ -1957,7 +2272,7 @@
         
         .id-cell {
           font-size: 0.75rem;
-          color: var (--muted);
+          color: var(--muted);
           font-family: monospace;
           display: none;
           padding: 4px 0;
@@ -2025,6 +2340,75 @@
         </td>
       </tr>
     `).join('');
+  }
+
+  // Build options for quick inline filters based on loaded data
+  function buildResultsQuickFilters(data) {
+    const meetSel = document.getElementById('filter-meet-quick');
+    const eventSel = document.getElementById('filter-event-quick');
+    const genderSel = document.getElementById('filter-gender-quick');
+    const searchInput = document.getElementById('filter-search-quick');
+    if (!meetSel || !eventSel || !genderSel || !searchInput) return;
+
+    const meets = [...new Set(data.map(r => r.meet_name))].filter(Boolean).sort();
+    const events = [...new Set(data.map(r => r.event_name))].filter(Boolean).sort();
+    const genders = [...new Set(data.map(r => r.event_gender).filter(Boolean))].sort();
+
+    meetSel.innerHTML = '<option value=\"\">All meets</option>' + meets.map(m => `<option value=\"${m}\">${m}</option>`).join('');
+    eventSel.innerHTML = '<option value=\"\">All events</option>' + events.map(e => `<option value=\"${e}\">${e}</option>`).join('');
+    genderSel.innerHTML = '<option value=\"\">Any gender</option>' + genders.map(g => `<option value=\"${g}\">${g}</option>`).join('');
+
+    meetSel.onchange = applyQuickResultsFilters;
+    eventSel.onchange = applyQuickResultsFilters;
+    genderSel.onchange = applyQuickResultsFilters;
+    searchInput.oninput = function() {
+      // small debounce via microtask
+      clearTimeout(window._resultsSearchTimer);
+      window._resultsSearchTimer = setTimeout(applyQuickResultsFilters, 150);
+    };
+  }
+
+  function clearQuickResultsFilters() {
+    const meetSel = document.getElementById('filter-meet-quick');
+    const eventSel = document.getElementById('filter-event-quick');
+    const genderSel = document.getElementById('filter-gender-quick');
+    const searchInput = document.getElementById('filter-search-quick');
+    if (meetSel) meetSel.value = '';
+    if (eventSel) eventSel.value = '';
+    if (genderSel) genderSel.value = '';
+    if (searchInput) searchInput.value = '';
+    applyQuickResultsFilters();
+  }
+
+  function applyQuickResultsFilters() {
+    if (!window.currentRawData) return;
+    const meetSel = document.getElementById('filter-meet-quick');
+    const eventSel = document.getElementById('filter-event-quick');
+    const genderSel = document.getElementById('filter-gender-quick');
+    const searchInput = document.getElementById('filter-search-quick');
+
+    const meet = meetSel ? meetSel.value : '';
+    const event = eventSel ? eventSel.value : '';
+    const gender = genderSel ? genderSel.value : '';
+    const q = (searchInput ? searchInput.value : '').toLowerCase().trim();
+
+    let rows = window.currentRawData.slice();
+    rows = rows.filter(r => {
+      if (meet && r.meet_name !== meet) return false;
+      if (event && r.event_name !== event) return false;
+      if (gender && r.event_gender !== gender) return false;
+      if (q) {
+        const hay = `${r.athlete_name || ''} ${r.athlete_school || ''}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+
+    const tbody = document.getElementById('results-grid-body');
+    if (tbody) tbody.innerHTML = renderResultsRows(rows);
+    updateRecordCount(rows.length);
+    document.getElementById('select-all').checked = false;
+    updateSelectionCount();
   }
   
   function toggleResultsIDDisplay() {
@@ -2229,6 +2613,80 @@
     }
     
     applyAdvancedFilters();
+  }
+
+  // ==========================
+  // Bulk edit for selected results
+  // ==========================
+  function openBulkEditModal() {
+    const selectedRows = Array.from(document.querySelectorAll('.row-checkbox:checked'))
+      .map(cb => cb.closest('.result-row'))
+      .filter(Boolean);
+    if (!selectedRows.length) {
+      alert('Select at least one result row first.');
+      return;
+    }
+    const ids = selectedRows.map(row => row.getAttribute('data-id'));
+
+    const body = `
+      <div class="form-group">
+        <label class="form-label">New Mark/Time <span style="color: var(--muted); font-size:0.8rem;">(leave blank to keep current)</span></label>
+        <input type="text" class="form-input" name="bulk_mark" placeholder="e.g., 7.40, 18:25.0">
+      </div>
+      <div class="form-group">
+        <label class="form-label">New Placement <span style="color: var(--muted); font-size:0.8rem;">(leave blank to keep current)</span></label>
+        <input type="number" class="form-input" name="bulk_place" min="1" placeholder="e.g., 8">
+      </div>
+      <div class="form-group">
+        <label class="form-label">New Heat <span style="color: var(--muted); font-size:0.8rem;">(leave blank to keep current)</span></label>
+        <input type="text" class="form-input" name="bulk_heat" placeholder="e.g., 1, 2, A, B">
+      </div>
+      <p style="font-size:0.85rem; color: var(--warning); margin-top: 4px;">
+        These changes will be applied to <strong>${ids.length}</strong> selected result(s). Only fields you fill in will be updated.
+      </p>
+    `;
+
+    // Use modal template but override submit handler
+    const template = document.getElementById('modal-template');
+    const clone = template.content.cloneNode(true);
+    clone.querySelector('#modal-title').textContent = 'Bulk Edit Results';
+    clone.querySelector('#modal-body').innerHTML = body;
+    const submitBtn = clone.querySelector('#modal-submit');
+    submitBtn.textContent = 'Apply to Selected';
+    submitBtn.onclick = function () { handleBulkEditSubmit(ids); };
+    const overlay = clone.querySelector('.modal-overlay');
+    document.body.appendChild(overlay);
+    window.currentModal = overlay;
+  }
+
+  async function handleBulkEditSubmit(ids) {
+    const modal = window.currentModal;
+    if (!modal || !ids || !ids.length) return;
+
+    const mark = modal.querySelector('input[name="bulk_mark"]').value.trim();
+    const placeRaw = modal.querySelector('input[name="bulk_place"]').value.trim();
+    const heat = modal.querySelector('input[name="bulk_heat"]').value.trim();
+
+    const updates = {};
+    if (mark) updates.mark = mark;
+    if (placeRaw) updates.placement = parseInt(placeRaw, 10) || null;
+    if (heat) updates.heat = heat;
+
+    if (!Object.keys(updates).length) {
+      alert('Enter at least one field to update.');
+      return;
+    }
+
+    try {
+      await Promise.all(
+        ids.map(id => updateRecord(`Track/results/${id}`, updates))
+      );
+      closeModal();
+      await loadSection('results');
+    } catch (err) {
+      console.error('Bulk edit error:', err);
+      alert('Error applying bulk edits: ' + err.message);
+    }
   }
   
   function clearAdvancedFilters() {

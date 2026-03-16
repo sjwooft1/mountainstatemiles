@@ -184,7 +184,7 @@ html[data-theme="light"] {
     /* View Toggles */
     .view-toggles {
       display: flex;
-      background: var(--bg-light);
+      background: var(--bg-secondary);
       border: 1px solid var(--border);
       border-radius: 4px;
       padding: 4px;
@@ -206,27 +206,46 @@ html[data-theme="light"] {
       color: var(--accent-dark);
     }
 
-    /* Calendar Styling */
-    #calendar {
-      background: var(--bg-light);
-      padding: 20px;
-      border-radius: 6px;
-      border: 1px solid var(--border);
-      min-height: 600px;
+    /* Calendar container & FullCalendar theme */
+    #calendar-wrapper {
       display: none;
+      margin-top: 24px;
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      min-height: 600px;
     }
 
-    .fc-event {
-      cursor: pointer;
-      border: none;
-      padding: 2px 4px;
-      color: var(--primary)
+    #calendar-wrapper.visible {
+      display: block;
     }
-    
-    .fc-event-title {
-      font-weight: 600;
-      color: var(--secondary)
+
+    #calendar {
+      min-height: 560px;
     }
+
+    /* FullCalendar 6 theme overrides */
+    .fc {
+      --fc-border-color: var(--border);
+      --fc-button-bg-color: var(--primary);
+      --fc-button-border-color: var(--primary);
+      --fc-button-hover-bg-color: var(--primary-light);
+      --fc-button-hover-border-color: var(--primary-light);
+      --fc-button-active-bg-color: var(--primary-lighter);
+      --fc-today-bg-color: rgba(0, 40, 85, 0.08);
+      --fc-page-bg-color: var(--bg-primary);
+      --fc-neutral-bg-color: var(--bg-primary);
+      --fc-list-event-hover-bg-color: var(--bg-secondary);
+    }
+
+    .fc .fc-toolbar-title { font-size: 1.25rem; color: var(--text-primary); }
+    .fc .fc-button { color: var(--accent); font-weight: 600; }
+    .fc .fc-col-header-cell-cushion { color: var(--text-secondary); font-weight: 600; }
+    .fc .fc-daygrid-day-number { color: var(--text-secondary); }
+    .fc .fc-event { cursor: pointer; border: none; border-radius: 4px; }
+    .fc .fc-event-title { font-weight: 600; }
+    .fc .fc-day-today .fc-daygrid-day-number { background: var(--primary); color: var(--accent); border-radius: 50%; padding: 2px 6px; }
 
     /* List Grid Styling */
     .meets-grid {
@@ -251,7 +270,7 @@ html[data-theme="light"] {
     .meet-card:hover {
       transform: translateY(-4px);
       box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
-      border-color: var(--);
+      border-color: var(--primary-light);
     }
 
     .meet-card-title { 
@@ -281,10 +300,10 @@ html[data-theme="light"] {
       padding: 6px 12px;
       border-radius: 4px;
       border: 1px solid var(--border);
-      background: var(--bg-light);
+      background: var(--bg-secondary);
       cursor: pointer;
       font-size: 0.9rem;
-      color: var(--text-primary);
+      color: var (--text-primary);
       transition: all 0.2s;
     }
     .filter-chip.active { 
@@ -295,7 +314,7 @@ html[data-theme="light"] {
 
     /* Footer */
     footer {
-      background: var(--bg-light);
+      background: var(--bg-secondary);
       border-top: 1px solid var(--border);
       padding: 60px 20px;
       color: var(--text-secondary);
@@ -341,7 +360,7 @@ html[data-theme="light"] {
       display: none;
       position: absolute;
       right: 0;
-      background: var(--bg-light);
+      background: var(--bg-secondary);
       min-width: 200px;
       box-shadow: 0 8px 16px rgba(0,0,0,0.12);
       z-index: 1000;
@@ -364,7 +383,7 @@ html[data-theme="light"] {
     }
 
     .export-dropdown button:hover { 
-      background: var(--bg-light);
+      background: var(--bg-secondary);
       color: var(--primary); 
     }
 
@@ -394,7 +413,7 @@ html[data-theme="light"] {
     }
 
     .modal-content {
-      background: var(--bg-light);
+      background: var(--bg-primary);
       padding: 30px;
       border-radius: 6px;
       max-width: 450px;
@@ -515,9 +534,14 @@ html[data-theme="light"] {
         <button class="view-btn" onclick="switchView('calendar')">Calendar View</button>
       </div>
     </div>
-    <div class="section-header">
-      <div class="search-bar">
-        <input type="text" id="search" placeholder="Search for a meet...">
+    <div id="list-controls" class="section-header" style="display: flex; flex-wrap: wrap; align-items: center; gap: 16px;">
+      <div class="filter-bar" style="margin-bottom: 0;">
+        <button type="button" class="filter-chip active" onclick="filterList('all', this)">All</button>
+        <button type="button" class="filter-chip" onclick="filterList('indoor', this)">Indoor</button>
+        <button type="button" class="filter-chip" onclick="filterList('outdoor', this)">Outdoor</button>
+      </div>
+      <div class="search-bar" style="margin-top: 0; flex: 1; min-width: 200px;">
+        <input type="text" id="search" placeholder="Search meets by name or location...">
       </div>
       <div class="export-container">
         <button class="view-btn export-main-btn" onclick="toggleExportMenu()">
@@ -558,7 +582,9 @@ html[data-theme="light"] {
       <div style="grid-column: 1/-1; text-align: center;">Loading meets...</div>
     </div>
 
-    <div id="calendar"></div>
+    <div id="calendar-wrapper">
+      <div id="calendar"></div>
+    </div>
 
   </main>
   
@@ -642,36 +668,57 @@ html[data-theme="light"] {
     // 2. View Switcher
     function switchView(view) {
       document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
-      event.target.classList.add('active');
+      const buttons = document.querySelectorAll('.view-btn');
+      const listBtn = buttons[0];
+      const calBtn = buttons[1];
+      if (view === 'list' && listBtn) listBtn.classList.add('active');
+      else if (view === 'calendar' && calBtn) calBtn.classList.add('active');
+
+      const listEl = document.getElementById('meets-list');
+      const wrapperEl = document.getElementById('calendar-wrapper');
+      const controlsEl = document.getElementById('list-controls');
 
       if (view === 'list') {
-        document.getElementById('meets-list').style.display = 'grid';
-        document.getElementById('list-controls').style.display = 'flex';
-        document.getElementById('calendar').style.display = 'none';
+        if (listEl) listEl.style.display = 'grid';
+        if (controlsEl) controlsEl.style.display = 'flex';
+        if (wrapperEl) wrapperEl.classList.remove('visible');
       } else {
-        document.getElementById('meets-list').style.display = 'none';
-        document.getElementById('list-controls').style.display = 'none';
-        document.getElementById('calendar').style.display = 'block';
-        if (calendar) calendar.render(); // Refresh calendar layout
+        if (listEl) listEl.style.display = 'none';
+        if (controlsEl) controlsEl.style.display = 'none';
+        if (wrapperEl) {
+          wrapperEl.classList.add('visible');
+          // FullCalendar needs updateSize when container was hidden
+          if (calendar) {
+            requestAnimationFrame(() => {
+              calendar.updateSize();
+            });
+          }
+        }
       }
     }
 
     // 3. Render List
     function renderList(filter) {
       const container = document.getElementById('meets-list');
-      const filtered = filter === 'all' ? allMeets : allMeets.filter(m => m.season === filter);
-      const search = document.getElementById("search");
-      const searchValue = search.value.toLowerCase();
-      const filtered2 = filtered.filter(m => m.name.toLowerCase().includes(searchValue));
-      
-      // Sort by date descending
-      filtered2.sort((a,b) => new Date(b.date) - new Date(a.date));
+      if (!container) return;
+      const filtered = filter === 'all' ? allMeets : allMeets.filter(m => (m.season || '').toLowerCase() === filter);
+      const searchEl = document.getElementById('search');
+      const searchValue = (searchEl && searchEl.value) ? searchEl.value.toLowerCase() : '';
+      const filtered2 = searchValue
+        ? filtered.filter(m => (m.name || '').toLowerCase().includes(searchValue) || (m.location || '').toLowerCase().includes(searchValue))
+        : filtered;
+      filtered2.sort((a, b) => new Date(b.date) - new Date(a.date));
 
+      if (filtered2.length === 0) {
+        container.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--text-secondary);">No meets match your filters.</div>';
+        return;
+      }
       container.innerHTML = filtered2.map(meet => `
-        <a href="meet.html?slug=${meet.slug}" class="meet-card">
-          <h3 class="meet-card-title">${meet.name}</h3>
-          <p class="meet-card-date">📅 ${new Date(meet.date).toLocaleDateString()}</p>
-          <p class="meet-card-location">📍 ${meet.location || 'TBD'}</p>
+        <a href="meet.html?slug=${encodeURIComponent(meet.slug || meet.id)}" class="meet-card">
+          <h3 class="meet-card-title">${(meet.name || 'Unnamed Meet').replace(/</g, '&lt;')}</h3>
+          <p class="meet-card-date">📅 ${new Date(meet.date).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}</p>
+          ${meet.location ? `<p class="meet-card-location">📍 ${String(meet.location).replace(/</g, '&lt;')}</p>` : '<p class="meet-card-location">📍 TBD</p>'}
+          ${meet.season ? `<span style="font-size:0.75rem; color:var(--text-tertiary); text-transform:uppercase;">${meet.season}</span>` : ''}
         </a>
       `).join('');
     }
@@ -682,30 +729,45 @@ html[data-theme="light"] {
       renderList(season);
     }
 
-    // 4. Initialize Calendar
+    // 4. Initialize Calendar (FullCalendar 6)
     function initCalendar() {
       const calendarEl = document.getElementById('calendar');
+      if (!calendarEl || typeof FullCalendar === 'undefined') return;
+
+      const eventColor = (meet) => {
+        const s = (meet.season || '').toLowerCase();
+        if (s === 'indoor') return '#0f3460';
+        if (s === 'outdoor') return '#1a5f2a';
+        return '#002855';
+      };
+
       calendar = new FullCalendar.Calendar(calendarEl, {
         initialView: 'dayGridMonth',
+        height: 'auto',
         headerToolbar: {
           left: 'prev,next today',
           center: 'title',
-          right: 'dayGridMonth,listMonth'
+          right: 'dayGridMonth,timeGridWeek,listMonth'
         },
         events: allMeets.map(meet => ({
-          title: meet.name,
+          id: meet.id,
+          title: meet.name || 'Meet',
           start: meet.date,
-          url: `meet.html?slug=${meet.slug}`,
-          backgroundColor: '#002855',
-          borderColor: 'transparent'
+          allDay: true,
+          url: `meet.html?slug=${encodeURIComponent(meet.slug || meet.id)}`,
+          backgroundColor: eventColor(meet),
+          borderColor: eventColor(meet),
+          extendedProps: { location: meet.location, season: meet.season }
         })),
         eventClick: function(info) {
-          info.jsEvent.preventDefault(); // don't let browser nav
-          if (info.event.url) {
-            window.location.href = info.event.url;
-          }
+          info.jsEvent.preventDefault();
+          if (info.event.url) window.location.href = info.event.url;
+        },
+        eventDidMount: function(info) {
+          info.el.setAttribute('title', [info.event.title, info.event.extendedProps.location].filter(Boolean).join(' · ') || info.event.title);
         }
       });
+      calendar.render();
     }
 
     document.addEventListener('DOMContentLoaded', init);
@@ -763,26 +825,30 @@ function exportFullSeason(format) {
 }
 
 function generateICSFile() {
-    let icsContent = ["BEGIN:VCALENDAR", "VERSION:2.0", "PROID:-//MSM//Meets//EN"];
-    
+    const lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Mountain State Miles//Track Meets//EN", "CALSCALE:GREGORIAN"];
     allMeets.forEach(meet => {
-        const start = new Date(meet.date).toISOString().replace(/-|:|\.\d+/g, "");
-        icsContent.push("BEGIN:VEVENT");
-        icsContent.push(`SUMMARY:${meet.name}`);
-        icsContent.push(`DTSTART:${start}`);
-        icsContent.push(`LOCATION:${meet.location || 'TBD'}`);
-        icsContent.push(`DESCRIPTION:View details at mountainstatemiles.com/meet.html?slug=${meet.slug}`);
-        icsContent.push("END:VEVENT");
+      const dateStr = (meet.date || '').toString().replace(/-/g, '').slice(0, 8);
+      if (!dateStr) return;
+      const summary = (meet.name || 'Track Meet').replace(/[,;\\]/g, (match) => '\\' + match);
+      const location = (meet.location || 'TBD').replace(/[,;\\]/g, (match) => '\\' + match);
+      const url = `https://mountainstatemiles.com/Track/meet.html?slug=${encodeURIComponent(meet.slug || meet.id)}`;
+      lines.push("BEGIN:VEVENT");
+      lines.push("DTSTART;VALUE=DATE:" + dateStr);
+      lines.push("DTEND;VALUE=DATE:" + dateStr);
+      lines.push("SUMMARY:" + summary);
+      lines.push("LOCATION:" + location);
+      lines.push("URL:" + url);
+      lines.push("END:VEVENT");
     });
-
-    icsContent.push("END:VCALENDAR");
-    const blob = new Blob([icsContent.join("\r\n")], { type: "text/calendar" });
-    const url = window.URL.createObjectURL(blob);
+    lines.push("END:VCALENDAR");
+    const blob = new Blob([lines.join("\r\n")], { type: "text/calendar;charset=utf-8" });
     const a = document.createElement("a");
-    a.href = url;
-    a.download = "WV_Track_Schedule.ics";
+    a.href = URL.createObjectURL(blob);
+    a.download = "Track_Meets.ics";
     a.click();
-}
+    URL.revokeObjectURL(a.href);
+    closeCalendarPopup();
+  }
 // --- POPUP CONTROLS ---
 function showCalendarPopup() {
     document.getElementById('calendarModal').style.display = 'flex';
@@ -815,27 +881,6 @@ function exportTable(type) {
     toggleExportMenu();
 }
 
-// Ensure the generateICSFile function is updated to close the modal
-function generateICSFile() {
-    let icsContent = ["BEGIN:VCALENDAR", "VERSION:2.0", "PROID:-//MSM//Meets//EN"];
-    allMeets.forEach(meet => {
-        const start = new Date(meet.date).toISOString().replace(/-|:|\.\d+/g, "");
-        icsContent.push("BEGIN:VEVENT");
-        icsContent.push(`SUMMARY:${meet.name}`);
-        icsContent.push(`DTSTART:${start}`);
-        icsContent.push(`LOCATION:${meet.location || 'TBD'}`);
-        icsContent.push("END:VEVENT");
-    });
-    icsContent.push("END:VCALENDAR");
-    
-    const blob = new Blob([icsContent.join("\r\n")], { type: "text/calendar" });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "Track_Schedule.ics";
-    a.click();
-    closeCalendarPopup();
-}
   </script>
 </body>
 </html>

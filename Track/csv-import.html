@@ -100,6 +100,7 @@ button{
   padding:8px;
   border-bottom:1px solid var(--border);
   font-size:.82rem;
+  text-align: left;
 }
 .preview-table th{
   text-transform:uppercase;
@@ -132,21 +133,13 @@ button{
 <select id="meetSelect">
 <option value="">Loading meets...</option>
 </select>
-<br><br>
-<h4 style="margin:0 0 8px 0;">Optional: Lock to Single Event</h4>
-<select id="eventSelect">
-  <option value="">Use event headers from pasted text (best for full meets)</option>
-</select>
-<p style="margin-top:8px;font-size:0.85rem;color:var(--muted);">
-  For single-event lists like the 400m example, pick the event here so you can paste just that table.
-</p>
 </div>
 
 <div class="card">
-<h3>Paste Full Meet Results</h3>
-<textarea id="pasteArea" placeholder="Paste entire Athletic.net boys or girls results here..."></textarea>
+<h3>Paste Full Meet Results (CSV)</h3>
+<textarea id="pasteArea" placeholder="Paste data from the Ultimate Scraper here..."></textarea>
 <br><br>
-<button class="btn-primary" onclick="parseMeet()">Parse Meet</button>
+<button class="btn-primary" onclick="parseMeet()">Parse Results</button>
 </div>
 
 <div class="card" id="previewCard" style="display:none">
@@ -156,10 +149,11 @@ button{
 </div>
 
 <div class="card" id="importCard" style="display:none">
-<h3>Import</h3>
+<h3>Import to Database</h3>
+<p style="color:var(--muted); font-size:0.9rem;">This process will automatically create new athlete profiles if they do not exist in the database.</p>
 <div class="progress"><div id="progressFill" class="progress-fill"></div></div>
 <br>
-<button class="btn-primary" onclick="importMeet()">Import Valid Results</button>
+<button class="btn-primary btn-import" onclick="importMeet()">Import Valid Results</button>
 </div>
 
 </div>
@@ -169,208 +163,223 @@ button{
 <script src="firebase-config.js"></script>
 
 <script>
-let parsedRows=[]
-let validRows=[]
-// eventMap: name -> id, eventNamesById: id -> name
-let eventMap={}
-let eventNamesById={}
+let parsedRows = [];
+let validRows = [];
+let eventMap = {};
+let athletesCache = {}; 
 
-const FIELD_KEYWORDS=[
-"shot put","discus","javelin","hammer",
-"long jump","triple jump","high jump","pole vault"
-]
-
-function isFieldEvent(name){
-  if(!name) return false
-  return FIELD_KEYWORDS.some(k=>name.toLowerCase().includes(k))
+async function loadMeets() {
+    const snap = await firebase.database().ref("Track/meets").once("value");
+    const sel = document.getElementById("meetSelect");
+    sel.innerHTML = "<option value=''>Select Meet</option>";
+    snap.forEach(c => { sel.innerHTML += `<option value="${c.key}">${c.val().name}</option>`; });
 }
 
-function normalizeDistance(mark){
-  const m = mark.match(/(\d+)[^\d]+(\d+(?:\.\d+)?)/)
-  if(!m) return mark
-  return m[1]+"ft "+m[2]+"in"
+async function loadDatabaseCaches() {
+    const eventsSnap = await firebase.database().ref("Track/events").once("value");
+    eventsSnap.forEach(c => {
+        eventMap[c.val().name.toLowerCase()] = c.key;
+    });
+
+    const athletesSnap = await firebase.database().ref("Track/athletes").once("value");
+    athletesSnap.forEach(c => {
+        const a = c.val();
+        const key = `${(a.school || "").toLowerCase()}|${(a.first_name + " " + a.last_name).toLowerCase()}`;
+        athletesCache[key] = c.key;
+    });
 }
 
-function normalizeTime(mark){
-  return mark.replace(/[^\d\:\.]/g,"")
-}
+function resolveEventId(eventName, gender) {
+    if (!eventName) return null;
+    let clean = eventName.toLowerCase()
+        .replace(/[^a-z0-9\s]/g, " ") 
+        .replace(/\b(meter|meters)\b/g, "m")
+        .replace(/\b(open|varsity|finals?|prelims?|timed|dash|run|results)\b/g, "")
+        .replace(/\s+/g, " ")
+        .trim();
 
-async function loadMeets(){
-  const snap = await firebase.database().ref("Track/meets").once("value")
-  const sel = document.getElementById("meetSelect")
-  sel.innerHTML="<option value=''>Select Meet</option>"
-  snap.forEach(c=>{
-    sel.innerHTML+=`<option value="${c.key}">${c.val().name}</option>`
-  })
-}
+    let parts = clean.split(" ");
+    let reconstructed = parts.map(p => {
+        if (!isNaN(p) && !p.endsWith("m") && p.length <= 4) return p + "m";
+        return p;
+    }).join(" ");
 
-async function loadEvents(){
-  const snap = await firebase.database().ref("Track/events").once("value")
-  const sel = document.getElementById("eventSelect")
-  if (sel) {
-    sel.innerHTML = '<option value="">Use event headers from pasted text (best for full meets)</option>'
-  }
-  snap.forEach(c=>{
-    const v = c.val()
-    eventMap[v.name]=c.key
-    eventNamesById[c.key]=v.name
-    if (sel) {
-      sel.innerHTML += `<option value="${c.key}">${v.name}</option>`
+    // Ensure we match the DB's gender prefix
+    let genderPrefix = gender === "W" ? "girls" : "boys";
+    let target = reconstructed.startsWith("boys") || reconstructed.startsWith("girls") 
+        ? reconstructed 
+        : (genderPrefix + " " + reconstructed);
+
+    if (eventMap[target]) return eventMap[target];
+
+    for (let [dbName, id] of Object.entries(eventMap)) {
+        if (dbName === target || dbName.includes(target) || target.includes(dbName)) return id;
     }
-  })
+    return null;
 }
 
-async function parseMeet(){
-
-  const meetId=document.getElementById("meetSelect").value
-  if(!meetId){alert("Select meet first");return}
-
-  const text=document.getElementById("pasteArea").value.trim()
-  if(!text){alert("Paste results first");return}
-
-  const manualEventId = (document.getElementById("eventSelect") && document.getElementById("eventSelect").value) || ""
-  const manualEventName = manualEventId ? (eventNamesById[manualEventId] || "") : ""
-
-  parsedRows=[]
-  validRows=[]
-
-  const lines=text.split(/\r?\n/)
-  let currentEvent=null
-  let currentRound=null
-
-  for(let i=0;i<lines.length;i++){
-    let line=lines[i].trim()
-    if(!line) continue
-
-    const header=line.match(/^(.+?) - (Finals|Prelims)$/i)
-    if(header){
-      currentEvent=header[1].trim()
-      currentRound=header[2]
-      continue
+function parseCSVLine(text) {
+    let ret = [], inQuote = false, val = "";
+    for (let i = 0; i < text.length; i++) {
+        let c = text[i];
+        if (inQuote) {
+            if (c === '"') {
+                if (i < text.length - 1 && text[i+1] === '"') { val += '"'; i++; } 
+                else { inQuote = false; }
+            } else { val += c; }
+        } else {
+            if (c === '"') { inQuote = true; }
+            else if (c === ',') { ret.push(val.trim()); val = ""; }
+            else { val += c; }
+        }
     }
-
-    if(line.toLowerCase().includes("field series")) continue
-    if(!currentEvent && !manualEventId) continue
-
-    // Try tab/column-based parsing first to support multiple formats
-    const partsRaw = line.split(/\t+/).map(p=>p.trim()).filter(p=>p!=="")
-    let place=null
-    let grade=null
-    let name=null
-    let mark=null
-
-    if (partsRaw.length >= 4 && /^\d+\.$/.test(partsRaw[0])) {
-      // Format A: place, grade, name..., mark (e.g. "1.\t11\tWilliam Pizzico\t7.36a")
-      if (/^\d+|-$/.test(partsRaw[1])) {
-        place = partsRaw[0].replace(/\./,"")
-        grade = partsRaw[1] !== "-" ? partsRaw[1] : null
-        name = partsRaw.slice(2, partsRaw.length-1).join(" ")
-        mark = partsRaw[partsRaw.length-1]
-      }
-      // Format B: place, name, grade, mark, school (e.g. "1.\tAJ Payne\t10\t52.54\tParkersburg")
-      else if (partsRaw.length >= 4 && /^\d+|-$/.test(partsRaw[2])) {
-        place = partsRaw[0].replace(/\./,"")
-        name = partsRaw[1]
-        grade = partsRaw[2] !== "-" ? partsRaw[2] : null
-        mark = partsRaw[3]
-      }
-    }
-
-    // Fallback: legacy regex parsing for other odd formats
-    if (!name || !mark) {
-      const row=line.match(/^(\d+)?\.?\s*(\d+|-)?\s+(.+?)\s+(.+)$/)
-      if(!row) continue
-      place=row[1]||place
-      grade=row[2]||grade
-      name=row[3].trim()
-      mark=row[4].trim()
-    }
-
-    if(["DNS","SCR","NH","ND"].includes(mark)){
-      // keep mark
-    } else if(isFieldEvent(currentEvent)){
-      mark=normalizeDistance(mark)
-    } else {
-      mark=normalizeTime(mark)
-    }
-
-    const eventName = currentEvent || manualEventName
-    const eventIdFromName = eventName ? (eventMap[eventName] || null) : null
-    const eventId = eventIdFromName || manualEventId || null
-
-    const obj={
-      meet_id:meetId,
-      event_name:eventName,
-      event_id:eventId,
-      round:currentRound,
-      athlete_name:name,
-      grade,
-      mark,
-      placement:place,
-      valid:!!eventId
-    }
-
-    parsedRows.push(obj)
-    if(obj.valid) validRows.push(obj)
-  }
-
-  renderPreview()
+    ret.push(val.trim());
+    return ret;
 }
 
-function renderPreview(){
-  document.getElementById("previewCard").style.display="block"
-  document.getElementById("importCard").style.display="block"
+async function parseMeet() {
+    const meetId = document.getElementById("meetSelect").value;
+    const text = document.getElementById("pasteArea").value.trim();
+    if (!meetId || !text) return alert("Select meet and paste text");
 
-  document.getElementById("stats").innerHTML=`
-  <div class="stat-grid">
-    <div class="stat"><div class="stat-number">${parsedRows.length}</div>Total Rows</div>
-    <div class="stat"><div class="stat-number success">${validRows.length}</div>Valid</div>
-    <div class="stat"><div class="stat-number error">${parsedRows.length-validRows.length}</div>Invalid</div>
-  </div>
-  `
+    parsedRows = [];
+    validRows = [];
+    
+    const lines = text.split(/\n/);
+    
+    lines.forEach((line, index) => {
+        if (index === 0 && line.includes("event_name")) return; // Skip header
+        if (line.length < 5) return;
 
-  document.getElementById("preview").innerHTML=`
-  <table class="preview-table">
-  <thead>
-  <tr>
-  <th>Event</th>
-  <th>Name</th>
-  <th>Mark</th>
-  <th>Round</th>
-  <th>Status</th>
-  </tr>
-  </thead>
-  <tbody>
-  ${parsedRows.slice(0,40).map(r=>`
-  <tr>
-  <td>${r.event_name}</td>
-  <td>${r.athlete_name}</td>
-  <td>${r.mark}</td>
-  <td>${r.round}</td>
-  <td>${r.valid?'<span class="success">OK</span>':'<span class="error">Missing Event</span>'}</td>
-  </tr>
-  `).join("")}
-  </tbody>
-  </table>
-  `
+        const parts = parseCSVLine(line);
+        if (parts.length < 5) return;
+
+        const eventFull = parts[0] ? parts[0].replace(/"/g, "").trim() : "";
+        const place = parts[1] ? parts[1].replace(/"/g, "").trim() : "";
+        const grade = parts[2] ? parts[2].replace(/"/g, "").trim() : "";
+        const name = parts[3] ? parts[3].replace(/"/g, "").trim() : "";
+        const mark = parts[4] ? parts[4].replace(/"/g, "").trim() : "";
+        const school = parts[5] ? parts[5].replace(/"/g, "").trim() : "Unattached";
+        const rawGender = parts[7] ? parts[7].replace(/"/g, "").trim() : "Boys";
+
+        // --- GENDER FIX ---
+        // Force mapping "Girls/Women" to "W" and everything else to "M"
+        let cleanGender = "M"; 
+        if (rawGender.toLowerCase().includes("girl") || rawGender.toLowerCase().includes("women") || rawGender.toLowerCase().startsWith("w")) {
+            cleanGender = "W";
+        }
+
+        // --- HEAT FIX ---
+        // Set heat strictly based on if the event name says "Prelim"
+        const heatStatus = eventFull.toLowerCase().includes("prelim") ? "Prelims" : "Finals";
+
+        const eventId = resolveEventId(eventFull, cleanGender);
+
+        parsedRows.push({
+            meet_id: meetId,
+            event_name: eventFull,
+            event_id: eventId,
+            athlete_name: name,
+            school: school,
+            grade: grade,
+            mark: mark,
+            placement: place,
+            heat: heatStatus,     // Overwritten to Prelims/Finals
+            gender: cleanGender,  // Overwritten to strictly M or W
+            valid: !!eventId
+        });
+    });
+
+    validRows = parsedRows.filter(r => r.valid);
+    renderPreview();
 }
 
-async function importMeet(){
-  const ref=firebase.database().ref("Track/results")
-  let count=0
+function renderPreview() {
+    document.getElementById("previewCard").style.display = "block";
+    document.getElementById("importCard").style.display = "block";
+    
+    document.getElementById("stats").innerHTML = `
+        <div class="stat-grid">
+            <div class="stat"><div class="stat-number">${parsedRows.length}</div>Rows</div>
+            <div class="stat"><div class="stat-number success">${validRows.length}</div>Ready</div>
+            <div class="stat"><div class="stat-number error">${parsedRows.length - validRows.length}</div>Missing Events</div>
+        </div>`;
 
-  for(let i=0;i<validRows.length;i++){
-    await ref.push(validRows[i])
-    count++
-    document.getElementById("progressFill").style.width=
-      Math.round((count/validRows.length)*100)+"%"
-  }
-
-  alert("Import complete: "+count+" results added.")
+    document.getElementById("preview").innerHTML = `
+        <table class="preview-table">
+            <thead><tr><th>Event</th><th>Place</th><th>Heat/Round</th><th>Name</th><th>School</th><th>Mark</th><th>Gender</th><th>Status</th></tr></thead>
+            <tbody>
+                ${parsedRows.slice(0, 50).map(r => `
+                    <tr style="${!r.valid ? 'background:rgba(239,68,68,0.1)' : ''}">
+                        <td><small>${r.event_name}</small></td>
+                        <td>${r.placement}</td>
+                        <td>${r.heat}</td>
+                        <td><strong>${r.athlete_name}</strong></td>
+                        <td><small>${r.school}</small></td>
+                        <td><strong>${r.mark}</strong></td>
+                        <td>${r.gender}</td>
+                        <td>${r.valid ? '✅' : '❌'}</td>
+                    </tr>`).join("")}
+            </tbody>
+        </table>
+        ${parsedRows.length > 50 ? `<p style="text-align:center; color:var(--muted); margin-top:10px;">Showing first 50 of ${parsedRows.length} rows</p>` : ''}`;
 }
 
-loadMeets()
-loadEvents()
+async function importMeet() {
+    if (!validRows.length) return alert("No valid rows to import");
+    if (!confirm(`Import ${validRows.length} results? Athletes will be automatically linked or created.`)) return;
+    
+    const btn = document.querySelector(".btn-import");
+    btn.disabled = true;
+    
+    const resultsRef = firebase.database().ref("Track/results");
+    const athletesRef = firebase.database().ref("Track/athletes");
+
+    for (let i = 0; i < validRows.length; i++) {
+        const row = validRows[i];
+        
+        // --- 1. RESOLVE OR CREATE ATHLETE ---
+        const cacheKey = `${row.school.toLowerCase()}|${row.athlete_name.toLowerCase()}`;
+        let athleteId = athletesCache[cacheKey];
+
+        if (!athleteId) {
+            const nameParts = row.athlete_name.split(' ');
+            const first = nameParts[0];
+            const last = nameParts.slice(1).join(' ');
+            
+            const newAthlete = await athletesRef.push({
+                first_name: first,
+                last_name: last,
+                school: row.school,
+                grade: row.grade,
+                gender: row.gender // Perfectly formatted M or W
+            });
+            
+            athleteId = newAthlete.key;
+            athletesCache[cacheKey] = athleteId; 
+        }
+
+        // --- 2. PUSH CLEAN RESULT ---
+        await resultsRef.push({
+            meet_id: row.meet_id,
+            event_id: row.event_id,
+            athlete_id: athleteId,
+            mark: row.mark,
+            placement: row.placement ? parseInt(row.placement) : null,
+            heat: row.heat,       // Will save exactly "Prelims" or "Finals"
+            gender: row.gender,   // Will save exactly "M" or "W"
+            timestamp: new Date().toISOString()
+        });
+
+        document.getElementById("progressFill").style.width = Math.round(((i+1)/validRows.length)*100) + "%";
+    }
+    
+    alert("Import Complete!");
+    location.reload();
+}
+
+loadMeets();
+loadDatabaseCaches();
 </script>
 </body>
 </html>

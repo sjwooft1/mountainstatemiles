@@ -423,6 +423,38 @@
 
   const FIELD_EVENTS = ['long jump', 'high jump', 'triple jump', 'pole vault', 'shot put', 'discus', 'javelin', 'hammer'];
 
+  // --- NEW: Function to handle URL Parameters ---
+  function applyUrlParams() {
+    const params = new URLSearchParams(window.location.search);
+    const eventParam = params.get('event');
+    const genderParam = params.get('gender');
+    const seasonParam = params.get('season');
+
+    if (eventParam) {
+      // Find the option that matches the slug or ID
+      const options = Array.from(selectEvent.options);
+      const targetOption = options.find(opt => 
+        opt.getAttribute('data-slug') === eventParam || opt.value === eventParam
+      );
+      if (targetOption) selectEvent.value = targetOption.value;
+    }
+
+    if (genderParam) {
+      const g = genderParam.toLowerCase();
+      if (g === 'male' || g === 'm') selectGender.value = 'M';
+      if (g === 'female' || g === 'f') selectGender.value = 'F';
+    }
+
+    if (seasonParam) {
+      selectSeason.value = seasonParam.toLowerCase();
+    }
+
+    // If an event was specified via URL, trigger the load automatically
+    if (selectEvent.value) {
+      loadRankings();
+    }
+  }
+
   function isFieldEvent(eventName) {
     if (!eventName) return false;
     const normalized = eventName.toLowerCase();
@@ -431,13 +463,9 @@
 
   function parseMarkValue(mark, eventName) {
     if (!mark) return Infinity;
-    
-    if (['DNS', 'SCR', 'NH', 'ND', 'DQ'].includes(mark.toString().toUpperCase())) {
-      return Infinity;
-    }
+    if (['DNS', 'SCR', 'NH', 'ND', 'DQ'].includes(mark.toString().toUpperCase())) return Infinity;
     
     const markStr = mark.toString();
-    
     if (isFieldEvent(eventName)) {
       const match = markStr.match(/(\d+)[^\d]*(\d+(?:\.\d+)?)/);
       if (match) {
@@ -455,22 +483,15 @@
         return minutes * 60 + seconds;
       }
     }
-    
     return parseFloat(markStr) || Infinity;
   }
 
   function formatMarkForDisplay(mark, eventName) {
     if (!mark) return '—';
-    
     if (isFieldEvent(eventName)) {
       const match = mark.toString().match(/(\d+)[^\d]*(\d+(?:\.\d+)?)/);
-      if (match) {
-        const feet = match[1];
-        const inches = match[2];
-        return `${feet}ft ${inches}in`;
-      }
+      if (match) return `${match[1]}ft ${match[2]}in`;
     }
-    
     return mark;
   }
 
@@ -486,7 +507,12 @@
       });
       
       events.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-      selectEvent.innerHTML = `<option value="">-- choose event --</option>` + events.map(e => `<option value="${e.id}" data-slug="${e.slug || e.id}">${e.name || 'Unnamed Event'} (${e.category || 'N/A'})</option>`).join('');
+      selectEvent.innerHTML = `<option value="">-- choose event --</option>` + 
+        events.map(e => `<option value="${e.id}" data-slug="${e.slug || e.id}">${e.name || 'Unnamed Event'} (${e.category || 'N/A'})</option>`).join('');
+      
+      // --- NEW: Apply URL parameters after events are loaded ---
+      applyUrlParams();
+
     } catch (error) {
       console.error('Error loading events:', error);
       selectEvent.innerHTML = '<option value="">Error loading events</option>';
@@ -494,23 +520,15 @@
   }
 
   function getMedalIcon(rank) {
-    switch (rank) {
-      case 1: return '🥇';
-      case 2: return '🥈';
-      case 3: return '🥉';
-      default: return '';
-    }
+    if (rank === 1) return '🥇';
+    if (rank === 2) return '🥈';
+    if (rank === 3) return '🥉';
+    return '';
   }
 
   function renderRankingsTable(filteredResults, eventName) {
     if (!filteredResults || filteredResults.length === 0) {
-      rankingsContainer.innerHTML = `
-        <div class="empty-state">
-          <div class="empty-state-icon">📊</div>
-          <h3>No rankings found</h3>
-          <p>No rankings found for the selected filters.</p>
-        </div>
-      `;
+      rankingsContainer.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📊</div><h3>No rankings found</h3><p>No rankings found for the selected filters.</p></div>`;
       document.getElementById('stats-bar').style.display = 'none';
       return;
     }
@@ -518,7 +536,7 @@
     document.getElementById('stats-bar').style.display = 'grid';
     document.getElementById('stat-count').textContent = filteredResults.length;
 
-    const html = filteredResults.map((result, index) => {
+    rankingsContainer.innerHTML = filteredResults.map((result, index) => {
       const rank = index + 1;
       const medal = getMedalIcon(rank);
       const athleteName = ((result.athlete?.first_name || '') + ' ' + (result.athlete?.last_name || '')).trim() || '—';
@@ -536,25 +554,16 @@
               <a href="athlete.html?id=${result.athlete_id || ''}" class="athlete-link">${athleteName}</a>
             </div>
             <div class="result-info">
-              <div class="result-info-item">
-                <i class="fas fa-school"></i>
-                <span>${result.athlete?.school || '—'}</span>
-              </div>
-              <div class="result-info-item">
-                <i class="fas fa-flag"></i>
-                <span>${result.meet?.name || '—'}</span>
-              </div>
+              <div class="result-info-item"><i class="fas fa-school"></i><span>${result.athlete?.school || '—'}</span></div>
+              <div class="result-info-item"><i class="fas fa-flag"></i><span>${result.meet?.name || '—'}</span></div>
             </div>
           </div>
           <div class="result-time">
             <div class="result-time-label">Mark</div>
             <div class="result-time-value">${mark}</div>
           </div>
-        </div>
-      `;
+        </div>`;
     }).join('');
-
-    rankingsContainer.innerHTML = html;
   }
 
   async function loadRankings() {
@@ -563,27 +572,15 @@
     const gender = selectGender.value;
 
     if (!eventId) { 
-      rankingsContainer.innerHTML = `
-        <div class="empty-state">
-          <div class="empty-state-icon">⚠️</div>
-          <h3>Select an event</h3>
-          <p>Please select an event above, then click Load.</p>
-        </div>
-      `;
+      rankingsContainer.innerHTML = `<div class="empty-state"><div class="empty-state-icon">⚠️</div><h3>Select an event</h3><p>Please select an event above, then click Load.</p></div>`;
       document.getElementById('stats-bar').style.display = 'none';
       return; 
     }
 
-    rankingsContainer.innerHTML = `
-      <div class="loading-state">
-        <div class="loading-spinner"></div>
-        <p>Loading rankings...</p>
-      </div>
-    `;
+    rankingsContainer.innerHTML = `<div class="loading-state"><div class="loading-spinner"></div><p>Loading rankings...</p></div>`;
 
     try {
       await waitForFirebase();
-
       const eventSnapshot = await window.firebaseDatabase.ref('Track/events').child(eventId).once('value');
       const eventData = eventSnapshot.val() || {};
       const eventName = eventData.name || 'Unknown Event';
@@ -609,20 +606,12 @@
       
       if (meetIds.length > 0) {
         const meetsSnapshot = await window.firebaseDatabase.ref('Track/meets').once('value');
-        meetsSnapshot.forEach(child => {
-          if (meetIds.includes(child.key)) {
-            meetsMap[child.key] = { id: child.key, ...child.val() };
-          }
-        });
+        meetsSnapshot.forEach(child => { if (meetIds.includes(child.key)) meetsMap[child.key] = child.val(); });
       }
       
       if (athleteIds.length > 0) {
         const athletesSnapshot = await window.firebaseDatabase.ref('Track/athletes').once('value');
-        athletesSnapshot.forEach(child => {
-          if (athleteIds.includes(child.key)) {
-            athletesMap[child.key] = { id: child.key, ...child.val() };
-          }
-        });
+        athletesSnapshot.forEach(child => { if (athleteIds.includes(child.key)) athletesMap[child.key] = child.val(); });
       }
       
       results.forEach(r => {
@@ -631,31 +620,19 @@
       });
       
       let filteredResults = results;
-      if (season) {
-        filteredResults = results.filter(r => r.meet && r.meet.season === season);
-      }
+      if (season) filteredResults = filteredResults.filter(r => r.meet && r.meet.season === season);
+      if (gender) filteredResults = filteredResults.filter(r => r.athlete && r.athlete.gender === gender);
       
       filteredResults.sort((a, b) => {
         const markA = parseMarkValue(a.mark, eventName);
         const markB = parseMarkValue(b.mark, eventName);
-        if (isFieldEvent(eventName)) {
-          return markB - markA;
-        }
-        return markA - markB;
+        return isFieldEvent(eventName) ? markB - markA : markA - markB;
       });
       
       renderRankingsTable(filteredResults, eventName);
-
     } catch (error) {
       console.error('Error loading rankings:', error);
-      rankingsContainer.innerHTML = `
-        <div class="empty-state" style="color: var(--danger);">
-          <div class="empty-state-icon">⚠️</div>
-          <h3>Error</h3>
-          <p>Error loading rankings. Please try again.</p>
-        </div>
-      `;
-      document.getElementById('stats-bar').style.display = 'none';
+      rankingsContainer.innerHTML = `<div class="empty-state" style="color: var(--danger);"><div class="empty-state-icon">⚠️</div><h3>Error</h3><p>Error loading rankings.</p></div>`;
     }
   }
 
@@ -663,20 +640,10 @@
 
   document.addEventListener('DOMContentLoaded', () => {
     setTimeout(initEvents, 100);
-    
     const menuToggle = document.querySelector('.mobile-menu-toggle');
     const navMenu = document.getElementById('main-nav');
-    
     if (menuToggle && navMenu) {
-      menuToggle.addEventListener('click', () => {
-        navMenu.classList.toggle('mobile-open');
-      });
-      
-      document.addEventListener('click', (e) => {
-        if (!navMenu.contains(e.target) && !menuToggle.contains(e.target)) {
-          navMenu.classList.remove('mobile-open');
-        }
-      });
+      menuToggle.addEventListener('click', () => navMenu.classList.toggle('mobile-open'));
     }
   });
 </script>

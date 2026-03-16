@@ -13,28 +13,122 @@
   * { box-sizing: border-box; }
   
   :root {
-    --primary: #002855;
-    --secondary: #0056b3;
-    --text-primary: #1a1a1a;
-    --text-secondary: #666;
-    --bg-light: #f8f9fa;
-    --border-light: #e0e0e0;
-    --accent: #ff6b35;
-    --accent-dark: #d9530a;
+  /* Light Mode (Default) */
+  --primary: #000000;
+  --primary-light: #1a1a1a;
+  --primary-lighter: #333333;
+  --accent: #ffffff;
+  --accent-dark: #f5f5f5;
+  --border: #403e3e;
+  --border-light: #f0f0f0;
+  --text-primary: #000000;
+  --text-secondary: #252424;
+  --text-tertiary: #999999;
+  --bg-primary: #ffffff;
+  --bg-secondary: #f9f9f9;
+  --bg-dark: #000000;
+  --shadow-light: rgba(0, 0, 0, 0.08);
+  --shadow-medium: rgba(0, 0, 0, 0.1);
+  
+  /* Semantics */
+  --success: #10b981;
+  --danger: #ef4444;
+  --warning: #f59e0b;
+  
+  /* Typography */
+  --font-display: 'Aqeon Demo', sans-serif;
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  
+  /* Spacing Scale */
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  --spacing-2xl: 3rem;
+  --spacing-3xl: 4rem;
+  
+  /* Transitions */
+  --transition: 200ms ease-in-out;
+  
+  /* Border Radius */
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 6px;
+  --radius-xl: 8px;
+}
+
+/* Dark Mode */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --primary: #ffffff;
+    --primary-light: #f0f0f0;
+    --primary-lighter: #e0e0e0;
+    --accent: #1a1a1a;
+    --accent-dark: #2a2a2a;
+    --border: #404040;
+    --border-light: #303030;
+    --text-primary: #ffffff;
+    --text-secondary: #b0b0b0;
+    --text-tertiary: #808080;
+    --bg-primary: #1a1a1a;
+    --bg-secondary: #252525;
+    --bg-dark: #0a0a0a;
+    --shadow-light: rgba(0, 0, 0, 0.3);
+    --shadow-medium: rgba(0, 0, 0, 0.5);
   }
+}
+
+/* Explicit Dark Mode Class */
+html[data-theme="dark"] {
+  --primary: #ffffff;
+  --primary-light: #f0f0f0;
+  --primary-lighter: #e0e0e0;
+  --accent: #1a1a1a;
+  --accent-dark: #2a2a2a;
+  --border: #404040;
+  --border-light: #303030;
+  --text-primary: #ffffff;
+  --text-secondary: #b0b0b0;
+  --text-tertiary: #808080;
+  --bg-primary: #1a1a1a;
+  --bg-secondary: #252525;
+  --bg-dark: #0a0a0a;
+  --shadow-light: rgba(0, 0, 0, 0.3);
+  --shadow-medium: rgba(0, 0, 0, 0.5);
+}
+
+/* Explicit Light Mode Class */
+html[data-theme="light"] {
+  --primary: #000000;
+  --primary-light: #1a1a1a;
+  --primary-lighter: #333333;
+  --accent: #ffffff;
+  --accent-dark: #f5f5f5;
+  --border: #e0e0e0;
+  --border-light: #f0f0f0;
+  --text-primary: #000000;
+  --text-secondary: #666666;
+  --text-tertiary: #999999;
+  --bg-primary: #ffffff;
+  --bg-secondary: #f9f9f9;
+  --bg-dark: #000000;
+  --shadow-light: rgba(0, 0, 0, 0.08);
+  --shadow-medium: rgba(0, 0, 0, 0.1);
+}
   
   html, body {
     margin: 0;
     padding: 0;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
-    background: var(--bg-light);
+    background: var(--accent);
     color: var(--text-primary);
     line-height: 1.6;
   }
   
   header {
-    background: white;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    background: var(--bg-secondary);
+    box-shadow: 0 2px 8px var(--bg-secondary);
     position: sticky;
     top: 0;
     z-index: 100;
@@ -126,8 +220,8 @@
   }
   
   footer {
-    background: var(--primary);
-    color: white;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
     text-align: center;
     padding: 40px 20px;
     margin-top: 80px;
@@ -135,7 +229,7 @@
   
   footer p {
     margin: 0 0 20px;
-    opacity: 0.9;
+    color: var(--text-secondary);
   }
   
   .btn {
@@ -170,6 +264,7 @@
         <li><a href="rankings.html" class="navbar-link">Rankings</a></li>
         <li><a href="analytics.html" class="navbar-link">Analytics</a></li>
       </ul>
+      <button class="theme-toggle" aria-label="Switch theme">🌙</button>
     </nav>
   </header>
   
@@ -240,6 +335,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-analytics-compat.js"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/handsontable@latest/dist/handsontable.full.min.css">
 <script src="https://cdn.jsdelivr.net/npm/handsontable@latest/dist/handsontable.full.min.js"></script>
+<script src="/assets/theme-toggle.js"></script>
 <script src="firebase-config.js"></script>
 <script>
 async function waitForFirebase() {
