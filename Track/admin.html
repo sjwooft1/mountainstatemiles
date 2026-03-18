@@ -1022,7 +1022,7 @@
     document.getElementById('content').innerHTML = `
       <div style="background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 24px;">
         <h3 style="margin: 0 0 16px 0;">Bulk Edit Features Coming Soon</h3>
-        <p style="color: var(--muted); margin-bottom: 20px;">Update multiple records at once by filtering results.</p>
+        <p style="color: var (--muted); margin-bottom: 20px;">Update multiple records at once by filtering results.</p>
         <button class="btn btn-secondary" onclick="loadSection('analytics')">View Analytics Instead</button>
       </div>
     `;
@@ -1634,10 +1634,7 @@
       data.push({ id: child.key, ...child.val() });
     });
 
-    // CRITICAL FIX: Update the global variables that openEditModal uses
-    currentData = data; 
-    
-    // Set Columns for the Modal (Standard Add/Edit)
+    currentData = data;
     currentColumns = [
       { key: 'name', label: 'Name', type: 'text' },
       { key: 'slug', label: 'Slug (URL)', type: 'text' },
@@ -1647,7 +1644,6 @@
       { key: 'season', label: 'Season', type: 'select', options: ['indoor', 'outdoor'] }
     ];
     
-    // Setup CRUD options
     currentOptions = {
       onCreate: (row) => createRecord('Track/meets', row),
       onUpdate: (id, updates) => updateRecord(`Track/meets/${id}`, updates),
@@ -1776,18 +1772,24 @@
         }
     }, 100);
 
-    // Wire meets quick filters after DOM is ready
-    const seasonSel = document.getElementById('meets-filter-season');
-    const searchInput = document.getElementById('meets-filter-search');
-    if (seasonSel) {
-      seasonSel.onchange = applyMeetsFilters;
-    }
-    if (searchInput) {
-      searchInput.oninput = function () {
-        clearTimeout(window._meetsSearchTimer);
-        window._meetsSearchTimer = setTimeout(applyMeetsFilters, 150);
-      };
-    }
+    // Wire meets quick filters AFTER rendering - use setTimeout to ensure DOM is ready
+    setTimeout(() => {
+      const seasonSel = document.getElementById('meets-filter-season');
+      const searchInput = document.getElementById('meets-filter-search');
+      
+      if (seasonSel) {
+        seasonSel.addEventListener('change', applyMeetsFilters);
+      }
+      if (searchInput) {
+        searchInput.addEventListener('input', function () {
+          clearTimeout(window._meetsSearchTimer);
+          window._meetsSearchTimer = setTimeout(applyMeetsFilters, 150);
+        });
+      }
+      
+      // Store data reference
+      window.currentData = data;
+    }, 50);
   }
 
   // ==========================================
@@ -2069,17 +2071,374 @@
       data.push({ id: child.key, ...child.val() });
     });
     
-    renderGrid('Events', [
+    currentData = data;
+    currentColumns = [
       { key: 'name', label: 'Name', type: 'text' },
       { key: 'slug', label: 'Slug', type: 'text' },
       { key: 'category', label: 'Category', type: 'select', options: ['sprints', 'mid-distance', 'distance', 'jumps', 'throws', 'relays', 'hurdles'] },
       { key: 'gender', label: 'Gender', type: 'select', options: ['M', 'F', 'Mixed'] },
       { key: 'season', label: 'Season', type: 'select', options: ['indoor', 'outdoor'] }
-    ], data, {
+    ];
+    
+    currentOptions = {
       onCreate: (row) => createRecord('Track/events', row),
       onUpdate: (id, updates) => updateRecord(`Track/events/${id}`, updates),
       onDelete: (id) => deleteRecord(`Track/events/${id}`)
+    };
+
+    document.getElementById('content').innerHTML = `
+      <div class="grid-container" style="height: 100%; display: flex; flex-direction: column;">
+        <div class="grid-header">
+          <h3 style="display:flex; align-items:center; gap:10px;">
+            Events Management 
+            <span style="font-size:0.8em; color:var(--muted); font-weight:normal;">(${data.length})</span>
+          </h3>
+          <div class="grid-actions">
+            <select id="events-filter-category" class="form-input" style="width:auto; min-width: 140px; font-size:0.85rem; padding:6px 10px;">
+              <option value="">All categories</option>
+              <option value="sprints">Sprints</option>
+              <option value="mid-distance">Mid-Distance</option>
+              <option value="distance">Distance</option>
+              <option value="jumps">Jumps</option>
+              <option value="throws">Throws</option>
+              <option value="relays">Relays</option>
+              <option value="hurdles">Hurdles</option>
+            </select>
+            <select id="events-filter-gender" class="form-input" style="width:auto; min-width: 120px; font-size:0.85rem; padding:6px 10px;">
+              <option value="">All genders</option>
+              <option value="M">Men</option>
+              <option value="F">Women</option>
+              <option value="Mixed">Mixed</option>
+            </select>
+            <select id="events-filter-season" class="form-input" style="width:auto; min-width: 140px; font-size:0.85rem; padding:6px 10px;">
+              <option value="">All seasons</option>
+              <option value="indoor">Indoor</option>
+              <option value="outdoor">Outdoor</option>
+            </select>
+            <input id="events-filter-search" class="form-input" placeholder="Search name / slug…" style="min-width: 180px; font-size:0.85rem; padding:6px 10px;" />
+            <button class="btn btn-secondary btn-small" onclick="clearEventsFilters()" style="font-size:0.8rem;">Clear</button>
+            <label style="display:flex; align-items:center; gap:8px; padding:8px 12px; border:1px solid var(--border); border-radius:6px; background:var(--card); cursor:pointer; white-space:nowrap;">
+              <input type="checkbox" id="events-select-all" onchange="toggleEventsSelectAll()">
+              <span style="font-size:0.9rem;">Select All</span>
+            </label>
+            <button class="btn btn-primary" onclick="openAddModal()">+ Add Event</button>
+          </div>
+        </div>
+
+        <div id="events-list-view" class="grid-scroll" style="flex:1;">
+          <table class="grid-table">
+            <thead>
+              <tr>
+                <th style="width: 30px;"><input type="checkbox" id="events-checkbox-all" onchange="toggleEventsSelectAll()"></th>
+                <th class="sortable" onclick="sortEventsTable('name')">Name</th>
+                <th class="sortable" onclick="sortEventsTable('category')">Category</th>
+                <th class="sortable" onclick="sortEventsTable('gender')">Gender</th>
+                <th class="sortable" onclick="sortEventsTable('season')">Season</th>
+                <th style="width:120px;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="events-list-body">
+              ${data.map(row => `
+                <tr class="events-row" data-id="${row.id}">
+                  <td style="width: 30px;"><input type="checkbox" class="events-checkbox" onchange="updateEventsSelectionCount()"></td>
+                  <td><strong>${row.name}</strong><br><span style="font-size:0.8em; color:var(--muted)">${row.slug}</span></td>
+                  <td><span style="padding:2px 6px; border-radius:4px; font-size:0.8em; background:var(--hover);">${row.category}</span></td>
+                  <td>${row.gender}</td>
+                  <td><span style="padding:2px 6px; border-radius:4px; font-size:0.8em; background:${row.season === 'indoor' ? '#0f3460' : '#4a2511'}">${row.season}</span></td>
+                  <td>
+                    <button class="btn btn-secondary btn-small" onclick="openEditModal('${row.id}')">Edit</button>
+                    <button class="btn btn-danger btn-small" onclick="confirmDelete('${row.id}')">Del</button>
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+
+        <div id="events-bulk-actions-bar" style="padding: 12px 20px; background: var(--card); border-top: 1px solid var(--border); display: none; gap: 12px; align-items: center;">
+          <span id="events-selection-count" style="color: var(--muted); font-size: 0.9rem;"></span>
+          <button class="btn btn-danger btn-small" onclick="openEventsBulkDeleteModal()">🗑️ Delete Selected</button>
+          <button class="btn btn-secondary btn-small" onclick="bulkExportEvents()">📥 Export Selected</button>
+          <button class="btn btn-secondary btn-small" onclick="openEventsBulkEditModal()">✏️ Bulk Edit</button>
+        </div>
+      </div>
+
+      <style>
+        .events-row input[type="checkbox"] {
+          cursor: pointer;
+        }
+        .events-row.selected {
+          background: rgba(255, 123, 45, 0.1);
+        }
+      </style>
+    `;
+
+    // Wire event filters AFTER rendering
+    setTimeout(() => {
+      const categorySel = document.getElementById('events-filter-category');
+      const genderSel = document.getElementById('events-filter-gender');
+      const seasonSel = document.getElementById('events-filter-season');
+      const searchInput = document.getElementById('events-filter-search');
+      
+      if (categorySel) categorySel.addEventListener('change', applyEventsFilters);
+      if (genderSel) genderSel.addEventListener('change', applyEventsFilters);
+      if (seasonSel) seasonSel.addEventListener('change', applyEventsFilters);
+      if (searchInput) {
+        searchInput.addEventListener('input', function () {
+          clearTimeout(window._eventsSearchTimer);
+          window._eventsSearchTimer = setTimeout(applyEventsFilters, 150);
+        });
+      }
+      
+      window.currentData = data;
+    }, 50);
+  }
+
+  function toggleEventsSelectAll() {
+    const isChecked = document.getElementById('events-checkbox-all').checked;
+    document.querySelectorAll('.events-checkbox').forEach(checkbox => {
+      checkbox.checked = isChecked;
     });
+    updateEventsSelectionCount();
+  }
+
+  function updateEventsSelectionCount() {
+    const selected = document.querySelectorAll('.events-checkbox:checked').length;
+    const bulkBar = document.getElementById('events-bulk-actions-bar');
+    const selectionCount = document.getElementById('events-selection-count');
+    
+    if (selected > 0) {
+      bulkBar.style.display = 'flex';
+      selectionCount.textContent = `${selected} event(s) selected`;
+      document.querySelectorAll('.events-row').forEach(row => {
+        if (row.querySelector('.events-checkbox:checked')) {
+          row.classList.add('selected');
+        } else {
+          row.classList.remove('selected');
+        }
+      });
+    } else {
+      bulkBar.style.display = 'none';
+      document.querySelectorAll('.events-row').forEach(row => row.classList.remove('selected'));
+    }
+  }
+
+  function openEventsBulkEditModal() {
+    const selectedRows = Array.from(document.querySelectorAll('.events-checkbox:checked'))
+      .map(cb => cb.closest('.events-row'))
+      .filter(Boolean);
+    if (!selectedRows.length) {
+      alert('Select at least one event first.');
+      return;
+    }
+    const ids = selectedRows.map(row => row.getAttribute('data-id'));
+
+    const body = `
+      <div class="form-group">
+        <label class="form-label">New Season <span style="color: var(--muted); font-size:0.8rem;">(leave blank to keep current)</span></label>
+        <select class="form-input" name="bulk_season">
+          <option value="">-- Keep current --</option>
+          <option value="indoor">Indoor</option>
+          <option value="outdoor">Outdoor</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">New Category <span style="color: var(--muted); font-size:0.8rem;">(leave blank to keep current)</span></label>
+        <select class="form-input" name="bulk_category">
+          <option value="">-- Keep current --</option>
+          <option value="sprints">Sprints</option>
+          <option value="mid-distance">Mid-Distance</option>
+          <option value="distance">Distance</option>
+          <option value="jumps">Jumps</option>
+          <option value="throws">Throws</option>
+          <option value="relays">Relays</option>
+          <option value="hurdles">Hurdles</option>
+        </select>
+      </div>
+      <p style="font-size:0.85rem; color: var(--warning); margin-top: 4px;">
+        These changes will be applied to <strong>${ids.length}</strong> selected event(s). Only fields you fill in will be updated.
+      </p>
+    `;
+
+    const template = document.getElementById('modal-template');
+    const clone = template.content.cloneNode(true);
+    clone.querySelector('#modal-title').textContent = 'Bulk Edit Events';
+    clone.querySelector('#modal-body').innerHTML = body;
+    const submitBtn = clone.querySelector('#modal-submit');
+    submitBtn.textContent = 'Apply to Selected';
+    submitBtn.onclick = function () { handleEventsBulkEditSubmit(ids); };
+    const overlay = clone.querySelector('.modal-overlay');
+    document.body.appendChild(overlay);
+    window.currentModal = overlay;
+  }
+
+  async function handleEventsBulkEditSubmit(ids) {
+    const modal = window.currentModal;
+    if (!modal || !ids || !ids.length) return;
+
+    const season = modal.querySelector('select[name="bulk_season"]').value.trim();
+    const category = modal.querySelector('select[name="bulk_category"]').value.trim();
+
+    const updates = {};
+    if (season) updates.season = season;
+    if (category) updates.category = category;
+
+    if (!Object.keys(updates).length) {
+      alert('Enter at least one field to update.');
+      return;
+    }
+
+    try {
+      await Promise.all(ids.map(id => updateRecord(`Track/events/${id}`, updates)));
+      closeModal();
+      await loadSection('events');
+    } catch (err) {
+      console.error('Bulk edit error:', err);
+      alert('Error applying bulk edits: ' + err.message);
+    }
+  }
+
+  function openEventsBulkDeleteModal() {
+    const selectedRows = Array.from(document.querySelectorAll('.events-checkbox:checked'))
+      .map(cb => cb.closest('.events-row'))
+      .filter(Boolean);
+    if (!selectedRows.length) {
+      alert('Select at least one event first.');
+      return;
+    }
+    const ids = selectedRows.map(row => row.getAttribute('data-id'));
+    const names = selectedRows.map(row => row.querySelector('strong').textContent);
+
+    const body = `
+      <p style="color: var(--danger); font-weight: 600; margin-bottom: 16px;">⚠️ This action cannot be undone!</p>
+      <p style="margin-bottom: 16px;">You are about to delete the following ${ids.length} event(s):</p>
+      <div style="background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 12px; max-height: 200px; overflow-y: auto; margin-bottom: 16px;">
+        <ul style="margin: 0; padding-left: 20px;">
+          ${names.map(name => `<li style="color: #e6f0f7; margin-bottom: 4px;">${name}</li>`).join('')}
+        </ul>
+      </div>
+      <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+        <input type="checkbox" id="confirm-delete-events" style="cursor: pointer;">
+        <span style="font-size: 0.9rem;">I understand this will delete these events and all related data</span>
+      </label>
+    `;
+
+    const template = document.getElementById('modal-template');
+    const clone = template.content.cloneNode(true);
+    clone.querySelector('#modal-title').textContent = 'Delete Events';
+    clone.querySelector('#modal-body').innerHTML = body;
+    const submitBtn = clone.querySelector('#modal-submit');
+    submitBtn.textContent = 'Delete Permanently';
+    submitBtn.style.background = 'var(--danger)';
+    submitBtn.onclick = function () { 
+      if (document.getElementById('confirm-delete-events').checked) {
+        handleEventsBulkDelete(ids);
+      } else {
+        alert('Please confirm by checking the box.');
+      }
+    };
+    const overlay = clone.querySelector('.modal-overlay');
+    document.body.appendChild(overlay);
+    window.currentModal = overlay;
+  }
+
+  async function handleEventsBulkDelete(ids) {
+    try {
+      await Promise.all(ids.map(id => deleteRecord(`Track/events/${id}`)));
+      closeModal();
+      await loadSection('events');
+    } catch (err) {
+      console.error('Bulk delete error:', err);
+      alert('Error: ' + err.message);
+    }
+  }
+
+  function bulkExportEvents() {
+    const selectedRows = Array.from(document.querySelectorAll('.events-checkbox:checked'))
+      .map(cb => cb.closest('.events-row'))
+      .filter(Boolean);
+    
+    const selectedData = currentData.filter(r => selectedRows.some(row => row.getAttribute('data-id') === r.id));
+    const headers = ['Name', 'Slug', 'Category', 'Gender', 'Season'];
+    const rows = selectedData.map(r => [r.name, r.slug, r.category, r.gender, r.season]);
+    
+    const csv = [headers, ...rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(','))].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `events-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function clearEventsFilters() {
+    document.getElementById('events-filter-category').value = '';
+    document.getElementById('events-filter-gender').value = '';
+    document.getElementById('events-filter-season').value = '';
+    document.getElementById('events-filter-search').value = '';
+    applyEventsFilters();
+  }
+
+  function applyEventsFilters() {
+    if (!window.currentData || currentSection !== 'events') return;
+    const category = document.getElementById('events-filter-category').value;
+    const gender = document.getElementById('events-filter-gender').value;
+    const season = document.getElementById('events-filter-season').value;
+    const q = (document.getElementById('events-filter-search').value || '').toLowerCase().trim();
+
+    const all = window.currentData.slice();
+    const filtered = all.filter(row => {
+      if (category && row.category !== category) return false;
+      if (gender && row.gender !== gender) return false;
+      if (season && row.season !== season) return false;
+      if (q) {
+        const hay = `${row.name || ''} ${row.slug || ''}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+
+    const tbody = document.getElementById('events-list-body');
+    if (tbody) {
+      tbody.innerHTML = filtered.map(row => `
+        <tr class="events-row" data-id="${row.id}">
+          <td style="width: 30px;"><input type="checkbox" class="events-checkbox" onchange="updateEventsSelectionCount()"></td>
+          <td><strong>${row.name}</strong><br><span style="font-size:0.8em; color:var(--muted)">${row.slug}</span></td>
+          <td><span style="padding:2px 6px; border-radius:4px; font-size:0.8em; background:var(--hover);">${row.category}</span></td>
+          <td>${row.gender}</td>
+          <td><span style="padding:2px 6px; border-radius:4px; font-size:0.8em; background:${row.season === 'indoor' ? '#0f3460' : '#4a2511'}">${row.season}</span></td>
+          <td>
+            <button class="btn btn-secondary btn-small" onclick="openEditModal('${row.id}')">Edit</button>
+            <button class="btn btn-danger btn-small" onclick="confirmDelete('${row.id}')">Del</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+    document.getElementById('events-checkbox-all').checked = false;
+    updateEventsSelectionCount();
+    updateRecordCount(filtered.length);
+  }
+
+  function sortEventsTable(column) {
+    if (!window.currentData || currentSection !== 'events') return;
+    if (!window._eventsSort) window._eventsSort = { column: null, dir: 'asc' };
+    const state = window._eventsSort;
+    if (state.column === column) {
+      state.dir = state.dir === 'asc' ? 'desc' : 'asc';
+    } else {
+      state.column = column;
+      state.dir = 'asc';
+    }
+
+    window.currentData.sort((a, b) => {
+      const aVal = a[column] || '';
+      const bVal = b[column] || '';
+      const cmp = aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
+      return state.dir === 'asc' ? cmp : -cmp;
+    });
+
+    applyEventsFilters();
   }
   
   async function renderAthletes() {
@@ -2089,16 +2448,332 @@
       data.push({ id: child.key, ...child.val() });
     });
     
-    renderGrid('Athletes', [
+    currentData = data;
+    currentColumns = [
       { key: 'first_name', label: 'First Name', type: 'text' },
       { key: 'last_name', label: 'Last Name', type: 'text' },
       { key: 'school', label: 'School', type: 'text' },
       { key: 'grade', label: 'Grade', type: 'text' }
-    ], data, {
+    ];
+    
+    currentOptions = {
       onCreate: (row) => createRecord('Track/athletes', row),
       onUpdate: (id, updates) => updateRecord(`Track/athletes/${id}`, updates),
       onDelete: (id) => deleteRecord(`Track/athletes/${id}`)
+    };
+
+    const schools = [...new Set(data.map(a => a.school))].filter(Boolean).sort();
+
+    document.getElementById('content').innerHTML = `
+      <div class="grid-container" style="height: 100%; display: flex; flex-direction: column;">
+        <div class="grid-header">
+          <h3 style="display:flex; align-items:center; gap:10px;">
+            Athletes Management 
+            <span style="font-size:0.8em; color:var(--muted); font-weight:normal;">(${data.length})</span>
+          </h3>
+          <div class="grid-actions">
+            <select id="athletes-filter-school" class="form-input" style="width:auto; min-width: 140px; font-size:0.85rem; padding:6px 10px;">
+              <option value="">All schools</option>
+              ${schools.map(s => `<option value="${s}">${s}</option>`).join('')}
+            </select>
+            <input id="athletes-filter-search" class="form-input" placeholder="Search name / school…" style="min-width: 200px; font-size:0.85rem; padding:6px 10px;" />
+            <button class="btn btn-secondary btn-small" onclick="clearAthletesFilters()" style="font-size:0.8rem;">Clear</button>
+            <label style="display:flex; align-items:center; gap:8px; padding:8px 12px; border:1px solid var(--border); border-radius:6px; background:var(--card); cursor:pointer; white-space:nowrap;">
+              <input type="checkbox" id="athletes-select-all" onchange="toggleAthletesSelectAll()">
+              <span style="font-size:0.9rem;">Select All</span>
+            </label>
+            <button class="btn btn-primary" onclick="openAddModal()">+ Add Athlete</button>
+          </div>
+        </div>
+
+        <div id="athletes-list-view" class="grid-scroll" style="flex:1;">
+          <table class="grid-table">
+            <thead>
+              <tr>
+                <th style="width: 30px;"><input type="checkbox" id="athletes-checkbox-all" onchange="toggleAthletesSelectAll()"></th>
+                <th class="sortable" onclick="sortAthletesTable('first_name')">First Name</th>
+                <th class="sortable" onclick="sortAthletesTable('last_name')">Last Name</th>
+                <th class="sortable" onclick="sortAthletesTable('school')">School</th>
+                <th class="sortable" onclick="sortAthletesTable('grade')">Grade</th>
+                <th style="width:120px;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="athletes-list-body">
+              ${data.map(row => `
+                <tr class="athletes-row" data-id="${row.id}">
+                  <td style="width: 30px;"><input type="checkbox" class="athletes-checkbox" onchange="updateAthletesSelectionCount()"></td>
+                  <td>${row.first_name}</td>
+                  <td><strong>${row.last_name}</strong></td>
+                  <td><span style="padding:2px 6px; border-radius:4px; font-size:0.8em; background:var(--hover);">${row.school}</span></td>
+                  <td>${row.grade || '—'}</td>
+                  <td>
+                    <button class="btn btn-secondary btn-small" onclick="openEditModal('${row.id}')">Edit</button>
+                    <button class="btn btn-danger btn-small" onclick="confirmDelete('${row.id}')">Del</button>
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+
+        <div id="athletes-bulk-actions-bar" style="padding: 12px 20px; background: var(--card); border-top: 1px solid var(--border); display: none; gap: 12px; align-items: center;">
+          <span id="athletes-selection-count" style="color: var(--muted); font-size: 0.9rem;"></span>
+          <button class="btn btn-danger btn-small" onclick="openAthletesBulkDeleteModal()">🗑️ Delete Selected</button>
+          <button class="btn btn-secondary btn-small" onclick="bulkExportAthletes()">📥 Export Selected</button>
+          <button class="btn btn-secondary btn-small" onclick="openAthletesBulkEditModal()">✏️ Bulk Edit</button>
+        </div>
+      </div>
+
+      <style>
+        .athletes-row input[type="checkbox"] {
+          cursor: pointer;
+        }
+        .athletes-row.selected {
+          background: rgba(255, 123, 45, 0.1);
+        }
+      </style>
+    `;
+
+    // Wire athlete filters AFTER rendering
+    setTimeout(() => {
+      const schoolSel = document.getElementById('athletes-filter-school');
+      const searchInput = document.getElementById('athletes-filter-search');
+      
+      if (schoolSel) schoolSel.addEventListener('change', applyAthletesFilters);
+      if (searchInput) {
+        searchInput.addEventListener('input', function () {
+          clearTimeout(window._athletesSearchTimer);
+          window._athletesSearchTimer = setTimeout(applyAthletesFilters, 150);
+        });
+      }
+      
+      window.currentData = data;
+    }, 50);
+  }
+
+  function toggleAthletesSelectAll() {
+    const isChecked = document.getElementById('athletes-checkbox-all').checked;
+    document.querySelectorAll('.athletes-checkbox').forEach(checkbox => {
+      checkbox.checked = isChecked;
     });
+    updateAthletesSelectionCount();
+  }
+
+  function updateAthletesSelectionCount() {
+    const selected = document.querySelectorAll('.athletes-checkbox:checked').length;
+    const bulkBar = document.getElementById('athletes-bulk-actions-bar');
+    const selectionCount = document.getElementById('athletes-selection-count');
+    
+    if (selected > 0) {
+      bulkBar.style.display = 'flex';
+      selectionCount.textContent = `${selected} athlete(s) selected`;
+      document.querySelectorAll('.athletes-row').forEach(row => {
+        if (row.querySelector('.athletes-checkbox:checked')) {
+          row.classList.add('selected');
+        } else {
+          row.classList.remove('selected');
+        }
+      });
+    } else {
+      bulkBar.style.display = 'none';
+      document.querySelectorAll('.athletes-row').forEach(row => row.classList.remove('selected'));
+    }
+  }
+
+  function openAthletesBulkEditModal() {
+    const selectedRows = Array.from(document.querySelectorAll('.athletes-checkbox:checked'))
+      .map(cb => cb.closest('.athletes-row'))
+      .filter(Boolean);
+    if (!selectedRows.length) {
+      alert('Select at least one athlete first.');
+      return;
+    }
+    const ids = selectedRows.map(row => row.getAttribute('data-id'));
+
+    const body = `
+      <div class="form-group">
+        <label class="form-label">New Grade <span style="color: var(--muted); font-size:0.8rem;">(leave blank to keep current)</span></label>
+        <input type="text" class="form-input" name="bulk_grade" placeholder="e.g., 9, 10, 11, 12">
+      </div>
+      <p style="font-size:0.85rem; color: var(--warning); margin-top: 4px;">
+        These changes will be applied to <strong>${ids.length}</strong> selected athlete(s). Only fields you fill in will be updated.
+      </p>
+    `;
+
+    const template = document.getElementById('modal-template');
+    const clone = template.content.cloneNode(true);
+    clone.querySelector('#modal-title').textContent = 'Bulk Edit Athletes';
+    clone.querySelector('#modal-body').innerHTML = body;
+    const submitBtn = clone.querySelector('#modal-submit');
+    submitBtn.textContent = 'Apply to Selected';
+    submitBtn.onclick = function () { handleAthletesBulkEditSubmit(ids); };
+    const overlay = clone.querySelector('.modal-overlay');
+    document.body.appendChild(overlay);
+    window.currentModal = overlay;
+  }
+
+  async function handleAthletesBulkEditSubmit(ids) {
+    const modal = window.currentModal;
+    if (!modal || !ids || !ids.length) return;
+
+    const grade = modal.querySelector('input[name="bulk_grade"]').value.trim();
+    const updates = {};
+    if (grade) updates.grade = grade;
+
+    if (!Object.keys(updates).length) {
+      alert('Enter at least one field to update.');
+      return;
+    }
+
+    try {
+      await Promise.all(ids.map(id => updateRecord(`Track/athletes/${id}`, updates)));
+      closeModal();
+      await loadSection('athletes');
+    } catch (err) {
+      console.error('Bulk edit error:', err);
+      alert('Error applying bulk edits: ' + err.message);
+    }
+  }
+
+  function openAthletesBulkDeleteModal() {
+    const selectedRows = Array.from(document.querySelectorAll('.athletes-checkbox:checked'))
+      .map(cb => cb.closest('.athletes-row'))
+      .filter(Boolean);
+    if (!selectedRows.length) {
+      alert('Select at least one athlete first.');
+      return;
+    }
+    const ids = selectedRows.map(row => row.getAttribute('data-id'));
+    const names = selectedRows.map(row => {
+      const first = row.cells[1].textContent;
+      const last = row.cells[2].textContent;
+      return `${first} ${last}`;
+    });
+
+    const body = `
+      <p style="color: var(--danger); font-weight: 600; margin-bottom: 16px;">⚠️ This action cannot be undone!</p>
+      <p style="margin-bottom: 16px;">You are about to delete the following ${ids.length} athlete(s):</p>
+      <div style="background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 12px; max-height: 200px; overflow-y: auto; margin-bottom: 16px;">
+        <ul style="margin: 0; padding-left: 20px;">
+          ${names.map(name => `<li style="color: #e6f0f7; margin-bottom: 4px;">${name}</li>`).join('')}
+        </ul>
+      </div>
+      <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+        <input type="checkbox" id="confirm-delete-athletes" style="cursor: pointer;">
+        <span style="font-size: 0.9rem;">I understand this will delete these athletes and all related data</span>
+      </label>
+    `;
+
+    const template = document.getElementById('modal-template');
+    const clone = template.content.cloneNode(true);
+    clone.querySelector('#modal-title').textContent = 'Delete Athletes';
+    clone.querySelector('#modal-body').innerHTML = body;
+    const submitBtn = clone.querySelector('#modal-submit');
+    submitBtn.textContent = 'Delete Permanently';
+    submitBtn.style.background = 'var(--danger)';
+    submitBtn.onclick = function () { 
+      if (document.getElementById('confirm-delete-athletes').checked) {
+        handleAthletesBulkDelete(ids);
+      } else {
+        alert('Please confirm by checking the box.');
+      }
+    };
+    const overlay = clone.querySelector('.modal-overlay');
+    document.body.appendChild(overlay);
+    window.currentModal = overlay;
+  }
+
+  async function handleAthletesBulkDelete(ids) {
+    try {
+      await Promise.all(ids.map(id => deleteRecord(`Track/athletes/${id}`)));
+      closeModal();
+      await loadSection('athletes');
+    } catch (err) {
+      console.error('Bulk delete error:', err);
+      alert('Error: ' + err.message);
+    }
+  }
+
+  function bulkExportAthletes() {
+    const selectedRows = Array.from(document.querySelectorAll('.athletes-checkbox:checked'))
+      .map(cb => cb.closest('.athletes-row'))
+      .filter(Boolean);
+    
+    const selectedData = currentData.filter(r => selectedRows.some(row => row.getAttribute('data-id') === r.id));
+    const headers = ['First Name', 'Last Name', 'School', 'Grade'];
+    const rows = selectedData.map(r => [r.first_name, r.last_name, r.school, r.grade || '']);
+    
+    const csv = [headers, ...rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(','))].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `athletes-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function clearAthletesFilters() {
+    document.getElementById('athletes-filter-school').value = '';
+    document.getElementById('athletes-filter-search').value = '';
+    applyAthletesFilters();
+  }
+
+  function applyAthletesFilters() {
+    if (!window.currentData || currentSection !== 'athletes') return;
+    const school = document.getElementById('athletes-filter-school').value;
+    const q = (document.getElementById('athletes-filter-search').value || '').toLowerCase().trim();
+
+    const all = window.currentData.slice();
+    const filtered = all.filter(row => {
+      if (school && row.school !== school) return false;
+      if (q) {
+        const hay = `${row.first_name || ''} ${row.last_name || ''} ${row.school || ''}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+
+    const tbody = document.getElementById('athletes-list-body');
+    if (tbody) {
+      tbody.innerHTML = filtered.map(row => `
+        <tr class="athletes-row" data-id="${row.id}">
+          <td style="width: 30px;"><input type="checkbox" class="athletes-checkbox" onchange="updateAthletesSelectionCount()"></td>
+          <td>${row.first_name}</td>
+          <td><strong>${row.last_name}</strong></td>
+          <td><span style="padding:2px 6px; border-radius:4px; font-size:0.8em; background:var(--hover);">${row.school}</span></td>
+          <td>${row.grade || '—'}</td>
+          <td>
+            <button class="btn btn-secondary btn-small" onclick="openEditModal('${row.id}')">Edit</button>
+            <button class="btn btn-danger btn-small" onclick="confirmDelete('${row.id}')">Del</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+    document.getElementById('athletes-checkbox-all').checked = false;
+    updateAthletesSelectionCount();
+    updateRecordCount(filtered.length);
+  }
+
+  function sortAthletesTable(column) {
+    if (!window.currentData || currentSection !== 'athletes') return;
+    if (!window._athletesSort) window._athletesSort = { column: null, dir: 'asc' };
+    const state = window._athletesSort;
+    if (state.column === column) {
+      state.dir = state.dir === 'asc' ? 'desc' : 'asc';
+    } else {
+      state.column = column;
+      state.dir = 'asc';
+    }
+
+    window.currentData.sort((a, b) => {
+      const aVal = a[column] || '';
+      const bVal = b[column] || '';
+      const cmp = aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
+      return state.dir === 'asc' ? cmp : -cmp;
+    });
+
+    applyAthletesFilters();
   }
   
   async function renderResults() {
@@ -2312,6 +2987,13 @@
     `;
     
     updateRecordCount(data.length);
+    
+    // Wire results filters AFTER rendering
+    setTimeout(() => {
+      buildResultsQuickFilters(data);
+      window.currentData = data;
+      window.currentRawData = data;
+    }, 50);
   }
   
   function renderResultsRows(data) {
@@ -2913,14 +3595,118 @@
       athlete_count: athletes.filter(a => a.school === school).length
     }));
     
-    renderGrid('Teams', [
+    currentData = data;
+    currentColumns = [
       { key: 'school', label: 'School', type: 'text' },
       { key: 'athlete_count', label: 'Athletes', type: 'number' }
-    ], data, {
-      onCreate: null,
-      onUpdate: null,
-      onDelete: null
+    ];
+
+    document.getElementById('content').innerHTML = `
+      <div class="grid-container" style="height: 100%; display: flex; flex-direction: column;">
+        <div class="grid-header">
+          <h3 style="display:flex; align-items:center; gap:10px;">
+            Teams Management 
+            <span style="font-size:0.8em; color:var(--muted); font-weight:normal;">(${data.length})</span>
+          </h3>
+          <div class="grid-actions">
+            <input id="teams-filter-search" class="form-input" placeholder="Search school…" style="min-width: 200px; font-size:0.85rem; padding:6px 10px;" />
+            <button class="btn btn-secondary btn-small" onclick="clearTeamsFilters()" style="font-size:0.8rem;">Clear</button>
+            <button class="btn btn-secondary" onclick="exportToCSV('teams')">📥 Export</button>
+          </div>
+        </div>
+
+        <div id="teams-list-view" class="grid-scroll" style="flex:1;">
+          <table class="grid-table">
+            <thead>
+              <tr>
+                <th class="sortable" onclick="sortTeamsTable('school')">School</th>
+                <th class="sortable" onclick="sortTeamsTable('athlete_count')">Athletes</th>
+              </tr>
+            </thead>
+            <tbody id="teams-list-body">
+              ${data.map(row => `
+                <tr class="teams-row" data-id="${row.id}">
+                  <td><strong>${row.school}</strong></td>
+                  <td><span style="padding:4px 10px; border-radius:4px; font-size:0.85em; background:var(--hover); font-weight:600;">${row.athlete_count}</span></td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <style>
+        .teams-row {
+          cursor: pointer;
+        }
+        .teams-row:hover {
+          background: var(--hover) !important;
+        }
+      </style>
+    `;
+
+    // Wire teams filters AFTER rendering
+    setTimeout(() => {
+      const searchInput = document.getElementById('teams-filter-search');
+      if (searchInput) {
+        searchInput.addEventListener('input', function () {
+          clearTimeout(window._teamsSearchTimer);
+          window._teamsSearchTimer = setTimeout(applyTeamsFilters, 150);
+        });
+      }
+      window.currentData = data;
+    }, 50);
+  }
+
+  function clearTeamsFilters() {
+    document.getElementById('teams-filter-search').value = '';
+    applyTeamsFilters();
+  }
+
+  function applyTeamsFilters() {
+    if (!window.currentData || currentSection !== 'teams') return;
+    const q = (document.getElementById('teams-filter-search').value || '').toLowerCase().trim();
+
+    const all = window.currentData.slice();
+    const filtered = all.filter(row => {
+      if (q) {
+        const hay = (row.school || '').toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
     });
+
+    const tbody = document.getElementById('teams-list-body');
+    if (tbody) {
+      tbody.innerHTML = filtered.map(row => `
+        <tr class="teams-row" data-id="${row.id}">
+          <td><strong>${row.school}</strong></td>
+          <td><span style="padding:4px 10px; border-radius:4px; font-size:0.85em; background:var(--hover); font-weight:600;">${row.athlete_count}</span></td>
+        </tr>
+      `).join('');
+    }
+    updateRecordCount(filtered.length);
+  }
+
+  function sortTeamsTable(column) {
+    if (!window.currentData || currentSection !== 'teams') return;
+    if (!window._teamsSort) window._teamsSort = { column: null, dir: 'asc' };
+    const state = window._teamsSort;
+    if (state.column === column) {
+      state.dir = state.dir === 'asc' ? 'desc' : 'asc';
+    } else {
+      state.column = column;
+      state.dir = 'asc';
+    }
+
+    window.currentData.sort((a, b) => {
+      const aVal = a[column] || '';
+      const bVal = b[column] || '';
+      const cmp = aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
+      return state.dir === 'asc' ? cmp : -cmp;
+    });
+
+    applyTeamsFilters();
   }
   
   async function renderAnalytics() {

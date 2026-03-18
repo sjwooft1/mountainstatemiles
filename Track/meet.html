@@ -310,7 +310,7 @@
     <div id="error-box" class="error-msg"></div>
 
     <div id="meet-header" class="meet-header-card" style="display:none;">
-      <h1 id="meet-title" class="meet-title">Loading Meet...</h1>
+      <h1 id="meet-title" class="meet-title">Loading Results...</h1>
       <div id="meet-meta" class="meet-meta"></div>
       <div id="weather-widget" class="weather-widget" style="display:none;"></div>
     </div>
@@ -319,7 +319,10 @@
       <div class="gender-tabs">
         <button id="tab-M" class="gender-tab active" onclick="setGender('M')">Men's Results</button>
         <button id="tab-W" class="gender-tab" onclick="setGender('W')">Women's Results</button>
+        <button id="heat-prelims" class="heat-pill" onclick="setHeat('Prelims')">Prelims</button>
+              <button id="heat-finals" class="heat-pill active" onclick="setHeat('Finals')">Finals</button>
       </div>
+
 
       <div class="view-controls">
         <button id="view-events" class="view-btn active" onclick="setView('events')">Results by Event</button>

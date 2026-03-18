@@ -191,30 +191,118 @@ async function loadDatabaseCaches() {
 
 function resolveEventId(eventName, gender) {
     if (!eventName) return null;
-    let clean = eventName.toLowerCase()
-        .replace(/[^a-z0-9\s]/g, " ") 
-        .replace(/\b(meter|meters)\b/g, "m")
-        .replace(/\b(open|varsity|finals?|prelims?|timed|dash|run|results)\b/g, "")
-        .replace(/\s+/g, " ")
-        .trim();
 
-    let parts = clean.split(" ");
-    let reconstructed = parts.map(p => {
-        if (!isNaN(p) && !p.endsWith("m") && p.length <= 4) return p + "m";
-        return p;
-    }).join(" ");
+    let lower = eventName.toLowerCase().trim();
+    console.log(`[RESOLVE] Input: "${eventName}" | Gender: ${gender}`);
 
-    // Ensure we match the DB's gender prefix
-    let genderPrefix = gender === "W" ? "girls" : "boys";
-    let target = reconstructed.startsWith("boys") || reconstructed.startsWith("girls") 
-        ? reconstructed 
-        : (genderPrefix + " " + reconstructed);
-
-    if (eventMap[target]) return eventMap[target];
-
-    for (let [dbName, id] of Object.entries(eventMap)) {
-        if (dbName === target || dbName.includes(target) || target.includes(dbName)) return id;
+    // --- 1. AGGRESSIVE CLEANUP ---
+    // Remove slash and everything after it
+    if (lower.includes("/")) {
+        lower = lower.split("/")[0].trim();
     }
+    
+    // Remove hyphen and trailing specs (like - 33")
+    lower = lower.replace(/\s*-\s*\d+[\"\']?\s*(inch|in|cm|m|meter)?.*$/i, '');
+    
+    // Remove round info and words that confuse the matcher
+    lower = lower.replace(/\b(finals?|prelims?|open|heats?|round\s*\d+|varsity|jv|exhibition|dash|run)\b/gi, '');
+    
+    // Remove punctuation
+    lower = lower.replace(/[^a-z0-9\s]/g, " ");
+    
+    // Normalize "meter(s)" to "m" and bind it directly to the number (e.g., "60 m" -> "60m")
+    lower = lower.replace(/\bmeters?\b/gi, 'm');
+    lower = lower.replace(/(\d+)\s+m\b/gi, '$1m'); 
+    
+    lower = lower.replace(/\s+/g, " ").trim();
+    console.log(`[RESOLVE] After cleaning: "${lower}"`);
+
+    // --- 2. CLASSIFY EVENT ---
+    let isHurdles = lower.includes("hurdle");
+    let isRelay = lower.includes("relay");
+    let isWalk = lower.includes("walk");
+
+    let genderPrefixes = (gender === "W" || gender === "Girls") ? ["girls", "womens", "women"] : ["boys", "mens", "men"];
+
+    // Extract core target words (strip out gender prefixes)
+    let targetWords = lower.split(" ").filter(w => w.length > 0 && !genderPrefixes.includes(w) && w !== "mixed");
+    
+    // Add 'm' to bare numbers under 10000 if it's a standard running event
+    targetWords = targetWords.map(w => {
+        if (!isNaN(w) && w.length <= 4 && !isRelay && !isHurdles && !lower.includes("jump") && !lower.includes("put") && !lower.includes("vault")) return w + "m";
+        return w;
+    });
+
+    let coreEvent = targetWords.join(" ");
+
+    // --- 3. EXACT MATCH ATTEMPTS ---
+    for (let prefix of genderPrefixes) {
+        let attempts = [
+            `${prefix} ${coreEvent}`,
+            `${prefix} ${coreEvent} dash`,
+            `${prefix} ${coreEvent} run`
+        ];
+        
+        if (isHurdles) {
+            const dist = coreEvent.replace(/[^0-9]/g, '');
+            if (dist) {
+                attempts.push(`${prefix} ${dist}m hurdles`);
+                attempts.push(`${prefix} ${dist} meter hurdles`);
+                attempts.push(`${prefix} ${dist} hurdles`);
+            }
+        }
+
+        for (let attempt of attempts) {
+            console.log(`[EXACT TRY] "${attempt}"`);
+            if (eventMap[attempt]) {
+                console.log(`[EXACT MATCH] ✓ Matched to "${attempt}"`);
+                return eventMap[attempt];
+            }
+        }
+    }
+
+    // --- 4. HIGH-PRECISION FUZZY FALLBACK ---
+    console.log(`[FUZZY] Falling back to fuzzy matcher for: "${coreEvent}"`);
+    
+    for (let [dbName, id] of Object.entries(eventMap)) {
+        // Strict Boundaries: cross-contamination prevention
+        if (isHurdles !== dbName.includes("hurdle")) continue;
+        if (isRelay !== dbName.includes("relay")) continue;
+        if (isWalk !== dbName.includes("walk")) continue;
+
+        // Strip gender and filler from DB name to compare the core event
+        let dbCore = dbName;
+        ["boys", "girls", "mens", "womens", "men", "women", "mixed"].forEach(g => {
+            dbCore = dbCore.replace(new RegExp(`\\b${g}\\b`, 'g'), '');
+        });
+        dbCore = dbCore.replace(/\b(dash|run)\b/g, '');
+        dbCore = dbCore.replace(/\bmeters?\b/gi, 'm');
+        dbCore = dbCore.replace(/(\d+)\s+m\b/gi, '$1m');
+        dbCore = dbCore.trim();
+
+        let dbWords = dbCore.split(" ").filter(w => w.length > 0);
+
+        let matchCount = 0;
+        for (let tw of targetWords) {
+            // Strict word comparison (allows for "60" to match "60m" and "hurdle" to match "hurdles")
+            if (dbWords.some(dw => dw === tw || dw === tw + "m" || dw + "m" === tw || dw + "s" === tw || tw + "s" === dw)) {
+                matchCount++;
+            }
+        }
+
+        // Match requires ALL core target words to be present in the DB event
+        if (matchCount >= targetWords.length && targetWords.length > 0) {
+            const dbHasCorrectGender = genderPrefixes.some(g => dbName.includes(g));
+            const dbHasNoGender = !["boys", "girls", "mens", "womens", "men", "women"].some(g => dbName.includes(g));
+
+            if (dbHasCorrectGender || dbHasNoGender) {
+                console.log(`[FUZZY MATCH] ✓ Matched to "${dbName}"`);
+                return id;
+            }
+        }
+    }
+
+    console.warn(`[FAIL] ✗ Could not match event: "${eventName}"`);
     return null;
 }
 
