@@ -866,9 +866,7 @@
 <script src="firebase-config.js"></script>
 <script src="../admin-logger.js"></script>
 <script>
-  // ==========================================
-  // App State
-  // ==========================================
+  let savedQuickFilters = { meet: '', event: '', gender: '', search: '' };
   let currentSection = 'dashboard';
   let currentData = [];
   let currentColumns = [];
@@ -1505,67 +1503,35 @@
     formData[input.name] = value;
   });
 
-  // LOGIC FOR RESULTS: Map Name/School text to an athlete_id
   if (currentSection === 'results') {
     const name = (formData.athlete_name || '').trim();
     const school = (formData.athlete_school || '').trim();
-    
-    if (!name || !school) {
-      alert("❌ Error: Athlete Name and School are required.");
-      return;
-    }
+    if (!name || !school) { alert("❌ Name and School are required."); return; }
 
-    // 1. Check if this athlete already exists (case-insensitive)
     let athleteId = Object.keys(window.currentAthletesMap || {}).find(id => {
       const a = window.currentAthletesMap[id];
       return a.name.toLowerCase() === name.toLowerCase() && a.school.toLowerCase() === school.toLowerCase();
     });
 
-    // 2. Create a new athlete if they don't exist
     if (!athleteId) {
-      const nameParts = name.split(/\s+/);
-      const first_name = nameParts[0] || 'Unknown';
-      const last_name = nameParts.slice(1).join(' ') || '';
-      
-      const newAthleteRef = await window.firebaseDatabase.ref('Track/athletes').push({
-        first_name, 
-        last_name, 
-        school
-      });
-      athleteId = newAthleteRef.key;
-      
-      // Update local map so it can be reused immediately without a page refresh
-      if (!window.currentAthletesMap) window.currentAthletesMap = {};
-      window.currentAthletesMap[athleteId] = { name, school };
+      const parts = name.split(/\s+/);
+      const first_name = parts[0] || 'Unknown';
+      const last_name = parts.slice(1).join(' ') || '';
+      const newRef = await window.firebaseDatabase.ref('Track/athletes').push({ first_name, last_name, school });
+      athleteId = newRef.key;
+      window.currentAthletesMap[athleteId] = { name, school }; // Update local map immediately
     }
-
-    // 3. Update formData to use the resolved ID and remove the temporary name fields
     formData.athlete_id = athleteId;
     delete formData.athlete_name;
     delete formData.athlete_school;
-
-    // Standard Results Validation
-    const requiredFields = { athlete_id: 'Athlete', event_id: 'Event', meet_id: 'Meet', mark: 'Mark/Time' };
-    for (const [field, label] of Object.entries(requiredFields)) {
-      if (!formData[field]) {
-        alert(`❌ Error: Missing ${label}`);
-        return;
-      }
-    }
   }
 
-  // Finalize Save (Standard logic)
   try {
-    if (editingId) {
-      await currentOptions.onUpdate(editingId, formData);
-    } else {
-      await currentOptions.onCreate(formData);
-    }
+    if (editingId) { await currentOptions.onUpdate(editingId, formData); } 
+    else { await currentOptions.onCreate(formData); }
     closeModal();
-    await loadSection(currentSection);
-  } catch (error) {
-    alert('Error: ' + error.message);
-  }
+    await loadSection(currentSection); // This triggers the table refresh
+  } catch (error) { alert('Error: ' + error.message); }
 }
   
   async function confirmDelete(id) {
@@ -3013,8 +2979,10 @@
     updateRecordCount(data.length);
     
     // Wire results filters AFTER rendering
+    // Wire results filters AFTER rendering
     setTimeout(() => {
-      buildResultsQuickFilters(data);
+      // CHANGED: Use initQuickResultsFilters instead of buildResultsQuickFilters
+      initQuickResultsFilters(data);
       window.currentData = data;
       window.currentRawData = data;
     }, 50);
@@ -3049,73 +3017,74 @@
   }
 
   // Build options for quick inline filters based on loaded data
-  function buildResultsQuickFilters(data) {
-    const meetSel = document.getElementById('filter-meet-quick');
-    const eventSel = document.getElementById('filter-event-quick');
-    const genderSel = document.getElementById('filter-gender-quick');
-    const searchInput = document.getElementById('filter-search-quick');
-    if (!meetSel || !eventSel || !genderSel || !searchInput) return;
+  
 
-    const meets = [...new Set(data.map(r => r.meet_name))].filter(Boolean).sort();
-    const events = [...new Set(data.map(r => r.event_name))].filter(Boolean).sort();
-    const genders = [...new Set(data.map(r => r.event_gender).filter(Boolean))].sort();
+  function initQuickResultsFilters(data) {
+  const meetSel = document.getElementById('filter-meet-quick');
+  const eventSel = document.getElementById('filter-event-quick');
+  const genderSel = document.getElementById('filter-gender-quick');
+  const searchInput = document.getElementById('filter-search-quick');
 
-    meetSel.innerHTML = '<option value=\"\">All meets</option>' + meets.map(m => `<option value=\"${m}\">${m}</option>`).join('');
-    eventSel.innerHTML = '<option value=\"\">All events</option>' + events.map(e => `<option value=\"${e}\">${e}</option>`).join('');
-    genderSel.innerHTML = '<option value=\"\">Any gender</option>' + genders.map(g => `<option value=\"${g}\">${g}</option>`).join('');
+  if (!meetSel || !eventSel || !genderSel || !searchInput) return;
 
-    meetSel.onchange = applyQuickResultsFilters;
-    eventSel.onchange = applyQuickResultsFilters;
-    genderSel.onchange = applyQuickResultsFilters;
-    searchInput.oninput = function() {
-      // small debounce via microtask
-      clearTimeout(window._resultsSearchTimer);
-      window._resultsSearchTimer = setTimeout(applyQuickResultsFilters, 150);
-    };
-  }
+  // Populate dropdown options
+  const meets = [...new Set(data.map(r => r.meet_name))].filter(Boolean).sort();
+  const events = [...new Set(data.map(r => r.event_name))].filter(Boolean).sort();
+  const genders = [...new Set(data.map(r => r.event_gender).filter(Boolean))].sort();
 
-  function clearQuickResultsFilters() {
-    const meetSel = document.getElementById('filter-meet-quick');
-    const eventSel = document.getElementById('filter-event-quick');
-    const genderSel = document.getElementById('filter-gender-quick');
-    const searchInput = document.getElementById('filter-search-quick');
-    if (meetSel) meetSel.value = '';
-    if (eventSel) eventSel.value = '';
-    if (genderSel) genderSel.value = '';
-    if (searchInput) searchInput.value = '';
+  meetSel.innerHTML = '<option value="">All meets</option>' + meets.map(m => `<option value="${m}">${m}</option>`).join('');
+  eventSel.innerHTML = '<option value="">All events</option>' + events.map(e => `<option value="${e}">${e}</option>`).join('');
+  genderSel.innerHTML = '<option value="">Any gender</option>' + genders.map(g => `<option value="${g}">${g}</option>`).join('');
+
+  // RESTORE SAVED FILTERS
+  meetSel.value = savedQuickFilters.meet || '';
+  eventSel.value = savedQuickFilters.event || '';
+  genderSel.value = savedQuickFilters.gender || '';
+  searchInput.value = savedQuickFilters.search || '';
+
+  // Attach listeners
+  meetSel.onchange = applyQuickResultsFilters;
+  eventSel.onchange = applyQuickResultsFilters;
+  genderSel.onchange = applyQuickResultsFilters;
+  searchInput.oninput = function() {
+    clearTimeout(window._resultsSearchTimer);
+    window._resultsSearchTimer = setTimeout(applyQuickResultsFilters, 150);
+  };
+
+  // Trigger initial filter application
+  if (window.activeFilters) {
+    filterResultsByActiveFilters();
+  } else {
     applyQuickResultsFilters();
   }
+}
 
-  function applyQuickResultsFilters() {
-    if (!window.currentRawData) return;
-    const meetSel = document.getElementById('filter-meet-quick');
-    const eventSel = document.getElementById('filter-event-quick');
-    const genderSel = document.getElementById('filter-gender-quick');
-    const searchInput = document.getElementById('filter-search-quick');
+function applyQuickResultsFilters() {
+  if (!window.currentRawData) return;
 
-    const meet = meetSel ? meetSel.value : '';
-    const event = eventSel ? eventSel.value : '';
-    const gender = genderSel ? genderSel.value : '';
-    const q = (searchInput ? searchInput.value : '').toLowerCase().trim();
+  const meet = document.getElementById('filter-meet-quick')?.value || '';
+  const event = document.getElementById('filter-event-quick')?.value || '';
+  const gender = document.getElementById('filter-gender-quick')?.value || '';
+  const q = (document.getElementById('filter-search-quick')?.value || '').toLowerCase().trim();
 
-    let rows = window.currentRawData.slice();
-    rows = rows.filter(r => {
-      if (meet && r.meet_name !== meet) return false;
-      if (event && r.event_name !== event) return false;
-      if (gender && r.event_gender !== gender) return false;
-      if (q) {
-        const hay = `${r.athlete_name || ''} ${r.athlete_school || ''}`.toLowerCase();
-        if (!hay.includes(q)) return false;
-      }
-      return true;
-    });
+  // SAVE CURRENT FILTERS to global state
+  savedQuickFilters = { meet, event, gender, search: q };
 
-    const tbody = document.getElementById('results-grid-body');
-    if (tbody) tbody.innerHTML = renderResultsRows(rows);
-    updateRecordCount(rows.length);
-    document.getElementById('select-all').checked = false;
-    updateSelectionCount();
+  let filtered = window.currentRawData;
+  if (meet) filtered = filtered.filter(r => r.meet_name === meet);
+  if (event) filtered = filtered.filter(r => r.event_name === event);
+  if (gender) filtered = filtered.filter(r => r.event_gender === gender);
+  if (q) {
+    filtered = filtered.filter(r => 
+      `${r.athlete_name} ${r.athlete_school} ${r.event_name}`.toLowerCase().includes(q)
+    );
   }
+
+  currentData = filtered;
+  const tbody = document.getElementById('results-grid-body');
+  if (tbody) tbody.innerHTML = renderResultsRows(filtered);
+  updateRecordCount(filtered.length);
+}
   
   function toggleResultsIDDisplay() {
     const showIds = document.getElementById('toggle-ids').checked;
@@ -4439,104 +4408,53 @@
   function openAddResultModal() {
   editingId = null;
   const events = Object.entries(window.currentEventsMap).map(([id, e]) => `
-    <option value="${id}">${e.name} (${e.gender})</option>
-  `).join('');
+    <option value="${id}">${e.name} (${e.gender})</option>`).join('');
   const meets = Object.entries(window.currentMeetsMap).map(([id, m]) => `
-    <option value="${id}">${m.name} - ${m.date}</option>
-  `).join('');
+    <option value="${id}">${m.name} - ${m.date}</option>`).join('');
 
   const formHTML = `
-    <div class="form-group">
-      <label class="form-label">Athlete Name *</label>
-      <input type="text" name="athlete_name" class="form-input" placeholder="First Last" required>
-    </div>
-    <div class="form-group">
-      <label class="form-label">School *</label>
-      <input type="text" name="athlete_school" class="form-input" placeholder="e.g. Parkersburg" required>
-    </div>
-    <div class="form-group">
-      <label class="form-label">Event *</label>
-      <select name="event_id" class="form-input" required>
-        <option value="">-- Select Event --</option>
-        ${events}
-      </select>
-    </div>
-    <div class="form-group">
-      <label class="form-label">Meet *</label>
-      <select name="meet_id" class="form-input" required>
-        <option value="">-- Select Meet --</option>
-        ${meets}
-      </select>
-    </div>
-    <div class="form-group">
-      <label class="form-label">Mark/Time *</label>
-      <input type="text" name="mark" class="form-input" placeholder="e.g., 7.36, 18:30.45" required>
-    </div>
+    <div class="form-group"><label class="form-label">Athlete Name *</label>
+      <input type="text" name="athlete_name" class="form-input" placeholder="First Last" required></div>
+    <div class="form-group"><label class="form-label">School *</label>
+      <input type="text" name="athlete_school" class="form-input" placeholder="e.g. Parkersburg" required></div>
+    <div class="form-group"><label class="form-label">Event *</label>
+      <select name="event_id" class="form-input" required><option value="">-- Select Event --</option>${events}</select></div>
+    <div class="form-group"><label class="form-label">Meet *</label>
+      <select name="meet_id" class="form-input" required><option value="">-- Select Meet --</option>${meets}</select></div>
+    <div class="form-group"><label class="form-label">Mark/Time *</label>
+      <input type="text" name="mark" class="form-input" placeholder="e.g., 7.36" required></div>
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-      <div class="form-group">
-        <label class="form-label">Placement</label>
-        <input type="number" name="placement" class="form-input" placeholder="e.g., 1, 2, 3">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Heat</label>
-        <input type="text" name="heat" class="form-input" placeholder="e.g., 1, 2, A, B">
-      </div>
-    </div>
-  `;
+      <div class="form-group"><label class="form-label">Placement</label><input type="number" name="placement" class="form-input"></div>
+      <div class="form-group"><label class="form-label">Heat</label><input type="text" name="heat" class="form-input"></div>
+    </div>`;
   openModal('Add Result', formHTML, 'Save Result');
 }
-  
+
 function openEditResultModal(id) {
   editingId = id;
   const result = currentData.find(r => r.id === id);
   if (!result) return;
-
-  // Get current athlete details from our global map
   const athlete = window.currentAthletesMap[result.athlete_id] || { name: '', school: '' };
-  
   const events = Object.entries(window.currentEventsMap).map(([eid, e]) => `
-    <option value="${eid}" ${result.event_id === eid ? 'selected' : ''}>${e.name} (${e.gender})</option>
-  `).join('');
+    <option value="${eid}" ${result.event_id === eid ? 'selected' : ''}>${e.name} (${e.gender})</option>`).join('');
   const meets = Object.entries(window.currentMeetsMap).map(([mid, m]) => `
-    <option value="${mid}" ${result.meet_id === mid ? 'selected' : ''}>${m.name} - ${m.date}</option>
-  `).join('');
+    <option value="${mid}" ${result.meet_id === mid ? 'selected' : ''}>${m.name} - ${m.date}</option>`).join('');
 
   const formHTML = `
-    <div class="form-group">
-      <label class="form-label">Athlete Name *</label>
-      <input type="text" name="athlete_name" class="form-input" value="${athlete.name}" required>
-    </div>
-    <div class="form-group">
-      <label class="form-label">School *</label>
-      <input type="text" name="athlete_school" class="form-input" value="${athlete.school}" required>
-    </div>
-    <div class="form-group">
-      <label class="form-label">Event *</label>
-      <select name="event_id" class="form-input" required>
-        ${events}
-      </select>
-    </div>
-    <div class="form-group">
-      <label class="form-label">Meet *</label>
-      <select name="meet_id" class="form-input" required>
-        ${meets}
-      </select>
-    </div>
-    <div class="form-group">
-      <label class="form-label">Mark/Time *</label>
-      <input type="text" name="mark" class="form-input" value="${result.mark}" required>
-    </div>
+    <div class="form-group"><label class="form-label">Athlete Name *</label>
+      <input type="text" name="athlete_name" class="form-input" value="${athlete.name}" required></div>
+    <div class="form-group"><label class="form-label">School *</label>
+      <input type="text" name="athlete_school" class="form-input" value="${athlete.school}" required></div>
+    <div class="form-group"><label class="form-label">Event *</label>
+      <select name="event_id" class="form-input" required>${events}</select></div>
+    <div class="form-group"><label class="form-label">Meet *</label>
+      <select name="meet_id" class="form-input" required>${meets}</select></div>
+    <div class="form-group"><label class="form-label">Mark/Time *</label>
+      <input type="text" name="mark" class="form-input" value="${result.mark}" required></div>
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-      <div class="form-group">
-        <label class="form-label">Placement</label>
-        <input type="number" name="placement" class="form-input" value="${result.placement === '—' ? '' : result.placement}">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Heat</label>
-        <input type="text" name="heat" class="form-input" value="${result.heat === '—' ? '' : result.heat}">
-      </div>
-    </div>
-  `;
+      <div class="form-group"><label class="form-label">Placement</label><input type="number" name="placement" class="form-input" value="${result.placement === '—' ? '' : result.placement}"></div>
+      <div class="form-group"><label class="form-label">Heat</label><input type="text" name="heat" class="form-input" value="${result.heat === '—' ? '' : result.heat}"></div>
+    </div>`;
   openModal('Edit Result', formHTML, 'Update');
 }
   
