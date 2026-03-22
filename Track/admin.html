@@ -1496,53 +1496,77 @@
   }
   
   async function handleModalSubmit() {
-    const modal = window.currentModal;
-    if (!modal) return;
+  const modal = window.currentModal;
+  if (!modal) return;
+  const formData = {};
+  modal.querySelectorAll('.form-input').forEach(input => {
+    let value = input.value;
+    if (input.type === 'number') value = value ? parseFloat(value) : null;
+    formData[input.name] = value;
+  });
+
+  // LOGIC FOR RESULTS: Map Name/School text to an athlete_id
+  if (currentSection === 'results') {
+    const name = (formData.athlete_name || '').trim();
+    const school = (formData.athlete_school || '').trim();
     
-    const formData = {};
-    modal.querySelectorAll('.form-input').forEach(input => {
-      let value = input.value;
-      if (input.type === 'number') value = value ? parseFloat(value) : null;
-      formData[input.name] = value;
-    });
-    
-    // Validate required fields for results
-    if (currentSection === 'results') {
-      const requiredFields = {
-        athlete_id: 'Athlete',
-        event_id: 'Event',
-        meet_id: 'Meet',
-        mark: 'Mark/Time'
-      };
-      
-      for (const [field, label] of Object.entries(requiredFields)) {
-        if (!formData[field] || String(formData[field]).trim() === '') {
-          alert(`❌ Error: Please select/enter ${label}`);
-          return;
-        }
-      }
+    if (!name || !school) {
+      alert("❌ Error: Athlete Name and School are required.");
+      return;
     }
-    
-    // Remove empty/null values to avoid Firebase key errors
-    Object.keys(formData).forEach(key => {
-      if (formData[key] === '' || formData[key] === null || formData[key] === undefined) {
-        delete formData[key];
-      }
+
+    // 1. Check if this athlete already exists (case-insensitive)
+    let athleteId = Object.keys(window.currentAthletesMap || {}).find(id => {
+      const a = window.currentAthletesMap[id];
+      return a.name.toLowerCase() === name.toLowerCase() && a.school.toLowerCase() === school.toLowerCase();
     });
-    
-    try {
-      if (editingId) {
-        await currentOptions.onUpdate(editingId, formData);
-      } else {
-        await currentOptions.onCreate(formData);
+
+    // 2. Create a new athlete if they don't exist
+    if (!athleteId) {
+      const nameParts = name.split(/\s+/);
+      const first_name = nameParts[0] || 'Unknown';
+      const last_name = nameParts.slice(1).join(' ') || '';
+      
+      const newAthleteRef = await window.firebaseDatabase.ref('Track/athletes').push({
+        first_name, 
+        last_name, 
+        school
+      });
+      athleteId = newAthleteRef.key;
+      
+      // Update local map so it can be reused immediately without a page refresh
+      if (!window.currentAthletesMap) window.currentAthletesMap = {};
+      window.currentAthletesMap[athleteId] = { name, school };
+    }
+
+    // 3. Update formData to use the resolved ID and remove the temporary name fields
+    formData.athlete_id = athleteId;
+    delete formData.athlete_name;
+    delete formData.athlete_school;
+
+    // Standard Results Validation
+    const requiredFields = { athlete_id: 'Athlete', event_id: 'Event', meet_id: 'Meet', mark: 'Mark/Time' };
+    for (const [field, label] of Object.entries(requiredFields)) {
+      if (!formData[field]) {
+        alert(`❌ Error: Missing ${label}`);
+        return;
       }
-      closeModal();
-      await loadSection(currentSection);
-    } catch (error) {
-      console.error('Form submission error:', error);
-      alert('Error: ' + error.message);
     }
   }
+
+  // Finalize Save (Standard logic)
+  try {
+    if (editingId) {
+      await currentOptions.onUpdate(editingId, formData);
+    } else {
+      await currentOptions.onCreate(formData);
+    }
+    closeModal();
+    await loadSection(currentSection);
+  } catch (error) {
+    alert('Error: ' + error.message);
+  }
+}
   
   async function confirmDelete(id) {
     if (!confirm('Are you sure you want to delete this record?')) return;
@@ -2887,6 +2911,7 @@
         <!-- Quick inline filters -->
         <div id="results-quick-filters" style="padding: 10px 20px; background: var(--panel); border-bottom: 1px solid var(--border); display: flex; flex-wrap: wrap; gap: 10px; align-items: center;">
           <span style="font-size: 0.9rem; color: var(--muted);">Quick Filters:</span>
+          <input id="filter-search-quick" class="form-input" placeholder="🔍 Search athlete name or team…" style="flex:1; min-width:250px; font-size:0.85rem; padding:6px 10px;" />
           <select id="filter-meet-quick" class="form-input" style="width:auto; min-width: 160px; font-size:0.85rem; padding:6px 10px;">
             <option value="">All meets</option>
           </select>
@@ -2898,7 +2923,6 @@
             <option value="M">Men/Boys</option>
             <option value="W">Women/Girls</option>
           </select>
-          <input id="filter-search-quick" class="form-input" placeholder="Search athlete / school…" style="flex:1; min-width:160px; font-size:0.85rem; padding:6px 10px;" />
           <button class="btn btn-secondary btn-small" onclick="clearQuickResultsFilters()" style="font-size:0.8rem;">Clear</button>
         </div>
 
@@ -3167,7 +3191,7 @@
           </div>
         </div>
         
-        <div style="padding: 16px; background: var(--card); border-radius: 8px;">
+        <div style="padding: 16px; background: var (--card); border-radius: 8px;">
           <h4 style="margin: 0 0 12px 0; color: var(--accent); font-size: 0.9rem; text-transform: uppercase;">Events</h4>
           
           <div class="form-group">
@@ -3998,7 +4022,7 @@
           letter-spacing: 1px;
           margin-bottom: 12px;
           padding-bottom: 8px;
-          border-bottom: 1px solid var(--border);
+          border-bottom: 1px solid var (--border);
         }
         
         .console-logs-list {
@@ -4413,129 +4437,108 @@
   }
   
   function openAddResultModal() {
-    editingId = null;
-    const athletes = Object.entries(window.currentAthletesMap).map(([id, a]) => `
-      <option value="${id}">${a.name} (${a.school})</option>
-    `).join('');
-    const events = Object.entries(window.currentEventsMap).map(([id, e]) => `
-      <option value="${id}">${e.name} (${e.gender})</option>
-    `).join('');
-    const meets = Object.entries(window.currentMeetsMap).map(([id, m]) => `
-      <option value="${id}">${m.name} - ${m.date}</option>
-    `).join('');
-    
-    const formHTML = `
+  editingId = null;
+  const events = Object.entries(window.currentEventsMap).map(([id, e]) => `
+    <option value="${id}">${e.name} (${e.gender})</option>
+  `).join('');
+  const meets = Object.entries(window.currentMeetsMap).map(([id, m]) => `
+    <option value="${id}">${m.name} - ${m.date}</option>
+  `).join('');
+
+  const formHTML = `
+    <div class="form-group">
+      <label class="form-label">Athlete Name *</label>
+      <input type="text" name="athlete_name" class="form-input" placeholder="First Last" required>
+    </div>
+    <div class="form-group">
+      <label class="form-label">School *</label>
+      <input type="text" name="athlete_school" class="form-input" placeholder="e.g. Parkersburg" required>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Event *</label>
+      <select name="event_id" class="form-input" required>
+        <option value="">-- Select Event --</option>
+        ${events}
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Meet *</label>
+      <select name="meet_id" class="form-input" required>
+        <option value="">-- Select Meet --</option>
+        ${meets}
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Mark/Time *</label>
+      <input type="text" name="mark" class="form-input" placeholder="e.g., 7.36, 18:30.45" required>
+    </div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
       <div class="form-group">
-        <label class="form-label">Athlete *</label>
-        <select name="athlete_id" class="form-input" required>
-          <option value="">-- Select Athlete --</option>
-          ${athletes}
-        </select>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Event *</label>
-        <select name="event_id" class="form-input" required>
-          <option value="">-- Select Event --</option>
-          ${events}
-        </select>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Meet *</label>
-        <select name="meet_id" class="form-input" required>
-          <option value="">-- Select Meet --</option>
-          ${meets}
-        </select>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Mark/Time *</label>
-        <input type="text" name="mark" class="form-input" placeholder="e.g., 7.36, 18:30.45" required>
-      </div>
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-        <div class="form-group">
-          <label class="form-label">Placement</label>
-          <input type="number" name="placement" class="form-input" placeholder="e.g., 1, 2, 3">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Heat</label>
-          <input type="text" name="heat" class="form-input" placeholder="e.g., 1, A, B">
-        </div>
+        <label class="form-label">Placement</label>
+        <input type="number" name="placement" class="form-input" placeholder="e.g., 1, 2, 3">
       </div>
       <div class="form-group">
-        <label class="form-label">Gender</label>
-        <select name="gender" class="form-input">
-          <option value="">-- Auto --</option>
-          <option value="M">Men</option>
-          <option value="W">Women</option>
-        </select>
+        <label class="form-label">Heat</label>
+        <input type="text" name="heat" class="form-input" placeholder="e.g., 1, 2, A, B">
       </div>
-    `;
-    
-    openModal('Add Result', formHTML, 'Create');
-  }
+    </div>
+  `;
+  openModal('Add Result', formHTML, 'Save Result');
+}
   
-  function openEditResultModal(id) {
-    editingId = id;
-    const record = currentData.find(r => r.id === id);
-    if (!record) return;
-    
-    const athletes = Object.entries(window.currentAthletesMap).map(([aid, a]) => `
-      <option value="${aid}" ${record.athlete_id === aid ? 'selected' : ''}>${a.name} (${a.school})</option>
-    `).join('');
-    const events = Object.entries(window.currentEventsMap).map(([eid, e]) => `
-      <option value="${eid}" ${record.event_id === eid ? 'selected' : ''}>${e.name} (${e.gender})</option>
-    `).join('');
-    const meets = Object.entries(window.currentMeetsMap).map(([mid, m]) => `
-      <option value="${mid}" ${record.meet_id === mid ? 'selected' : ''}>${m.name} - ${m.date}</option>
-    `).join('');
-    
-    const formHTML = `
+function openEditResultModal(id) {
+  editingId = id;
+  const result = currentData.find(r => r.id === id);
+  if (!result) return;
+
+  // Get current athlete details from our global map
+  const athlete = window.currentAthletesMap[result.athlete_id] || { name: '', school: '' };
+  
+  const events = Object.entries(window.currentEventsMap).map(([eid, e]) => `
+    <option value="${eid}" ${result.event_id === eid ? 'selected' : ''}>${e.name} (${e.gender})</option>
+  `).join('');
+  const meets = Object.entries(window.currentMeetsMap).map(([mid, m]) => `
+    <option value="${mid}" ${result.meet_id === mid ? 'selected' : ''}>${m.name} - ${m.date}</option>
+  `).join('');
+
+  const formHTML = `
+    <div class="form-group">
+      <label class="form-label">Athlete Name *</label>
+      <input type="text" name="athlete_name" class="form-input" value="${athlete.name}" required>
+    </div>
+    <div class="form-group">
+      <label class="form-label">School *</label>
+      <input type="text" name="athlete_school" class="form-input" value="${athlete.school}" required>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Event *</label>
+      <select name="event_id" class="form-input" required>
+        ${events}
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Meet *</label>
+      <select name="meet_id" class="form-input" required>
+        ${meets}
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Mark/Time *</label>
+      <input type="text" name="mark" class="form-input" value="${result.mark}" required>
+    </div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
       <div class="form-group">
-        <label class="form-label">Athlete *</label>
-        <select name="athlete_id" class="form-input" required>
-          <option value="">-- Select Athlete --</option>
-          ${athletes}
-        </select>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Event *</label>
-        <select name="event_id" class="form-input" required>
-          <option value="">-- Select Event --</option>
-          ${events}
-        </select>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Meet *</label>
-        <select name="meet_id" class="form-input" required>
-          <option value="">-- Select Meet --</option>
-          ${meets}
-        </select>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Mark/Time *</label>
-        <input type="text" name="mark" class="form-input" value="${record.mark}" required>
-      </div>
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-        <div class="form-group">
-          <label class="form-label">Placement</label>
-          <input type="number" name="placement" class="form-input" value="${record.placement}">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Heat</label>
-          <input type="text" name="heat" class="form-input" value="${record.heat}">
-        </div>
+        <label class="form-label">Placement</label>
+        <input type="number" name="placement" class="form-input" value="${result.placement === '—' ? '' : result.placement}">
       </div>
       <div class="form-group">
-        <label class="form-label">Gender</label>
-        <select name="gender" class="form-input">
-          <option value="">-- Auto --</option>
-          <option value="M" ${record.gender === 'M' ? 'selected' : ''}>Men</option>
-          <option value="W" ${record.gender === 'W' ? 'selected' : ''}>Women</option>
-        </select>
+        <label class="form-label">Heat</label>
+        <input type="text" name="heat" class="form-input" value="${result.heat === '—' ? '' : result.heat}">
       </div>
-    `;
-    
-    openModal('Edit Result', formHTML, 'Update');
-  }
+    </div>
+  `;
+  openModal('Edit Result', formHTML, 'Update');
+}
   
   function removeFilter(type, value) {
     if (!window.activeFilters) return;

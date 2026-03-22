@@ -4,158 +4,90 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Track Meet Import Engine</title>
-
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
-
 <style>
-:root{
-  --bg:#0c1424;
-  --panel:#111c32;
-  --card:#162540;
-  --accent:#ff5722;
-  --accent2:#ff784e;
-  --success:#22c55e;
-  --danger:#ef4444;
-  --warning:#f59e0b;
-  --text:#e6edf7;
-  --muted:#9fb4c8;
-  --border:rgba(255,255,255,.08);
-}
-*{box-sizing:border-box}
-body{
-  margin:0;
-  font-family:Inter,system-ui;
-  background:var(--bg);
-  color:var(--text);
-}
-.container{
-  max-width:1300px;
-  margin:auto;
-  padding:40px 20px;
-}
-.card{
-  background:var(--panel);
-  border:1px solid var(--border);
-  border-radius:14px;
-  padding:28px;
-  margin-bottom:24px;
-}
-h1{
-  font-size:2.2rem;
-  font-weight:800;
-  background:linear-gradient(90deg,var(--accent),var(--accent2));
-  -webkit-background-clip:text;
-  -webkit-text-fill-color:transparent;
-}
-textarea, select{
-  width:100%;
-  padding:12px;
-  background:var(--card);
-  border:1px solid var(--border);
-  border-radius:8px;
-  color:var(--text);
-  font-size:.95rem;
-}
-textarea{
-  min-height:250px;
-  resize:vertical;
-  font-family:monospace;
-}
-button{
-  padding:12px 20px;
-  border:none;
-  border-radius:8px;
-  font-weight:600;
-  cursor:pointer;
-}
-.btn-primary{
-  background:var(--accent);
-  color:white;
-}
-.btn-primary:hover{
-  background:var(--accent2);
-}
-.stat-grid{
-  display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
-  gap:18px;
-}
-.stat{
-  background:var(--card);
-  padding:18px;
-  border-radius:10px;
-  text-align:center;
-}
-.stat-number{
-  font-size:1.7rem;
-  font-weight:700;
-}
-.preview-table{
-  width:100%;
-  border-collapse:collapse;
-  margin-top:20px;
-}
-.preview-table th,
-.preview-table td{
-  padding:8px;
-  border-bottom:1px solid var(--border);
-  font-size:.82rem;
-  text-align: left;
-}
-.preview-table th{
-  text-transform:uppercase;
-  color:var(--muted);
-}
-.progress{
-  height:8px;
-  background:var(--card);
-  border-radius:6px;
-  overflow:hidden;
-}
-.progress-fill{
-  height:100%;
-  background:linear-gradient(90deg,var(--accent),var(--accent2));
-  width:0%;
-  transition:.3s;
-}
-.error{color:var(--danger)}
-.success{color:var(--success)}
-.warning{color:var(--warning)}
+    :root{ --bg:#0c1424; --panel:#111c32; --card:#162540; --accent:#ff5722; --accent2:#ff784e; --success:#22c55e; --danger:#ef4444; --warning:#f59e0b; --text:#e6edf7; --muted:#9fb4c8; --border:rgba(255,255,255,.08); }
+    *{box-sizing:border-box}
+    body{ margin:0; font-family:Inter,system-ui; background:var(--bg); color:var(--text); line-height:1.5; }
+    .container{ max-width:1200px; margin:auto; padding:40px 20px; }
+    .card{ background:var(--panel); border:1px solid var(--border); border-radius:14px; padding:24px; margin-bottom:20px; }
+    h1{ font-size:2.2rem; font-weight:800; background:linear-gradient(90deg,var(--accent),var(--accent2)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; margin-top:0; }
+    textarea, select{ width:100%; padding:12px; background:var(--card); border:1px solid var(--border); border-radius:8px; color:var(--text); font-size:.95rem; }
+    textarea{ min-height:180px; font-family:monospace; }
+    button{ padding:12px 24px; border:none; border-radius:8px; font-weight:700; cursor:pointer; background:var(--accent); color:white; transition: 0.2s; }
+    button:hover{ background:var(--accent2); transform: translateY(-1px); }
+    button:disabled{ opacity:0.5; cursor:not-allowed; }
+    
+    /* Event Selector */
+    .checkbox-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 10px; margin-top: 15px; max-height: 300px; overflow-y: auto; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 8px; }
+    .checkbox-grid label { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; cursor: pointer; padding: 4px; border-radius: 4px; }
+    .checkbox-grid label:hover { background: var(--card); }
+
+    /* Scrollable Preview Table */
+    .preview-scroll-container { max-height: 500px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; margin-top: 15px; background: var(--card); }
+    .preview-table{ width:100%; border-collapse:collapse; }
+    .preview-table th{ position: sticky; top: 0; background: #1a2a47; z-index: 10; padding: 12px 8px; text-align: left; font-size: 0.75rem; text-transform: uppercase; color: var(--muted); }
+    .preview-table td{ padding:10px 8px; border-bottom:1px solid var(--border); font-size:.82rem; }
+    
+    .stat-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:15px; margin-bottom: 20px;}
+    .stat{ background:var(--card); padding:15px; border-radius:10px; text-align:center; border: 1px solid var(--border); }
+    .stat-number{ font-size:1.5rem; font-weight:700; display: block; }
+    
+    .progress-bar{ height:10px; background:var(--card); border-radius:5px; overflow:hidden; margin: 20px 0; border: 1px solid var(--border); }
+    .progress-fill{ height:100%; background:linear-gradient(90deg, var(--accent), var(--accent2)); width:0%; transition: 0.3s; }
+    
+    .tag-invalid { color: var(--danger); font-weight: 600; }
+    .tag-valid { color: var(--success); font-weight: 600; }
 </style>
 </head>
 <body>
+
 <div class="container">
+    <h1>Meet Import Engine v3</h1>
 
-<h1>Meet Results Import Engine</h1>
+    <div class="card">
+        <h3>1. Setup Meet</h3>
+        <select id="meetSelect"><option value="">Loading meets...</option></select>
+    </div>
 
-<div class="card">
-<h3>Select Meet</h3>
-<select id="meetSelect">
-<option value="">Loading meets...</option>
-</select>
-</div>
+    <div class="card">
+        <h3>2. Paste Data</h3>
+        <textarea id="pasteArea" placeholder="Paste Scraper CSV here..."></textarea>
+        <div style="margin-top:15px">
+            <button onclick="parseMeet()">Parse & Analyze Results</button>
+        </div>
+    </div>
 
-<div class="card">
-<h3>Paste Full Meet Results (CSV)</h3>
-<textarea id="pasteArea" placeholder="Paste data from the Ultimate Scraper here..."></textarea>
-<br><br>
-<button class="btn-primary" onclick="parseMeet()">Parse Results</button>
-</div>
+    <div id="resultsArea" style="display:none">
+        <div class="card">
+            <h3>3. Select Events</h3>
+            <div id="eventList" class="checkbox-grid"></div>
+        </div>
 
-<div class="card" id="previewCard" style="display:none">
-<h3>Validation Summary</h3>
-<div id="stats"></div>
-<div id="preview"></div>
-</div>
+        <div class="card">
+            <h3>4. Final Review</h3>
+            <div id="stats" class="stat-grid"></div>
+            
+            <div class="preview-scroll-container">
+                <table class="preview-table">
+                    <thead>
+                        <tr>
+                            <th>CSV Event Name</th>
+                            <th>DB Match</th>
+                            <th>Athlete</th>
+                            <th>School</th>
+                            <th>Mark</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="previewBody"></tbody>
+                </table>
+            </div>
 
-<div class="card" id="importCard" style="display:none">
-<h3>Import to Database</h3>
-<p style="color:var(--muted); font-size:0.9rem;">This process will automatically create new athlete profiles if they do not exist in the database.</p>
-<div class="progress"><div id="progressFill" class="progress-fill"></div></div>
-<br>
-<button class="btn-primary btn-import" onclick="importMeet()">Import Valid Results</button>
-</div>
-
+            <div class="progress-bar"><div id="progressFill" class="progress-fill"></div></div>
+            <button id="importBtn" onclick="importMeet()" style="width:100%; font-size:1.1rem;">Import Validated Results</button>
+        </div>
+    </div>
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -164,145 +96,77 @@ button{
 
 <script>
 let parsedRows = [];
-let validRows = [];
-let eventMap = {};
-let athletesCache = {}; 
+let normalizedEventMap = {}; // Maps "flat" names like "boys100m" to DB ID
+let eventIdToName = {};
+let athletesCache = {};
 
-async function loadMeets() {
-    const snap = await firebase.database().ref("Track/meets").once("value");
+// Initialize Data
+async function init() {
+    const meetsSnap = await firebase.database().ref("Track/meets").once("value");
     const sel = document.getElementById("meetSelect");
-    sel.innerHTML = "<option value=''>Select Meet</option>";
-    snap.forEach(c => { sel.innerHTML += `<option value="${c.key}">${c.val().name}</option>`; });
-}
+    sel.innerHTML = '<option value="">-- Select Meet --</option>';
+    meetsSnap.forEach(s => { sel.innerHTML += `<option value="${s.key}">${s.val().name}</option>`; });
 
-async function loadDatabaseCaches() {
     const eventsSnap = await firebase.database().ref("Track/events").once("value");
-    eventsSnap.forEach(c => {
-        eventMap[c.val().name.toLowerCase()] = c.key;
+    eventsSnap.forEach(s => {
+        const id = s.key;
+        const name = s.val().name;
+        eventIdToName[id] = name;
+        
+        // Create a normalized key for this event
+        const normKey = normalizeString(name);
+        normalizedEventMap[normKey] = id;
     });
 
     const athletesSnap = await firebase.database().ref("Track/athletes").once("value");
-    athletesSnap.forEach(c => {
-        const a = c.val();
-        const key = `${(a.school || "").toLowerCase()}|${(a.first_name + " " + a.last_name).toLowerCase()}`;
-        athletesCache[key] = c.key;
+    athletesSnap.forEach(s => {
+        const a = s.val();
+        const key = `${(a.school||"").toLowerCase()}|${(a.first_name + " " + a.last_name).toLowerCase()}`;
+        athletesCache[key] = s.key;
     });
 }
 
-function resolveEventId(eventName, gender) {
-    if (!eventName) return null;
-
-    let lower = eventName.toLowerCase().trim();
-    console.log(`[RESOLVE] Input: "${eventName}" | Gender: ${gender}`);
-
-    // --- 1. AGGRESSIVE CLEANUP ---
-    // Remove slash and everything after it
-    if (lower.includes("/")) {
-        lower = lower.split("/")[0].trim();
-    }
+/**
+ * Normalizes strings for matching.
+ * "4x800 Relay HIGH SCHOOL - Finals" -> "4x800mrelay"
+ */
+function normalizeString(str) {
+    if (!str) return "";
+    let s = str.toLowerCase();
     
-    // Remove hyphen and trailing specs (like - 33")
-    lower = lower.replace(/\s*-\s*\d+[\"\']?\s*(inch|in|cm|m|meter)?.*$/i, '');
+    // Remove specific levels/noise
+    const noise = ["high school", "hs", "middle school", "ms", "junior high", "jh", "varsity", "jv", "freshman", "frosh", "open", "finals", "prelims", "heats"];
+    noise.forEach(n => s = s.replace(new RegExp(`\\b${n}\\b`, 'g'), ''));
+
+    // Standardize units
+    s = s.replace(/\bmeters?\b/g, 'm');
+    s = s.replace(/(\d+)\s+m\b/g, '$1m'); // "100 m" -> "100m"
+    s = s.replace(/(\d+x\d+)(?!m)/g, '$1m'); // "4x800" -> "4x800m"
     
-    // Remove round info and words that confuse the matcher
-    lower = lower.replace(/\b(finals?|prelims?|open|heats?|round\s*\d+|varsity|jv|exhibition|dash|run)\b/gi, '');
+    // Standardize Relay/Dash/Run
+    s = s.replace(/\bdash\b/g, '').replace(/\brun\b/g, '');
     
-    // Remove punctuation
-    lower = lower.replace(/[^a-z0-9\s]/g, " ");
+    // Strip everything except alphanumeric
+    return s.replace(/[^a-z0-9]/g, '');
+}
+
+function resolveEventId(rawName, gender) {
+    const g = (gender === "W" || gender === "F") ? "girls" : "boys";
+    const baseNorm = normalizeString(rawName);
     
-    // Normalize "meter(s)" to "m" and bind it directly to the number (e.g., "60 m" -> "60m")
-    lower = lower.replace(/\bmeters?\b/gi, 'm');
-    lower = lower.replace(/(\d+)\s+m\b/gi, '$1m'); 
+    // Try exact normalized match (e.g. boys + 100m)
+    const primaryKey = g + baseNorm;
+    if (normalizedEventMap[primaryKey]) return normalizedEventMap[primaryKey];
     
-    lower = lower.replace(/\s+/g, " ").trim();
-    console.log(`[RESOLVE] After cleaning: "${lower}"`);
+    // Secondary: try without gender prefix if the DB name already includes it
+    if (normalizedEventMap[baseNorm]) return normalizedEventMap[baseNorm];
 
-    // --- 2. CLASSIFY EVENT ---
-    let isHurdles = lower.includes("hurdle");
-    let isRelay = lower.includes("relay");
-    let isWalk = lower.includes("walk");
-
-    let genderPrefixes = (gender === "W" || gender === "Girls") ? ["girls", "womens", "women"] : ["boys", "mens", "men"];
-
-    // Extract core target words (strip out gender prefixes)
-    let targetWords = lower.split(" ").filter(w => w.length > 0 && !genderPrefixes.includes(w) && w !== "mixed");
-    
-    // Add 'm' to bare numbers under 10000 if it's a standard running event
-    targetWords = targetWords.map(w => {
-        if (!isNaN(w) && w.length <= 4 && !isRelay && !isHurdles && !lower.includes("jump") && !lower.includes("put") && !lower.includes("vault")) return w + "m";
-        return w;
-    });
-
-    let coreEvent = targetWords.join(" ");
-
-    // --- 3. EXACT MATCH ATTEMPTS ---
-    for (let prefix of genderPrefixes) {
-        let attempts = [
-            `${prefix} ${coreEvent}`,
-            `${prefix} ${coreEvent} dash`,
-            `${prefix} ${coreEvent} run`
-        ];
-        
-        if (isHurdles) {
-            const dist = coreEvent.replace(/[^0-9]/g, '');
-            if (dist) {
-                attempts.push(`${prefix} ${dist}m hurdles`);
-                attempts.push(`${prefix} ${dist} meter hurdles`);
-                attempts.push(`${prefix} ${dist} hurdles`);
-            }
-        }
-
-        for (let attempt of attempts) {
-            console.log(`[EXACT TRY] "${attempt}"`);
-            if (eventMap[attempt]) {
-                console.log(`[EXACT MATCH] ✓ Matched to "${attempt}"`);
-                return eventMap[attempt];
-            }
+    // Tertiary: Fuzzy loop (if the DB name contains our normalized string)
+    for (let [normKey, id] of Object.entries(normalizedEventMap)) {
+        if (normKey.includes(g) && (normKey.includes(baseNorm) || baseNorm.includes(normKey.replace(g,'')))) {
+            return id;
         }
     }
-
-    // --- 4. HIGH-PRECISION FUZZY FALLBACK ---
-    console.log(`[FUZZY] Falling back to fuzzy matcher for: "${coreEvent}"`);
-    
-    for (let [dbName, id] of Object.entries(eventMap)) {
-        // Strict Boundaries: cross-contamination prevention
-        if (isHurdles !== dbName.includes("hurdle")) continue;
-        if (isRelay !== dbName.includes("relay")) continue;
-        if (isWalk !== dbName.includes("walk")) continue;
-
-        // Strip gender and filler from DB name to compare the core event
-        let dbCore = dbName;
-        ["boys", "girls", "mens", "womens", "men", "women", "mixed"].forEach(g => {
-            dbCore = dbCore.replace(new RegExp(`\\b${g}\\b`, 'g'), '');
-        });
-        dbCore = dbCore.replace(/\b(dash|run)\b/g, '');
-        dbCore = dbCore.replace(/\bmeters?\b/gi, 'm');
-        dbCore = dbCore.replace(/(\d+)\s+m\b/gi, '$1m');
-        dbCore = dbCore.trim();
-
-        let dbWords = dbCore.split(" ").filter(w => w.length > 0);
-
-        let matchCount = 0;
-        for (let tw of targetWords) {
-            // Strict word comparison (allows for "60" to match "60m" and "hurdle" to match "hurdles")
-            if (dbWords.some(dw => dw === tw || dw === tw + "m" || dw + "m" === tw || dw + "s" === tw || tw + "s" === dw)) {
-                matchCount++;
-            }
-        }
-
-        // Match requires ALL core target words to be present in the DB event
-        if (matchCount >= targetWords.length && targetWords.length > 0) {
-            const dbHasCorrectGender = genderPrefixes.some(g => dbName.includes(g));
-            const dbHasNoGender = !["boys", "girls", "mens", "womens", "men", "women"].some(g => dbName.includes(g));
-
-            if (dbHasCorrectGender || dbHasNoGender) {
-                console.log(`[FUZZY MATCH] ✓ Matched to "${dbName}"`);
-                return id;
-            }
-        }
-    }
-
-    console.warn(`[FAIL] ✗ Could not match event: "${eventName}"`);
     return null;
 }
 
@@ -311,163 +175,136 @@ function parseCSVLine(text) {
     for (let i = 0; i < text.length; i++) {
         let c = text[i];
         if (inQuote) {
-            if (c === '"') {
-                if (i < text.length - 1 && text[i+1] === '"') { val += '"'; i++; } 
-                else { inQuote = false; }
-            } else { val += c; }
+            if (c === '"') { (text[i+1] === '"') ? (val += '"', i++) : inQuote = false; } 
+            else val += c;
         } else {
-            if (c === '"') { inQuote = true; }
+            if (c === '"') inQuote = true;
             else if (c === ',') { ret.push(val.trim()); val = ""; }
-            else { val += c; }
+            else val += c;
         }
     }
     ret.push(val.trim());
     return ret;
 }
 
-async function parseMeet() {
-    const meetId = document.getElementById("meetSelect").value;
+function parseMeet() {
     const text = document.getElementById("pasteArea").value.trim();
-    if (!meetId || !text) return alert("Select meet and paste text");
+    const meetId = document.getElementById("meetSelect").value;
+    if (!text || !meetId) return alert("Please select a meet and paste data.");
 
     parsedRows = [];
-    validRows = [];
-    
-    const lines = text.split(/\n/);
-    
-    lines.forEach((line, index) => {
-        if (index === 0 && line.includes("event_name")) return; // Skip header
-        if (line.length < 5) return;
+    const lines = text.split('\n');
+    const uniqueEvents = new Set();
 
-        const parts = parseCSVLine(line);
-        if (parts.length < 5) return;
+    lines.forEach((line, idx) => {
+        if (idx === 0 && line.includes("event_name")) return;
+        const p = parseCSVLine(line);
+        if (p.length < 5) return;
 
-        const eventFull = parts[0] ? parts[0].replace(/"/g, "").trim() : "";
-        const place = parts[1] ? parts[1].replace(/"/g, "").trim() : "";
-        const grade = parts[2] ? parts[2].replace(/"/g, "").trim() : "";
-        const name = parts[3] ? parts[3].replace(/"/g, "").trim() : "";
-        const mark = parts[4] ? parts[4].replace(/"/g, "").trim() : "";
-        const school = parts[5] ? parts[5].replace(/"/g, "").trim() : "Unattached";
-        const rawGender = parts[7] ? parts[7].replace(/"/g, "").trim() : "Boys";
-
-        // --- GENDER FIX ---
-        // Force mapping "Girls/Women" to "W" and everything else to "M"
-        let cleanGender = "M"; 
-        if (rawGender.toLowerCase().includes("girl") || rawGender.toLowerCase().includes("women") || rawGender.toLowerCase().startsWith("w")) {
-            cleanGender = "W";
-        }
-
-        // --- HEAT FIX ---
-        // Set heat strictly based on if the event name says "Prelim"
-        const heatStatus = eventFull.toLowerCase().includes("prelim") ? "Prelims" : "Finals";
-
-        const eventId = resolveEventId(eventFull, cleanGender);
-
+        const rawEvent = p[0];
+        const gender = (p[7] || "Boys");
+        const cleanGender = (gender.toLowerCase().includes('girl') || gender.toLowerCase().startsWith('w') || gender.toLowerCase().startsWith('f')) ? "W" : "M";
+        
+        const eventId = resolveEventId(rawEvent, cleanGender);
+        
         parsedRows.push({
-            meet_id: meetId,
-            event_name: eventFull,
+            raw_event: rawEvent,
             event_id: eventId,
-            athlete_name: name,
-            school: school,
-            grade: grade,
-            mark: mark,
-            placement: place,
-            heat: heatStatus,     // Overwritten to Prelims/Finals
-            gender: cleanGender,  // Overwritten to strictly M or W
-            valid: !!eventId
+            place: p[1],
+            grade: p[2],
+            athlete_name: p[3],
+            mark: p[4],
+            school: p[5] || "Unattached",
+            heat: rawEvent.toLowerCase().includes("prelim") ? "Prelims" : "Finals",
+            gender: cleanGender,
+            meet_id: meetId
         });
+        uniqueEvents.add(rawEvent);
     });
 
-    validRows = parsedRows.filter(r => r.valid);
-    renderPreview();
+    renderEventSelector(Array.from(uniqueEvents));
+    document.getElementById('resultsArea').style.display = 'block';
+    updateUI();
 }
 
-function renderPreview() {
-    document.getElementById("previewCard").style.display = "block";
-    document.getElementById("importCard").style.display = "block";
-    
-    document.getElementById("stats").innerHTML = `
-        <div class="stat-grid">
-            <div class="stat"><div class="stat-number">${parsedRows.length}</div>Rows</div>
-            <div class="stat"><div class="stat-number success">${validRows.length}</div>Ready</div>
-            <div class="stat"><div class="stat-number error">${parsedRows.length - validRows.length}</div>Missing Events</div>
-        </div>`;
+function renderEventSelector(events) {
+    const container = document.getElementById('eventList');
+    container.innerHTML = "";
+    events.sort().forEach(evt => {
+        const safe = evt.replace(/"/g, '&quot;');
+        container.innerHTML += `<label><input type="checkbox" class="evt-cb" value="${safe}" checked onchange="updateUI()"> ${evt}</label>`;
+    });
+}
 
-    document.getElementById("preview").innerHTML = `
-        <table class="preview-table">
-            <thead><tr><th>Event</th><th>Place</th><th>Heat/Round</th><th>Name</th><th>School</th><th>Mark</th><th>Gender</th><th>Status</th></tr></thead>
-            <tbody>
-                ${parsedRows.slice(0, 50).map(r => `
-                    <tr style="${!r.valid ? 'background:rgba(239,68,68,0.1)' : ''}">
-                        <td><small>${r.event_name}</small></td>
-                        <td>${r.placement}</td>
-                        <td>${r.heat}</td>
-                        <td><strong>${r.athlete_name}</strong></td>
-                        <td><small>${r.school}</small></td>
-                        <td><strong>${r.mark}</strong></td>
-                        <td>${r.gender}</td>
-                        <td>${r.valid ? '✅' : '❌'}</td>
-                    </tr>`).join("")}
-            </tbody>
-        </table>
-        ${parsedRows.length > 50 ? `<p style="text-align:center; color:var(--muted); margin-top:10px;">Showing first 50 of ${parsedRows.length} rows</p>` : ''}`;
+function updateUI() {
+    const checkedEvents = [...document.querySelectorAll('.evt-cb:checked')].map(cb => cb.value);
+    const filtered = parsedRows.filter(r => checkedEvents.includes(r.raw_event));
+    const valid = filtered.filter(r => r.event_id);
+
+    document.getElementById('stats').innerHTML = `
+        <div class="stat"><span class="stat-number">${filtered.length}</span>Rows</div>
+        <div class="stat"><span class="stat-number" style="color:var(--success)">${valid.length}</span>Matched</div>
+        <div class="stat"><span class="stat-number" style="color:var(--danger)">${filtered.length - valid.length}</span>Missing ID</div>
+    `;
+
+    const tbody = document.getElementById('previewBody');
+    tbody.innerHTML = filtered.map(r => `
+        <tr>
+            <td><small>${r.raw_event}</small></td>
+            <td>${r.event_id ? `<b>${eventIdToName[r.event_id]}</b>` : `<i class="tag-invalid">No Match</i>`}</td>
+            <td>${r.athlete_name}</td>
+            <td>${r.school}</td>
+            <td>${r.mark}</td>
+            <td class="${r.event_id ? 'tag-valid' : 'tag-invalid'}">${r.event_id ? '✓' : '✗'}</td>
+        </tr>
+    `).join('');
 }
 
 async function importMeet() {
-    if (!validRows.length) return alert("No valid rows to import");
-    if (!confirm(`Import ${validRows.length} results? Athletes will be automatically linked or created.`)) return;
-    
-    const btn = document.querySelector(".btn-import");
-    btn.disabled = true;
-    
-    const resultsRef = firebase.database().ref("Track/results");
-    const athletesRef = firebase.database().ref("Track/athletes");
+    const checkedEvents = [...document.querySelectorAll('.evt-cb:checked')].map(cb => cb.value);
+    const toImport = parsedRows.filter(r => checkedEvents.includes(r.raw_event) && r.event_id);
 
-    for (let i = 0; i < validRows.length; i++) {
-        const row = validRows[i];
-        
-        // --- 1. RESOLVE OR CREATE ATHLETE ---
+    if (toImport.length === 0) return alert("No valid rows to import!");
+    if (!confirm(`Import ${toImport.length} results?`)) return;
+
+    const btn = document.getElementById('importBtn');
+    btn.disabled = true;
+
+    for (let i = 0; i < toImport.length; i++) {
+        const row = toImport[i];
         const cacheKey = `${row.school.toLowerCase()}|${row.athlete_name.toLowerCase()}`;
         let athleteId = athletesCache[cacheKey];
 
         if (!athleteId) {
-            const nameParts = row.athlete_name.split(' ');
-            const first = nameParts[0];
-            const last = nameParts.slice(1).join(' ');
-            
-            const newAthlete = await athletesRef.push({
-                first_name: first,
-                last_name: last,
-                school: row.school,
-                grade: row.grade,
-                gender: row.gender // Perfectly formatted M or W
+            const parts = row.athlete_name.split(' ');
+            const first = parts[0];
+            const last = parts.slice(1).join(' ');
+            const newAth = await firebase.database().ref("Track/athletes").push({
+                first_name: first, last_name: last, school: row.school, grade: row.grade, gender: row.gender
             });
-            
-            athleteId = newAthlete.key;
-            athletesCache[cacheKey] = athleteId; 
+            athleteId = newAth.key;
+            athletesCache[cacheKey] = athleteId;
         }
 
-        // --- 2. PUSH CLEAN RESULT ---
-        await resultsRef.push({
+        await firebase.database().ref("Track/results").push({
             meet_id: row.meet_id,
             event_id: row.event_id,
             athlete_id: athleteId,
             mark: row.mark,
-            placement: row.placement ? parseInt(row.placement) : null,
-            heat: row.heat,       // Will save exactly "Prelims" or "Finals"
-            gender: row.gender,   // Will save exactly "M" or "W"
+            placement: parseInt(row.place) || null,
+            heat: row.heat,
+            gender: row.gender,
             timestamp: new Date().toISOString()
         });
 
-        document.getElementById("progressFill").style.width = Math.round(((i+1)/validRows.length)*100) + "%";
+        document.getElementById('progressFill').style.width = `${((i+1)/toImport.length)*100}%`;
     }
-    
-    alert("Import Complete!");
+
+    alert("Import Successful!");
     location.reload();
 }
 
-loadMeets();
-loadDatabaseCaches();
+init();
 </script>
 </body>
 </html>
