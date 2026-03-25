@@ -549,6 +549,9 @@
           if (firstBtn) firstBtn.classList.add('active');
         }
         await loadResults();
+        const name = r.relay_names ? 
+    `<div class="relay-team">${athlete.school}</div><div class="relay-names" style="font-size:0.8rem; color:var(--muted);">${r.relay_names}</div>` : 
+    (athlete.first_name ? `${athlete.first_name} ${athlete.last_name}` : 'Unknown');
       } catch (err) {
         console.error('Error loading today\'s meets:', err);
         section.style.display = 'none';

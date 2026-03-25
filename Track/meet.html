@@ -319,10 +319,7 @@
       <div class="gender-tabs">
         <button id="tab-M" class="gender-tab active" onclick="setGender('M')">Men's Results</button>
         <button id="tab-W" class="gender-tab" onclick="setGender('W')">Women's Results</button>
-        <button id="heat-prelims" class="heat-pill" onclick="setHeat('Prelims')">Prelims</button>
-              <button id="heat-finals" class="heat-pill active" onclick="setHeat('Finals')">Finals</button>
       </div>
-
 
       <div class="view-controls">
         <button id="view-events" class="view-btn active" onclick="setView('events')">Results by Event</button>
@@ -450,7 +447,8 @@
             placement: parseInt(r.placement) || null,
             gender: gender,
             event_name: eventName,
-            heat: heat
+            heat: heat,
+            relay_names: r.relay_names // IMPORTANT: Pass the relay names if they exist
           });
         });
 
@@ -576,6 +574,7 @@
         return;
       }
 
+      // RELAY NAMES LOGIC INTEGRATED HERE
       wrapper.innerHTML = `
         <table class="data-table">
           <thead>
@@ -587,14 +586,19 @@
             </tr>
           </thead>
           <tbody>
-            ${results.map(r => `
+            ${results.map(r => {
+              const nameDisplay = r.relay_names 
+                ? `<div style="line-height: 1.2;"><strong>${r.school} Relay</strong><br><span style="font-size:0.8rem; color:var(--text-secondary); font-weight:normal;">${r.relay_names}</span></div>` 
+                : `<a href="athlete.html?id=${r.athlete_id}">${r.athlete_name}</a>`;
+
+              return `
               <tr>
                 <td style="text-align:center;">${getPlaceBadge(r.placement)}</td>
-                <td><a href="athlete.html?id=${r.athlete_id}">${r.athlete_name}</a></td>
+                <td>${nameDisplay}</td>
                 <td>${r.school}</td>
                 <td style="font-weight:700;">${r.mark || '—'}</td>
               </tr>
-            `).join('')}
+            `}).join('')}
           </tbody>
         </table>
       `;

@@ -292,7 +292,7 @@
         <a href="index.html" class="navbar-brand">Track</a>
         <button class="mobile-menu-toggle" aria-label="Toggle menu">☰</button>
         <ul class="navbar-nav" id="main-nav">
-          <li><a href="/home/index" class="navbar-link">Home</a></li>
+          <li><a href="/home/index.html" class="navbar-link">Home</a></li>
           <li><a href="index.html" class="navbar-link">Track</a></li>
           <li><a href="meets.html" class="navbar-link">Meets</a></li>
           <li><a href="events.html" class="navbar-link">Events</a></li>
@@ -396,7 +396,6 @@
       </div>
   </footer>
 
-<!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-analytics-compat.js"></script>
@@ -423,7 +422,6 @@
 
   const FIELD_EVENTS = ['long jump', 'high jump', 'triple jump', 'pole vault', 'shot put', 'discus', 'javelin', 'hammer'];
 
-  // --- NEW: Function to handle URL Parameters ---
   function applyUrlParams() {
     const params = new URLSearchParams(window.location.search);
     const eventParam = params.get('event');
@@ -431,7 +429,6 @@
     const seasonParam = params.get('season');
 
     if (eventParam) {
-      // Find the option that matches the slug or ID
       const options = Array.from(selectEvent.options);
       const targetOption = options.find(opt => 
         opt.getAttribute('data-slug') === eventParam || opt.value === eventParam
@@ -449,7 +446,6 @@
       selectSeason.value = seasonParam.toLowerCase();
     }
 
-    // If an event was specified via URL, trigger the load automatically
     if (selectEvent.value) {
       loadRankings();
     }
@@ -510,7 +506,6 @@
       selectEvent.innerHTML = `<option value="">-- choose event --</option>` + 
         events.map(e => `<option value="${e.id}" data-slug="${e.slug || e.id}">${e.name || 'Unnamed Event'} (${e.category || 'N/A'})</option>`).join('');
       
-      // --- NEW: Apply URL parameters after events are loaded ---
       applyUrlParams();
 
     } catch (error) {
@@ -539,8 +534,13 @@
     rankingsContainer.innerHTML = filteredResults.map((result, index) => {
       const rank = index + 1;
       const medal = getMedalIcon(rank);
-      const athleteName = ((result.athlete?.first_name || '') + ' ' + (result.athlete?.last_name || '')).trim() || '—';
       const mark = formatMarkForDisplay(result.mark, eventName);
+      
+      // RELAY NAMES LOGIC INTEGRATED HERE
+      const titleContent = result.relay_names 
+        ? `<div>${result.athlete?.school || 'Relay Team'}</div><div style="font-size:0.8rem; color:var(--text-secondary); font-weight:normal; margin-top:2px;">${result.relay_names}</div>`
+        : `<a href="athlete.html?id=${result.athlete_id || ''}" class="athlete-link">${((result.athlete?.first_name || '') + ' ' + (result.athlete?.last_name || '')).trim() || '—'}</a>`;
+
       return `
         <div class="result-card">
           <div class="result-rank">
@@ -551,7 +551,7 @@
           </div>
           <div class="result-content">
             <div class="result-title">
-              <a href="athlete.html?id=${result.athlete_id || ''}" class="athlete-link">${athleteName}</a>
+              ${titleContent}
             </div>
             <div class="result-info">
               <div class="result-info-item"><i class="fas fa-school"></i><span>${result.athlete?.school || '—'}</span></div>

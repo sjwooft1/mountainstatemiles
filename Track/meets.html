@@ -206,20 +206,21 @@ html[data-theme="light"] {
       color: var(--accent-dark);
     }
 
-    /* Calendar container & FullCalendar theme */
-    #calendar-wrapper {
-      display: none;
-      margin-top: 24px;
-      background: var(--bg-primary);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 20px;
-      min-height: 600px;
-    }
+   /* Change this section */
+#calendar-wrapper {
+  display: none;
+  margin-top: 24px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  min-height: 600px;
+}
 
-    #calendar-wrapper.visible {
-      display: block;
-    }
+/* Add !important here to override the ID-based display: none */
+#calendar-wrapper.visible {
+  display:flex;
+}
 
     #calendar {
       min-height: 560px;
@@ -495,16 +496,17 @@ html[data-theme="light"] {
       background: #d0d0d0;
     }
 
-    @media (max-width: 768px) {
-      .section-title {
-        font-size: 2rem;
-      }
-
-      .search-bar input {
-        width: 100%;
-        max-width: 300px;
-      }
-    }
+    /* Find this section around line 170 */
+@media (min-width: 768px) {
+  .view-controls {
+    /* REMOVE OR COMMENT OUT THIS LINE BELOW */
+    /* display: none; */ 
+    
+    /* ADD THIS INSTEAD to make it visible */
+    display: flex; 
+    margin-bottom: 0;
+  }
+}
   </style>
 </head>
 <body>
