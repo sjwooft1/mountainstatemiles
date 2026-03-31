@@ -261,39 +261,53 @@ function updateUI() {
 }
 
 async function importMeet() {
-    const toImport = results.filter(r => !isNaN(r.id_event) && r.event_id);
+    // 1. Grab currently selected events from the UI
+    const checkedEvents = [...document.querySelectorAll('.evt-cb:checked')].map(cb => cb.value);
+    
+    // 2. Filter the parsed rows to only include selected events that matched a DB ID
+    const toImport = parsedRows.filter(r => checkedEvents.includes(r.raw_event) && r.event_id);
 
-    if (toImport.length === 0) return alert("No valid rows to import!");
-    if (!confirm(`Import ${toImport.length} results?`)) return;
+    if (toImport.length === 0) return alert("No valid rows to import! Check your event matches.");
+    if (!confirm(`Import ${toImport.length} results into Firebase?`)) return;
 
     const btn = document.getElementById('importBtn');
     btn.disabled = true;
+    btn.innerText = "Importing...";
 
     for (let i = 0; i < toImport.length; i++) {
-        // Define 'row' here so it's accessible to everything below
         const row = toImport[i]; 
         
-        const cacheKey = `${row.school.toLowerCase()}|${row.athlete_name.toLowerCase()}`;
+        // Safety fallback for missing strings to prevent lowercase() errors
+        const safeSchool = (row.school || "Unattached").toLowerCase();
+        const safeName = (row.athlete_name || "Unknown").toLowerCase();
+        const cacheKey = `${safeSchool}|${safeName}`;
+        
         let athleteId = athletesCache[cacheKey];
 
         // CHECK FOR RELAY: If the name contains a comma or "Relay", treat as relay
-        const isRelay = row.event_name.toLowerCase().includes('relay') || 
+        const isRelay = row.raw_event.toLowerCase().includes('relay') || 
                         row.athlete_name.includes(',') || 
-                        row.athlete_name.toLowerCase().includes('relay');
+                        row.athlete_name.toLowerCase().includes('relay') ||
+                        row.athlete_name.toLowerCase().includes('team');
 
         if (!athleteId && !isRelay) {
             const parts = row.athlete_name.split(' ');
-            const first = parts[0];
-            const last = parts.slice(1).join(' ');
-            const newAth = await firebase.database().ref("Track/athletes").push({
-                first_name: first, 
-                last_name: last, 
-                school: row.school, 
-                grade: row.grade, 
-                gender: row.gender
-            });
-            athleteId = newAth.key;
-            athletesCache[cacheKey] = athleteId;
+            const first = parts[0] || "Unknown";
+            const last = parts.slice(1).join(' ') || "";
+            
+            try {
+                const newAth = await firebase.database().ref("Track/athletes").push({
+                    first_name: first, 
+                    last_name: last, 
+                    school: row.school || "Unattached", 
+                    grade: row.grade || "", 
+                    gender: row.gender || "M"
+                });
+                athleteId = newAth.key;
+                athletesCache[cacheKey] = athleteId;
+            } catch (error) {
+                console.error("Error creating athlete:", error);
+            }
         }
 
         // Prepare the result object
@@ -304,7 +318,7 @@ async function importMeet() {
             placement: parseInt(row.place) || null,
             heat: row.heat || "Finals",
             gender: row.gender,
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString() // This drives your live results feed
         };
 
         // If it's a relay, store the names in relay_names and leave athlete_id null
@@ -315,8 +329,13 @@ async function importMeet() {
             resultData.athlete_id = athleteId;
         }
 
-        await firebase.database().ref("Track/results").push(resultData);
+        try {
+            await firebase.database().ref("Track/results").push(resultData);
+        } catch (error) {
+            console.error("Error pushing result:", error);
+        }
 
+        // Update progress bar
         document.getElementById('progressFill').style.width = `${((i + 1) / toImport.length) * 100}%`;
     }
 
