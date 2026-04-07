@@ -1,199 +1,258 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mountain State Miles — Track & Cross Country</title>
-    <meta property="og:image" content="/assets/Wvruns Logo.png" />
-    <link rel="icon" type="image/png" href="/assets/Favicon Generator/favicon-96x96.png" sizes="96x96" />
-    <link rel="icon" type="image/svg+xml" href="/assets/Favicon Generator/favicon.svg" />
-    <link rel="shortcut icon" href="/assets/Favicon Generator/favicon.ico" />
-    <link rel="apple-touch-icon" sizes="180x180" href="/assets/Favicon Generator/apple-touch-icon.png" />
-    <meta name="apple-mobile-web-app-title" content="MSM" />
-    <link rel="manifest" href="/assets/Favicon Generator/site.webmanifest" />
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="/assets/main.css">
-</head>
-<body class="home-page">
-    <header>
-        <nav class="navbar">
-            <div class="navbar-content">
-                <a href="/home/index" class="navbar-brand">MSM</a>
-                <button class="mobile-menu-toggle" aria-label="Toggle menu">☰</button>
-                <ul class="navbar-nav" id="main-nav">
-                    <li><a href="index" class="navbar-link active">Home</a></li>
-                    <li><a href="about" class="navbar-link">About</a></li>
-                    <li><a href="/feedback" class="navbar-link">Feedback</a></li>
-                    <li><a href="/Track/index" class="navbar-link">Track & Field</a></li>
-                    <li><a href="/CrossCountry/xc" class="navbar-link">Cross Country</a></li>
-                    <li><a href="/weather" class="navbar-link">Weather</a></li>
-                </ul>
-                <button class="theme-toggle" aria-label="Switch theme">🌙</button>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Mountain State Miles — Track & Cross Country</title>
+        <meta property="og:image" content="/assets/images/Wvruns Logo.png" />
+        <link
+            rel="icon"
+            type="image/png"
+            href="/assets/images/favicon/favicon-96x96.png"
+            sizes="96x96"
+        />
+        <link
+            rel="icon"
+            type="image/svg+xml"
+            href="/assets/images/favicon/favicon.svg"
+        />
+        <link rel="shortcut icon" href="/assets/images/favicon/favicon.ico" />
+        <link
+            rel="apple-touch-icon"
+            sizes="180x180"
+            href="/assets/images/favicon/apple-touch-icon.png"
+        />
+        <meta name="apple-mobile-web-app-title" content="MSM" />
+        <link rel="manifest" href="/assets/images/favicon/site.webmanifest" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+            rel="stylesheet"
+        />
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+        />
+        <link rel="stylesheet" href="/assets/main.css" />
+    </head>
+    <body class="home-page">
+        <header>
+            <nav class="navbar">
+                <div class="navbar-content">
+                    <a href="/home/index" class="navbar-brand">MSM</a>
+                    <button class="mobile-menu-toggle" aria-label="Toggle menu">
+                        ☰
+                    </button>
+                    <ul class="navbar-nav" id="main-nav">
+                        <li>
+                            <a href="index" class="navbar-link active">Home</a>
+                        </li>
+                        <li><a href="about" class="navbar-link">About</a></li>
+                        <li>
+                            <a href="/feedback" class="navbar-link">Feedback</a>
+                        </li>
+                        <li>
+                            <a href="/Track/index" class="navbar-link"
+                                >Track & Field</a
+                            >
+                        </li>
+                        <li>
+                            <a href="/CrossCountry/xc" class="navbar-link"
+                                >Cross Country</a
+                            >
+                        </li>
+                        <li>
+                            <a href="/weather" class="navbar-link">Weather</a>
+                        </li>
+                    </ul>
+                    <button class="theme-toggle" aria-label="Switch theme">
+                        🌙
+                    </button>
+                </div>
+            </nav>
+        </header>
+
+        <div class="content-wrapper">
+            <div class="hero">
+                <img
+                    src="/assets/images/logo white.png"
+                    alt="Mountain State Miles Logo"
+                    class="hero-logo"
+                />
+                <h1>Mountain State Miles</h1>
+                <p>
+                    Your source for West Virginia track & cross country results,
+                    rankings, and records
+                </p>
             </div>
-        </nav>
-    </header>
-    
-    <div class="content-wrapper">
-        <div class="hero">
-            <img src="/assets/logo white.png" alt="Mountain State Miles Logo" class="hero-logo" />
-            <h1>Mountain State Miles</h1>
-            <p>Your source for West Virginia track & cross country results, rankings, and records</p>
+
+            <div class="sport-cards">
+                <a href="/Track/index" class="sport-card">
+                    <h3>🏃 Track & Field</h3>
+                    <p>Meet records, rankings, and results</p>
+                </a>
+                <a href="/CrossCountry/xc" class="sport-card">
+                    <h3>🏅 Cross Country</h3>
+                    <p>School rankings and meet results</p>
+                </a>
+            </div>
+
+            <div class="meets-section" id="news-section">
+                <div class="meets-header">
+                    <h2>📰 Latest Recaps</h2>
+                    <a href="/news" class="view-all-link">View All →</a>
+                </div>
+                <div class="meets-grid" id="news-grid">
+                    <div class="loading-state">Loading recaps...</div>
+                </div>
+            </div>
         </div>
-        
-        <div class="sport-cards">
-            <a href="/Track/index" class="sport-card">
-                <h3>🏃 Track & Field</h3>
-                <p>Meet records, rankings, and results</p>
-            </a>
-            <a href="/CrossCountry/xc" class="sport-card">
-                <h3>🏅 Cross Country</h3>
-                <p>School rankings and meet results</p>
-            </a>
-        </div>
-        
-        <div class="meets-section" id="news-section">
-            <div class="meets-header">
-                <h2>📰 Latest Recaps</h2>
-                <a href="/news" class="view-all-link">View All →</a>
-            </div>
-            <div class="meets-grid" id="news-grid">
-                <div class="loading-state">Loading recaps...</div>
-            </div>
-        </div>
-    </div>
 
-    <footer>
-        <div class="row">
-            <div class="footer-col">
-                <h4>General</h4>
-                <ul>
-                    <li><a href="/home/index">Home</a></li>
-                    <li><a href="/home/about">About</a></li>
-                    <li><a href="/feedback">Feedback</a></li>
-                    <li><a href="/home/admin">Admin</a></li>
-                    <li><a href="/news">News</a></li>
-                </ul>
+        <footer>
+            <div class="row">
+                <div class="footer-col">
+                    <h4>General</h4>
+                    <ul>
+                        <li><a href="/home/index">Home</a></li>
+                        <li><a href="/home/about">About</a></li>
+                        <li><a href="/feedback">Feedback</a></li>
+                        <li><a href="/home/admin">Admin</a></li>
+                        <li><a href="/news">News</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-col">
+                    <h4>Cross Country</h4>
+                    <ul>
+                        <li><a href="/CrossCountry/xc">Home</a></li>
+                        <li><a href="/CrossCountry/meets">Meets</a></li>
+                        <li><a href="/CrossCountry/schools">Schools</a></li>
+                        <li><a href="/CrossCountry/rankings">Rankings</a></li>
+                        <li><a href="/CrossCountry/analytics">Analytics</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-col">
+                    <h4>Track</h4>
+                    <ul>
+                        <li><a href="/Track/index">Home</a></li>
+                        <li><a href="/Track/meets">Meets</a></li>
+                        <li><a href="/Track/teams">Teams</a></li>
+                        <li><a href="/Track/rankings">Rankings</a></li>
+                        <li><a href="/Track/analytics">Analytics</a></li>
+                    </ul>
+                </div>
             </div>
-
-            <div class="footer-col">
-                <h4>Cross Country</h4>
-                <ul>
-                    <li><a href="/CrossCountry/xc">Home</a></li>
-                    <li><a href="/CrossCountry/meets">Meets</a></li>
-                    <li><a href="/CrossCountry/schools">Schools</a></li>
-                    <li><a href="/CrossCountry/rankings">Rankings</a></li>
-                    <li><a href="/CrossCountry/analytics">Analytics</a></li>
-                </ul>
+            <hr />
+            <div class="row">
+                <div class="footer-bottom">
+                    <p>
+                        &#169; 2026 Mountain State Miles — Built by runners, for
+                        runners.
+                    </p>
+                </div>
             </div>
+        </footer>
 
-            <div class="footer-col">
-                <h4>Track</h4>
-                <ul>
-                    <li><a href="/Track/index">Home</a></li>
-                    <li><a href="/Track/meets">Meets</a></li>
-                    <li><a href="/Track/teams">Teams</a></li>
-                    <li><a href="/Track/rankings">Rankings</a></li>
-                    <li><a href="/Track/analytics">Analytics</a></li>
-                </ul>
-            </div>
-        </div>
-        <hr>
-        <div class="row">
-            <div class="footer-bottom">
-                <p>&#169; 2026 Mountain State Miles — Built by runners, for runners.</p>
-            </div>
-        </div>
-    </footer>
+        <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-analytics-compat.js"></script>
+        <script src="/assets/theme-toggle.js"></script>
 
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-analytics-compat.js"></script>
-    <script src="/assets/theme-toggle.js"></script>
-    
-    <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyCBQt9I_OSoUuTM61F-JXNBkD98f7PCJcA",
-            authDomain: "mountainstatemiles-1326f.firebaseapp.com",
-            databaseURL: "https://mountainstatemiles-1326f-default-rtdb.firebaseio.com",
-            projectId: "mountainstatemiles-1326f",
-            storageBucket: "mountainstatemiles-1326f.firebasestorage.app",
-            messagingSenderId: "605911511756",
-            appId: "1:605911511756:web:0e99071a816f0a39210869",
-            measurementId: "G-N3DNFRQNF9"
-        };
+        <script>
+            const firebaseConfig = {
+                apiKey: "AIzaSyCBQt9I_OSoUuTM61F-JXNBkD98f7PCJcA",
+                authDomain: "mountainstatemiles-1326f.firebaseapp.com",
+                databaseURL:
+                    "https://mountainstatemiles-1326f-default-rtdb.firebaseio.com",
+                projectId: "mountainstatemiles-1326f",
+                storageBucket: "mountainstatemiles-1326f.firebasestorage.app",
+                messagingSenderId: "605911511756",
+                appId: "1:605911511756:web:0e99071a816f0a39210869",
+                measurementId: "G-N3DNFRQNF9",
+            };
 
-        firebase.initializeApp(firebaseConfig);
-        const database = firebase.database();
+            firebase.initializeApp(firebaseConfig);
+            const database = firebase.database();
 
-        async function loadRecentNews() {
-            const newsGrid = document.getElementById('news-grid');
-            try {
-                const snapshot = await database.ref('news').once('value');
-                const articles = [];
-                
-                snapshot.forEach(child => {
-                    articles.push({
-                        id: child.key,
-                        ...child.val()
+            async function loadRecentNews() {
+                const newsGrid = document.getElementById("news-grid");
+                try {
+                    const snapshot = await database.ref("news").once("value");
+                    const articles = [];
+
+                    snapshot.forEach((child) => {
+                        articles.push({
+                            id: child.key,
+                            ...child.val(),
+                        });
                     });
-                });
 
-                articles.sort((a, b) => {
-                    const dateA = new Date(a.date || 0);
-                    const dateB = new Date(b.date || 0);
-                    return dateB - dateA;
-                });
-
-                const recentArticles = articles.slice(0, 3);
-
-                if (!recentArticles.length) {
-                    newsGrid.innerHTML = '<div class="loading-state">No articles yet. Check back soon!</div>';
-                    return;
-                }
-
-                function formatDate(dateString) {
-                    const date = new Date(dateString);
-                    return date.toLocaleDateString('en-US', { 
-                        month: 'short', 
-                        day: 'numeric'
+                    articles.sort((a, b) => {
+                        const dateA = new Date(a.date || 0);
+                        const dateB = new Date(b.date || 0);
+                        return dateB - dateA;
                     });
-                }
 
-                newsGrid.innerHTML = recentArticles.map(article => `
+                    const recentArticles = articles.slice(0, 3);
+
+                    if (!recentArticles.length) {
+                        newsGrid.innerHTML =
+                            '<div class="loading-state">No articles yet. Check back soon!</div>';
+                        return;
+                    }
+
+                    function formatDate(dateString) {
+                        const date = new Date(dateString);
+                        return date.toLocaleDateString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                        });
+                    }
+
+                    newsGrid.innerHTML = recentArticles
+                        .map(
+                            (article) => `
                     <div class="meet-card" style="cursor: default;">
                         <h3 class="meet-card-title">${article.title}</h3>
                         <p class="meet-card-date">📅 ${formatDate(article.date)}</p>
-                        ${article.category ? `<p class="meet-card-location">${article.category}</p>` : ''}
+                        ${article.category ? `<p class="meet-card-location">${article.category}</p>` : ""}
                         <p style="font-size: 0.9rem; color: var(--text-secondary); margin: 0;">${article.content.substring(0, 100)}...</p>
                     </div>
-                `).join('');
-            } catch (error) {
-                console.error('Error loading news:', error);
-                newsGrid.innerHTML = '<div class="loading-state">Error loading articles.</div>';
+                `,
+                        )
+                        .join("");
+                } catch (error) {
+                    console.error("Error loading news:", error);
+                    newsGrid.innerHTML =
+                        '<div class="loading-state">Error loading articles.</div>';
+                }
             }
-        }
 
-        document.addEventListener('DOMContentLoaded', () => {
-            loadRecentNews();
-            
-            const menuToggle = document.querySelector('.mobile-menu-toggle');
-            const navMenu = document.getElementById('main-nav');
-            
-            if (menuToggle && navMenu) {
-                menuToggle.addEventListener('click', () => {
-                    navMenu.classList.toggle('mobile-open');
-                });
-                
-                document.addEventListener('click', (e) => {
-                    if (!navMenu.contains(e.target) && !menuToggle.contains(e.target)) {
-                        navMenu.classList.remove('mobile-open');
-                    }
-                });
-            }
-        });
-    </script>
-</body>
+            document.addEventListener("DOMContentLoaded", () => {
+                loadRecentNews();
+
+                const menuToggle = document.querySelector(
+                    ".mobile-menu-toggle",
+                );
+                const navMenu = document.getElementById("main-nav");
+
+                if (menuToggle && navMenu) {
+                    menuToggle.addEventListener("click", () => {
+                        navMenu.classList.toggle("mobile-open");
+                    });
+
+                    document.addEventListener("click", (e) => {
+                        if (
+                            !navMenu.contains(e.target) &&
+                            !menuToggle.contains(e.target)
+                        ) {
+                            navMenu.classList.remove("mobile-open");
+                        }
+                    });
+                }
+            });
+        </script>
+    </body>
 </html>

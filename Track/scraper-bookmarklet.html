@@ -1,0 +1,427 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>AthleticsNet Scraper Bookmarklet - Mountain State Miles</title>
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap"
+            rel="stylesheet"
+        />
+        <style>
+            :root {
+                --bg: #0c1424;
+                --panel: #111c32;
+                --card: #162540;
+                --accent: #ff5722;
+                --accent2: #ff784e;
+                --success: #22c55e;
+                --danger: #ef4444;
+                --warning: #f59e0b;
+                --text: #e6edf7;
+                --muted: #9fb4c8;
+                --border: rgba(255, 255, 255, 0.08);
+            }
+            * {
+                box-sizing: border-box;
+            }
+            body {
+                margin: 0;
+                font-family: Inter, system-ui;
+                background: var(--bg);
+                color: var(--text);
+                line-height: 1.6;
+            }
+            .container {
+                max-width: 900px;
+                margin: auto;
+                padding: 40px 20px;
+            }
+            .card {
+                background: var(--panel);
+                border: 1px solid var(--border);
+                border-radius: 14px;
+                padding: 24px;
+                margin-bottom: 20px;
+            }
+            h1 {
+                font-size: 2.2rem;
+                font-weight: 800;
+                background: linear-gradient(
+                    90deg,
+                    var(--accent),
+                    var(--accent2)
+                );
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                margin-top: 0;
+            }
+            h2 {
+                font-size: 1.5rem;
+                margin-top: 0;
+                color: var(--text);
+            }
+            h3 {
+                color: var(--accent);
+                margin-top: 16px;
+            }
+            .step-number {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: 32px;
+                height: 32px;
+                border-radius: 50%;
+                background: var(--accent);
+                color: white;
+                font-weight: 700;
+                margin-right: 12px;
+            }
+            .step-title {
+                display: flex;
+                align-items: center;
+                margin-bottom: 12px;
+            }
+            .bookmarklet-code {
+                background: var(--card);
+                border: 1px solid var(--border);
+                border-radius: 8px;
+                padding: 16px;
+                font-family: monospace;
+                font-size: 0.75rem;
+                overflow-x: auto;
+                word-break: break-all;
+                margin: 12px 0;
+                line-height: 1.3;
+            }
+            .copy-button {
+                padding: 12px 24px;
+                border: none;
+                border-radius: 8px;
+                font-weight: 700;
+                cursor: pointer;
+                background: var(--accent);
+                color: white;
+                transition: 0.2s;
+                font-size: 0.95rem;
+            }
+            .copy-button:hover {
+                background: var(--accent2);
+                transform: translateY(-1px);
+            }
+            .copy-button.copied {
+                background: var(--success);
+            }
+            .info-box {
+                background: rgba(255, 87, 34, 0.1);
+                border-left: 4px solid var(--accent);
+                padding: 16px;
+                border-radius: 4px;
+                margin: 16px 0;
+            }
+            .warning-box {
+                background: rgba(245, 158, 11, 0.1);
+                border-left: 4px solid var(--warning);
+                padding: 16px;
+                border-radius: 4px;
+                margin: 16px 0;
+            }
+            .success-box {
+                background: rgba(34, 197, 94, 0.1);
+                border-left: 4px solid var(--success);
+                padding: 16px;
+                border-radius: 4px;
+                margin: 16px 0;
+            }
+            .back-link {
+                display: inline-block;
+                margin-bottom: 20px;
+                color: var(--accent);
+                text-decoration: none;
+                font-weight: 600;
+            }
+            .back-link:hover {
+                text-decoration: underline;
+            }
+            code {
+                background: var(--card);
+                padding: 2px 6px;
+                border-radius: 4px;
+                font-family: monospace;
+                font-size: 0.9rem;
+            }
+            ul,
+            ol {
+                margin: 12px 0;
+                padding-left: 20px;
+            }
+            li {
+                margin: 8px 0;
+            }
+            a {
+                color: var(--accent);
+                text-decoration: none;
+            }
+            a:hover {
+                text-decoration: underline;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <a href="csv-import.html" class="back-link">← Back to CSV Import</a>
+
+            <div class="card">
+                <h1>🔍 AthleticsNet Scraper Bookmarklet</h1>
+                <p>
+                    Automatically extract meet results from AthleticsNet and
+                    copy them to your clipboard in CSV format for easy
+                    importing.
+                </p>
+            </div>
+
+            <!-- STEP 1: Install -->
+            <div class="card">
+                <div class="step-title">
+                    <span class="step-number">1</span>
+                    <h2>Install Bookmarklet</h2>
+                </div>
+                <p>
+                    Copy this bookmarklet code and save it as a browser
+                    bookmark:
+                </p>
+
+                <div class="bookmarklet-code" id="bookmarklet-code">
+                    javascript:(function(){console.log("--- SCRAPING
+                    ATHLETICSNET ---");const
+                    tables=document.querySelectorAll('table');let
+                    csvRows=["event_name,place,grade,athlete_name,mark,school,heat,gender"];let
+                    count=0;tables.forEach(table=>{let gender="Boys";let
+                    allHeaders=Array.from(document.querySelectorAll('h2, h3, h4,
+                    .division-title, .event-title'));for(let
+                    i=allHeaders.length-1;i>=0;i--){if(allHeaders[i].compareDocumentPosition(table)&Node.DOCUMENT_POSITION_FOLLOWING){let
+                    headerText=allHeaders[i].innerText.toLowerCase();if(headerText.includes("women")||headerText.includes("girl")||headerText.includes("female")){gender="Girls";break;}else
+                    if(headerText.includes("men")||headerText.includes("boy")||headerText.includes("male")){gender="Boys";break;}}}let
+                    eventHeader=table.closest('.event-results,
+                    .m-event-results')?table.closest('.event-results,
+                    .m-event-results').querySelector('h3,
+                    h4'):table.previousElementSibling;if(!eventHeader||!['H3','H4'].includes(eventHeader.tagName)){for(let
+                    i=allHeaders.length-1;i>=0;i--){if(allHeaders[i].compareDocumentPosition(table)&Node.DOCUMENT_POSITION_FOLLOWING){eventHeader=allHeaders[i];break;}}}let
+                    rawEventName=eventHeader?eventHeader.innerText.trim().replace(/\n/g,'
+                    ').replace(/\s+/g,' '):"Unknown Event";let
+                    eventName=rawEventName.replace(/\s-\s\d{2}"(?:\s?\/\s?\d\.\d{3}m)?/,"").replace(/\s-\s\d+(?:\.\d+)?\s?(?:kg|lb)\b/i,"").replace(/\b(\d)x(\d{2,4})\sRelay\b/i,(match,legs,dist)=>`${legs}x${dist}m
+                    Relay`).replace(/\s{2,}/g," ").trim();const
+                    headers=Array.from(table.querySelectorAll('thead
+                    th')).map(th=>th.innerText.trim().toLowerCase());const
+                    placeIdx=headers.findIndex(h=>h.includes('pl'));const
+                    nameIdx=headers.findIndex(h=>h.includes('athlete')||h.includes('name'));const
+                    gradeIdx=headers.findIndex(h=>h==='yr'||h==='year'||h==='gr'||h==='grade');const
+                    markIdx=headers.findIndex(h=>h.includes('time')||h.includes('mark')||h.includes('result'));const
+                    schoolIdx=headers.findIndex(h=>h.includes('team')||h.includes('school'));const
+                    heatIdx=headers.findIndex(h=>h.includes('ht')||h.includes('heat')||h.includes('flight')||h.includes('fl'));const
+                    rows=table.querySelectorAll('tbody tr');let
+                    currentHeat="";rows.forEach(row=>{if(row.querySelector('th')||row.classList.contains('heat-header')){const
+                    text=row.innerText.toLowerCase();if(text.includes('heat')||text.includes('flight')){currentHeat=text.replace(/[^0-9]/g,'');}return;}const
+                    cells=row.querySelectorAll('td');if(cells.length<3)return;const
+                    getCell=(idx,fallbackSelector)=>{if(idx>=0&&cells[idx])return
+                    cells[idx].innerText.trim();const
+                    el=row.querySelector(fallbackSelector);return
+                    el?el.innerText.trim():""};let
+                    place=getCell(placeIdx,'.place,
+                    td:first-child').replace('.','');let
+                    name=getCell(nameIdx,'a[href*="/athlete/"], .athlete,
+                    .name');let grade=getCell(gradeIdx,'.grade, .yr, .year');let
+                    school=getCell(schoolIdx,'a[href*="/team/"], .team,
+                    .school')||"Unattached";let
+                    heat=getCell(heatIdx,'.heat')||currentHeat||"1";let
+                    mark=getCell(markIdx,'.result, .time, .mark,
+                    .time-distance');if(!mark){cells.forEach(td=>{const
+                    txt=td.innerText.trim();if(/(\d+[:.]\d+)|(\d+['"])|(\d+[-]\d+)/.test(txt)&&txt.length<15)mark=txt;});}if(mark)mark=mark.replace(/[as]$/gi,"").trim();if(eventName.toLowerCase().includes('relay')||eventName.toLowerCase().includes('shuttle')){const
+                    relayAthleteLinks=Array.from(row.querySelectorAll('.athlete
+                    a, .athlete span,
+                    a.athlete-name'));if(relayAthleteLinks.length>0){name=relayAthleteLinks.map(a=>a.innerText.trim()).filter(n=>n!=="").join(',
+                    ');}else{name=row.querySelector('.school,
+                    .team')?.innerText.trim()||name;}school=school.split(' -
+                    ')[0].trim();grade="";}if(name&&mark&&!isNaN(parseInt(place))){const
+                    cleanRow=[`"${eventName.replace(/"/g,'""')}"`,`"${place.replace(/"/g,'""')}"`,`"${grade.replace(/"/g,'""')}"`,`"${name.replace(/"/g,'""')}"`,`"${mark.replace(/"/g,'""')}"`,`"${school.replace(/"/g,'""')}"`,`"${heat.replace(/"/g,'""')}"`,`"${gender}"`].join(",");csvRows.push(cleanRow);count++;}});});if(count>0){const
+                    temp=document.createElement("textarea");document.body.appendChild(temp);temp.value=csvRows.join("\n");temp.select();document.execCommand("copy");document.body.removeChild(temp);alert(`✅
+                    Copied ${count} results to clipboard!`);}else{alert("❌
+                    Found 0 results. Make sure you're on the Results
+                    tab.");}})();
+                </div>
+
+                <button class="copy-button" onclick="copyBookmarklet()">
+                    📋 Copy Code
+                </button>
+
+                <div class="info-box">
+                    <strong>📌 Installation Steps:</strong>
+                    <ol>
+                        <li>Click "Copy Code" button above</li>
+                        <li>Create a new bookmark (Ctrl+D or Cmd+D)</li>
+                        <li>Name it "Scrape AthleticsNet"</li>
+                        <li>
+                            Paste code in the URL field (should start with
+                            <code>javascript:</code>)
+                        </li>
+                        <li>Save the bookmark</li>
+                    </ol>
+                </div>
+            </div>
+
+            <!-- STEP 2: Usage -->
+            <div class="card">
+                <div class="step-title">
+                    <span class="step-number">2</span>
+                    <h2>How to Use</h2>
+                </div>
+                <ol>
+                    <li>
+                        <strong>Go to AthleticsNet Meet Results Page</strong> -
+                        Navigate to the meet you want to scrape
+                    </li>
+                    <li>
+                        <strong>Click the "Results" Tab</strong> - Make sure you
+                        can see the results tables
+                    </li>
+                    <li>
+                        <strong>Click Your Bookmarklet</strong> - Click the
+                        "Scrape AthleticsNet" bookmark
+                    </li>
+                    <li>
+                        <strong>Results Copied</strong> - You'll see a
+                        confirmation alert with the number of results extracted
+                    </li>
+                    <li>
+                        <strong>Paste in CSV Import</strong> - Go to the
+                        <a href="csv-import.html">CSV Import page</a> and paste
+                        the data
+                    </li>
+                    <li>
+                        <strong>Review & Import</strong> - Verify matches and
+                        click Import
+                    </li>
+                </ol>
+            </div>
+
+            <!-- STEP 3: Features -->
+            <div class="card">
+                <div class="step-title">
+                    <span class="step-number">3</span>
+                    <h2>What It Does</h2>
+                </div>
+                <ul>
+                    <li>✅ Auto-detects gender from page headers</li>
+                    <li>
+                        ✅ Removes hurdle heights and throwing weights from
+                        event names
+                    </li>
+                    <li>✅ Normalizes relay event names</li>
+                    <li>
+                        ✅ Extracts placements, times/marks, grades, schools,
+                        heats
+                    </li>
+                    <li>✅ Handles relay teams correctly</li>
+                    <li>✅ Copies results as CSV to clipboard</li>
+                    <li>✅ Works with different AthleticsNet table layouts</li>
+                </ul>
+            </div>
+
+            <!-- STEP 4: Troubleshooting -->
+            <div class="card">
+                <div class="step-title">
+                    <span class="step-number">4</span>
+                    <h2>Troubleshooting</h2>
+                </div>
+
+                <h3>❌ "Found 0 results"</h3>
+                <ul>
+                    <li>
+                        Verify you're on the <strong>Results tab</strong> (not
+                        Meet Info)
+                    </li>
+                    <li>Make sure results tables are visible</li>
+                    <li>Try refreshing the page and running again</li>
+                </ul>
+
+                <h3>❌ Bookmarklet not working</h3>
+                <ul>
+                    <li>
+                        Ensure the bookmark URL starts with
+                        <code>javascript:</code>
+                    </li>
+                    <li>Try reinstalling the bookmarklet with fresh code</li>
+                    <li>Test on a different meet page</li>
+                </ul>
+
+                <h3>❌ Unusual results or missing data</h3>
+                <ul>
+                    <li>
+                        Some AthleticsNet layouts may have non-standard table
+                        structures
+                    </li>
+                    <li>
+                        After pasting in CSV Import, review the preview table to
+                        see which events matched
+                    </li>
+                    <li>
+                        You can manually adjust or exclude problematic events
+                        before importing
+                    </li>
+                </ul>
+            </div>
+
+            <!-- STEP 5: Next Steps -->
+            <div class="card">
+                <div class="step-title">
+                    <span class="step-number">5</span>
+                    <h2>Next Steps</h2>
+                </div>
+                <p>After scraping results:</p>
+                <ol>
+                    <li>
+                        Go to
+                        <a href="csv-import.html">Track CSV Import page</a>
+                    </li>
+                    <li>Select the meet from the dropdown</li>
+                    <li>Paste the scraped CSV data</li>
+                    <li>Click "Parse & Analyze Results"</li>
+                    <li>
+                        Review event matches and select which events to import
+                    </li>
+                    <li>Click "Import Validated Results"</li>
+                </ol>
+                <div class="success-box">
+                    <strong>💡 Pro Tip:</strong> The CSV Import tool
+                    automatically creates new athletes if they don't exist, so
+                    you don't need to set them up manually!
+                </div>
+            </div>
+
+            <a href="csv-import.html" class="back-link">← Back to CSV Import</a>
+        </div>
+
+        <script>
+            function copyBookmarklet() {
+                const code =
+                    document.getElementById("bookmarklet-code").innerText;
+                navigator.clipboard
+                    .writeText(code)
+                    .then(() => {
+                        const btn = event.target;
+                        btn.innerText = "✅ Copied!";
+                        btn.classList.add("copied");
+                        setTimeout(() => {
+                            btn.innerText = "📋 Copy Code";
+                            btn.classList.remove("copied");
+                        }, 2000);
+                    })
+                    .catch(() => {
+                        alert(
+                            "Failed to copy. Please select and copy the code manually.",
+                        );
+                    });
+            }
+        </script>
+    </body>
+</html>
