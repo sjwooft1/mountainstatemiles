@@ -100,6 +100,36 @@ export function renderCustomChart(rows, { chartType, groupBy, metric, topN }) {
   });
 }
 
+export function renderCoachTeamDepthChart(rows) {
+  // Charting number of unique athletes placed per event
+  const grouped = rows.reduce((acc, r) => {
+    const key = r.eventName || "Unknown";
+    if (!acc[key]) acc[key] = new Set();
+    acc[key].add(r.athleteName);
+    return acc;
+  }, {});
+  
+  const entries = Object.entries(grouped)
+    .map(([eventName, athleteSet]) => [eventName, athleteSet.size])
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10); // Top 10 deepest events
+
+  render("coachTeamDepthChart", {
+    type: "bar",
+    data: {
+      labels: entries.map(([k]) => k),
+      datasets: [{
+        label: "Unique Athletes Competed",
+        data: entries.map(([,v]) => v),
+        backgroundColor: "rgba(139, 92, 246, 0.4)",
+        borderColor: "#7c3aed",
+        borderWidth: 1
+      }]
+    },
+    options: { responsive: true, maintainAspectRatio: false }
+  });
+}
+
 export function renderCoachTrendChart(rows) {
   const grouped = rows
     .filter((r) => r.date && Number.isFinite(r.bestTimeSeconds))

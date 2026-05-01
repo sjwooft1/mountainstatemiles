@@ -15,6 +15,7 @@ const DEFAULT_STATE = {
   compareA: "",
   compareB: "",
   compareEventId: "",
+  coachSchoolName: "",
   coachAthleteName: "",
   coachEventId: "",
   chartType: "bar",

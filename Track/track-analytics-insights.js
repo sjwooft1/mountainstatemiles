@@ -72,6 +72,39 @@ export function buildInsights(rows) {
   return insights;
 }
 
+export function buildTeamInsights(rows) {
+  if (!rows.length) return ["No team data available for current scope."];
+  const insights = [];
+
+  // Deepest Event
+  const byEvent = rows.reduce((acc, r) => {
+    acc[r.eventName] = (acc[r.eventName] || 0) + 1;
+    return acc;
+  }, {});
+  const strongestEvent = Object.entries(byEvent).sort((a, b) => b[1] - a[1])[0];
+  if (strongestEvent) {
+    insights.push(`💪 Strongest depth in **${strongestEvent[0]}** with ${strongestEvent[1]} total entry results.`);
+  }
+
+  // Workhorse
+  const byAthlete = rows.reduce((acc, r) => {
+    acc[r.athleteName] = (acc[r.athleteName] || 0) + 1;
+    return acc;
+  }, {});
+  const mostActive = Object.entries(byAthlete).sort((a, b) => b[1] - a[1])[0];
+  if (mostActive) {
+    insights.push(`🏃 Most active athlete: **${mostActive[0]}** (${mostActive[1]} individual appearances).`);
+  }
+
+  // High Finishers
+  const top1s = rows.filter(r => r.placement === 1).length;
+  if (top1s > 0) {
+    insights.push(`🥇 The team has captured **${top1s}** first-place finishes in this reporting period.`);
+  }
+  
+  return insights;
+}
+
 export function compareSlices(rows, compareBy, a, b, options = {}) {
   const eventId = options.compareEventId || "";
   const scopedRows = eventId ? rows.filter((r) => r.eventId === eventId) : rows;

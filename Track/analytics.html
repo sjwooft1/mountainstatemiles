@@ -1,219 +1,1270 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Track Analytics Builder - Mountain State Miles</title>
-  <link rel="icon" type="image/png" href="../assets/Favicon Generator/favicon-96x96.png" sizes="96x96" />
-  <link rel="icon" type="image/svg+xml" href="../assets/Favicon Generator/favicon.svg" />
-  <link rel="shortcut icon" href="../assets/Favicon Generator/favicon.ico" />
-  <link rel="apple-touch-icon" sizes="180x180" href="../assets/Favicon Generator/apple-touch-icon.png" />
-  <link rel="manifest" href="../assets/Favicon Generator/site.webmanifest" />
-  <link rel="stylesheet" href="/assets/main.css" />
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-  <script src="firebase-config.js"></script>
-  <script src="/assets/theme-toggle.js"></script>
-  <style>
-    .analytics-shell { max-width: 1400px; margin: 0 auto; padding: 90px 20px 40px; }
-    .analytics-title { margin-bottom: 6px; }
-    .analytics-subtitle { margin-bottom: 18px; }
-    .grid { display: grid; gap: 16px; }
-    .panel { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
-    .panel h3 { margin-bottom: 10px; font-size: 1.1rem; font-family: var(--font-sans); }
-    .filters-grid { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
-    .field { display: flex; flex-direction: column; gap: 6px; }
-    .field label { color: var(--text-secondary); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
-    .field select, .field input { padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-primary); color: var(--text-primary); }
-    .toolbar { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
-    .btn { padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-primary); color: var(--text-primary); cursor: pointer; font-weight: 600; }
-    .btn.primary { background: var(--text-primary); color: var(--bg-primary); border-color: var(--text-primary); }
-    .kpis { grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
-    .kpi { background: var(--bg-primary); border: 1px solid var(--border); border-radius: 10px; padding: 12px; }
-    .kpi-label { font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; }
-    .kpi-value { margin-top: 4px; font-size: 1.4rem; font-weight: 800; }
-    .viz-grid { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
-    .chart-wrap { height: 280px; }
-    .insight-list { display: grid; gap: 8px; }
-    .insight-item { background: var(--bg-primary); border: 1px solid var(--border); border-radius: 8px; padding: 10px; }
-    .compare-grid { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
-    .compare-card { background: var(--bg-primary); border: 1px solid var(--border); border-radius: 8px; padding: 12px; }
-    .table-wrap { overflow: auto; border: 1px solid var(--border); border-radius: 10px; }
-    table { width: 100%; border-collapse: collapse; min-width: 980px; }
-    th, td { border-bottom: 1px solid var(--border); text-align: left; padding: 8px; font-size: 0.85rem; }
-    th { background: var(--bg-secondary); color: var(--text-secondary); text-transform: uppercase; font-size: 0.75rem; }
-    .state-pill { display: inline-block; border: 1px solid var(--border); padding: 3px 8px; border-radius: 999px; margin-right: 6px; margin-bottom: 6px; font-size: 0.75rem; }
-    .loading { color: var(--text-secondary); font-weight: 600; }
-    .favorite-banner { margin-bottom: 12px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg-primary); font-size: 0.9rem; }
-    .coach-grid { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
-    .coach-cards { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-top: 10px; }
-    .coach-note { font-size: 0.85rem; color: var(--text-secondary); margin-top: 8px; }
-    @media print {
-      header, footer, .toolbar, .filter-controls-only { display: none !important; }
-      .analytics-shell { padding: 0; max-width: 100%; }
-      .panel { break-inside: avoid; border: 1px solid #ccc; }
-      body { background: white; color: black; }
-    }
-  </style>
-</head>
-<body>
-  <header>
-    <nav class="navbar">
-      <div class="navbar-content">
-        <a href="index.html" class="navbar-brand">Track</a>
-        <button class="mobile-menu-toggle" aria-label="Toggle menu">☰</button>
-        <ul class="navbar-nav" id="main-nav">
-          <li><a href="/home/index.html" class="navbar-link">Home</a></li>
-          <li><a href="index.html" class="navbar-link">Track</a></li>
-          <li><a href="meets.html" class="navbar-link">Meets</a></li>
-          <li><a href="events.html" class="navbar-link">Events</a></li>
-          <li><a href="rankings.html" class="navbar-link">Rankings</a></li>
-          <li><a href="analytics.html" class="navbar-link active">Analytics</a></li>
-        </ul>
-        <button class="theme-toggle" aria-label="Switch theme">🌙</button>
-      </div>
-    </nav>
-  </header>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Track Analytics Builder - Mountain State Miles</title>
+        <link
+            rel="icon"
+            type="image/png"
+            href="../assets/Favicon Generator/favicon-96x96.png"
+            sizes="96x96"
+        />
+        <link
+            rel="icon"
+            type="image/svg+xml"
+            href="../assets/Favicon Generator/favicon.svg"
+        />
+        <link
+            rel="shortcut icon"
+            href="../assets/Favicon Generator/favicon.ico"
+        />
+        <link
+            rel="apple-touch-icon"
+            sizes="180x180"
+            href="../assets/Favicon Generator/apple-touch-icon.png"
+        />
+        <link
+            rel="manifest"
+            href="../assets/Favicon Generator/site.webmanifest"
+        />
+        <link rel="stylesheet" href="/assets/main.css" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+            rel="stylesheet"
+        />
+        <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+        <script src="firebase-config.js"></script>
+        <script src="/assets/theme-toggle.js"></script>
+        <style>
+            /* ===== CORE LAYOUT ===== */
+            .analytics-shell {
+                max-width: 1500px;
+                margin: 0 auto;
+                padding: 100px 20px 60px;
+            }
 
-  <main class="analytics-shell">
-    <h1 class="analytics-title section-title">Track Analytics Builder</h1>
-    <p class="analytics-subtitle">Filter, compare, graph, print, and share Track database insights.</p>
-    <div id="favoriteBanner" class="favorite-banner">Favorite team: Not set</div>
+            .analytics-header {
+                margin-bottom: 40px;
+                position: relative;
+            }
 
-    <section class="panel filter-controls-only">
-      <h3>Global Filters</h3>
-      <div id="filterPills"></div>
-      <div class="grid filters-grid">
-        <div class="field"><label for="seasonFilter">Season</label><select id="seasonFilter"><option value="">All</option><option value="indoor">Indoor</option><option value="outdoor">Outdoor</option></select></div>
-        <div class="field"><label for="genderFilter">Gender</label><select id="genderFilter"><option value="">All</option><option value="M">Boys / M</option><option value="F">Girls / F</option></select></div>
-        <div class="field"><label for="eventFilter">Event</label><select id="eventFilter"><option value="">All events</option></select></div>
-        <div class="field"><label for="categoryFilter">Category</label><select id="categoryFilter"><option value="">All categories</option></select></div>
-        <div class="field"><label for="schoolFilter">School</label><select id="schoolFilter"><option value="">All schools</option></select></div>
-        <div class="field"><label for="meetFilter">Meet</label><select id="meetFilter"><option value="">All meets</option></select></div>
-        <div class="field"><label for="athleteFilter">Athlete</label><select id="athleteFilter"><option value="">All athletes</option></select></div>
-        <div class="field"><label for="relayFilter">Relay / Individual</label><select id="relayFilter"><option value="">Both</option><option value="relay">Relay</option><option value="individual">Individual</option></select></div>
-        <div class="field"><label for="markTypeFilter">Mark Type</label><select id="markTypeFilter"><option value="">All</option><option value="time">Running time</option><option value="field">Field mark</option></select></div>
-        <div class="field"><label for="startDate">Start Date</label><input id="startDate" type="date" /></div>
-        <div class="field"><label for="endDate">End Date</label><input id="endDate" type="date" /></div>
-        <div class="field"><label for="placementMax">Best Placement <=</label><input id="placementMax" type="number" min="1" placeholder="Any" /></div>
-      </div>
-      <div class="toolbar">
-        <button class="btn primary" id="applyFiltersBtn">Apply Filters</button>
-        <button class="btn" id="resetFiltersBtn">Reset Filters</button>
-        <button class="btn" id="shareBtn">Copy Shareable Link</button>
-        <button class="btn" id="printBtn">Print View</button>
-        <button class="btn" id="csvBtn">Export Filtered CSV</button>
-        <button class="btn" id="jsonBtn">Export Filtered JSON</button>
-        <button class="btn" id="setFavoriteBtn">Set Current School as Favorite</button>
-        <button class="btn" id="useFavoriteBtn">Use Favorite Team Filter</button>
-        <button class="btn" id="clearFavoriteBtn">Clear Favorite</button>
-      </div>
-    </section>
+            .analytics-title {
+                font-size: 2.5rem;
+                margin-bottom: 8px;
+                font-weight: 800;
+                background: linear-gradient(
+                    135deg,
+                    var(--text-primary),
+                    var(--text-secondary)
+                );
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                background-clip: text;
+            }
 
-    <section class="panel">
-      <h3>Overview KPIs</h3>
-      <div class="grid kpis" id="kpiGrid"></div>
-    </section>
+            .analytics-subtitle {
+                font-size: 1rem;
+                margin-bottom: 24px;
+                color: var(--text-secondary);
+                max-width: 600px;
+            }
 
-    <section class="panel">
-      <h3>Comparison Builder (A vs B)</h3>
-      <div class="grid filters-grid">
-        <div class="field"><label for="compareBy">Compare By</label><select id="compareBy"><option value="schoolName">School</option><option value="athleteName">Athlete</option><option value="eventName">Event</option><option value="category">Category</option><option value="gender">Gender</option><option value="season">Season</option></select></div>
-        <div class="field"><label for="compareEventId">Compare Within Event</label><select id="compareEventId"><option value="">All events</option></select></div>
-        <div class="field"><label for="compareA">Selection A</label><select id="compareA"><option value="">Select</option></select></div>
-        <div class="field"><label for="compareB">Selection B</label><select id="compareB"><option value="">Select</option></select></div>
-      </div>
-      <div class="grid compare-grid" id="compareOutput"></div>
-    </section>
+            /* ===== PANELS & SECTIONS ===== */
+            .grid {
+                display: grid;
+                gap: 20px;
+            }
 
-    <section class="panel">
-      <h3>Custom Graph Builder</h3>
-      <div class="grid filters-grid">
-        <div class="field"><label for="chartType">Chart Type</label><select id="chartType"><option value="bar">Bar</option><option value="line">Line</option><option value="doughnut">Doughnut</option></select></div>
-        <div class="field"><label for="groupBy">Group By</label><select id="groupBy"><option value="eventName">Event</option><option value="schoolName">School</option><option value="meetName">Meet</option><option value="athleteName">Athlete</option><option value="season">Season</option><option value="gender">Gender</option></select></div>
-        <div class="field"><label for="metric">Metric</label><select id="metric"><option value="count">Result Count</option><option value="bestTimeSeconds">Best Time</option><option value="avgTimeSeconds">Avg Time</option><option value="bestFieldMark">Best Field Mark</option></select></div>
-        <div class="field"><label for="topN">Top N</label><input id="topN" type="number" min="3" max="30" value="10" /></div>
-      </div>
-      <div class="toolbar"><button class="btn primary" id="buildChartBtn">Build Chart</button></div>
-    </section>
+            .panel {
+                background: var(--bg-secondary);
+                border: 1px solid var(--border);
+                border-radius: 14px;
+                padding: 24px;
+                transition: all 0.2s ease;
+            }
 
-    <section class="grid viz-grid">
-      <div class="panel"><h3>Trend by Meet Date</h3><div class="chart-wrap"><canvas id="trendChart"></canvas></div></div>
-      <div class="panel"><h3>Distribution by Category</h3><div class="chart-wrap"><canvas id="categoryChart"></canvas></div></div>
-      <div class="panel"><h3>Custom Chart</h3><div class="chart-wrap"><canvas id="customChart"></canvas></div></div>
-    </section>
+            .panel:hover {
+                border-color: var(--text-primary);
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            }
 
-    <section class="panel">
-      <h3>Insights</h3>
-      <div id="insights" class="insight-list"><p class="loading">Loading insights...</p></div>
-    </section>
+            .panel.highlighted {
+                border: 2px solid var(--text-primary);
+                background: var(--bg-primary);
+            }
 
-    <section class="panel">
-      <h3>Coaching View - Athlete Deep Dive</h3>
-      <div class="grid coach-grid">
-        <div class="field"><label for="coachAthleteName">Athlete</label><select id="coachAthleteName"><option value="">Select athlete</option></select></div>
-        <div class="field"><label for="coachEventId">Focus Event</label><select id="coachEventId"><option value="">All events</option></select></div>
-      </div>
-      <div class="toolbar"><button class="btn primary" id="coachApplyBtn">Update Coaching View</button></div>
-      <div id="coachSummary" class="grid coach-cards"></div>
-      <p class="coach-note">Use this view to track progression, consistency, and event-specific readiness for one athlete.</p>
-      <section class="grid viz-grid">
-        <div class="panel"><h3>Athlete Progression Trend</h3><div class="chart-wrap"><canvas id="coachTrendChart"></canvas></div></div>
-        <div class="panel"><h3>Event Split Snapshot</h3><div class="chart-wrap"><canvas id="coachEventChart"></canvas></div></div>
-      </section>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Date</th><th>Event</th><th>Meet</th><th>Mark</th><th>Placement</th><th>Heat</th>
-            </tr>
-          </thead>
-          <tbody id="coachTableBody"><tr><td colspan="6">Select an athlete to view coaching analysis.</td></tr></tbody>
-        </table>
-      </div>
-    </section>
+            .panel-header {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                margin-bottom: 20px;
+                padding-bottom: 16px;
+                border-bottom: 2px solid var(--border);
+            }
 
-    <section class="panel">
-      <h3>Data Explorer</h3>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Date</th><th>Meet</th><th>Event</th><th>Athlete / Relay</th><th>School</th><th>Gender</th><th>Mark</th><th>Placement</th><th>Heat</th><th>Category</th><th>Season</th>
-            </tr>
-          </thead>
-          <tbody id="tableBody"><tr><td colspan="11" class="loading">Loading data...</td></tr></tbody>
-        </table>
-      </div>
-    </section>
-  </main>
+            .panel-icon {
+                font-size: 1.8rem;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 40px;
+                height: 40px;
+                background: var(--bg-primary);
+                border-radius: 10px;
+            }
 
-  <footer>
-    <div class="row">
-      <div class="footer-col"><h4>General</h4><ul><li><a href="/home/index.html">Home</a></li><li><a href="/home/about.html">About</a></li><li><a href="/home/admin.html">Admin</a></li></ul></div>
-      <div class="footer-col"><h4>Cross Country</h4><ul><li><a href="/CrossCountry/xc.html">Home</a></li><li><a href="/CrossCountry/meets.html">Meets</a></li><li><a href="/CrossCountry/schools.html">Schools</a></li><li><a href="/CrossCountry/rankings.html">Rankings</a></li><li><a href="/CrossCountry/analytics.html">Analytics</a></li></ul></div>
-      <div class="footer-col"><h4>Track</h4><ul><li><a href="/Track/index.html">Home</a></li><li><a href="/Track/meets.html">Meets</a></li><li><a href="/Track/teams.html">Teams</a></li><li><a href="/Track/rankings.html">Rankings</a></li><li><a href="/Track/analytics.html">Analytics</a></li></ul></div>
-    </div>
-    <hr>
-    <div class="row"><div class="footer-bottom"><p>&#169; 2026 Mountain State Miles — Built by runners, for runners.</p></div></div>
-  </footer>
+            .panel-title-group h3 {
+                margin: 0;
+                font-size: 1.3rem;
+                font-weight: 700;
+            }
 
-  <script type="module" src="./track-analytics-app.js"></script>
-  <script>
-    const menuToggle = document.querySelector(".mobile-menu-toggle");
-    const navMenu = document.getElementById("main-nav");
-    if (menuToggle && navMenu) {
-      menuToggle.addEventListener("click", () => navMenu.classList.toggle("mobile-open"));
-      document.addEventListener("click", (e) => {
-        if (!navMenu.contains(e.target) && !menuToggle.contains(e.target)) {
-          navMenu.classList.remove("mobile-open");
-        }
-      });
-    }
-  </script>
-</body>
+            .panel-subtitle {
+                font-size: 0.85rem;
+                color: var(--text-secondary);
+                margin-top: 4px;
+            }
+
+            .collapsible-header {
+                cursor: pointer;
+                user-select: none;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+            }
+
+            .collapsible-header:hover {
+                opacity: 0.8;
+            }
+
+            .collapse-icon {
+                font-size: 1.2rem;
+                transition: transform 0.2s;
+            }
+
+            .collapsible-header.collapsed .collapse-icon {
+                transform: rotate(-90deg);
+            }
+
+            .collapsible-content {
+                max-height: 2000px;
+                overflow: hidden;
+                transition: max-height 0.3s ease;
+                margin-top: 16px;
+            }
+
+            .collapsible-header.collapsed ~ .collapsible-content {
+                max-height: 0;
+                margin-top: 0;
+            }
+
+            /* ===== FILTERS & FIELDS ===== */
+            .filters-grid {
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 14px;
+            }
+
+            .field {
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .field label {
+                color: var(--text-secondary);
+                font-size: 0.8rem;
+                text-transform: uppercase;
+                letter-spacing: 0.08em;
+                font-weight: 600;
+            }
+
+            .field select,
+            .field input {
+                padding: 12px 14px;
+                border: 1px solid var(--border);
+                border-radius: 8px;
+                background: var(--bg-primary);
+                color: var(--text-primary);
+                font-size: 0.95rem;
+                transition: all 0.2s;
+            }
+
+            .field select:focus,
+            .field input:focus {
+                outline: none;
+                border-color: var(--text-primary);
+                box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+            }
+
+            /* ===== BUTTONS & TOOLBAR ===== */
+            .toolbar {
+                display: flex;
+                gap: 10px;
+                flex-wrap: wrap;
+                margin-top: 16px;
+            }
+
+            .btn {
+                padding: 11px 16px;
+                border: 1px solid var(--border);
+                border-radius: 8px;
+                background: var(--bg-primary);
+                color: var(--text-primary);
+                cursor: pointer;
+                font-weight: 600;
+                font-size: 0.95rem;
+                transition: all 0.2s;
+                white-space: nowrap;
+            }
+
+            .btn:hover {
+                border-color: var(--text-primary);
+                transform: translateY(-2px);
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            }
+
+            .btn:active {
+                transform: translateY(0);
+            }
+
+            .btn.primary {
+                background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+                color: white;
+                border-color: #7c3aed;
+                font-weight: 700;
+            }
+
+            .btn.primary:hover {
+                background: linear-gradient(135deg, #7c3aed, #6d28d9);
+                border-color: #6d28d9;
+                box-shadow: 0 8px 16px rgba(139, 92, 246, 0.3);
+            }
+
+            .btn.secondary {
+                background: var(--bg-secondary);
+            }
+
+            .btn.small {
+                padding: 8px 12px;
+                font-size: 0.85 "" "" rem;
+            }
+
+            /* ===== KPI SECTION ===== */
+            .kpis {
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 14px;
+            }
+
+            .kpi {
+                background: linear-gradient(
+                    135deg,
+                    var(--bg-primary),
+                    var(--bg-secondary)
+                );
+                border: 1px solid var(--border);
+                border-radius: 10px;
+                padding: 16px;
+                border-left: 4px solid #8b5cf6;
+                transition: all 0.2s;
+            }
+
+            .kpi:hover {
+                transform: translateY(-4px);
+                box-shadow: 0 6px 16px rgba(139, 92, 246, 0.15);
+            }
+
+            .kpi-label {
+                font-size: 0.75rem;
+                color: var(--text-secondary);
+                text-transform: uppercase;
+                letter-spacing: 0.08em;
+                font-weight: 600;
+            }
+
+            .kpi-value {
+                margin-top: 8px;
+                font-size: 2rem;
+                font-weight: 800;
+                color: var(--text-primary);
+            }
+
+            .kpi.warning .kpi-value {
+                color: #f59e0b;
+            }
+            .kpi.success .kpi-value {
+                color: #10b981;
+            }
+            .kpi.info .kpi-value {
+                color: #3b82f6;
+            }
+
+            /* ===== VISUALIZATION ===== */
+            .viz-grid {
+                grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+            }
+
+            .chart-wrap {
+                height: 300px;
+                position: relative;
+            }
+
+            .chart-container {
+                position: relative;
+                height: 100%;
+            }
+
+            /* ===== INSIGHTS & CARDS ===== */
+            .insight-list {
+                display: grid;
+                gap: 10px;
+            }
+
+            .insight-item {
+                background: var(--bg-primary);
+                border: 1px solid var(--border);
+                border-left: 4px solid #8b5cf6;
+                border-radius: 8px;
+                padding: 12px 14px;
+                font-size: 0.95rem;
+                line-height: 1.5;
+            }
+
+            .insight-item.highlight {
+                border-left-color: #f59e0b;
+                background: linear-gradient(
+                    90deg,
+                    rgba(245, 158, 11, 0.05),
+                    transparent
+                );
+            }
+
+            .compare-grid {
+                grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            }
+
+            .compare-card {
+                background: var(--bg-primary);
+                border: 1px solid var(--border);
+                border-radius: 8px;
+                padding: 16px;
+                text-align: center;
+            }
+
+            .compare-card-label {
+                font-size: 0.85rem;
+                color: var(--text-secondary);
+                text-transform: uppercase;
+                margin-bottom: 8px;
+            }
+
+            .compare-card-value {
+                font-size: 1.8rem;
+                font-weight: 700;
+                margin: 8px 0;
+            }
+
+            /* ===== TABLE ===== */
+            .table-wrap {
+                overflow: auto;
+                border: 1px solid var(--border);
+                border-radius: 10px;
+            }
+
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                min-width: 1000px;
+            }
+
+            th,
+            td {
+                border-bottom: 1px solid var(--border);
+                text-align: left;
+                padding: 12px;
+                font-size: 0.9rem;
+            }
+
+            th {
+                background: var(--bg-secondary);
+                color: var(--text-secondary);
+                text-transform: uppercase;
+                font-size: 0.75rem;
+                font-weight: 700;
+                letter-spacing: 0.05em;
+            }
+
+            tr:hover {
+                background: var(--bg-secondary);
+            }
+
+            /* ===== FAVORITE BANNER ===== */
+            .favorite-banner {
+                background: linear-gradient(
+                    135deg,
+                    rgba(139, 92, 246, 0.1),
+                    rgba(124, 58, 237, 0.05)
+                );
+                border: 2px solid #8b5cf6;
+                border-radius: 10px;
+                padding: 16px;
+                font-size: 0.95rem;
+                margin-bottom: 24px;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                flex-wrap: wrap;
+                gap: 12px;
+            }
+
+            .favorite-banner span {
+                font-weight: 600;
+                color: var(--text-primary);
+            }
+
+            /* ===== COACH SECTION ===== */
+            .coach-grid {
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            }
+
+            .coach-cards {
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            }
+
+            .team-header {
+                display: flex;
+                align-items: center;
+                gap: 16px;
+                padding: 20px;
+                background: linear-gradient(
+                    135deg,
+                    rgba(139, 92, 246, 0.1),
+                    rgba(124, 58, 237, 0.05)
+                );
+                border: 2px solid #8b5cf6;
+                border-radius: 10px;
+                margin-bottom: 20px;
+            }
+
+            .team-logo {
+                width: 50px;
+                height: 50px;
+                border-radius: 50%;
+                background: #8b5cf6;
+                color: white;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 1.6rem;
+                font-weight: bold;
+                flex-shrink: 0;
+            }
+
+            .team-info h4 {
+                margin: 0;
+                font-size: 1.2rem;
+                color: var(--text-primary);
+                font-weight: 700;
+            }
+
+            .team-info p {
+                margin: 4px 0 0 0;
+                font-size: 0.85rem;
+                color: var(--text-secondary);
+            }
+
+            /* ===== EMPTY STATE ===== */
+            .empty-state {
+                text-align: center;
+                padding: 40px 20px;
+                color: var(--text-secondary);
+            }
+
+            .empty-state-icon {
+                font-size: 3rem;
+                margin-bottom: 16px;
+            }
+
+            .empty-state p {
+                margin: 8px 0;
+                font-size: 0.95rem;
+            }
+
+            /* ===== LOADING STATE ===== */
+            .loading {
+                color: var(--text-secondary);
+                font-weight: 600;
+                animation: pulse 2s infinite;
+            }
+
+            @keyframes pulse {
+                0%,
+                100% {
+                    opacity: 1;
+                }
+                50% {
+                    opacity: 0.5;
+                }
+            }
+
+            /* ===== PILLS & BADGES ===== */
+            .state-pill {
+                display: inline-block;
+                border: 1px solid var(--border);
+                padding: 6px 12px;
+                border-radius: 20px;
+                margin-right: 8px;
+                margin-bottom: 8px;
+                font-size: 0.8rem;
+                background: var(--bg-primary);
+                color: var(--text-primary);
+            }
+
+            .badge {
+                display: inline-block;
+                background: #8b5cf6;
+                color: white;
+                padding: 4px 8px;
+                border-radius: 4px;
+                font-size: 0.75rem;
+                font-weight: 600;
+                margin-left: 8px;
+            }
+
+            /* ===== QUICK STATS ===== */
+            .quick-stats {
+                display: flex;
+                gap: 20px;
+                margin-bottom: 20px;
+                flex-wrap: wrap;
+            }
+
+            .stat {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                font-size: 0.9rem;
+                color: var(--text-secondary);
+            }
+
+            .stat-value {
+                font-weight: 700;
+                color: var(--text-primary);
+                font-size: 1rem;
+            }
+
+            /* ===== HELP TEXT ===== */
+            .help-text {
+                font-size: 0.85rem;
+                color: var(--text-secondary);
+                margin-top: 4px;
+                display: block;
+            }
+
+            .info-box {
+                background: linear-gradient(
+                    90deg,
+                    rgba(59, 130, 246, 0.05),
+                    transparent
+                );
+                border: 1px solid rgba(59, 130, 246, 0.2);
+                border-left: 4px solid #3b82f6;
+                border-radius: 6px;
+                padding: 12px;
+                margin-bottom: 16px;
+                font-size: 0.9rem;
+                color: var(--text-primary);
+            }
+
+            /* ===== RESPONSIVE ===== */
+            @media (max-width: 768px) {
+                .analytics-shell {
+                    padding: 80px 16px 40px;
+                }
+
+                .analytics-title {
+                    font-size: 1.8rem;
+                }
+
+                .panel {
+                    padding: 16px;
+                }
+
+                .filters-grid {
+                    grid-template-columns: 1fr;
+                }
+
+                .viz-grid {
+                    grid-template-columns: 1fr;
+                }
+
+                .kpis {
+                    grid-template-columns: 1fr;
+                }
+
+                .team-header {
+                    flex-direction: column;
+                    text-align: center;
+                }
+            }
+
+            /* ===== PRINT STYLES ===== */
+            @media print {
+                .analytics-shell {
+                    padding: 0;
+                }
+
+                .toolbar,
+                header,
+                footer,
+                .favorite-banner,
+                .filter-controls-only {
+                    display: none !important;
+                }
+
+                .panel {
+                    page-break-inside: avoid;
+                    break-inside: avoid;
+                    border: 1px solid #ccc;
+                    box-shadow: none;
+                }
+
+                body {
+                    background: white;
+                    color: black;
+                }
+
+                table {
+                    page-break-inside: avoid;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <header>
+            <nav class="navbar">
+                <div class="navbar-content">
+                    <a href="index.html" class="navbar-brand">Track</a>
+                    <button class="mobile-menu-toggle" aria-label="Toggle menu">
+                        ☰
+                    </button>
+                    <ul class="navbar-nav" id="main-nav">
+                        <li>
+                            <a href="/home/index.html" class="navbar-link"
+                                >Home</a
+                            >
+                        </li>
+                        <li>
+                            <a href="index.html" class="navbar-link">Track</a>
+                        </li>
+                        <li>
+                            <a href="meets.html" class="navbar-link">Meets</a>
+                        </li>
+                        <li>
+                            <a href="events.html" class="navbar-link">Events</a>
+                        </li>
+                        <li>
+                            <a href="rankings.html" class="navbar-link"
+                                >Rankings</a
+                            >
+                        </li>
+                        <li>
+                            <a href="analytics.html" class="navbar-link active"
+                                >Analytics</a
+                            >
+                        </li>
+                    </ul>
+                    <button class="theme-toggle" aria-label="Switch theme">
+                        🌙
+                    </button>
+                </div>
+            </nav>
+        </header>
+
+        <main class="analytics-shell">
+            <!-- HEADER SECTION -->
+            <div class="analytics-header">
+                <h1 class="analytics-title">📊 Track Analytics</h1>
+                <p class="analytics-subtitle">
+                    Explore, filter, compare, and visualize track & field
+                    performance data with powerful analytics tools.
+                </p>
+
+                <div id="favoriteBanner" class="favorite-banner">
+                    <div><span>⭐ Favorite Team: Not Set</span></div>
+                    <div style="display: flex; gap: 8px">
+                        <button class="btn btn.small" id="setFavoriteBtn">
+                            Set Favorite
+                        </button>
+                        <button class="btn btn.small" id="useFavoriteBtn">
+                            Load Favorite
+                        </button>
+                        <button class="btn btn.small" id="clearFavoriteBtn">
+                            Clear
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FILTER SECTION -->
+            <section class="panel">
+                <div class="panel-header">
+                    <div class="panel-icon">🔍</div>
+                    <div class="panel-title-group">
+                        <h3>Global Filters</h3>
+                        <span class="panel-subtitle"
+                            >Refine your data view across all metrics</span
+                        >
+                    </div>
+                </div>
+
+                <div id="filterPills" class="quick-stats"></div>
+
+                <div class="grid filters-grid">
+                    <div class="field">
+                        <label for="seasonFilter">Season</label>
+                        <select id="seasonFilter">
+                            <option value="">All Seasons</option>
+                            <option value="indoor">Indoor</option>
+                            <option value="outdoor">Outdoor</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="genderFilter">Gender</label>
+                        <select id="genderFilter">
+                            <option value="">All</option>
+                            <option value="M">Boys / Men (M)</option>
+                            <option value="F">Girls / Women (F)</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="eventFilter">Event</label>
+                        <select id="eventFilter">
+                            <option value="">All Events</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="categoryFilter">Category</label>
+                        <select id="categoryFilter">
+                            <option value="">All Categories</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="schoolFilter">School</label>
+                        <select id="schoolFilter">
+                            <option value="">All Schools</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="meetFilter">Meet</label>
+                        <select id="meetFilter">
+                            <option value="">All Meets</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="athleteFilter">Athlete</label>
+                        <select id="athleteFilter">
+                            <option value="">All Athletes</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="relayFilter">Type</label>
+                        <select id="relayFilter">
+                            <option value="">All Types</option>
+                            <option value="relay">Relays Only</option>
+                            <option value="individual">Individual Only</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="markTypeFilter">Mark Type</label>
+                        <select id="markTypeFilter">
+                            <option value="">All Marks</option>
+                            <option value="time">Running Time</option>
+                            <option value="field">Field Mark</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="startDate">Start Date</label>
+                        <input id="startDate" type="date" />
+                    </div>
+                    <div class="field">
+                        <label for="endDate">End Date</label>
+                        <input id="endDate" type="date" />
+                    </div>
+                    <div class="field">
+                        <label for="placementMax">Top Placements <=</label>
+                        <input
+                            id="placementMax"
+                            type="number"
+                            min="1"
+                            placeholder="e.g., 8"
+                        />
+                    </div>
+                </div>
+
+                <div class="toolbar">
+                    <button class="btn primary" id="applyFiltersBtn">
+                        ✓ Apply Filters
+                    </button>
+                    <button class="btn" id="resetFiltersBtn">
+                        ↻ Reset All
+                    </button>
+                    <button class="btn" id="shareBtn">🔗 Share Link</button>
+                    <button class="btn" id="csvBtn">📥 Export CSV</button>
+                    <button class="btn" id="jsonBtn">📋 Export JSON</button>
+                    <button class="btn" id="printBtn" style="display: none">
+                        🖨️ Print
+                    </button>
+                </div>
+            </section>
+
+            <!-- KPI SECTION -->
+            <section class="panel">
+                <div class="panel-header">
+                    <div class="panel-icon">📈</div>
+                    <div class="panel-title-group">
+                        <h3>Key Metrics</h3>
+                        <span class="panel-subtitle"
+                            >Overview of your filtered dataset</span
+                        >
+                    </div>
+                </div>
+                <div class="grid kpis" id="kpiGrid"></div>
+            </section>
+
+            <!-- INSIGHTS SECTION -->
+            <section class="panel">
+                <div class="panel-header">
+                    <div class="panel-icon">💡</div>
+                    <div class="panel-title-group">
+                        <h3>Smart Insights</h3>
+                        <span class="panel-subtitle"
+                            >AI-powered observations from your data</span
+                        >
+                    </div>
+                </div>
+                <div id="insights" class="insight-list">
+                    <p class="loading">Analyzing your data...</p>
+                </div>
+            </section>
+
+            <!-- COMPARISON SECTION -->
+            <section class="panel">
+                <div class="panel-header">
+                    <div class="panel-icon">⚖️</div>
+                    <div class="panel-title-group">
+                        <h3>Comparison Tool</h3>
+                        <span class="panel-subtitle"
+                            >Head-to-head analysis (A vs B)</span
+                        >
+                    </div>
+                </div>
+
+                <div class="grid filters-grid">
+                    <div class="field">
+                        <label for="compareBy">Compare By</label>
+                        <select id="compareBy">
+                            <option value="schoolName">School</option>
+                            <option value="athleteName">Athlete</option>
+                            <option value="eventName">Event</option>
+                            <option value="category">Category</option>
+                            <option value="gender">Gender</option>
+                            <option value="season">Season</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="compareEventId">Within Event</label>
+                        <select id="compareEventId">
+                            <option value="">All Events</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="compareA">Item A</label>
+                        <select id="compareA">
+                            <option value="">Select Item A</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="compareB">Item B</label>
+                        <select id="compareB">
+                            <option value="">Select Item B</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div
+                    class="grid compare-grid"
+                    id="compareOutput"
+                    style="margin-top: 16px"
+                ></div>
+            </section>
+
+            <!-- CHART BUILDER SECTION -->
+            <section class="panel">
+                <div class="panel-header">
+                    <div class="panel-icon">📊</div>
+                    <div class="panel-title-group">
+                        <h3>Custom Chart Builder</h3>
+                        <span class="panel-subtitle"
+                            >Create flexible visualizations</span
+                        >
+                    </div>
+                </div>
+
+                <div class="grid filters-grid">
+                    <div class="field">
+                        <label for="chartType">Chart Type</label>
+                        <select id="chartType">
+                            <option value="bar">Bar</option>
+                            <option value="line">Line</option>
+                            <option value="doughnut">Doughnut</option>
+                            <option value="pie">Pie</option>
+                            <option value="radar">Radar</option>
+                            <option value="polarArea">Polar Area</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="groupBy">Group By</label>
+                        <select id="groupBy">
+                            <option value="eventName">Event</option>
+                            <option value="schoolName">School</option>
+                            <option value="meetName">Meet</option>
+                            <option value="athleteName">Athlete</option>
+                            <option value="season">Season</option>
+                            <option value="gender">Gender</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="metric">Metric</label>
+                        <select id="metric">
+                            <option value="count">Result Count</option>
+                            <option value="avgTime">Average Time</option>
+                            <option value="bestTime">Best Time</option>
+                            <option value="avgField">Average Field Mark</option>
+                            <option value="bestField">Best Field Mark</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="topN">Top N Results</label>
+                        <input
+                            id="topN"
+                            type="number"
+                            min="3"
+                            max="30"
+                            value="10"
+                        />
+                    </div>
+                </div>
+
+                <div class="toolbar">
+                    <button class="btn primary" id="buildChartBtn">
+                        🎨 Build Chart
+                    </button>
+                </div>
+            </section>
+
+            <!-- VISUALIZATIONS SECTION -->
+            <section class="grid viz-grid">
+                <div class="panel">
+                    <h3 style="margin: 0 0 16px 0">📈 Trend by Meet</h3>
+                    <div class="chart-wrap">
+                        <canvas id="trendChart"></canvas>
+                    </div>
+                </div>
+                <div class="panel">
+                    <h3 style="margin: 0 0 16px 0">
+                        🏃 Distribution by Category
+                    </h3>
+                    <div class="chart-wrap">
+                        <canvas id="categoryChart"></canvas>
+                    </div>
+                </div>
+                <div class="panel">
+                    <h3 style="margin: 0 0 16px 0">📊 Custom Chart</h3>
+                    <div class="chart-wrap">
+                        <canvas id="customChart"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- COACH DASHBOARD SECTION -->
+            <section class="panel highlighted" id="coachPanel">
+                <div class="panel-header">
+                    <div class="panel-icon">🏆</div>
+                    <div class="panel-title-group">
+                        <h3>Coach Dashboard</h3>
+                        <span class="panel-subtitle"
+                            >Team & athlete performance insights</span
+                        >
+                    </div>
+                </div>
+
+                <div class="info-box">
+                    💡 Set a favorite team above, or select a school in the
+                    filters to unlock detailed coaching views and reports.
+                </div>
+
+                <div class="grid coach-grid">
+                    <div class="field">
+                        <label for="coachSchoolName">Team</label>
+                        <select id="coachSchoolName">
+                            <option value="">Select team</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="coachAthleteName">Athlete</label>
+                        <select id="coachAthleteName">
+                            <option value="">Team Overview</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="coachEventId">Focus Event</label>
+                        <select id="coachEventId">
+                            <option value="">All Events</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="toolbar">
+                    <button class="btn primary" id="coachApplyBtn">
+                        🔍 Update View
+                    </button>
+                    <button class="btn" id="printReportBtn">
+                        🖨️ Print Report
+                    </button>
+                    <button
+                        class="btn"
+                        id="printCoachBtn"
+                        style="display: none"
+                    ></button>
+                    <button
+                        class="btn"
+                        id="shareCoachBtn"
+                        style="display: none"
+                    ></button>
+                </div>
+
+                <!-- Team Header -->
+                <div id="teamHeader"></div>
+
+                <!-- Coach Insights -->
+                <div
+                    id="coachInsights"
+                    class="insight-list"
+                    style="margin-bottom: 20px"
+                ></div>
+
+                <!-- Coach Summary Cards -->
+                <div id="coachSummary" class="grid coach-cards"></div>
+
+                <!-- Coach Charts -->
+                <div class="grid viz-grid" style="margin-top: 24px">
+                    <div class="panel" style="border: none; padding: 0">
+                        <h3 style="margin: 0 0 16px 0">📈 Progression Trend</h3>
+                        <div class="chart-wrap">
+                            <canvas id="coachTrendChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="panel" style="border: none; padding: 0">
+                        <h3 style="margin: 0 0 16px 0">🎯 Event Breakdown</h3>
+                        <div class="chart-wrap">
+                            <canvas id="coachEventChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="panel" style="border: none; padding: 0">
+                        <h3 style="margin: 0 0 16px 0">👥 Team Coverage</h3>
+                        <div class="chart-wrap">
+                            <canvas id="coachRadarChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Team Report Section (Hidden) -->
+                <section
+                    id="teamReportSection"
+                    style="display: none; margin-top: 24px"
+                >
+                    <h4>
+                        Team Report: <span id="coachTeamNameDisplay"></span>
+                    </h4>
+                    <div id="coachTeamSummary" class="grid coach-cards"></div>
+                    <div class="grid viz-grid" style="margin-top: 16px">
+                        <div class="panel" style="border: none; padding: 0">
+                            <h3 style="margin: 0 0 16px 0">
+                                Team Depth (Entries per Event)
+                            </h3>
+                            <div class="chart-wrap">
+                                <canvas id="coachTeamDepthChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="panel" style="border: none; padding: 0">
+                            <h3 style="margin: 0 0 16px 0">
+                                Advanced Team Insights
+                            </h3>
+                            <div
+                                id="coachTeamInsights"
+                                class="insight-list"
+                            ></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Individual Report Section (Hidden) -->
+                <section
+                    id="individualReportSection"
+                    style="display: none; margin-top: 24px"
+                >
+                    <h4>
+                        Athlete Report:
+                        <span id="coachAthleteNameDisplay"></span>
+                    </h4>
+                    <div class="table-wrap" style="margin-top: 16px">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Event</th>
+                                    <th>Meet</th>
+                                    <th>Mark</th>
+                                    <th>Placement</th>
+                                    <th>Heat</th>
+                                </tr>
+                            </thead>
+                            <tbody id="coachTableBody">
+                                <tr>
+                                    <td colspan="6" class="loading">
+                                        Loading...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- Empty State -->
+                <div
+                    id="coachEmptyState"
+                    style="
+                        margin-top: 24px;
+                        color: var(--text-secondary);
+                        font-size: 0.9rem;
+                    "
+                >
+                    Select a Team to generate reports.
+                </div>
+            </section>
+
+            <!-- DATA EXPLORER SECTION -->
+            <section class="panel">
+                <div class="panel-header">
+                    <div class="panel-icon">🔎</div>
+                    <div class="panel-title-group">
+                        <h3>Data Explorer</h3>
+                        <span class="panel-subtitle"
+                            >Browse all results in your filtered view</span
+                        >
+                    </div>
+                </div>
+
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Meet</th>
+                                <th>Event</th>
+                                <th>Athlete / Relay</th>
+                                <th>School</th>
+                                <th>Gender</th>
+                                <th>Mark</th>
+                                <th>Placement</th>
+                                <th>Heat</th>
+                                <th>Category</th>
+                                <th>Season</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody">
+                            <tr>
+                                <td colspan="11" class="loading">
+                                    Loading data...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <div class="row">
+                <div class="footer-col">
+                    <h4>General</h4>
+                    <ul>
+                        <li><a href="/home/index.html">Home</a></li>
+                        <li><a href="/home/about.html">About</a></li>
+                        <li><a href="/home/admin.html">Admin</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h4>Cross Country</h4>
+                    <ul>
+                        <li><a href="/CrossCountry/xc.html">Home</a></li>
+                        <li><a href="/CrossCountry/meets.html">Meets</a></li>
+                        <li>
+                            <a href="/CrossCountry/schools.html">Schools</a>
+                        </li>
+                        <li>
+                            <a href="/CrossCountry/rankings.html">Rankings</a>
+                        </li>
+                        <li>
+                            <a href="/CrossCountry/analytics.html">Analytics</a>
+                        </li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h4>Track</h4>
+                    <ul>
+                        <li><a href="/Track/index.html">Home</a></li>
+                        <li><a href="/Track/meets.html">Meets</a></li>
+                        <li><a href="/Track/teams.html">Teams</a></li>
+                        <li><a href="/Track/rankings.html">Rankings</a></li>
+                        <li><a href="/Track/analytics.html">Analytics</a></li>
+                    </ul>
+                </div>
+            </div>
+            <hr />
+            <div class="row">
+                <div class="footer-bottom">
+                    <p>
+                        &#169; 2026 Mountain State Miles — Built by runners, for
+                        runners.
+                    </p>
+                </div>
+            </div>
+        </footer>
+
+        <script type="module" src="./track-analytics-app.js"></script>
+        <script>
+            const menuToggle = document.querySelector(".mobile-menu-toggle");
+            const navMenu = document.getElementById("main-nav");
+            if (menuToggle && navMenu) {
+                menuToggle.addEventListener("click", () =>
+                    navMenu.classList.toggle("mobile-open"),
+                );
+                document.addEventListener("click", (e) => {
+                    if (
+                        !navMenu.contains(e.target) &&
+                        !menuToggle.contains(e.target)
+                    ) {
+                        navMenu.classList.remove("mobile-open");
+                    }
+                });
+            }
+        </script>
+    </body>
 </html>
+""""""
