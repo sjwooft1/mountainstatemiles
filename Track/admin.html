@@ -4,6 +4,7 @@
   <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="stylesheet" href="/assets/msm-loader.css" />
   <title>Track Admin Dashboard</title>
   <style>
     * { box-sizing: border-box; }
@@ -786,6 +787,7 @@
   </style>
 </head>
 <body>
+<script src="/assets/msm-loader.js"></script>
 <div class="app-wrapper">
   <aside class="sidebar">
     <div class="sidebar-brand">
@@ -963,6 +965,8 @@
       console.error('Error loading section:', error);
       document.getElementById('content').innerHTML = 
         `<div class="empty-state" style="color: var(--danger);">Error loading section: ${error.message}</div>`;
+    } finally {
+      document.dispatchEvent(new Event("MSMDataLoaded"));
     }
   }
   

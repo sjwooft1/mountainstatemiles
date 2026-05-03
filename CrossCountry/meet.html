@@ -16,6 +16,7 @@
   <meta name="keywords" content="WVXC, WV Track, West Virginia Running, Cross Country Results, WV HS Running, Mountain State Miles" />
   <meta name="author" content="Mountain State Miles" />
   <link rel="stylesheet" href="/assets/main.css">
+<link rel="stylesheet" href="/assets/msm-loader.css" />
   <!-- URL Parameter Script in the Head -->
   <script>
     window.addEventListener("DOMContentLoaded", () => {
@@ -29,6 +30,7 @@
 </head>
 
 <body>
+<script src="/assets/msm-loader.js"></script>
   <header>
     <nav class="navbar">
       <div class="navbar-content">
@@ -205,6 +207,7 @@
       if (!slug) {
         errorDiv.style.display = "block";
         errorDiv.textContent = "No meet specified. Please return to the Meets page.";
+        document.dispatchEvent(new Event("MSMDataLoaded"));
         return;
       }
 
@@ -260,6 +263,8 @@
         console.error(err);
         errorDiv.style.display = "block";
         errorDiv.textContent = "Error loading meet data: " + err.message;
+      } finally {
+        document.dispatchEvent(new Event("MSMDataLoaded"));
       }
     });
 

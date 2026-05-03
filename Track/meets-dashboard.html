@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
+<link rel="stylesheet" href="/assets/msm-loader.css" />
   <title>Meets Dashboard - Track Admin</title>
   
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -194,6 +195,7 @@
   </style>
 </head>
 <body>
+<script src="/assets/msm-loader.js"></script>
 
 <div class="container">
   <div class="header">
@@ -359,6 +361,8 @@
       console.error('Error loading data:', error);
       document.getElementById('needs-results-section').innerHTML = 
         `<div class="empty-state" style="color: var(--danger);">Error connecting to database.</div>`;
+    } finally {
+      document.dispatchEvent(new Event("MSMDataLoaded"));
     }
   }
   

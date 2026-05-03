@@ -10,6 +10,7 @@
   <link rel="apple-touch-icon" sizes="180x180" href="assets/Favicon Generator/apple-touch-icon.png" />
   <link rel="manifest" href="assets/Favicon Generator/site.webmanifest" />
   <link rel="stylesheet" href="/assets/main.css" />
+<link rel="stylesheet" href="/assets/msm-loader.css" />
   
   <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
@@ -24,6 +25,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
+<script src="/assets/msm-loader.js"></script>
   <header>
     <nav class="navbar">
       <div class="navbar-content">
@@ -492,20 +494,26 @@
 
     // Initialize page
     async function init() {
-      if (typeof getSchoolBySlug === 'undefined') {
-          document.getElementById('roster-loading').textContent = 'Error: Firebase helpers not loaded. Check script tags.';
-          document.getElementById('meets-loading').textContent = '';
-          return;
-      }
+      try {
+        if (typeof getSchoolBySlug === 'undefined') {
+            document.getElementById('roster-loading').textContent = 'Error: Firebase helpers not loaded. Check script tags.';
+            document.getElementById('meets-loading').textContent = '';
+            return;
+        }
 
-      const schoolSlug = await loadSchoolInfo();
-      if (schoolSlug) {
-        loadRoster(schoolSlug);
-        loadMeets(schoolSlug);
-        loadTeamStatistics(schoolSlug);
-      } else {
-        document.getElementById('roster-loading').style.display = 'none';
-        document.getElementById('meets-loading').style.display = 'none';
+        const schoolSlug = await loadSchoolInfo();
+        if (schoolSlug) {
+          await Promise.all([
+            loadRoster(schoolSlug),
+            loadMeets(schoolSlug),
+            loadTeamStatistics(schoolSlug),
+          ]);
+        } else {
+          document.getElementById('roster-loading').style.display = 'none';
+          document.getElementById('meets-loading').style.display = 'none';
+        }
+      } finally {
+        document.dispatchEvent(new Event("MSMDataLoaded"));
       }
     }
 

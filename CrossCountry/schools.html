@@ -10,8 +10,10 @@
   <link rel="apple-touch-icon" sizes="180x180" href="assets/Favicon Generator/apple-touch-icon.png" />
   <link rel="manifest" href="assets/Favicon Generator/site.webmanifest" />
   <link rel="stylesheet" href="/assets/main.css" />
+<link rel="stylesheet" href="/assets/msm-loader.css" />
 </head>
 <body>
+<script src="/assets/msm-loader.js"></script>
   <header>
     <nav class="navbar">
       <div class="navbar-content">
@@ -194,6 +196,8 @@
       search.addEventListener("input", e => {
         renderList(e.target.value);
       });
+
+      document.dispatchEvent(new Event("MSMDataLoaded"));
     }
 
     loadSchools();

@@ -12,10 +12,12 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="/assets/main.css">
+<link rel="stylesheet" href="/assets/msm-loader.css" />
   <style>
     </style>
 </head>
 <body>
+<script src="/assets/msm-loader.js"></script>
   <div class="hero-section">
     <div class="hero-content">
       <img src="/assets/1.png" alt="Mountain State Miles Logo" class="hero-logo" />
@@ -37,6 +39,7 @@
           <li><a href="events.html" class="navbar-link">Events</a></li>
           <li><a href="rankings.html" class="navbar-link">Rankings</a></li>
           <li><a href="analytics.html" class="navbar-link">Analytics</a></li>
+          <li><a href="coach-login.html" class="navbar-link">Coach</a></li>
         </ul>
         <button class="theme-toggle" aria-label="Switch theme">🌙</button>
       </div>
@@ -180,6 +183,8 @@
         console.error('Error loading meets:', error);
         if (titleEl) titleEl.textContent = "Today's Track Meets";
         container.innerHTML = '<p style="color: #dc3545; padding: 20px; text-align: center;">No meets scheduled for today.</p>';
+      } finally {
+        document.dispatchEvent(new Event("MSMDataLoaded"));
       }
     }
     
@@ -202,5 +207,7 @@
       }
     });
   </script>
+  <script src="track-coach-auth.js"></script>
+  <script src="track-coach-toolbar.js"></script>
 </body>
 </html>

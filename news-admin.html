@@ -6,8 +6,10 @@
   <title>News Admin — Mountain State Miles</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/assets/main.css">
+<link rel="stylesheet" href="/assets/msm-loader.css" />
 </head>
 <body>
+<script src="/assets/msm-loader.js"></script>
   <header>
     <nav class="navbar">
       <div class="navbar-content">
@@ -293,6 +295,8 @@
       if (dateInput) {
         dateInput.valueAsDate = new Date();
       }
+
+      document.dispatchEvent(new Event("MSMDataLoaded"));
     });
   </script>
 </body>

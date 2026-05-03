@@ -1,0 +1,120 @@
+/* Mountain State Miles — outline-then-fill page loader */
+
+#msm-page-loader {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 1rem;
+  background: var(--msm-loader-bg, rgba(16, 18, 28, 0.9));
+  color: var(--msm-loader-fg, #ddd6fe);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 0.38s ease,
+    visibility 0.38s ease;
+}
+
+#msm-page-loader.msm-page-loader--shown {
+  opacity: 1;
+  visibility: visible;
+}
+
+html[data-theme="light"] #msm-page-loader {
+  --msm-loader-bg: rgba(248, 250, 255, 0.94);
+  --msm-loader-fg: #4c1d95;
+}
+
+html[data-theme="dark"] #msm-page-loader,
+body.dark #msm-page-loader {
+  --msm-loader-bg: rgba(12, 14, 24, 0.94);
+  --msm-loader-fg: #e9d5ff;
+}
+
+#msm-page-loader.msm-page-loader--exiting {
+  opacity: 0;
+  pointer-events: none;
+}
+
+#msm-page-loader .msm-page-loader__brand {
+  text-align: center;
+  margin-top: 0.75rem;
+  font-family:
+    Inter,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    sans-serif;
+  font-weight: 700;
+  font-size: 0.78rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  opacity: 0;
+  animation: msm-brand-fade 0.65s ease 0.85s forwards;
+}
+
+@keyframes msm-brand-fade {
+  to {
+    opacity: 1;
+  }
+}
+
+/* Stylized Appalachians mark — stroke draw then fill */
+#msm-loader-mark {
+  width: clamp(112px, 26vw, 168px);
+  height: auto;
+  overflow: visible;
+}
+
+#msm-loader-mark #msm-loader-path-draw {
+  fill: none;
+  stroke: var(--msm-loader-fg, #a78bfa);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: msm-stroke-reveal 1.15s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  vector-effect: non-scaling-stroke;
+}
+
+#msm-loader-mark #msm-loader-path-fill {
+  fill: var(--msm-loader-fg, #a78bfa);
+  fill-opacity: 0;
+  stroke: none;
+  animation: msm-fill-pop 10.55s ease 1.05s forwards;
+}
+
+@keyframes msm-stroke-reveal {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes msm-fill-pop {
+  to {
+    fill-opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #msm-page-loader .msm-page-loader__brand {
+    opacity: 1;
+    animation: none;
+  }
+
+  #msm-loader-mark #msm-loader-path-draw {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+
+  #msm-loader-mark #msm-loader-path-fill {
+    animation: none;
+    fill-opacity: 1;
+  }
+}

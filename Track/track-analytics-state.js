@@ -18,6 +18,7 @@ const DEFAULT_STATE = {
   coachSchoolName: "",
   coachAthleteName: "",
   coachEventId: "",
+  coachMeetId: "",
   chartType: "bar",
   groupBy: "eventName",
   metric: "count",

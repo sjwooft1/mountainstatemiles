@@ -22,6 +22,7 @@ import {
   renderCoachTrendChart,
   renderCoachEventChart,
   renderCoachTeamDepthChart,
+  renderCoachRadarChart,
 } from "./track-analytics-charts.js";
 
 const filterIds = [
@@ -44,6 +45,7 @@ const filterIds = [
   "coachSchoolName",
   "coachAthleteName",
   "coachEventId",
+  "coachMeetId",
   "chartType",
   "groupBy",
   "metric",
@@ -70,6 +72,7 @@ const idMap = {
   coachSchoolName: "coachSchoolName",
   coachAthleteName: "coachAthleteName",
   coachEventId: "coachEventId",
+  coachMeetId: "coachMeetId",
   chartType: "chartType",
   groupBy: "groupBy",
   metric: "metric",
@@ -81,9 +84,252 @@ let allRows = [];
 let filteredRows = [];
 let contextData = { meets: [], events: [], athletes: [] };
 const FAVORITE_TEAM_KEY = "track.favorite.team";
+let coachDebounceTimer = null;
 
 function el(id) {
   return document.getElementById(id);
+}
+
+function insightToHtml(text) {
+  const esc = String(text || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+  return esc.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+}
+
+function isCoachAuthorized() {
+  return (
+    typeof window !== "undefined" &&
+    window.MSMTrackCoachAuth &&
+    window.MSMTrackCoachAuth.isSignedIn()
+  );
+}
+
+function coachScopeRows(team, athlete) {
+  let rows = filteredRows;
+  if (team) rows = rows.filter((r) => r.schoolName === team);
+  if (athlete) rows = rows.filter((r) => r.athleteName === athlete);
+  if (state.coachMeetId)
+    rows = rows.filter((r) => r.meetId === state.coachMeetId);
+  if (state.coachEventId)
+    rows = rows.filter((r) => r.eventId === state.coachEventId);
+  return rows;
+}
+
+function scheduleCoachRedraw() {
+  if (coachDebounceTimer) clearTimeout(coachDebounceTimer);
+  coachDebounceTimer = setTimeout(() => {
+    pullStateFromInputs();
+    renderCoachView();
+    writeStateToUrl(state);
+  }, 380);
+}
+
+function refreshCoachDependentSelects() {
+  const team = state.coachSchoolName || el("coachSchoolName")?.value || "";
+  const meetLabelFor = (id) =>
+    contextData.meets?.find((m) => m.id === id)?.name ||
+    filteredRows.find((r) => r.meetId === id)?.meetName ||
+    id;
+
+  let scopedForMeets = filteredRows;
+  if (team) scopedForMeets = scopedForMeets.filter((r) => r.schoolName === team);
+  let meetIds = [
+    ...new Set(scopedForMeets.map((r) => r.meetId).filter(Boolean)),
+  ].sort();
+
+  const meetPickLabel = team
+    ? "All meets (coach scope)"
+    : "All meets in filters";
+  const meetOpts = meetIds.map((id) => ({
+    value: id,
+    label: meetLabelFor(id),
+  }));
+  const prevMeet = state.coachMeetId;
+  setOptions(
+    "coachMeetId",
+    meetOpts,
+    "value",
+    "label",
+    true,
+    meetPickLabel,
+  );
+  const meetNode = el("coachMeetId");
+  if (
+    meetNode &&
+    prevMeet &&
+    meetIds.some((id) => id === prevMeet)
+  ) {
+    meetNode.value = prevMeet;
+    state.coachMeetId = prevMeet;
+  } else state.coachMeetId = meetNode?.value || "";
+
+  const athBase = team
+    ? scopedForMeets.filter((r) => r.schoolName === team)
+    : scopedForMeets;
+  const athleteNames = uniqueValues(athBase, "athleteName");
+  const athOpts = athleteNames.map((v) => ({ value: v, label: v }));
+  const prevAth = state.coachAthleteName;
+  setOptions(
+    "coachAthleteName",
+    athOpts,
+    "value",
+    "label",
+    true,
+    "Team roster overview",
+  );
+  const athNode = el("coachAthleteName");
+  if (
+    athNode &&
+    prevAth &&
+    athleteNames.some((n) => n === prevAth)
+  ) {
+    athNode.value = prevAth;
+    state.coachAthleteName = prevAth;
+  } else state.coachAthleteName = athNode?.value || "";
+}
+
+function updateCoachToolbarAccess() {
+  const auth = isCoachAuthorized();
+  const gated = ["printReportBtn", "printFilteredSummaryBtn", "shareCoachBtn", "printBtn"];
+  gated.forEach((id) => {
+    const node = el(id);
+    if (!node) return;
+    node.disabled = id === "printBtn" ? false : !auth;
+    node.style.opacity = auth || id === "printBtn" ? "1" : "0.48";
+    node.title = auth
+      ? ""
+      : "Coach or admin login required — use Coach login link in navbar area.";
+  });
+  const printGlobal = el("printBtn");
+  if (printGlobal) printGlobal.style.display = auth ? "" : "none";
+
+  const hint = el("coachAuthHint");
+  if (hint) hint.style.display = auth ? "none" : "";
+
+  const pill = el("coachStatusPill");
+  if (pill) {
+    pill.textContent = auth
+      ? "Signed in · print-ready reports enabled"
+      : "Read-only summaries · sign in to print";
+  }
+}
+
+function scheduleChartPrintPaint() {
+  requestAnimationFrame(() => {
+    [
+      "trendChart",
+      "categoryChart",
+      "customChart",
+      "coachTrendChart",
+      "coachEventChart",
+      "coachRadarChart",
+      "coachTeamDepthChart",
+    ].forEach((id) => {
+      const cn = document.getElementById(id);
+      const chart = cn && window.Chart?.getChart ? window.Chart.getChart(cn) : null;
+      if (chart) chart.resize();
+    });
+  });
+}
+
+function triggerPrint(modeClass) {
+  const meta = el("coachPrintMetaLine");
+  if (meta && modeClass === "print-coach") {
+    const parts = [];
+    if (state.coachSchoolName) parts.push(`Team: ${state.coachSchoolName}`);
+    if (state.coachAthleteName)
+      parts.push(`Athlete: ${state.coachAthleteName}`);
+    if (state.coachMeetId) {
+      const label =
+        contextData.meets?.find((m) => m.id === state.coachMeetId)?.name ||
+        filteredRows.find((r) => r.meetId === state.coachMeetId)?.meetName ||
+        state.coachMeetId;
+      parts.push(`Meet focus: ${label}`);
+    }
+    meta.textContent = `${parts.join(" · ") || "Overview"} · Generated ${new Date().toLocaleString()}`;
+  } else if (meta && modeClass === "print-analytics-scope") {
+    meta.textContent = `Filtered dataset (${filteredRows.length} rows) · ${new Date().toLocaleString()}`;
+  } else if (meta) {
+    meta.textContent = "";
+  }
+
+  document.body.classList.remove("print-coach", "print-analytics-scope");
+  if (modeClass) document.body.classList.add(modeClass);
+  scheduleChartPrintPaint();
+  setTimeout(() => {
+    window.print();
+    setTimeout(() => {
+      document.body.classList.remove("print-coach", "print-analytics-scope");
+    }, 800);
+  }, 220);
+}
+
+function renderCoachDynamicInsights(team, athlete, athleteRows, teamRows) {
+  const box = el("coachInsights");
+  if (!box) return;
+  const bullets = [];
+
+  const totalScoped = athleteRows.length || teamRows.length;
+  if (!team && !athlete) {
+    box.innerHTML = "";
+    return;
+  }
+
+  bullets.push(
+    `Current scope captures **${totalScoped}** result rows from your global filters (season, gender, dates, etc.).`,
+  );
+
+  if (team) {
+    bullets.push(...buildTeamInsights(teamRows));
+  }
+  if (athlete && athleteRows.length) {
+    const best = athleteRows
+      .filter((r) => Number.isFinite(r.bestTimeSeconds))
+      .sort((a, b) => a.bestTimeSeconds - b.bestTimeSeconds)[0];
+    const bestFld = athleteRows
+      .filter((r) => Number.isFinite(r.bestFieldMark))
+      .sort((a, b) => b.bestFieldMark - a.bestFieldMark)[0];
+    if (best) {
+      bullets.push(
+        `Best run in scope: ${formatCoachMetric(best.bestTimeSeconds)} (${best.eventName} @ ${best.meetName}).`,
+      );
+    }
+    if (bestFld) {
+      bullets.push(
+        `Best field progression in scope: ${bestFld.bestFieldMark.toFixed(2)} (${bestFld.eventName}).`,
+      );
+    }
+  }
+
+  box.innerHTML = bullets
+    .map((t) => `<div class="insight-item">${insightToHtml(t)}</div>`)
+    .join("");
+}
+
+function renderCoachTeamHeader(team, rosterSize, scopedCount) {
+  const host = el("teamHeader");
+  if (!host) return;
+  if (!team) {
+    host.innerHTML = "";
+    return;
+  }
+  const initials = team
+    .split(/\s+/)
+    .map((w) => w[0])
+    .slice(0, 3)
+    .join("")
+    .toUpperCase();
+  host.innerHTML = `
+    <div class="team-header coach-live-header">
+      <div class="team-logo">${initials}</div>
+      <div class="team-info">
+        <h4>${insightToHtml(team)}</h4>
+        <p>${rosterSize} athletes in scope · ${scopedCount} result rows powering this dashboard · updates live when filters move</p>
+      </div>
+      <span class="badge coach-live-dot">● Live</span>
+    </div>`;
 }
 
 function setOptions(
@@ -143,6 +389,7 @@ function renderPills() {
         "coachSchoolName",
         "coachAthleteName",
         "coachEventId",
+        "coachMeetId",
       ].includes(k)
     )
       return;
@@ -165,7 +412,7 @@ function renderKpis() {
 function renderInsights() {
   const insights = buildInsights(filteredRows);
   el("insights").innerHTML = insights
-    .map((text) => `<div class="insight-item">${text}</div>`)
+    .map((text) => `<div class="insight-item">${insightToHtml(text)}</div>`)
     .join("");
 }
 
@@ -250,7 +497,7 @@ function renderTeamReport(rows, teamName) {
 
   const insights = buildTeamInsights(rows);
   insightsContainer.innerHTML = insights
-    .map((text) => `<div class="insight-item">${text}</div>`)
+    .map((text) => `<div class="insight-item">${insightToHtml(text)}</div>`)
     .join("");
 
   renderCoachTeamDepthChart(rows);
@@ -311,40 +558,48 @@ function renderAthleteReport(rows, athleteName) {
       )
       .join("");
   }
-
-  renderCoachTrendChart(rows);
-  renderCoachEventChart(rows);
 }
 
 function renderCoachView() {
   const team = state.coachSchoolName || "";
   const athlete = state.coachAthleteName || "";
-  const eventId = state.coachEventId || "";
 
   const teamSection = el("teamReportSection");
   const indSection = el("individualReportSection");
   const emptyState = el("coachEmptyState");
 
-  // Reset charts if unselected
   if (!team && !athlete) {
+    renderCoachTeamHeader("", 0, 0);
     teamSection.style.display = "none";
     indSection.style.display = "none";
     emptyState.style.display = "block";
     renderCoachTeamDepthChart([]);
     renderCoachTrendChart([]);
     renderCoachEventChart([]);
+    renderCoachRadarChart([]);
     return;
   }
 
   emptyState.style.display = "none";
 
+  const teamScoped = team ? coachScopeRows(team, "") : [];
+  let athleteRows = [];
+  if (athlete)
+    athleteRows = coachScopeRows(team, athlete).slice().sort((a, b) => String(a.date || "").localeCompare(String(b.date || "")));
+
+  renderCoachDynamicInsights(team, athlete, athleteRows, teamScoped);
+  renderCoachTeamHeader(
+    team,
+    teamScoped.length ? new Set(teamScoped.map((r) => r.athleteName)).size : 0,
+    teamScoped.length || athleteRows.length,
+  );
+
+  if (!athlete && el("coachSummary")) el("coachSummary").innerHTML = "";
+
   if (team) {
     teamSection.style.display = "block";
     el("coachTeamNameDisplay").textContent = team;
-    let baseTeamRows = filteredRows.filter((r) => r.schoolName === team);
-    if (eventId)
-      baseTeamRows = baseTeamRows.filter((r) => r.eventId === eventId);
-    renderTeamReport(baseTeamRows, team);
+    renderTeamReport(teamScoped, team);
   } else {
     teamSection.style.display = "none";
   }
@@ -352,15 +607,22 @@ function renderCoachView() {
   if (athlete) {
     indSection.style.display = "block";
     el("coachAthleteNameDisplay").textContent = athlete;
-    let athleteRows = filteredRows.filter((r) => r.athleteName === athlete);
-    if (eventId) athleteRows = athleteRows.filter((r) => r.eventId === eventId);
-
-    // Sort athlete chronological
-    athleteRows.sort((a, b) => (a.date || "").localeCompare(b.date || ""));
     renderAthleteReport(athleteRows, athlete);
   } else {
     indSection.style.display = "none";
+    if (!team) {
+      renderCoachTeamDepthChart([]);
+    }
+    const summary = el("coachSummary");
+    if (!team && summary) summary.innerHTML = "";
   }
+
+  const chartPack = athleteRows.length ? athleteRows : teamScoped;
+  renderCoachRadarChart(chartPack);
+  renderCoachTrendChart(chartPack);
+  renderCoachEventChart(chartPack);
+
+  updateCoachToolbarAccess();
 }
 
 function refreshBuilderSelects() {
@@ -400,6 +662,7 @@ function updateView() {
   renderCustomChart(filteredRows, state);
   renderTable();
   refreshBuilderSelects();
+  refreshCoachDependentSelects();
   renderCoachView();
 }
 
@@ -456,14 +719,6 @@ function populateStaticFilters() {
     "All athletes",
   );
   setOptions(
-    "coachAthleteName",
-    uniqueValues(allRows, "athleteName").map((v) => ({ value: v, label: v })),
-    "value",
-    "label",
-    true,
-    "Select athlete",
-  );
-  setOptions(
     "coachEventId",
     contextData.events.map((e) => ({ value: e.id, label: e.name || e.id })),
     "value",
@@ -516,7 +771,15 @@ function bindActions() {
   if (btn("jsonBtn"))
     btn("jsonBtn").addEventListener("click", () => exportRows("json"));
   if (btn("printBtn"))
-    btn("printBtn").addEventListener("click", () => window.print());
+    btn("printBtn").addEventListener("click", () => {
+      if (!isCoachAuthorized()) {
+        window.location.href = "coach-login.html?redirect=" + encodeURIComponent(
+          `${window.location.pathname.slice(window.location.pathname.lastIndexOf("/") + 1)}${window.location.search}`,
+        );
+        return;
+      }
+      triggerPrint("print-analytics-scope");
+    });
 
   if (btn("buildChartBtn"))
     btn("buildChartBtn").addEventListener("click", () => {
@@ -577,21 +840,48 @@ function bindActions() {
 
   if (btn("printReportBtn"))
     btn("printReportBtn").addEventListener("click", () => {
-      document.body.classList.add("print-coach");
-      window.print();
-      setTimeout(() => {
-        document.body.classList.remove("print-coach");
-      }, 500);
+      if (!isCoachAuthorized()) {
+        window.location.href =
+          "coach-login.html?redirect=" +
+          encodeURIComponent(
+            `analytics.html${window.location.search ? window.location.search : ""}`,
+          );
+        return;
+      }
+      const team = state.coachSchoolName || "";
+      const athlete = state.coachAthleteName || "";
+      if (!team && !athlete) {
+        alert("Select a team or athlete in the Coach Dashboard first.");
+        return;
+      }
+      triggerPrint("print-coach");
+    });
+
+  if (btn("printFilteredSummaryBtn"))
+    btn("printFilteredSummaryBtn").addEventListener("click", () => {
+      if (!isCoachAuthorized()) {
+        window.location.href =
+          "coach-login.html?redirect=" +
+          encodeURIComponent(
+            `analytics.html${window.location.search ? window.location.search : ""}`,
+          );
+        return;
+      }
+      if (!filteredRows.length) {
+        alert("Nothing to print — widen your global filters first.");
+        return;
+      }
+      triggerPrint("print-analytics-scope");
     });
 
   if (btn("printCoachBtn"))
     btn("printCoachBtn").addEventListener("click", () => {
-      document.body.classList.add("print-coach");
-      window.print();
-      document.body.classList.remove("print-coach");
+      triggerPrint("print-coach");
     });
 
-  if (btn("shareCoachBtn"))
+  if (btn("shareCoachBtn")) {
+    btn("shareCoachBtn").style.display = "";
+    btn("shareCoachBtn").textContent = "🔗 Copy coach view link";
     btn("shareCoachBtn").addEventListener("click", async () => {
       const url = buildShareUrl(state);
       try {
@@ -601,15 +891,36 @@ function bindActions() {
         alert(`Could not copy link. ${url}`);
       }
     });
+  }
+
+  ["coachSchoolName", "coachAthleteName", "coachEventId", "coachMeetId"].forEach((sid) => {
+    const node = el(sid);
+    if (!node) return;
+    node.addEventListener("change", scheduleCoachRedraw);
+  });
+}
+
+function syncCoachBannerFromFavorite() {
+  const fav = window.localStorage.getItem(FAVORITE_TEAM_KEY) || "";
+  if (!state.coachSchoolName && fav && el("coachSchoolName")) {
+    el("coachSchoolName").value = fav;
+    state.coachSchoolName = fav;
+  }
+}
+
+function maybeAutoTeamFromGlobals() {
+  if (!state.coachSchoolName && state.schoolName && el("coachSchoolName")) {
+    state.coachSchoolName = state.schoolName;
+    el("coachSchoolName").value = state.schoolName;
+  }
 }
 
 function renderFavoriteBanner() {
   const favorite = window.localStorage.getItem(FAVORITE_TEAM_KEY) || "";
-  const node = el("favoriteBanner");
-  if (!node) return;
-  node.textContent = favorite
-    ? `Favorite team: ${favorite}`
-    : "Favorite team: Not set";
+  const banner = el("favoriteBanner");
+  const label = el("favoriteBannerLabel");
+  if (!banner || !label) return;
+  label.textContent = favorite ? `Favorite team: ${favorite}` : "Favorite team: Not set";
 }
 
 function exportRows(mode) {
@@ -673,17 +984,25 @@ async function waitForFirebase() {
 async function init() {
   await waitForFirebase();
   state = { ...getDefaultState(), ...parseStateFromUrl() };
+  if (state.meetId && !state.coachMeetId) state.coachMeetId = state.meetId;
   const loaded = await loadTrackAnalyticsData();
   allRows = loaded.rows;
   contextData = loaded;
   populateStaticFilters();
+  syncCoachBannerFromFavorite();
+  maybeAutoTeamFromGlobals();
   hydrateInputsFromState();
   bindActions();
   updateView();
+  updateCoachToolbarAccess();
 }
 
-init().catch((error) => {
-  const body = el("tableBody");
-  if (body)
-    body.innerHTML = `<tr><td colspan="11">Failed to load analytics data: ${error.message}</td></tr>`;
-});
+init()
+  .catch((error) => {
+    const body = el("tableBody");
+    if (body)
+      body.innerHTML = `<tr><td colspan="11">Failed to load analytics data: ${error.message}</td></tr>`;
+  })
+  .finally(() => {
+    document.dispatchEvent(new Event("MSMDataLoaded"));
+  });

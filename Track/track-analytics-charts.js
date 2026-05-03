@@ -186,3 +186,47 @@ export function renderCoachEventChart(rows) {
     options: { responsive: true, maintainAspectRatio: false },
   });
 }
+
+/** Event breadth: how often the team enters each event type (counts, not averages). */
+export function renderCoachRadarChart(rows) {
+  const grouped = rows.reduce((acc, r) => {
+    const key = r.eventName || "Unknown";
+    acc[key] = (acc[key] || 0) + 1;
+    return acc;
+  }, {});
+  const entries = Object.entries(grouped)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 8);
+  if (!entries.length) {
+    render("coachRadarChart", {
+      type: "radar",
+      data: { labels: ["—"], datasets: [{ label: "Results", data: [0], borderColor: "#7c3aed", backgroundColor: "rgba(124,58,237,0.15)" }] },
+      options: { responsive: true, maintainAspectRatio: false },
+    });
+    return;
+  }
+  const maxVal = Math.max(...entries.map(([, v]) => v), 1);
+  render("coachRadarChart", {
+    type: "radar",
+    data: {
+      labels: entries.map(([k]) => k.length > 32 ? `${k.slice(0, 30)}…` : k),
+      datasets: [{
+        label: "Result entries",
+        data: entries.map(([, v]) => v),
+        borderColor: "#7c3aed",
+        backgroundColor: "rgba(124,58,237,0.28)",
+      }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        r: {
+          beginAtZero: true,
+          max: maxVal,
+          ticks: { stepSize: maxVal <= 10 ? 1 : undefined },
+        },
+      },
+    },
+  });
+}

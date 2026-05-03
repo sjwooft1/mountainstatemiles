@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Track Coach Login – Mountain State Miles</title>
+    <link rel="stylesheet" href="/assets/main.css" />
+    <style>
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+      .coach-shell {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 120px 20px 40px;
+      }
+      .coach-card {
+        max-width: 400px;
+        width: 100%;
+        padding: 32px;
+        border-radius: 18px;
+        background: var(--bg-secondary);
+        border: 1px solid var(--border);
+        box-shadow: 0 16px 50px rgba(0, 0, 0, 0.2);
+      }
+      .coach-card h1 {
+        margin: 0 0 8px;
+        font-size: 1.5rem;
+      }
+      .coach-card p {
+        color: var(--text-secondary);
+        font-size: 0.95rem;
+        line-height: 1.45;
+      }
+      .coach-card input {
+        width: 100%;
+        padding: 12px 14px;
+        margin-top: 10px;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+        font-size: 1rem;
+        background: var(--bg-primary);
+        color: var(--text-primary);
+        box-sizing: border-box;
+      }
+      .coach-card button {
+        width: 100%;
+        margin-top: 14px;
+        padding: 12px;
+        border-radius: 8px;
+        border: none;
+        font-weight: 700;
+        cursor: pointer;
+        background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+        color: #fff;
+      }
+      .coach-card button:hover {
+        filter: brightness(1.06);
+      }
+      .coach-err {
+        color: #f87171;
+        font-size: 0.9rem;
+        margin-top: 12px;
+        display: none;
+      }
+      .coach-links {
+        margin-top: 20px;
+        font-size: 0.85rem;
+      }
+      .coach-links a {
+        color: var(--text-secondary);
+      }
+    </style>
+    <script src="track-coach-auth.js"></script>
+  </head>
+  <body>
+    <header>
+      <nav class="navbar">
+        <div class="navbar-content">
+          <a href="index.html" class="navbar-brand">Track</a>
+          <ul class="navbar-nav" id="main-nav">
+            <li><a href="/home/index.html" class="navbar-link">Home</a></li>
+            <li><a href="index.html" class="navbar-link">Track</a></li>
+            <li>
+              <a href="analytics.html" class="navbar-link">Analytics</a>
+            </li>
+          </ul>
+          <button class="theme-toggle" aria-label="Switch theme">🌙</button>
+        </div>
+      </nav>
+    </header>
+
+    <div class="coach-shell">
+      <div class="coach-card">
+        <h1>Track coach login</h1>
+        <p>
+          Used for printable team reports, full-meet summaries, and the coach
+          tools on Analytics. Administrators signed into Track admin already
+          have access.
+        </p>
+        <input
+          type="text"
+          id="coachUser"
+          placeholder="Coach username"
+          autocomplete="username"
+        />
+        <input
+          type="password"
+          id="coachPass"
+          placeholder="Password"
+          autocomplete="current-password"
+        />
+        <button type="button" id="coachSignInBtn">Continue</button>
+        <p id="coachErr" class="coach-err">Incorrect credentials.</p>
+        <div class="coach-links">
+          <p>
+            Prefer the full admin dashboard?
+            <a href="admin-login.html">Admin login</a>
+          </p>
+          <p><a href="analytics.html">Back to Analytics</a></p>
+        </div>
+      </div>
+    </div>
+
+    <script src="/assets/theme-toggle.js"></script>
+    <script>
+      (function () {
+        var COACH_KEY =
+          typeof MSMTrackCoachAuth !== "undefined" &&
+          MSMTrackCoachAuth.COACH_KEY
+            ? MSMTrackCoachAuth.COACH_KEY
+            : "msm_track_coach_signed_in";
+
+        if (
+          typeof MSMTrackCoachAuth !== "undefined" &&
+          MSMTrackCoachAuth.isSignedIn()
+        ) {
+          window.location.replace("analytics.html");
+          return;
+        }
+
+        var validUser = "coach";
+        var validPass =
+          typeof window.WVTRACK_COACH_PASS === "string" &&
+          window.WVTRACK_COACH_PASS
+            ? window.WVTRACK_COACH_PASS
+            : "MountainCoachWV2026";
+
+        function qs(name) {
+          return new URLSearchParams(window.location.search).get(name) || "";
+        }
+
+        document
+          .getElementById("coachSignInBtn")
+          .addEventListener("click", function () {
+            var u = document.getElementById("coachUser").value.trim();
+            var p = document.getElementById("coachPass").value;
+            var err = document.getElementById("coachErr");
+
+            if (u === validUser && p === validPass) {
+              try {
+                localStorage.setItem(COACH_KEY, "1");
+              } catch (e) {
+                err.textContent = "Could not save session.";
+                err.style.display = "block";
+                return;
+              }
+              var dest = qs("redirect");
+              if (/^(https?:|\/\/)/i.test(dest)) dest = "";
+              window.location.href = dest || "analytics.html";
+              return;
+            }
+            err.style.display = "block";
+          });
+
+        document
+          .getElementById("coachPass")
+          .addEventListener("keydown", function (e) {
+            if (e.key === "Enter") document.getElementById("coachSignInBtn").click();
+          });
+      })();
+    </script>
+  </body>
+</html>

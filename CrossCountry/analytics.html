@@ -16,10 +16,12 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
   <link rel="stylesheet" href="/assets/main.css">
+<link rel="stylesheet" href="/assets/msm-loader.css" />
   <script src="firebase-config.js"></script>
   <script src="firebase-helpers.js"></script>
 </head>
 <body>
+<script src="/assets/msm-loader.js"></script>
   <header>
     <nav class="navbar">
       <div class="navbar-content">
@@ -241,6 +243,8 @@
         updateAnalytics();
       } catch (error) {
         console.error('Error initializing analytics:', error);
+      } finally {
+        document.dispatchEvent(new Event("MSMDataLoaded"));
       }
     }
 

@@ -361,6 +361,14 @@ async function loadAthlete() {
   document.getElementById('athlete-name').textContent = `${ath.first_name} ${ath.last_name}`;
   document.getElementById('athlete-meta').innerHTML = `<strong>School:</strong> ${ath.school ?? ''} &nbsp; <strong>Grade:</strong> ${ath.grade ?? ''}`;
 
+  const fullName = `${ath.first_name || ''} ${ath.last_name || ''}`.trim();
+  window.__MSM_COACH_CTX = {
+    kind: 'athlete',
+    athleteName: fullName,
+    schoolName: ath.school || ''
+  };
+  window.dispatchEvent(new CustomEvent('msm-coach-context-updated'));
+
   // personal bests: find best mark per event for this athlete (naive: min mark)
   const pbsSnapshot = await window.firebaseDatabase.ref('Track/results')
     .orderByChild('athlete_id')
@@ -536,5 +544,7 @@ document.addEventListener('DOMContentLoaded', () => {
   setTimeout(loadAthlete, 100);
 });
 </script>
+<script src="track-coach-auth.js"></script>
+<script src="track-coach-toolbar.js"></script>
 </body>
 </html>

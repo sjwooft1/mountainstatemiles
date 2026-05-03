@@ -10,6 +10,7 @@
   <link rel="apple-touch-icon" sizes="180x180" href="../assets/Favicon Generator/apple-touch-icon.png" />
   <link rel="manifest" href="../assets/Favicon Generator/site.webmanifest" />
   <link rel="stylesheet" href="/assets/main.css">
+<link rel="stylesheet" href="/assets/msm-loader.css" />
   <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
@@ -23,6 +24,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
+<script src="/assets/msm-loader.js"></script>
   <header>
     <nav class="navbar">
       <div class="navbar-content">
@@ -510,15 +512,60 @@
       }
     }
 
+    async function loadTeamAnalytics(schoolName) {
+      try {
+        await waitForFirebase();
+        const resultsSnapshot = await window.firebaseDatabase.ref('Track/results').once('value');
+        const teamResults = [];
+        resultsSnapshot.forEach(c => {
+          const v = c.val();
+          if (v && v.school === schoolName) teamResults.push(v);
+        });
+
+        const venues = teamResults.reduce((acc, r) => {
+          const k = r.meet_name || r.meet || 'Meet';
+          acc[k] = (acc[k] || 0) + 1;
+          return acc;
+        }, {});
+        const topVenue = Object.entries(venues).sort((a,b) => b[1] - a[1])[0];
+        document.getElementById('top-venue').textContent = topVenue ? topVenue[0] : 'N/A';
+
+        const buckets = [0, 0, 0, 0, 0];
+        teamResults.forEach(r => {
+          const t = parseFloat(r.time);
+          if (isNaN(t) || t <= 0) return;
+          if (t < 12) buckets[0]++;
+          else if (t < 15) buckets[1]++;
+          else if (t < 20) buckets[2]++;
+          else buckets[3]++;
+        });
+        const max = Math.max(...buckets, 1);
+        document.getElementById('depth-chart').innerHTML = buckets.map(count =>
+          `<div class="viz-bar" style="height: ${max ? (count / max) * 100 : 0}%" title="${count} results"></div>`
+        ).join('');
+      } catch (e) {
+        console.error('Team analytics:', e);
+      }
+    }
+
     // Initialize page
     async function init() {
       const schoolName = await loadTeamInfo();
-      if (schoolName) {
-        loadRoster(schoolName);
-        loadMeets(schoolName);
-      } else {
-        document.getElementById('roster-loading').style.display = 'none';
-        document.getElementById('meets-loading').style.display = 'none';
+      try {
+        if (schoolName) {
+          window.__MSM_COACH_CTX = { kind: 'team', schoolName };
+          window.dispatchEvent(new CustomEvent('msm-coach-context-updated'));
+          await Promise.all([
+            loadRoster(schoolName),
+            loadMeets(schoolName),
+            loadTeamAnalytics(schoolName),
+          ]);
+        } else {
+          document.getElementById('roster-loading').style.display = 'none';
+          document.getElementById('meets-loading').style.display = 'none';
+        }
+      } finally {
+        document.dispatchEvent(new Event("MSMDataLoaded"));
       }
     }
 
@@ -586,51 +633,9 @@
       transition: height 0.3s ease;
     }
   </style>
-  
-  <script>
-    // Add inside your existing <script> tag
-    async function loadTeamAnalytics(schoolName) {
-      const resultsSnapshot = await window.firebaseDatabase.ref('Track/results').once('value');
-      const teamResults = [];
-      resultsSnapshot.forEach(c => {
-        if(c.val().school === schoolName) teamResults.push(c.val());
-      });
-  
-      // 1. Calculate Venue Frequency
-      const venues = teamResults.reduce((acc, r) => {
-        acc[r.meet_name] = (acc[r.meet_name] || 0) + 1;
-        return acc;
-      }, {});
-      const topVenue = Object.entries(venues).sort((a,b) => b[1] - a[1])[0];
-      document.getElementById('top-venue').textContent = topVenue ? topVenue[0] : 'N/A';
-  
-      // 2. Performance Distribution (e.g., for 100m or 1600m)
-      // Here we create a simple visualization of performance "buckets"
-      const buckets = [0, 0, 0, 0, 0]; // Fast -> Slow
-      teamResults.forEach(r => {
-        const t = parseFloat(r.time);
-        if(t < 12) buckets[0]++;
-        else if(t < 15) buckets[1]++;
-        else if(t < 20) buckets[2]++;
-        else buckets[3]++;
-      });
-  
-      const max = Math.max(...buckets);
-      document.getElementById('depth-chart').innerHTML = buckets.map(count => `
-        <div class="viz-bar" style="height: ${(count/max)*100}%" title="${count} results"></div>
-      `).join('');
-    }
-  
-    // Hook this into your init() function
-    async function init() {
-      const schoolName = await loadTeamInfo();
-      if (schoolName) {
-        loadRoster(schoolName);
-        loadMeets(schoolName);
-        loadTeamAnalytics(schoolName); // New
-      }
-    }
-  </script>
+
+  <script src="track-coach-auth.js"></script>
+  <script src="track-coach-toolbar.js"></script>
 </body>
 </html>
 

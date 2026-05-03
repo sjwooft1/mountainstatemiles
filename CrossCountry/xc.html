@@ -16,6 +16,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="/assets/main.css">
+<link rel="stylesheet" href="/assets/msm-loader.css" />
   <meta name="description" content="Mountain State Miles — West Virginia's home for XC & Track results, rankings, rosters, records, schedules, and meet coverage." />
   <meta name="keywords" content="West Virginia running, WVHSXC, WVXC, WV Track, WV high school running, WV cross country, WV track and field, WV runs, Mountain State Miles" />
   <meta name="author" content="Mountain State Miles" />
@@ -31,6 +32,7 @@
   <meta name="robots" content="index, follow" />
 </head>
 <body>
+<script src="/assets/msm-loader.js"></script>
   <div class="hero-section">
     <div class="hero-content">
       <img src="/assets/1.png" alt="Mountain State Miles Logo" class="hero-logo" />
@@ -144,6 +146,8 @@
       } catch (e) {
         console.error('Error loading meets:', e);
         container.innerHTML = '<p>Error loading recent meets.</p>';
+      } finally {
+        document.dispatchEvent(new Event("MSMDataLoaded"));
       }
     }
     document.addEventListener('DOMContentLoaded', () => {

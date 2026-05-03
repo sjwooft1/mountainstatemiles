@@ -35,8 +35,10 @@
             href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
         />
         <link rel="stylesheet" href="/assets/main.css" />
+<link rel="stylesheet" href="/assets/msm-loader.css" />
     </head>
     <body class="home-page">
+<script src="/assets/msm-loader.js"></script>
         <header>
             <nav class="navbar">
                 <div class="navbar-content">
@@ -227,6 +229,8 @@
                     console.error("Error loading news:", error);
                     newsGrid.innerHTML =
                         '<div class="loading-state">Error loading articles.</div>';
+                } finally {
+                    document.dispatchEvent(new Event("MSMDataLoaded"));
                 }
             }
 

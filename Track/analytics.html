@@ -29,6 +29,7 @@
             href="../assets/Favicon Generator/site.webmanifest"
         />
         <link rel="stylesheet" href="/assets/main.css" />
+<link rel="stylesheet" href="/assets/msm-loader.css" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
         <link
@@ -251,7 +252,7 @@
 
             .btn.small {
                 padding: 8px 12px;
-                font-size: 0.85 "" "" rem;
+                font-size: 0.85rem;
             }
 
             /* ===== KPI SECTION ===== */
@@ -557,6 +558,51 @@
                 font-size: 1rem;
             }
 
+            /* ===== COACH STATUS STRIP ===== */
+            .coach-dash-head {
+                display: flex;
+                flex-wrap: wrap;
+                align-items: flex-start;
+                justify-content: space-between;
+                gap: 14px;
+                margin-bottom: 16px;
+            }
+
+            .coach-status-pill {
+                font-size: 0.82rem;
+                font-weight: 600;
+                padding: 8px 12px;
+                border-radius: 999px;
+                border: 1px solid var(--border);
+                background: var(--bg-primary);
+                color: var(--text-secondary);
+            }
+
+            #coachAuthHint {
+                font-size: 0.87rem;
+                color: var(--text-secondary);
+            }
+
+            #coachAuthHint a {
+                font-weight: 700;
+                color: #a78bfa;
+            }
+
+            .coach-live-header .coach-live-dot {
+                color: #22c55e;
+                animation: pulse-dot 2.2s ease-in-out infinite;
+            }
+
+            @keyframes pulse-dot {
+                0%,
+                100% {
+                    opacity: 1;
+                }
+                50% {
+                    opacity: 0.45;
+                }
+            }
+
             /* ===== HELP TEXT ===== */
             .help-text {
                 font-size: 0.85rem;
@@ -613,38 +659,114 @@
             }
 
             /* ===== PRINT STYLES ===== */
+            .coach-print-title {
+                display: none;
+            }
+
             @media print {
                 .analytics-shell {
                     padding: 0;
+                    max-width: none;
+                }
+
+                header,
+                footer,
+                #favoriteBanner,
+                .favorite-banner,
+                #msm-coach-toolbar,
+                #msm-coach-login-hint {
+                    display: none !important;
+                }
+
+                .coach-print-title {
+                    display: block !important;
+                    padding: 0 0 12px;
+                    margin: 0 0 14px;
+                    border-bottom: 2px solid #111;
+                    font-family: Georgia, serif;
+                }
+
+                .coach-print-title h2 {
+                    margin: 0;
+                    font-size: 18pt;
+                }
+
+                .coach-print-meta {
+                    font-size: 9pt;
+                    color: #333;
+                    margin-top: 4px;
                 }
 
                 .toolbar,
-                header,
-                footer,
-                .favorite-banner,
-                .filter-controls-only {
+                .theme-toggle {
                     display: none !important;
                 }
 
                 .panel {
                     page-break-inside: avoid;
                     break-inside: avoid;
-                    border: 1px solid #ccc;
-                    box-shadow: none;
+                    border: 1px solid #ccc !important;
+                    box-shadow: none !important;
+                }
+
+                .chart-wrap {
+                    height: 220px;
                 }
 
                 body {
-                    background: white;
-                    color: black;
+                    background: white !important;
+                    color: #111 !important;
+                }
+
+                .kpi-value,
+                .kpi-label {
+                    color: #111 !important;
+                    -webkit-text-fill-color: #111 !important;
                 }
 
                 table {
+                    page-break-inside: auto;
+                }
+
+                tr,
+                thead {
                     page-break-inside: avoid;
+                }
+
+                /* Coach-only printable packet */
+                body.print-coach
+                    main.analytics-shell
+                    > *:not(#coachPrintTitle):not(#coachPanel) {
+                    display: none !important;
+                }
+
+                body.print-coach #coachPanel {
+                    border: none !important;
+                    box-shadow: none !important;
+                }
+
+                body.print-coach #coachPanel .toolbar {
+                    display: none !important;
+                }
+
+                /* Filtered KPI / explorer packet (meet or season exports) */
+                body.print-analytics-scope #favoriteBanner {
+                    display: none !important;
+                }
+
+                body.print-analytics-scope #analyticsFilterPanel,
+                body.print-analytics-scope #coachPanel {
+                    display: none !important;
+                }
+
+                body.print-analytics-scope #coachPrintTitle {
+                    display: none !important;
                 }
             }
         </style>
     </head>
     <body>
+<script src="/assets/msm-loader.js"></script>
         <header>
             <nav class="navbar">
                 <div class="navbar-content">
@@ -677,6 +799,11 @@
                                 >Analytics</a
                             >
                         </li>
+                        <li>
+                            <a href="coach-login.html" class="navbar-link"
+                                >Coach</a
+                            >
+                        </li>
                     </ul>
                     <button class="theme-toggle" aria-label="Switch theme">
                         🌙
@@ -695,7 +822,11 @@
                 </p>
 
                 <div id="favoriteBanner" class="favorite-banner">
-                    <div><span>⭐ Favorite Team: Not Set</span></div>
+                    <div>
+                        <span id="favoriteBannerLabel"
+                            >⭐ Favorite Team: Not Set</span
+                        >
+                    </div>
                     <div style="display: flex; gap: 8px">
                         <button class="btn btn.small" id="setFavoriteBtn">
                             Set Favorite
@@ -711,7 +842,7 @@
             </div>
 
             <!-- FILTER SECTION -->
-            <section class="panel">
+            <section class="panel" id="analyticsFilterPanel">
                 <div class="panel-header">
                     <div class="panel-icon">🔍</div>
                     <div class="panel-title-group">
@@ -991,21 +1122,41 @@
                 </div>
             </section>
 
+            <div id="coachPrintTitle" class="coach-print-title" aria-hidden="true">
+                <h2>Mountain State Miles · Track coach report</h2>
+                <p class="coach-print-meta" id="coachPrintMetaLine"></p>
+            </div>
+
             <!-- COACH DASHBOARD SECTION -->
             <section class="panel highlighted" id="coachPanel">
-                <div class="panel-header">
-                    <div class="panel-icon">🏆</div>
-                    <div class="panel-title-group">
-                        <h3>Coach Dashboard</h3>
-                        <span class="panel-subtitle"
-                            >Team & athlete performance insights</span
-                        >
+                <div
+                    class="panel-header coach-dash-head"
+                    style="flex-wrap: wrap"
+                >
+                    <div style="display: flex; align-items: center; gap: 12px">
+                        <div class="panel-icon">🏆</div>
+                        <div class="panel-title-group">
+                            <h3>Coach Dashboard</h3>
+                            <span class="panel-subtitle"
+                                >Charts refresh as selections change · exports
+                                need coach login</span
+                            >
+                        </div>
                     </div>
+                    <span class="coach-status-pill" id="coachStatusPill"
+                        >Read-only summaries · sign in to print</span
+                    >
                 </div>
 
+                <p id="coachAuthHint" class="help-text" style="margin-bottom: 12px">
+                    Printable PDF-ready exports require a coach or admin session.
+                    <a href="coach-login.html">Coach login</a>
+                </p>
+
                 <div class="info-box">
-                    💡 Set a favorite team above, or select a school in the
-                    filters to unlock detailed coaching views and reports.
+                    💡 Set a favorite team, use global school/meet filters, or
+                    pick a team below. Athlete dropdown lists roster members in
+                    the current filtered dataset.
                 </div>
 
                 <div class="grid coach-grid">
@@ -1022,6 +1173,10 @@
                         </select>
                     </div>
                     <div class="field">
+                        <label for="coachMeetId">Coach meet focus</label>
+                        <select id="coachMeetId"></select>
+                    </div>
+                    <div class="field">
                         <label for="coachEventId">Focus Event</label>
                         <select id="coachEventId">
                             <option value="">All Events</option>
@@ -1031,21 +1186,22 @@
 
                 <div class="toolbar">
                     <button class="btn primary" id="coachApplyBtn">
-                        🔍 Update View
+                        🔍 Snap to URL / refresh
                     </button>
-                    <button class="btn" id="printReportBtn">
-                        🖨️ Print Report
+                    <button class="btn" id="printReportBtn" type="button">
+                        🖨️ Coach print packet
+                    </button>
+                    <button class="btn" id="printFilteredSummaryBtn" type="button">
+                        🗂️ Print filtered summary
                     </button>
                     <button
                         class="btn"
                         id="printCoachBtn"
                         style="display: none"
                     ></button>
-                    <button
-                        class="btn"
-                        id="shareCoachBtn"
-                        style="display: none"
-                    ></button>
+                    <button class="btn" id="shareCoachBtn" type="button">
+                        🔗 Coach link
+                    </button>
                 </div>
 
                 <!-- Team Header -->
@@ -1154,7 +1310,8 @@
                         font-size: 0.9rem;
                     "
                 >
-                    Select a Team to generate reports.
+                    Select a team or athlete above (roster narrows automatically
+                    with global filters).
                 </div>
             </section>
 
@@ -1247,7 +1404,9 @@
             </div>
         </footer>
 
+        <script src="./track-coach-auth.js"></script>
         <script type="module" src="./track-analytics-app.js"></script>
+        <script src="./track-coach-toolbar.js"></script>
         <script>
             const menuToggle = document.querySelector(".mobile-menu-toggle");
             const navMenu = document.getElementById("main-nav");
@@ -1267,4 +1426,3 @@
         </script>
     </body>
 </html>
-""""""

@@ -11,6 +11,7 @@
   <link rel="manifest" href="../assets/Favicon Generator/site.webmanifest" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/assets/main.css">
+<link rel="stylesheet" href="/assets/msm-loader.css" />
 </head>
 <style>
   .section-title {
@@ -18,6 +19,7 @@
   }
 </style>
 <body>
+<script src="/assets/msm-loader.js"></script>
   <header>
     <nav class="navbar">
       <div class="navbar-content">
@@ -110,6 +112,8 @@
       } catch (error) {
         console.error('Error loading events:', error);
         container.innerHTML = '<div class="empty-state" style="color: #dc3545;">⚠️ Error loading events. Please check your connection and try again.</div>';
+      } finally {
+        document.dispatchEvent(new Event("MSMDataLoaded"));
       }
     }
     
@@ -117,5 +121,7 @@
       setTimeout(loadEvents, 100);
     });
   </script>
+  <script src="track-coach-auth.js"></script>
+  <script src="track-coach-toolbar.js"></script>
 </body>
 </html>

@@ -12,6 +12,7 @@
   <link rel="manifest" href="../assets/Favicon Generator/site.webmanifest" />
   
   <link rel="stylesheet" href="/assets/main.css">
+<link rel="stylesheet" href="/assets/msm-loader.css" />
   
   <script>
     window.addEventListener("DOMContentLoaded", () => {
@@ -287,6 +288,7 @@
 </head>
 
 <body>
+<script src="/assets/msm-loader.js"></script>
   <header>
     <nav class="navbar">
       <div class="navbar-content">
@@ -392,6 +394,7 @@
       
       if (!slug) {
         showError("No meet specified in the URL.");
+        document.dispatchEvent(new Event("MSMDataLoaded"));
         return;
       }
 
@@ -458,12 +461,21 @@
         
         document.getElementById('loading').style.display = 'none';
         document.getElementById('main-content').style.display = 'block';
+
+        window.__MSM_COACH_CTX = {
+          kind: 'meet',
+          meetId: meetInfo.id,
+          meetName: meetInfo.name || ''
+        };
+        window.dispatchEvent(new CustomEvent('msm-coach-context-updated'));
         
         // Render initial view
         setGender('M');
 
       } catch(e) {
         showError(e.message);
+      } finally {
+        document.dispatchEvent(new Event("MSMDataLoaded"));
       }
     }
 
@@ -694,5 +706,7 @@
 
     document.addEventListener('DOMContentLoaded', init);
   </script>
+  <script src="track-coach-auth.js"></script>
+  <script src="track-coach-toolbar.js"></script>
 </body>
 </html>

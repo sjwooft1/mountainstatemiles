@@ -12,8 +12,10 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="/assets/main.css">
+<link rel="stylesheet" href="/assets/msm-loader.css" />
 </head>
 <body>
+<script src="/assets/msm-loader.js"></script>
   <header>
     <nav class="navbar">
       <div class="navbar-content">
@@ -140,6 +142,7 @@
       } catch (error) {
         console.error('Error loading teams:', error);
         grid.innerHTML = '<div class="empty-state">Error loading teams. Please try again later.</div>';
+        document.dispatchEvent(new Event("MSMDataLoaded"));
         return;
       }
       
@@ -235,6 +238,8 @@
       search.addEventListener("input", e => {
         renderList(e.target.value);
       });
+
+      document.dispatchEvent(new Event("MSMDataLoaded"));
     }
     
     document.addEventListener('DOMContentLoaded', () => {
@@ -257,5 +262,7 @@
       }
     });
   </script>
+  <script src="track-coach-auth.js"></script>
+  <script src="track-coach-toolbar.js"></script>
 </body>
 </html>

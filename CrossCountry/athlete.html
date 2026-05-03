@@ -12,6 +12,7 @@
   <link rel="apple-touch-icon" sizes="180x180" href="assets/Favicon Generator/apple-touch-icon.png" />
   <link rel="manifest" href="assets/Favicon Generator/site.webmanifest" />
   <link rel="stylesheet" href="/assets/main.css" />
+<link rel="stylesheet" href="/assets/msm-loader.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
   <script src="https://cdn.jsdelivr.net/npm/handsontable@latest/dist/handsontable.full.min.js"></script>
   <script>
@@ -73,6 +74,7 @@
     
 </head>
 <body>
+<script src="/assets/msm-loader.js"></script>
   <header>
     <nav class="navbar">
       <div class="navbar-content">
@@ -283,14 +285,13 @@
       let athleteName = null;     // The "Real Name" used to find results (e.g. "Connor George")
       let athleteProfile = null;  // The object from 'crosscountry/athletes'
 
-      if (!slugParam && !nameParam) {
-        loadingDiv.style.display = 'none';
-        errorDiv.style.display = 'block';
-        errorDiv.textContent = 'No athlete specified! URL must contain ?slug= or ?name=';
-        return;
-      }
-
       try {
+        if (!slugParam && !nameParam) {
+          loadingDiv.style.display = 'none';
+          errorDiv.style.display = 'block';
+          errorDiv.textContent = 'No athlete specified! URL must contain ?slug= or ?name=';
+          return;
+        }
         // 2. FETCH ATHLETE PROFILE
         // We need to find the "Real Name" to query the results table.
         
@@ -388,6 +389,8 @@
         loadingDiv.style.display = 'none';
         errorDiv.style.display = 'block';
         errorDiv.textContent = 'Error loading athlete data. Please try again.';
+      } finally {
+        document.dispatchEvent(new Event("MSMDataLoaded"));
       }
     }
 
