@@ -370,6 +370,23 @@ function pullStateFromInputs() {
   });
   state = next;
 }
+function applyPanelVisibility() {
+  // If no panels are specified in state, show everything by default
+  if (!state.panels) return; 
+
+  const allowedPanels = state.panels.split(',');
+  const allPanels = [
+    'kpiPanel', 'insightsPanel', 'comparePanel', 
+    'chartBuilderPanel', 'vizPanel', 'coachPanel', 'explorerPanel'
+  ];
+  
+  allPanels.forEach(id => {
+    const node = el(id);
+    if (node) {
+      node.style.display = allowedPanels.includes(id) ? '' : 'none';
+    }
+  });
+}
 
 function renderPills() {
   const container = el("filterPills");
@@ -653,6 +670,7 @@ function refreshBuilderSelects() {
 function updateView() {
   filteredRows = applyFilters(allRows, state);
   writeStateToUrl(state);
+  applyPanelVisibility();
   renderPills();
   renderKpis();
   renderInsights();
@@ -755,16 +773,48 @@ function bindActions() {
       updateView();
     });
 
-  if (btn("shareBtn"))
-    btn("shareBtn").addEventListener("click", async () => {
-      const url = buildShareUrl(state);
-      try {
-        await navigator.clipboard.writeText(url);
-        alert("Global shareable link copied.");
-      } catch (err) {
-        alert(`Could not copy link. ${url}`);
-      }
-    });
+    const shareBtn = el("shareBtn");
+    const shareMenu = el("shareMenu");
+    const copyShareBtn = el("copyShareBtn");
+  
+    if (shareBtn && shareMenu) {
+      shareBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        shareMenu.style.display = shareMenu.style.display === "none" ? "block" : "none";
+      });
+  
+      // Close menu if clicked outside
+      document.addEventListener("click", (e) => {
+        if (!shareMenu.contains(e.target) && !shareBtn.contains(e.target)) {
+          shareMenu.style.display = "none";
+        }
+      });
+    }
+  
+    if (copyShareBtn) {
+      copyShareBtn.addEventListener("click", async () => {
+        const checkboxes = document.querySelectorAll(".share-panel-cb");
+        const selectedPanels = Array.from(checkboxes)
+            .filter(cb => cb.checked)
+            .map(cb => cb.value);
+        
+        // If all panels are checked, leave the state blank so it defaults to showing all
+        if (selectedPanels.length === checkboxes.length) {
+            state.panels = "";
+        } else {
+            state.panels = selectedPanels.join(",");
+        }
+  
+        const url = buildShareUrl(state);
+        try {
+          await navigator.clipboard.writeText(url);
+          alert("Custom shareable link copied!");
+          shareMenu.style.display = "none";
+        } catch (err) {
+          alert(`Could not copy link. ${url}`);
+        }
+      });
+    }
 
   if (btn("csvBtn"))
     btn("csvBtn").addEventListener("click", () => exportRows("csv"));

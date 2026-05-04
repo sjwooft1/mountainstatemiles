@@ -23,6 +23,7 @@ const DEFAULT_STATE = {
   groupBy: "eventName",
   metric: "count",
   topN: "10",
+  panels: "",
 };
 
 export function getDefaultState() {

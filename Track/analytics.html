@@ -943,18 +943,31 @@
                     </button>
                     <button class="btn" id="resetFiltersBtn">
                         ↻ Reset All
-                    </button>
-                    <button class="btn" id="shareBtn">🔗 Share Link</button>
+                    </button>                    
                     <button class="btn" id="csvBtn">📥 Export CSV</button>
                     <button class="btn" id="jsonBtn">📋 Export JSON</button>
                     <button class="btn" id="printBtn" style="display: none">
                         🖨️ Print
                     </button>
+                    <div style="position: relative; display: inline-block;">
+                        <button class="btn" id="shareBtn">🔗 Share Link</button>
+                        <div id="shareMenu" style="display: none; position: absolute; top: 100%; left: 0; margin-top: 8px; background: var(--bg-secondary); border: 1px solid var(--border); padding: 16px; z-index: 100; border-radius: 8px; width: 220px; box-shadow: 0 10px 25px rgba(0,0,0,0.3);">
+                            <h4 style="margin: 0 0 12px 0; font-size: 14px;">Include Sections:</h4>
+                            <label style="display: block; margin-bottom: 8px; font-size: 13px; cursor: pointer;"><input type="checkbox" class="share-panel-cb" value="kpiPanel" checked> Key Metrics</label>
+                            <label style="display: block; margin-bottom: 8px; font-size: 13px; cursor: pointer;"><input type="checkbox" class="share-panel-cb" value="insightsPanel" checked> Smart Insights</label>
+                            <label style="display: block; margin-bottom: 8px; font-size: 13px; cursor: pointer;"><input type="checkbox" class="share-panel-cb" value="comparePanel" checked> Comparison Tool</label>
+                            <label style="display: block; margin-bottom: 8px; font-size: 13px; cursor: pointer;"><input type="checkbox" class="share-panel-cb" value="chartBuilderPanel" checked> Chart Builder</label>
+                            <label style="display: block; margin-bottom: 8px; font-size: 13px; cursor: pointer;"><input type="checkbox" class="share-panel-cb" value="vizPanel" checked> Visualizations</label>
+                            <label style="display: block; margin-bottom: 8px; font-size: 13px; cursor: pointer;"><input type="checkbox" class="share-panel-cb" value="coachPanel" checked> Coach Dashboard</label>
+                            <label style="display: block; margin-bottom: 14px; font-size: 13px; cursor: pointer;"><input type="checkbox" class="share-panel-cb" value="explorerPanel" checked> Data Explorer</label>
+                            <button class="btn primary small" id="copyShareBtn" style="width: 100%;">Copy Custom Link</button>
+                        </div>
+                    </div>
                 </div>
             </section>
 
             <!-- KPI SECTION -->
-            <section class="panel">
+            <section class="panel" id="kpiPanel">
                 <div class="panel-header">
                     <div class="panel-icon">📈</div>
                     <div class="panel-title-group">
@@ -968,7 +981,7 @@
             </section>
 
             <!-- INSIGHTS SECTION -->
-            <section class="panel">
+            <section class="panel" id="insightsPanel">
                 <div class="panel-header">
                     <div class="panel-icon">💡</div>
                     <div class="panel-title-group">
@@ -984,7 +997,7 @@
             </section>
 
             <!-- COMPARISON SECTION -->
-            <section class="panel">
+            <section class="panel" id="comparePanel">
                 <div class="panel-header">
                     <div class="panel-icon">⚖️</div>
                     <div class="panel-title-group">
@@ -1035,7 +1048,7 @@
             </section>
 
             <!-- CHART BUILDER SECTION -->
-            <section class="panel">
+            <section class="panel" id="chartBuilderPanel">
                 <div class="panel-header">
                     <div class="panel-icon">📊</div>
                     <div class="panel-title-group">
@@ -1099,7 +1112,7 @@
             </section>
 
             <!-- VISUALIZATIONS SECTION -->
-            <section class="grid viz-grid">
+            <section class="grid viz-grid" id="vizPanel">
                 <div class="panel">
                     <h3 style="margin: 0 0 16px 0">📈 Trend by Meet</h3>
                     <div class="chart-wrap">
@@ -1316,7 +1329,7 @@
             </section>
 
             <!-- DATA EXPLORER SECTION -->
-            <section class="panel">
+            <section class="panel" id="explorerPanel">
                 <div class="panel-header">
                     <div class="panel-icon">🔎</div>
                     <div class="panel-title-group">
