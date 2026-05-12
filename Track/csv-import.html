@@ -3,7 +3,7 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="/assets/msm-loader.css" />
+        <link rel="stylesheet" href="/assets/msm-loader.css" />
         <title>Track Meet Import Engine</title>
         <link
             href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap"
@@ -58,7 +58,8 @@
                 margin-top: 0;
             }
             textarea,
-            select {
+            select,
+            .search-replace-bar input {
                 width: 100%;
                 padding: 12px;
                 background: var(--card);
@@ -88,6 +89,26 @@
             button:disabled {
                 opacity: 0.5;
                 cursor: not-allowed;
+            }
+
+            /* Search and Replace Bar Styles */
+            .search-replace-bar {
+                display: flex;
+                gap: 10px;
+                margin-bottom: 12px;
+                align-items: center;
+            }
+            .search-replace-bar input {
+                flex: 1;
+                padding: 8px 12px;
+            }
+            .btn-secondary {
+                background: #334155;
+                font-size: 0.85rem;
+                padding: 8px 16px;
+            }
+            .btn-secondary:hover {
+                background: #475569;
             }
 
             /* Event Selector */
@@ -194,7 +215,7 @@
         </style>
     </head>
     <body>
-<script src="/assets/msm-loader.js"></script>
+        <script src="/assets/msm-loader.js"></script>
         <div class="container">
             <h1>Meet Import Engine v3</h1>
 
@@ -222,6 +243,13 @@
                     >
                     to automatically extract results from AthleticsNet!
                 </p>
+
+                <div class="search-replace-bar">
+                    <input type="text" id="findText" placeholder="Find text..." />
+                    <input type="text" id="replaceText" placeholder="Replace with..." />
+                    <button class="btn-secondary" onclick="executeReplace()">Replace All</button>
+                </div>
+
                 <textarea
                     id="pasteArea"
                     placeholder="Paste Scraper CSV here..."
@@ -279,11 +307,33 @@
 
         <script>
             let parsedRows = [];
-            let normalizedEventMap = {}; // Maps "flat" names like "boys100m" to DB ID
+            let normalizedEventMap = {}; 
             let eventIdToName = {};
             let athletesCache = {};
 
-            // Initialize Data
+            // NEW: Search and Replace Functionality
+            function executeReplace() {
+                const find = document.getElementById('findText').value;
+                const replace = document.getElementById('replaceText').value;
+                const area = document.getElementById('pasteArea');
+
+                if (!find) {
+                    alert("Please enter text to find.");
+                    return;
+                }
+
+                const originalText = area.value;
+                // Escapes special characters for Regex
+                const escapedFind = find.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                const regex = new RegExp(escapedFind, 'g');
+                
+                const newText = originalText.replace(regex, replace);
+                const count = (originalText.match(regex) || []).length;
+
+                area.value = newText;
+                alert(`Replaced ${count} occurrences of "${find}".`);
+            }
+
             async function init() {
                 try {
                 const meetsSnap = await firebase
@@ -304,8 +354,6 @@
                     const id = s.key;
                     const name = s.val().name;
                     eventIdToName[id] = name;
-
-                    // Create a normalized key for this event
                     const normKey = normalizeString(name);
                     normalizedEventMap[normKey] = id;
                 });
@@ -324,67 +372,26 @@
                 }
             }
 
-            /**
-             * Normalizes strings for matching.
-             * "4x800 Relay HIGH SCHOOL - Finals" -> "4x800mrelay"
-             */
             function normalizeString(str) {
                 if (!str) return "";
                 let s = str.toLowerCase();
-
-                // Remove specific levels/noise
-                const noise = [
-                    "high school",
-                    "hs",
-                    "middle school",
-                    "ms",
-                    "junior high",
-                    "jh",
-                    "varsity",
-                    "jv",
-                    "freshman",
-                    "frosh",
-                    "open",
-                    "finals",
-                    "prelims",
-                    "heats",
-                ];
-                noise.forEach(
-                    (n) => (s = s.replace(new RegExp(`\\b${n}\\b`, "g"), "")),
-                );
-
-                // Standardize units
+                const noise = ["high school", "hs", "middle school", "ms", "junior high", "jh", "varsity", "jv", "freshman", "frosh", "open", "finals", "prelims", "heats"];
+                noise.forEach((n) => (s = s.replace(new RegExp(`\\b${n}\\b`, "g"), "")));
                 s = s.replace(/\bmeters?\b/g, "m");
-                s = s.replace(/(\d+)\s+m\b/g, "$1m"); // "100 m" -> "100m"
-                s = s.replace(/(\d+x\d+)(?!m)/g, "$1m"); // "4x800" -> "4x800m"
-
-                // Standardize Relay/Dash/Run
+                s = s.replace(/(\d+)\s+m\b/g, "$1m"); 
+                s = s.replace(/(\d+x\d+)(?!m)/g, "$1m");
                 s = s.replace(/\bdash\b/g, "").replace(/\brun\b/g, "");
-
-                // Strip everything except alphanumeric
                 return s.replace(/[^a-z0-9]/g, "");
             }
 
             function resolveEventId(rawName, gender) {
                 const g = gender === "W" || gender === "F" ? "girls" : "boys";
                 const baseNorm = normalizeString(rawName);
-
-                // Try exact normalized match (e.g. boys + 100m)
                 const primaryKey = g + baseNorm;
-                if (normalizedEventMap[primaryKey])
-                    return normalizedEventMap[primaryKey];
-
-                // Secondary: try without gender prefix if the DB name already includes it
-                if (normalizedEventMap[baseNorm])
-                    return normalizedEventMap[baseNorm];
-
-                // Tertiary: Fuzzy loop (if the DB name contains our normalized string)
+                if (normalizedEventMap[primaryKey]) return normalizedEventMap[primaryKey];
+                if (normalizedEventMap[baseNorm]) return normalizedEventMap[baseNorm];
                 for (let [normKey, id] of Object.entries(normalizedEventMap)) {
-                    if (
-                        normKey.includes(g) &&
-                        (normKey.includes(baseNorm) ||
-                            baseNorm.includes(normKey.replace(g, "")))
-                    ) {
+                    if (normKey.includes(g) && (normKey.includes(baseNorm) || baseNorm.includes(normKey.replace(g, "")))) {
                         return id;
                     }
                 }
@@ -392,16 +399,12 @@
             }
 
             function parseCSVLine(text) {
-                let ret = [],
-                    inQuote = false,
-                    val = "";
+                let ret = [], inQuote = false, val = "";
                 for (let i = 0; i < text.length; i++) {
                     let c = text[i];
                     if (inQuote) {
                         if (c === '"') {
-                            text[i + 1] === '"'
-                                ? ((val += '"'), i++)
-                                : (inQuote = false);
+                            text[i + 1] === '"' ? ((val += '"'), i++) : (inQuote = false);
                         } else val += c;
                     } else {
                         if (c === '"') inQuote = true;
@@ -418,8 +421,7 @@
             function parseMeet() {
                 const text = document.getElementById("pasteArea").value.trim();
                 const meetId = document.getElementById("meetSelect").value;
-                if (!text || !meetId)
-                    return alert("Please select a meet and paste data.");
+                if (!text || !meetId) return alert("Please select a meet and paste data.");
 
                 parsedRows = [];
                 const lines = text.split("\n");
@@ -432,13 +434,7 @@
 
                     const rawEvent = p[0];
                     const gender = p[7] || "Boys";
-                    const cleanGender =
-                        gender.toLowerCase().includes("girl") ||
-                        gender.toLowerCase().startsWith("w") ||
-                        gender.toLowerCase().startsWith("f")
-                            ? "W"
-                            : "M";
-
+                    const cleanGender = gender.toLowerCase().includes("girl") || gender.toLowerCase().startsWith("w") || gender.toLowerCase().startsWith("f") ? "W" : "M";
                     const eventId = resolveEventId(rawEvent, cleanGender);
 
                     parsedRows.push({
@@ -449,9 +445,7 @@
                         athlete_name: p[3],
                         mark: p[4],
                         school: p[5] || "Unattached",
-                        heat: rawEvent.toLowerCase().includes("prelim")
-                            ? "Prelims"
-                            : "Finals",
+                        heat: rawEvent.toLowerCase().includes("prelim") ? "Prelims" : "Finals",
                         gender: cleanGender,
                         meet_id: meetId,
                     });
@@ -473,56 +467,35 @@
             }
 
             function updateUI() {
-                const checkedEvents = [
-                    ...document.querySelectorAll(".evt-cb:checked"),
-                ].map((cb) => cb.value);
-                const filtered = parsedRows.filter((r) =>
-                    checkedEvents.includes(r.raw_event),
-                );
+                const checkedEvents = [...document.querySelectorAll(".evt-cb:checked")].map((cb) => cb.value);
+                const filtered = parsedRows.filter((r) => checkedEvents.includes(r.raw_event));
                 const valid = filtered.filter((r) => r.event_id);
 
                 document.getElementById("stats").innerHTML = `
-        <div class="stat"><span class="stat-number">${filtered.length}</span>Rows</div>
-        <div class="stat"><span class="stat-number" style="color:var(--success)">${valid.length}</span>Matched</div>
-        <div class="stat"><span class="stat-number" style="color:var(--danger)">${filtered.length - valid.length}</span>Missing ID</div>
-    `;
+                    <div class="stat"><span class="stat-number">${filtered.length}</span>Rows</div>
+                    <div class="stat"><span class="stat-number" style="color:var(--success)">${valid.length}</span>Matched</div>
+                    <div class="stat"><span class="stat-number" style="color:var(--danger)">${filtered.length - valid.length}</span>Missing ID</div>
+                `;
 
                 const tbody = document.getElementById("previewBody");
-                tbody.innerHTML = filtered
-                    .map(
-                        (r) => `
-        <tr>
-            <td><small>${r.raw_event}</small></td>
-            <td>${r.event_id ? `<b>${eventIdToName[r.event_id]}</b>` : `<i class="tag-invalid">No Match</i>`}</td>
-            <td>${r.athlete_name}</td>
-            <td>${r.school}</td>
-            <td>${r.mark}</td>
-            <td class="${r.event_id ? "tag-valid" : "tag-invalid"}">${r.event_id ? "✓" : "✗"}</td>
-        </tr>
-    `,
-                    )
-                    .join("");
+                tbody.innerHTML = filtered.map((r) => `
+                    <tr>
+                        <td><small>${r.raw_event}</small></td>
+                        <td>${r.event_id ? `<b>${eventIdToName[r.event_id]}</b>` : `<i class="tag-invalid">No Match</i>`}</td>
+                        <td>${r.athlete_name}</td>
+                        <td>${r.school}</td>
+                        <td>${r.mark}</td>
+                        <td class="${r.event_id ? "tag-valid" : "tag-invalid"}">${r.event_id ? "✓" : "✗"}</td>
+                    </tr>
+                `).join("");
             }
 
             async function importMeet() {
-                // 1. Grab currently selected events from the UI
-                const checkedEvents = [
-                    ...document.querySelectorAll(".evt-cb:checked"),
-                ].map((cb) => cb.value);
+                const checkedEvents = [...document.querySelectorAll(".evt-cb:checked")].map((cb) => cb.value);
+                const toImport = parsedRows.filter((r) => checkedEvents.includes(r.raw_event) && r.event_id);
 
-                // 2. Filter the parsed rows to only include selected events that matched a DB ID
-                const toImport = parsedRows.filter(
-                    (r) => checkedEvents.includes(r.raw_event) && r.event_id,
-                );
-
-                if (toImport.length === 0)
-                    return alert(
-                        "No valid rows to import! Check your event matches.",
-                    );
-                if (
-                    !confirm(`Import ${toImport.length} results into Firebase?`)
-                )
-                    return;
+                if (toImport.length === 0) return alert("No valid rows to import!");
+                if (!confirm(`Import ${toImport.length} results?`)) return;
 
                 const btn = document.getElementById("importBtn");
                 btn.disabled = true;
@@ -530,49 +503,30 @@
 
                 for (let i = 0; i < toImport.length; i++) {
                     const row = toImport[i];
-
-                    // Safety fallback for missing strings to prevent lowercase() errors
-                    const safeSchool = (
-                        row.school || "Unattached"
-                    ).toLowerCase();
-                    const safeName = (
-                        row.athlete_name || "Unknown"
-                    ).toLowerCase();
+                    const safeSchool = (row.school || "Unattached").toLowerCase();
+                    const safeName = (row.athlete_name || "Unknown").toLowerCase();
                     const cacheKey = `${safeSchool}|${safeName}`;
 
                     let athleteId = athletesCache[cacheKey];
-
-                    // CHECK FOR RELAY: If the name contains a comma or "Relay", treat as relay
-                    const isRelay =
-                        row.raw_event.toLowerCase().includes("relay") ||
-                        row.athlete_name.includes(",") ||
-                        row.athlete_name.toLowerCase().includes("relay") ||
-                        row.athlete_name.toLowerCase().includes("team");
+                    const isRelay = row.raw_event.toLowerCase().includes("relay") || row.athlete_name.includes(",") || row.athlete_name.toLowerCase().includes("relay") || row.athlete_name.toLowerCase().includes("team");
 
                     if (!athleteId && !isRelay) {
                         const parts = row.athlete_name.split(" ");
                         const first = parts[0] || "Unknown";
                         const last = parts.slice(1).join(" ") || "";
-
                         try {
-                            const newAth = await firebase
-                                .database()
-                                .ref("Track/athletes")
-                                .push({
-                                    first_name: first,
-                                    last_name: last,
-                                    school: row.school || "Unattached",
-                                    grade: row.grade || "",
-                                    gender: row.gender || "M",
-                                });
+                            const newAth = await firebase.database().ref("Track/athletes").push({
+                                first_name: first,
+                                last_name: last,
+                                school: row.school || "Unattached",
+                                grade: row.grade || "",
+                                gender: row.gender || "M",
+                            });
                             athleteId = newAth.key;
                             athletesCache[cacheKey] = athleteId;
-                        } catch (error) {
-                            console.error("Error creating athlete:", error);
-                        }
+                        } catch (e) { console.error(e); }
                     }
 
-                    // Prepare the result object
                     const resultData = {
                         meet_id: row.meet_id,
                         event_id: row.event_id,
@@ -580,10 +534,9 @@
                         placement: parseInt(row.place) || null,
                         heat: row.heat || "Finals",
                         gender: row.gender,
-                        timestamp: new Date().toISOString(), // This drives your live results feed
+                        timestamp: new Date().toISOString(),
                     };
 
-                    // If it's a relay, store the names in relay_names and leave athlete_id null
                     if (isRelay) {
                         resultData.relay_names = row.athlete_name;
                         resultData.athlete_id = null;
@@ -591,18 +544,8 @@
                         resultData.athlete_id = athleteId;
                     }
 
-                    try {
-                        await firebase
-                            .database()
-                            .ref("Track/results")
-                            .push(resultData);
-                    } catch (error) {
-                        console.error("Error pushing result:", error);
-                    }
-
-                    // Update progress bar
-                    document.getElementById("progressFill").style.width =
-                        `${((i + 1) / toImport.length) * 100}%`;
+                    await firebase.database().ref("Track/results").push(resultData);
+                    document.getElementById("progressFill").style.width = `${((i + 1) / toImport.length) * 100}%`;
                 }
 
                 alert("Import Complete!");
