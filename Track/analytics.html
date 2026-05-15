@@ -892,9 +892,15 @@
                     </div>
                     <div class="field">
                         <label for="meetFilter">Meet</label>
-                        <select id="meetFilter">
-                            <option value="">All Meets</option>
-                        </select>
+                        <select
+                            id="meetFilter"
+                            multiple
+                            size="8"
+                            style="min-height:180px;"
+                        ></select>
+                        <small class="help-text">
+                            Hold Ctrl (Windows) or Cmd (Mac) to select multiple meets
+                        </small>
                     </div>
                     <div class="field">
                         <label for="athleteFilter">Athlete</label>

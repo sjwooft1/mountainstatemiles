@@ -357,7 +357,17 @@ function hydrateInputsFromState() {
   Object.entries(idMap).forEach(([stateKey, domId]) => {
     const node = el(domId);
     if (!node) return;
-    node.value = state[stateKey] || "";
+    if (stateKey === "meetId" && Array.isArray(state[stateKey])) {
+    
+      Array.from(node.options).forEach(opt => {
+        opt.selected = state[stateKey].includes(opt.value);
+      });
+    
+    } else {
+    
+      node.value = state[stateKey] || "";
+    
+    }
   });
 }
 
@@ -366,7 +376,11 @@ function pullStateFromInputs() {
   filterIds.forEach((key) => {
     const node = el(idMap[key]);
     if (!node) return;
-    next[key] = node.value || "";
+    if (key === "meetId") {
+      next[key] = Array.from(node.selectedOptions).map(o => o.value);
+    } else {
+      next[key] = node.value || "";
+    }
   });
   state = next;
 }
@@ -410,7 +424,11 @@ function renderPills() {
       ].includes(k)
     )
       return;
-    labels.push(`<span class="state-pill">${k}: ${v}</span>`);
+    const displayValue = Array.isArray(v)
+      ? v.join(", ")
+      : v;
+    
+    labels.push(`<span class="state-pill">${k}: ${displayValue}</span>`);
   });
   container.innerHTML =
     labels.join("") || `<span class="state-pill">No active filters</span>`;

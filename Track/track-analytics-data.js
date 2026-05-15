@@ -133,7 +133,13 @@ export function applyFilters(rows, filters) {
     if (filters.eventId && row.eventId !== filters.eventId) return false;
     if (filters.category && row.category !== filters.category) return false;
     if (filters.schoolName && row.schoolName !== filters.schoolName) return false;
-    if (filters.meetId && row.meetId !== filters.meetId) return false;
+    if (
+      Array.isArray(filters.meetId) &&
+      filters.meetId.length &&
+      !filters.meetId.includes(row.meetId)
+    ) {
+      return false;
+    }
     if (filters.athleteName && row.athleteName !== filters.athleteName) return false;
     if (filters.relayFilter === "relay" && !row.relay) return false;
     if (filters.relayFilter === "individual" && row.relay) return false;

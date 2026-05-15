@@ -192,62 +192,209 @@
                 </p>
 
                 <div class="bookmarklet-code" id="bookmarklet-code">
-                    javascript:(function(){console.log("--- SCRAPING
-                    ATHLETICSNET ---");const
-                    tables=document.querySelectorAll('table');let
-                    csvRows=["event_name,place,grade,athlete_name,mark,school,heat,gender"];let
-                    count=0;tables.forEach(table=>{let gender="Boys";let
-                    allHeaders=Array.from(document.querySelectorAll('h2, h3, h4,
-                    .division-title, .event-title'));for(let
-                    i=allHeaders.length-1;i>=0;i--){if(allHeaders[i].compareDocumentPosition(table)&Node.DOCUMENT_POSITION_FOLLOWING){let
-                    headerText=allHeaders[i].innerText.toLowerCase();if(headerText.includes("women")||headerText.includes("girl")||headerText.includes("female")){gender="Girls";break;}else
-                    if(headerText.includes("men")||headerText.includes("boy")||headerText.includes("male")){gender="Boys";break;}}}let
-                    eventHeader=table.closest('.event-results,
-                    .m-event-results')?table.closest('.event-results,
-                    .m-event-results').querySelector('h3,
-                    h4'):table.previousElementSibling;if(!eventHeader||!['H3','H4'].includes(eventHeader.tagName)){for(let
-                    i=allHeaders.length-1;i>=0;i--){if(allHeaders[i].compareDocumentPosition(table)&Node.DOCUMENT_POSITION_FOLLOWING){eventHeader=allHeaders[i];break;}}}let
-                    rawEventName=eventHeader?eventHeader.innerText.trim().replace(/\n/g,'
-                    ').replace(/\s+/g,' '):"Unknown Event";let
-                    eventName=rawEventName.replace(/\s-\s\d{2}"(?:\s?\/\s?\d\.\d{3}m)?/,"").replace(/\s-\s\d+(?:\.\d+)?\s?(?:kg|lb)\b/i,"").replace(/\b(\d)x(\d{2,4})\sRelay\b/i,(match,legs,dist)=>`${legs}x${dist}m
-                    Relay`).replace(/\s{2,}/g," ").trim();const
-                    headers=Array.from(table.querySelectorAll('thead
-                    th')).map(th=>th.innerText.trim().toLowerCase());const
-                    placeIdx=headers.findIndex(h=>h.includes('pl'));const
-                    nameIdx=headers.findIndex(h=>h.includes('athlete')||h.includes('name'));const
-                    gradeIdx=headers.findIndex(h=>h==='yr'||h==='year'||h==='gr'||h==='grade');const
-                    markIdx=headers.findIndex(h=>h.includes('time')||h.includes('mark')||h.includes('result'));const
-                    schoolIdx=headers.findIndex(h=>h.includes('team')||h.includes('school'));const
-                    heatIdx=headers.findIndex(h=>h.includes('ht')||h.includes('heat')||h.includes('flight')||h.includes('fl'));const
-                    rows=table.querySelectorAll('tbody tr');let
-                    currentHeat="";rows.forEach(row=>{if(row.querySelector('th')||row.classList.contains('heat-header')){const
-                    text=row.innerText.toLowerCase();if(text.includes('heat')||text.includes('flight')){currentHeat=text.replace(/[^0-9]/g,'');}return;}const
-                    cells=row.querySelectorAll('td');if(cells.length<3)return;const
-                    getCell=(idx,fallbackSelector)=>{if(idx>=0&&cells[idx])return
-                    cells[idx].innerText.trim();const
-                    el=row.querySelector(fallbackSelector);return
-                    el?el.innerText.trim():""};let
-                    place=getCell(placeIdx,'.place,
-                    td:first-child').replace('.','');let
-                    name=getCell(nameIdx,'a[href*="/athlete/"], .athlete,
-                    .name');let grade=getCell(gradeIdx,'.grade, .yr, .year');let
-                    school=getCell(schoolIdx,'a[href*="/team/"], .team,
-                    .school')||"Unattached";let
-                    heat=getCell(heatIdx,'.heat')||currentHeat||"1";let
-                    mark=getCell(markIdx,'.result, .time, .mark,
-                    .time-distance');if(!mark){cells.forEach(td=>{const
-                    txt=td.innerText.trim();if(/(\d+[:.]\d+)|(\d+['"])|(\d+[-]\d+)/.test(txt)&&txt.length<15)mark=txt;});}if(mark)mark=mark.replace(/[as]$/gi,"").trim();if(eventName.toLowerCase().includes('relay')||eventName.toLowerCase().includes('shuttle')){const
-                    relayAthleteLinks=Array.from(row.querySelectorAll('.athlete
-                    a, .athlete span,
-                    a.athlete-name'));if(relayAthleteLinks.length>0){name=relayAthleteLinks.map(a=>a.innerText.trim()).filter(n=>n!=="").join(',
-                    ');}else{name=row.querySelector('.school,
-                    .team')?.innerText.trim()||name;}school=school.split(' -
-                    ')[0].trim();grade="";}if(name&&mark&&!isNaN(parseInt(place))){const
-                    cleanRow=[`"${eventName.replace(/"/g,'""')}"`,`"${place.replace(/"/g,'""')}"`,`"${grade.replace(/"/g,'""')}"`,`"${name.replace(/"/g,'""')}"`,`"${mark.replace(/"/g,'""')}"`,`"${school.replace(/"/g,'""')}"`,`"${heat.replace(/"/g,'""')}"`,`"${gender}"`].join(",");csvRows.push(cleanRow);count++;}});});if(count>0){const
-                    temp=document.createElement("textarea");document.body.appendChild(temp);temp.value=csvRows.join("\n");temp.select();document.execCommand("copy");document.body.removeChild(temp);alert(`✅
-                    Copied ${count} results to clipboard!`);}else{alert("❌
-                    Found 0 results. Make sure you're on the Results
-                    tab.");}})();
+                    javascript:(function(){
+                        console.log("--- SCRAPING ATHLETIC.NET ---");
+                        
+                        const tables = document.querySelectorAll('table');
+                        let csvRows = ["event_name,place,grade,athlete_name,mark,school,heat,gender"];
+                        let count = 0;
+                        
+                        // CLEAN MARK FUNCTION
+                        function cleanMark(mark){
+                          if(!mark) return "";
+                        
+                          return mark
+                            // Remove wind readings like (-1.7), (+2.1), (0.0)
+                            .replace(/\s*\([+-]?\d+\.\d+\)/g, "")
+                        
+                            // Remove a, A, s, S at end
+                            .replace(/[aAsS]+$/g, "")
+                        
+                            // Remove PB/SB/PR/NR/etc
+                            .replace(/\b(?:PB|SB|PR|NR|CR|MR|FR|WL|EL)\b/gi, "")
+                        
+                            // Remove attached PB/SB like 11.20aSB
+                            .replace(/(?:a|s)?(?:PB|SB|PR|NR|CR|MR|FR|WL|EL)$/gi, "")
+                        
+                            // Remove extra spaces
+                            .replace(/\s+/g, " ")
+                            .trim();
+                        }
+                        
+                        tables.forEach(table => {
+                        
+                          let gender = "Boys";
+                        
+                          const allHeaders = Array.from(
+                            document.querySelectorAll('h2, h3, h4, .division-title, .event-title')
+                          );
+                        
+                          // Detect gender
+                          for(let i = allHeaders.length - 1; i >= 0; i--){
+                            if(allHeaders[i].compareDocumentPosition(table) & Node.DOCUMENT_POSITION_FOLLOWING){
+                        
+                              let headerText = allHeaders[i].innerText.toLowerCase();
+                        
+                              if(headerText.includes("women") || headerText.includes("girl") || headerText.includes("female")){
+                                gender = "Girls";
+                                break;
+                              } else if(headerText.includes("men") || headerText.includes("boy") || headerText.includes("male")){
+                                gender = "Boys";
+                                break;
+                              }
+                            }
+                          }
+                        
+                          // Find event header
+                          let eventHeader =
+                            table.closest('.event-results, .m-event-results')
+                              ? table.closest('.event-results, .m-event-results').querySelector('h3, h4')
+                              : table.previousElementSibling;
+                        
+                          if(!eventHeader || !['H3','H4'].includes(eventHeader.tagName)){
+                            for(let i = allHeaders.length - 1; i >= 0; i--){
+                              if(allHeaders[i].compareDocumentPosition(table) & Node.DOCUMENT_POSITION_FOLLOWING){
+                                eventHeader = allHeaders[i];
+                                break;
+                              }
+                            }
+                          }
+                        
+                          let rawEventName = eventHeader
+                            ? eventHeader.innerText.trim().replace(/\n/g,' ').replace(/\s+/g,' ')
+                            : "Unknown Event";
+                        
+                          // Clean event names
+                          let eventName = rawEventName
+                            .replace(/\s-\s\d{2}"(?:\s?\/\s?\d\.\d{3}m)?/, "")
+                            .replace(/\s-\s\d+(?:\.\d+)?\s?(?:kg|lb)\b/i, "")
+                            .replace(/\b(\d)x(\d{2,4})\sRelay\b/i, (match, legs, dist) => `${legs}x${dist}m Relay`)
+                            .replace(/\s{2,}/g, " ")
+                            .trim();
+                        
+                          const headers = Array.from(table.querySelectorAll('thead th'))
+                            .map(th => th.innerText.trim().toLowerCase());
+                        
+                          const placeIdx  = headers.findIndex(h => h.includes('pl'));
+                          const nameIdx   = headers.findIndex(h => h.includes('athlete') || h.includes('name'));
+                          const gradeIdx  = headers.findIndex(h => h === 'yr' || h === 'year' || h === 'gr' || h === 'grade');
+                          const markIdx   = headers.findIndex(h => h.includes('time') || h.includes('mark') || h.includes('result'));
+                          const schoolIdx = headers.findIndex(h => h.includes('team') || h.includes('school'));
+                          const heatIdx   = headers.findIndex(h => h.includes('ht') || h.includes('heat') || h.includes('flight') || h.includes('fl'));
+                        
+                          const rows = table.querySelectorAll('tbody tr');
+                        
+                          let currentHeat = "";
+                        
+                          rows.forEach(row => {
+                        
+                            // Heat/flight header rows
+                            if(row.querySelector('th') || row.classList.contains('heat-header')){
+                              const text = row.innerText.toLowerCase();
+                        
+                              if(text.includes('heat') || text.includes('flight')){
+                                currentHeat = text.replace(/[^0-9]/g,'');
+                              }
+                        
+                              return;
+                            }
+                        
+                            const cells = row.querySelectorAll('td');
+                        
+                            if(cells.length < 3) return;
+                        
+                            const getCell = (idx, fallbackSelector) => {
+                              if(idx >= 0 && cells[idx]) return cells[idx].innerText.trim();
+                        
+                              const el = row.querySelector(fallbackSelector);
+                              return el ? el.innerText.trim() : "";
+                            };
+                        
+                            let place  = getCell(placeIdx, '.place, td:first-child').replace('.','');
+                            let name   = getCell(nameIdx, 'a[href*="/athlete/"], .athlete, .name');
+                            let grade  = getCell(gradeIdx, '.grade, .yr, .year');
+                            let school = getCell(schoolIdx, 'a[href*="/team/"], .team, .school') || "Unattached";
+                            let heat   = getCell(heatIdx, '.heat') || currentHeat || "1";
+                            let mark   = getCell(markIdx, '.result, .time, .mark, .time-distance');
+                        
+                            // Backup mark detection
+                            if(!mark){
+                              cells.forEach(td => {
+                                const txt = td.innerText.trim();
+                        
+                                if(/(\d+[:.]\d+)|(\d+['"])|(\d+[-]\d+)/.test(txt) && txt.length < 25){
+                                  mark = txt;
+                                }
+                              });
+                            }
+                        
+                            // CLEAN THE MARK
+                            mark = cleanMark(mark);
+                        
+                            // Relay handling
+                            if(eventName.toLowerCase().includes('relay') || eventName.toLowerCase().includes('shuttle')){
+                        
+                              const relayAthleteLinks = Array.from(
+                                row.querySelectorAll('.athlete a, .athlete span, a.athlete-name')
+                              );
+                        
+                              if(relayAthleteLinks.length > 0){
+                                name = relayAthleteLinks
+                                  .map(a => a.innerText.trim())
+                                  .filter(n => n !== "")
+                                  .join(', ');
+                              } else {
+                                name = row.querySelector('.school, .team')?.innerText.trim() || name;
+                              }
+                        
+                              school = school.split(' - ')[0].trim();
+                              grade = "";
+                            }
+                        
+                            // Save row
+                            if(name && mark && !isNaN(parseInt(place))){
+                        
+                              const cleanRow = [
+                                `"${eventName.replace(/"/g,'""')}"`,
+                                `"${place.replace(/"/g,'""')}"`,
+                                `"${grade.replace(/"/g,'""')}"`,
+                                `"${name.replace(/"/g,'""')}"`,
+                                `"${mark.replace(/"/g,'""')}"`,
+                                `"${school.replace(/"/g,'""')}"`,
+                                `"${heat.replace(/"/g,'""')}"`,
+                                `"${gender}"`
+                              ].join(",");
+                        
+                              csvRows.push(cleanRow);
+                              count++;
+                            }
+                        
+                          });
+                        
+                        });
+                        
+                        // Copy CSV
+                        if(count > 0){
+                        
+                          const temp = document.createElement("textarea");
+                          document.body.appendChild(temp);
+                        
+                          temp.value = csvRows.join("\n");
+                        
+                          temp.select();
+                          document.execCommand("copy");
+                        
+                          document.body.removeChild(temp);
+                        
+                          alert(`✅ Copied ${count} results to clipboard!`);
+                        
+                        } else {
+                        
+                          alert("❌ Found 0 results. Make sure you're on the Results tab.");
+                        
+                        }
+                        
+                        })();
                 </div>
 
                 <button class="copy-button" onclick="copyBookmarklet()">
