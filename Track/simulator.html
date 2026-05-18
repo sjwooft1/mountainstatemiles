@@ -214,11 +214,15 @@
                 border: 1px solid var(--border);
                 border-radius: var(--radius);
                 overflow: hidden;
+                display: flex;
+                flex-direction: column;
+                max-height: calc(100vh - 100px);
             }
             .sidebar-header {
                 padding: 18px 20px 14px;
                 border-bottom: 1px solid var(--border);
                 background: var(--bg-raised);
+                flex-shrink: 0;
             }
             .sidebar-title {
                 font-family: var(--font-display);
@@ -271,7 +275,13 @@
                 background: var(--bg-card);
             }
 
-            /* Team search & list */
+            /* Team & Event search & list */
+            .sidebar-scrollable {
+                overflow-y: auto;
+                scrollbar-width: thin;
+                scrollbar-color: var(--border) transparent;
+                flex-grow: 1;
+            }
             .teams-section {
                 padding: 14px 20px;
                 border-bottom: 1px solid var(--border);
@@ -335,7 +345,7 @@
             }
 
             .school-list {
-                max-height: 320px;
+                max-height: 240px;
                 overflow-y: auto;
                 border-radius: 6px;
                 border: 1px solid var(--border);
@@ -375,6 +385,8 @@
 
             .sidebar-actions {
                 padding: 14px 20px;
+                flex-shrink: 0;
+                background: var(--bg-card);
             }
 
             .btn-simulate {
@@ -841,15 +853,6 @@
                 flex-shrink: 0;
             }
 
-            /* ─── SUMMARY ROW ─── */
-            .summary-tfoot td {
-                padding: 8px 14px;
-                font-size: 0.78rem;
-                color: var(--text-lo);
-                border-top: 1px solid var(--border);
-                background: var(--bg);
-            }
-
             /* ─── ERROR STATE ─── */
             .error-card {
                 background: rgba(239, 68, 68, 0.06);
@@ -877,6 +880,7 @@
                 }
                 .sidebar {
                     position: static;
+                    max-height: none;
                 }
                 .podium-row {
                     flex-wrap: wrap;
@@ -896,32 +900,6 @@
                 .event-table td:nth-child(3) {
                     display: none;
                 }
-            }
-
-            /* Team color palette */
-            .tc-0 {
-                background: #2a5cff;
-            }
-            .tc-1 {
-                background: #ff4e2a;
-            }
-            .tc-2 {
-                background: #2aff9f;
-            }
-            .tc-3 {
-                background: #ffd02a;
-            }
-            .tc-4 {
-                background: #c62aff;
-            }
-            .tc-5 {
-                background: #2afff0;
-            }
-            .tc-6 {
-                background: #ff2a7a;
-            }
-            .tc-7 {
-                background: #a2ff2a;
             }
         </style>
     </head>
@@ -974,7 +952,6 @@
             </div>
 
             <div class="sim-layout">
-                <!-- SIDEBAR -->
                 <aside class="sidebar">
                     <div class="sidebar-header">
                         <div class="sidebar-title">Configuration</div>
@@ -996,32 +973,49 @@
                         </div>
                     </div>
 
-                    <div class="teams-section">
-                        <div class="teams-label">
-                            Select Teams
-                            <span class="selected-count" id="selected-count"
-                                >0</span
-                            >
+                    <div class="sidebar-scrollable">
+                        <div class="teams-section">
+                            <div class="teams-label">
+                                Select Teams
+                                <span class="selected-count" id="selected-count">0</span>
+                            </div>
+                            <div class="search-wrap">
+                                <i class="fas fa-search"></i>
+                                <input
+                                    type="text"
+                                    id="school-search"
+                                    class="search-input"
+                                    placeholder="Search schools…"
+                                />
+                            </div>
+                            <div id="school-selector" class="school-list">
+                                <div style="padding: 20px; text-align: center; color: var(--text-lo);">
+                                    <i class="fas fa-circle-notch fa-spin"></i>&nbsp; Loading teams…
+                                </div>
+                            </div>
                         </div>
-                        <div class="search-wrap">
-                            <i class="fas fa-search"></i>
-                            <input
-                                type="text"
-                                id="school-search"
-                                class="search-input"
-                                placeholder="Search schools…"
-                            />
-                        </div>
-                        <div id="school-selector" class="school-list">
-                            <div
-                                style="
-                                    padding: 20px;
-                                    text-align: center;
-                                    color: var(--text-lo);
-                                "
-                            >
-                                <i class="fas fa-circle-notch fa-spin"></i
-                                >&nbsp; Loading teams…
+
+                        <div class="teams-section" style="border-bottom: none;">
+                            <div class="teams-label">
+                                Select Events
+                                <span class="selected-count" id="event-count">0</span>
+                            </div>
+                            <div class="search-wrap">
+                                <i class="fas fa-search"></i>
+                                <input
+                                    type="text"
+                                    id="event-search"
+                                    class="search-input"
+                                    placeholder="Search events…"
+                                />
+                            </div>
+                            <div style="text-align: right; margin-bottom: 6px;">
+                                 <button id="toggle-events-btn" style="background: none; border: none; color: var(--accent); font-size: 0.75rem; font-weight: 600; cursor: pointer; padding: 0;">Deselect All</button>
+                            </div>
+                            <div id="event-selector" class="school-list" style="max-height: 200px;">
+                                <div style="padding: 20px; text-align: center; color: var(--text-lo);">
+                                    <i class="fas fa-circle-notch fa-spin"></i>&nbsp; Loading events…
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1035,12 +1029,11 @@
                             class="btn-reset"
                             style="display: none"
                         >
-                            <i class="fas fa-undo"></i> Clear Selection
+                            <i class="fas fa-undo"></i> Clear Team Selection
                         </button>
                     </div>
                 </aside>
 
-                <!-- RESULTS -->
                 <section class="results-area" id="results-area">
                     <div class="empty-state">
                         <div class="empty-state-icon">
@@ -1057,7 +1050,6 @@
             </div>
         </main>
 
-        <!-- Firebase -->
         <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
         <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
         <script src="firebase-config.js"></script>
@@ -1067,17 +1059,6 @@
             /* ═══════════════════════════════════════════════
    CONSTANTS & STATE
    ─────────────────────────────────────────────
-   DB layout (from meet.html / rankings.html):
-     Track/athletes  → { first_name, last_name, school, gender }
-     Track/events    → { name, category, slug }
-     Track/meets     → { name, season, date, location }
-     Track/results   → { athlete_id, event_id, meet_id, mark,
-                         placement, heat, gender?, relay_names? }
-
-   Gender lives on the ATHLETE (athlete.gender = 'M' or 'F').
-   Season lives on the MEET   (meet.season = 'outdoor'|'indoor').
-   The result row may also carry its own `gender` field as a
-   shortcut — we use whichever is present.
 ═══════════════════════════════════════════════ */
 
             const SCORING = {
@@ -1106,10 +1087,11 @@
             ]);
 
             // Cached reference data loaded once on init
-            let athletesMap = {}; // athleteId → { first_name, last_name, school, gender }
-            let eventsMap = {}; // eventId   → { name, category }
-            let meetsMap = {}; // meetId    → { name, season }
-            let allSchools = []; // [{ name, key }]  key = exact school string from athletes
+            let athletesMap = {}; 
+            let eventsMap = {}; 
+            let meetsMap = {}; 
+            let allSchools = []; 
+            let allEventsList = [];
             let teamColorMap = {};
 
             /* ─── Firebase ─── */
@@ -1154,13 +1136,11 @@
                     .trim();
 
                 if (isFieldEvent(eventName)) {
-                    // feet-inches: "42-6" or "42'6"
                     const fi = s.match(/^(\d+)['\-](\d+(?:\.\d+)?)$/);
                     if (fi) return parseFloat(fi[1]) * 12 + parseFloat(fi[2]);
                     const v = parseFloat(s);
                     return isNaN(v) ? -Infinity : v;
                 } else {
-                    // track time: "4:15.23" or "58.4"
                     if (s.includes(":")) {
                         const [m, sec] = s.split(":");
                         const val = parseFloat(m) * 60 + parseFloat(sec);
@@ -1179,96 +1159,80 @@
             function getUrlParams() {
                 const params = new URLSearchParams(window.location.search);
                 return {
-                    teams: params.get("teams")
-                        ? params
-                              .get("teams")
-                              .split(",")
-                              .filter((t) => t.trim())
-                        : [],
+                    teams: params.get("teams") ? params.get("teams").split(",").filter((t) => t.trim()) : [],
+                    events: params.get("events") ? params.get("events").split(",").filter((e) => e.trim()) : null,
                     season: params.get("season")?.toLowerCase() || "",
                     gender: params.get("gender")?.toUpperCase() || "",
                 };
             }
 
-            function buildUrlSlug(selectedSchools, season, gender) {
-                const params = new URLSearchParams();
-                if (selectedSchools?.length)
-                    params.set("teams", selectedSchools.join(","));
-                if (season) params.set("season", season);
-                if (gender) params.set("gender", gender);
-                const queryString = params.toString();
-                return queryString ? `?${queryString}` : "";
-            }
-
             /* ─── UI helpers ─── */
-            function updateRunButton() {
-                const count = document.querySelectorAll(
-                    "#school-selector input:checked",
-                ).length;
+            function updateSimState() {
+                const teamCheckboxes = document.querySelectorAll("#school-selector input:checked");
+                const eventCheckboxes = document.querySelectorAll("#event-selector input:checked");
+                
+                const count = teamCheckboxes.length;
+                const eventCount = eventCheckboxes.length;
+                
                 const btn = document.getElementById("run-sim");
                 const badge = document.getElementById("selected-count");
+                const eventBadge = document.getElementById("event-count");
                 const resetBtn = document.getElementById("reset-sim");
 
                 badge.textContent = count;
                 badge.classList.toggle("visible", count > 0);
-                btn.disabled = count < 2;
-                btn.innerHTML =
-                    count < 2
-                        ? `<i class="fas fa-play"></i> Select ${2 - count} More Team${2 - count !== 1 ? "s" : ""}`
-                        : `<i class="fas fa-play"></i> Simulate ${count} Teams`;
+                
+                eventBadge.textContent = eventCount;
+                eventBadge.classList.toggle("visible", eventCount > 0);
+
+                btn.disabled = count < 2 || eventCount === 0;
+                btn.innerHTML = count < 2
+                    ? `<i class="fas fa-play"></i> Select ${2 - count} More Team${2 - count !== 1 ? "s" : ""}`
+                    : (eventCount === 0 ? `<i class="fas fa-play"></i> Select Events` : `<i class="fas fa-play"></i> Simulate ${count} Teams`);
                 resetBtn.style.display = count > 0 ? "block" : "none";
 
-                // Update URL slug when selection changes
-                const selectedSchools = Array.from(
-                    document.querySelectorAll("#school-selector input:checked"),
-                ).map((cb) => cb.value);
-                const season = document
-                    .getElementById("sim-season")
-                    .value.toLowerCase();
-                const gender = document
-                    .getElementById("sim-gender")
-                    .value.toUpperCase();
-                const newUrl = buildUrlSlug(selectedSchools, season, gender);
-                window.history.replaceState(
-                    null,
-                    "",
-                    newUrl || window.location.pathname,
-                );
+                // Update URL slug
+                const selectedSchools = Array.from(teamCheckboxes).map((cb) => cb.value);
+                const selectedEvents = Array.from(eventCheckboxes).map((cb) => cb.value);
+                const season = document.getElementById("sim-season").value.toLowerCase();
+                const gender = document.getElementById("sim-gender").value.toUpperCase();
+                
+                const params = new URLSearchParams();
+                if (selectedSchools.length) params.set("teams", selectedSchools.join(","));
+                
+                // Only put events in URL if NOT ALL are selected to keep url cleaner
+                if (allEventsList.length > 0 && selectedEvents.length > 0 && selectedEvents.length < allEventsList.length) {
+                    params.set("events", selectedEvents.join(","));
+                }
+                
+                if (season) params.set("season", season);
+                if (gender) params.set("gender", gender);
+                
+                const queryString = params.toString();
+                const newUrl = queryString ? `?${queryString}` : window.location.pathname;
+                window.history.replaceState(null, "", newUrl);
             }
 
             /* ═══════════════════════════════════════════════
-   INIT — load reference tables, build school list
+   INIT — load reference tables, build lists
 ═══════════════════════════════════════════════ */
             async function initSimulator() {
-                const container = document.getElementById("school-selector");
+                const schoolContainer = document.getElementById("school-selector");
                 try {
                     await waitForFirebase();
 
-                    // Load athletes, events, meets in parallel
                     const [athSnap, evSnap, meetSnap] = await Promise.all([
-                        window.firebaseDatabase
-                            .ref("Track/athletes")
-                            .once("value"),
-                        window.firebaseDatabase
-                            .ref("Track/events")
-                            .once("value"),
-                        window.firebaseDatabase
-                            .ref("Track/meets")
-                            .once("value"),
+                        window.firebaseDatabase.ref("Track/athletes").once("value"),
+                        window.firebaseDatabase.ref("Track/events").once("value"),
+                        window.firebaseDatabase.ref("Track/meets").once("value"),
                     ]);
 
-                    athSnap.forEach((c) => {
-                        athletesMap[c.key] = c.val();
-                    });
-                    evSnap.forEach((c) => {
-                        eventsMap[c.key] = c.val();
-                    });
-                    meetSnap.forEach((c) => {
-                        meetsMap[c.key] = c.val();
-                    });
+                    athSnap.forEach((c) => { athletesMap[c.key] = c.val(); });
+                    evSnap.forEach((c) => { eventsMap[c.key] = c.val(); });
+                    meetSnap.forEach((c) => { meetsMap[c.key] = c.val(); });
 
-                    // Build school list from athletes (school is a plain string, e.g. "Parkersburg High School")
-                    const schoolSet = new Map(); // school name → school name
+                    // Build school list
+                    const schoolSet = new Map();
                     Object.values(athletesMap).forEach((a) => {
                         const s = (a.school || "").trim();
                         if (s && !schoolSet.has(s)) schoolSet.set(s, s);
@@ -1277,98 +1241,91 @@
                         .sort((a, b) => a.localeCompare(b))
                         .map((name) => ({ name, key: name }));
 
-                    renderSchoolList(allSchools);
+                    // Build event list
+                    allEventsList = Object.keys(eventsMap)
+                        .map(key => ({ id: key, name: eventsMap[key].name || "Unknown Event" }))
+                        .sort((a, b) => a.name.localeCompare(b.name));
 
-                    // Load and apply URL parameters
+                    // Parse URL & setup initial UI checks
                     const urlParams = getUrlParams();
-                    if (urlParams.teams.length > 0) {
-                        const teamSet = new Set(urlParams.teams);
-                        allSchools.forEach((school) => {
-                            if (teamSet.has(school.name)) {
-                                const safeId = school.name.replace(
-                                    /[^a-zA-Z0-9]/g,
-                                    "_",
-                                );
-                                const checkbox = document.getElementById(
-                                    `school-${safeId}`,
-                                );
-                                if (checkbox) {
-                                    checkbox.checked = true;
-                                    checkbox
-                                        .closest(".school-item")
-                                        .classList.add("checked");
-                                }
-                            }
-                        });
+                    
+                    renderSchoolList(allSchools, new Set(urlParams.teams));
+                    
+                    // If urlParams.events is null, all will be selected by default
+                    let initialEventSet = null; 
+                    if(urlParams.events) {
+                        initialEventSet = new Set(urlParams.events);
+                    } else {
+                        initialEventSet = new Set(allEventsList.map(e => e.id));
                     }
-                    if (urlParams.season)
-                        document.getElementById("sim-season").value =
-                            urlParams.season;
-                    if (urlParams.gender)
-                        document.getElementById("sim-gender").value =
-                            urlParams.gender;
-                    updateRunButton();
+                    renderEventList(allEventsList, initialEventSet);
 
-                    document
-                        .getElementById("school-search")
-                        .addEventListener("input", (e) => {
-                            const q = e.target.value.toLowerCase();
-                            renderSchoolList(
-                                allSchools.filter((s) =>
-                                    s.name.toLowerCase().includes(q),
-                                ),
-                            );
+                    if (urlParams.season) document.getElementById("sim-season").value = urlParams.season;
+                    if (urlParams.gender) document.getElementById("sim-gender").value = urlParams.gender;
+                    
+                    updateSimState();
+
+                    // Search Listeners
+                    document.getElementById("school-search").addEventListener("input", (e) => {
+                        const q = e.target.value.toLowerCase();
+                        renderSchoolList(allSchools.filter((s) => s.name.toLowerCase().includes(q)));
+                    });
+                    
+                    document.getElementById("event-search").addEventListener("input", (e) => {
+                        const q = e.target.value.toLowerCase();
+                        renderEventList(allEventsList.filter((ev) => ev.name.toLowerCase().includes(q)));
+                    });
+
+                    // Action Listeners
+                    document.getElementById("reset-sim").addEventListener("click", () => {
+                        document.querySelectorAll("#school-selector input:checked").forEach((cb) => {
+                            cb.checked = false;
+                            cb.closest(".school-item").classList.remove("checked");
                         });
+                        updateSimState();
+                    });
 
-                    document
-                        .getElementById("reset-sim")
-                        .addEventListener("click", () => {
-                            document
-                                .querySelectorAll(
-                                    "#school-selector input:checked",
-                                )
-                                .forEach((cb) => {
-                                    cb.checked = false;
-                                    cb.closest(".school-item").classList.remove(
-                                        "checked",
-                                    );
-                                });
-                            updateRunButton();
+                    document.getElementById("toggle-events-btn").addEventListener("click", (e) => {
+                        const container = document.getElementById("event-selector");
+                        const allChecked = container.querySelectorAll("input:checked").length === container.querySelectorAll("input").length;
+                        
+                        container.querySelectorAll("input[type='checkbox']").forEach((cb) => {
+                            cb.checked = !allChecked;
+                            cb.closest(".school-item").classList.toggle("checked", !allChecked);
                         });
+                        
+                        e.target.textContent = allChecked ? "Select All" : "Deselect All";
+                        updateSimState();
+                    });
 
-                    // Update URL when season or gender changes
-                    document
-                        .getElementById("sim-season")
-                        .addEventListener("change", updateRunButton);
-                    document
-                        .getElementById("sim-gender")
-                        .addEventListener("change", updateRunButton);
+                    document.getElementById("sim-season").addEventListener("change", updateSimState);
+                    document.getElementById("sim-gender").addEventListener("change", updateSimState);
+
+                    // Auto-run if URL contains teams
+                    if (urlParams.teams.length >= 2) {
+                        setTimeout(() => runSimulation(), 100);
+                    }
+
                 } catch (err) {
                     console.error(err);
-                    container.innerHTML = `<div style="padding:18px;color:#ef4444;text-align:center;">
-      <i class="fas fa-triangle-exclamation"></i> Failed to load teams: ${err.message}
+                    schoolContainer.innerHTML = `<div style="padding:18px;color:#ef4444;text-align:center;">
+      <i class="fas fa-triangle-exclamation"></i> Failed to load data: ${err.message}
     </div>`;
                 }
             }
 
-            function renderSchoolList(list) {
+            function renderSchoolList(list, initialCheckedSet = null) {
                 const container = document.getElementById("school-selector");
                 if (!list?.length) {
                     container.innerHTML = `<div style="padding:18px;text-align:center;color:var(--text-lo);">No schools found.</div>`;
                     return;
                 }
 
-                // Preserve checked state across re-renders (e.g. after search)
-                const checkedSet = new Set(
-                    Array.from(
-                        document.querySelectorAll(
-                            "#school-selector input:checked",
-                        ),
-                    ).map((cb) => cb.value),
+                const checkedSet = initialCheckedSet || new Set(
+                    Array.from(container.querySelectorAll("input:checked")).map((cb) => cb.value)
                 );
 
-                container.innerHTML = list
-                    .map((school) => {
+                container.innerHTML = list.map((school) => {
                         const checked = checkedSet.has(school.key);
                         const safeId = school.key.replace(/[^a-zA-Z0-9]/g, "_");
                         return `
@@ -1376,57 +1333,75 @@
         <input type="checkbox" value="${school.key}" id="school-${safeId}"${checked ? " checked" : ""}>
         ${school.name}
       </label>`;
-                    })
-                    .join("");
+                }).join("");
 
-                container
-                    .querySelectorAll('input[type="checkbox"]')
-                    .forEach((cb) => {
-                        cb.addEventListener("change", (e) => {
-                            e.target
-                                .closest(".school-item")
-                                .classList.toggle("checked", e.target.checked);
-                            updateRunButton();
-                        });
+                container.querySelectorAll('input[type="checkbox"]').forEach((cb) => {
+                    cb.addEventListener("change", (e) => {
+                        e.target.closest(".school-item").classList.toggle("checked", e.target.checked);
+                        updateSimState();
                     });
-
-                updateRunButton();
+                });
             }
+
+            function renderEventList(list, initialCheckedSet = null) {
+                const container = document.getElementById("event-selector");
+                if (!list?.length) {
+                    container.innerHTML = `<div style="padding:18px;text-align:center;color:var(--text-lo);">No events found.</div>`;
+                    return;
+                }
+
+                let checkedSet = initialCheckedSet;
+                if (!checkedSet) {
+                    // Fallback to preserve state during search
+                    checkedSet = new Set(Array.from(container.querySelectorAll("input:checked")).map((cb) => cb.value));
+                }
+
+                container.innerHTML = list.map((ev) => {
+                        const checked = checkedSet.has(ev.id);
+                        const safeId = ev.id.replace(/[^a-zA-Z0-9]/g, "_");
+                        return `
+      <label class="school-item${checked ? " checked" : ""}" for="event-${safeId}">
+        <input type="checkbox" value="${ev.id}" id="event-${safeId}"${checked ? " checked" : ""}>
+        ${ev.name}
+      </label>`;
+                }).join("");
+
+                container.querySelectorAll('input[type="checkbox"]').forEach((cb) => {
+                    cb.addEventListener("change", (e) => {
+                        e.target.closest(".school-item").classList.toggle("checked", e.target.checked);
+                        
+                        // Update toggle button text based on state
+                        const allChecked = container.querySelectorAll("input:checked").length === container.querySelectorAll("input").length;
+                        document.getElementById("toggle-events-btn").textContent = allChecked ? "Deselect All" : "Select All";
+                        
+                        updateSimState();
+                    });
+                });
+            }
+
 
             /* ═══════════════════════════════════════════════
    MAIN SIMULATION
-   ─────────────────────────────────────────────
-   Steps:
-   1. Pull ALL results from Track/results (one fetch).
-   2. Join to athletes → get gender & school.
-   3. Join to meets → get season.
-   4. Filter by selected schools + chosen gender + chosen season.
-   5. Per athlete per event, keep their single best mark.
-   6. Per event, keep top 3 per school (1 for relays).
-   7. Score using NFHS 8-place table.
 ═══════════════════════════════════════════════ */
             async function runSimulation() {
-                const selectedSchools = Array.from(
-                    document.querySelectorAll("#school-selector input:checked"),
-                ).map((cb) => cb.value);
+                const selectedSchools = Array.from(document.querySelectorAll("#school-selector input:checked")).map((cb) => cb.value);
+                const selectedEvents = new Set(Array.from(document.querySelectorAll("#event-selector input:checked")).map((cb) => cb.value));
+                
                 if (selectedSchools.length < 2) {
                     alert("Please select at least 2 teams.");
                     return;
                 }
+                if (selectedEvents.size === 0) {
+                    alert("Please select at least 1 event to simulate.");
+                    return;
+                }
 
-                const season = document
-                    .getElementById("sim-season")
-                    .value.toLowerCase(); // 'outdoor'|'indoor'
-                const genderFilter = document
-                    .getElementById("sim-gender")
-                    .value.toUpperCase(); // 'M'|'F'
+                const season = document.getElementById("sim-season").value.toLowerCase();
+                const genderFilter = document.getElementById("sim-gender").value.toUpperCase();
                 const resultsArea = document.getElementById("results-area");
 
-                // Assign colors
                 teamColorMap = {};
-                selectedSchools.forEach((s, i) => {
-                    teamColorMap[s] = TEAM_COLORS[i % TEAM_COLORS.length];
-                });
+                selectedSchools.forEach((s, i) => { teamColorMap[s] = TEAM_COLORS[i % TEAM_COLORS.length]; });
 
                 resultsArea.innerHTML = `
     <div class="loading-state">
@@ -1436,52 +1411,37 @@
     </div>`;
 
                 try {
-                    // ── 1. Fetch all results ──
-                    const resSnap = await window.firebaseDatabase
-                        .ref("Track/results")
-                        .once("value");
+                    const resSnap = await window.firebaseDatabase.ref("Track/results").once("value");
 
-                    // ── 2–4. Filter ──
                     const selectedSet = new Set(selectedSchools);
                     const filteredResults = [];
 
                     resSnap.forEach((child) => {
                         const r = child.val();
+                        
+                        // Ignore events that are filtered out
+                        if (!r.event_id || !selectedEvents.has(r.event_id)) return;
+                        
                         const athlete = athletesMap[r.athlete_id] || {};
                         const meet = meetsMap[r.meet_id] || {};
                         const event = eventsMap[r.event_id] || {};
 
-                        // Resolve gender: prefer result.gender, fallback to athlete.gender
-                        const resGender = (
-                            r.gender ||
-                            athlete.gender ||
-                            ""
-                        ).toUpperCase();
-                        // Resolve season from the meet
+                        const resGender = (r.gender || athlete.gender || "").toUpperCase();
                         const resSeason = (meet.season || "").toLowerCase();
-                        // Resolve school from athlete
                         const school = (athlete.school || "").trim();
 
-                        if (!selectedSet.has(school)) return; // not a selected team
-                        if (resGender !== genderFilter) return; // wrong gender
-                        if (resSeason !== season) return; // wrong season
-                        if (!r.mark || !r.event_id) return; // no mark
+                        if (!selectedSet.has(school)) return; 
+                        if (resGender !== genderFilter) return; 
+                        if (resSeason !== season) return; 
+                        if (!r.mark) return; 
 
                         const eventName = event.name || "Unknown Event";
                         const parsed = parseMark(r.mark, eventName);
-                        if (
-                            parsed === Infinity ||
-                            parsed === -Infinity ||
-                            Number.isNaN(parsed)
-                        )
-                            return;
+                        if (parsed === Infinity || parsed === -Infinity || Number.isNaN(parsed)) return;
 
                         const athleteLabel = r.relay_names
-                            ? athlete.school
-                                ? `${athlete.school} Relay`
-                                : "Relay"
-                            : `${athlete.first_name || ""} ${athlete.last_name || ""}`.trim() ||
-                              "Unknown";
+                            ? athlete.school ? `${athlete.school} Relay` : "Relay"
+                            : `${athlete.first_name || ""} ${athlete.last_name || ""}`.trim() || "Unknown";
 
                         filteredResults.push({
                             athleteId: r.athlete_id || "relay",
@@ -1501,14 +1461,12 @@
         <div class="empty-state">
           <div class="empty-state-icon"><i class="fas fa-search"></i></div>
           <h2>No Results Found</h2>
-          <p>No records matched <strong>${genderFilter === "M" ? "Boys" : "Girls"} · ${season}</strong> for the selected schools.
-          Make sure athletes have a <code>gender</code> field and their meets have a <code>season</code> field set correctly.</p>
+          <p>No records matched <strong>${genderFilter === "M" ? "Boys" : "Girls"} · ${season}</strong> for the selected teams and events.</p>
         </div>`;
                         return;
                     }
 
-                    // ── 5. Per athlete per event → keep best mark ──
-                    const bestPerAthlete = {}; // `${athleteId}_${eventId}` → entry
+                    const bestPerAthlete = {}; 
 
                     filteredResults.forEach((entry) => {
                         const key = `${entry.athleteId}_${entry.eventId}`;
@@ -1521,13 +1479,10 @@
                         if (better) bestPerAthlete[key] = entry;
                     });
 
-                    // ── 6. Group by event; keep top 3 per school (1 for relays) ──
                     const teamScores = {};
-                    selectedSchools.forEach((s) => {
-                        teamScores[s] = { school: s, points: 0 };
-                    });
+                    selectedSchools.forEach((s) => { teamScores[s] = { school: s, points: 0 }; });
 
-                    const eventBuckets = {}; // eventId → { name, relay, fieldEvent, entries[] }
+                    const eventBuckets = {}; 
 
                     Object.values(bestPerAthlete).forEach((entry) => {
                         if (!eventBuckets[entry.eventId]) {
@@ -1539,12 +1494,10 @@
                             };
                         }
                         const bucket = eventBuckets[entry.eventId];
-                        if (!bucket.bySchool[entry.school])
-                            bucket.bySchool[entry.school] = [];
+                        if (!bucket.bySchool[entry.school]) bucket.bySchool[entry.school] = [];
                         bucket.bySchool[entry.school].push(entry);
                     });
 
-                    // Build final combined entries per event
                     const eventResults = [];
 
                     Object.values(eventBuckets).forEach((bucket) => {
@@ -1554,32 +1507,21 @@
                         Object.values(bucket.bySchool).forEach(
                             (schoolEntries) => {
                                 schoolEntries.sort((a, b) =>
-                                    bucket.fieldEvent
-                                        ? b.parsed - a.parsed
-                                        : a.parsed - b.parsed,
+                                    bucket.fieldEvent ? b.parsed - a.parsed : a.parsed - b.parsed
                                 );
-                                entries.push(
-                                    ...schoolEntries.slice(0, allowed),
-                                );
-                            },
+                                entries.push(...schoolEntries.slice(0, allowed));
+                            }
                         );
 
-                        // Sort all entries across all schools
                         entries.sort((a, b) =>
-                            bucket.fieldEvent
-                                ? b.parsed - a.parsed
-                                : a.parsed - b.parsed,
+                            bucket.fieldEvent ? b.parsed - a.parsed : a.parsed - b.parsed
                         );
 
-                        // ── 7. Score ──
-                        const scoring = bucket.relay
-                            ? SCORING.relay
-                            : SCORING.individual;
+                        const scoring = bucket.relay ? SCORING.relay : SCORING.individual;
                         entries.forEach((e, i) => {
                             e.place = i + 1;
                             e.points = scoring[i] || 0;
-                            if (teamScores[e.school])
-                                teamScores[e.school].points += e.points;
+                            if (teamScores[e.school]) teamScores[e.school].points += e.points;
                         });
 
                         if (entries.length) {
@@ -1604,20 +1546,15 @@
             }
 
             /* ═══════════════════════════════════════════════
-   RENDERING
+   RENDERING RESULTS
 ═══════════════════════════════════════════════ */
             function renderResults(teamScores, events) {
                 const resultsArea = document.getElementById("results-area");
-                const standings = Object.values(teamScores).sort(
-                    (a, b) => b.points - a.points,
-                );
+                const standings = Object.values(teamScores).sort((a, b) => b.points - a.points);
 
-                // Podium cards
-                const podiumItems = standings
-                    .map((team, i) => {
+                const podiumItems = standings.map((team, i) => {
                         const cls = ["p1", "p2", "p3"][i] || "";
-                        const placeLabel =
-                            ["1ST", "2ND", "3RD"][i] || `${i + 1}TH`;
+                        const placeLabel = ["1ST", "2ND", "3RD"][i] || `${i + 1}TH`;
                         const color = teamColorMap[team.school] || "#8899bb";
                         return `
       <div class="podium-item ${cls}">
@@ -1628,28 +1565,16 @@
         <div class="podium-pts">${team.points}</div>
         <div class="podium-pts-label">Points</div>
       </div>`;
-                    })
-                    .join("");
+                }).join("");
 
-                // Event result cards
-                const placeClass = (p) =>
-                    p === 1 ? "g" : p === 2 ? "s" : p === 3 ? "b" : "n";
-                const rowClass = (p) =>
-                    p === 1
-                        ? "row-gold"
-                        : p === 2
-                          ? "row-silver"
-                          : p === 3
-                            ? "row-bronze"
-                            : "";
+                const placeClass = (p) => p === 1 ? "g" : p === 2 ? "s" : p === 3 ? "b" : "n";
+                const rowClass = (p) => p === 1 ? "row-gold" : p === 2 ? "row-silver" : p === 3 ? "row-bronze" : "";
 
                 const eventCards = events
                     .sort((a, b) => a.name.localeCompare(b.name))
                     .map((event) => {
-                        const rows = event.entries
-                            .map((e) => {
-                                const color =
-                                    teamColorMap[e.school] || "#8899bb";
+                        const rows = event.entries.map((e) => {
+                                const color = teamColorMap[e.school] || "#8899bb";
                                 return `
           <tr class="${rowClass(e.place)}">
             <td><span class="place-badge ${placeClass(e.place)}">${e.place}</span></td>
@@ -1660,20 +1585,13 @@
             <td class="mark-val">${formatDisplayMark(e.mark)}</td>
             <td class="pts-val${e.points === 0 ? " zero" : ""}">${e.points > 0 ? "+" + e.points : "—"}</td>
           </tr>`;
-                            })
-                            .join("");
+                        }).join("");
 
                         const tags = [
-                            event.relay
-                                ? `<span class="event-tag relay">Relay</span>`
-                                : "",
-                            event.fieldEvent
-                                ? `<span class="event-tag field">Field</span>`
-                                : `<span class="event-tag">Track</span>`,
+                            event.relay ? `<span class="event-tag relay">Relay</span>` : "",
+                            event.fieldEvent ? `<span class="event-tag field">Field</span>` : `<span class="event-tag">Track</span>`,
                             `<span class="event-tag">${event.entries.length} comp</span>`,
-                        ]
-                            .filter(Boolean)
-                            .join("");
+                        ].filter(Boolean).join("");
 
                         return `
         <div class="event-card">
@@ -1694,8 +1612,7 @@
             <tbody>${rows}</tbody>
           </table>
         </div>`;
-                    })
-                    .join("");
+                    }).join("");
 
                 resultsArea.innerHTML = `
     <div class="results-wrap">
@@ -1719,9 +1636,7 @@
 ═══════════════════════════════════════════════ */
             document.addEventListener("DOMContentLoaded", () => {
                 initSimulator();
-                document
-                    .getElementById("run-sim")
-                    .addEventListener("click", runSimulation);
+                document.getElementById("run-sim").addEventListener("click", runSimulation);
             });
         </script>
     </body>
