@@ -592,7 +592,7 @@
       const resultsSnapshot = await window.firebaseDatabase.ref('Track/results')
         .orderByChild('event_id')
         .equalTo(eventId)
-        .limitToFirst(200)
+     
         .once('value');
       
       const results = [];
@@ -630,6 +630,13 @@
       filteredResults.sort((a, b) => {
         const markA = parseMarkValue(a.mark, eventName);
         const markB = parseMarkValue(b.mark, eventName);
+        
+        // Prevent NaN when comparing two invalid marks
+        if (markA === Infinity && markB === Infinity) return 0;
+        // Push invalid marks to the bottom of the list
+        if (markA === Infinity) return 1;
+        if (markB === Infinity) return -1;
+        
         return isFieldEvent(eventName) ? markB - markA : markA - markB;
       });
       
