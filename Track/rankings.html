@@ -438,11 +438,7 @@
       if (targetOption) selectEvent.value = targetOption.value;
     }
 
-    if (genderParam) {
-      const g = genderParam.toLowerCase();
-      if (g === 'male' || g === 'm') selectGender.value = 'M';
-      if (g === 'female' || g === 'f') selectGender.value = 'F';
-    }
+    
 
     if (seasonParam) {
       selectSeason.value = seasonParam.toLowerCase();

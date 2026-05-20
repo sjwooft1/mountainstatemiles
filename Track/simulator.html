@@ -1,1643 +1,829 @@
 <!doctype html>
 <html lang="en">
-    <head>
-        <meta charset="utf-8" />
-        <meta name="viewport" content="width=device-width,initial-scale=1" />
-        <title>Meet Simulator — TrackStats</title>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link
-            href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap"
-            rel="stylesheet"
-        />
-        <link
-            rel="stylesheet"
-            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-        />
-        <style>
-            /* ─── DESIGN TOKENS ─── */
-            :root {
-                --bg: #0a0c10;
-                --bg-card: #12161e;
-                --bg-raised: #1a2030;
-                --border: #252d3d;
-                --border-glow: #2a5cff44;
-                --text-hi: #f0f4ff;
-                --text-mid: #8899bb;
-                --text-lo: #48566e;
-                --accent: #2a5cff;
-                --accent-dim: #1a3a99;
-                --accent-glow: rgba(42, 92, 255, 0.15);
-                --gold: #f5b731;
-                --silver: #a8b8c8;
-                --bronze: #c47a38;
-                --gold-bg: rgba(245, 183, 49, 0.08);
-                --silver-bg: rgba(168, 184, 200, 0.06);
-                --bronze-bg: rgba(196, 122, 56, 0.06);
-                --font-display: "Barlow Condensed", sans-serif;
-                --font-body: "Barlow", sans-serif;
-                --font-mono: "JetBrains Mono", monospace;
-                --radius: 10px;
-                --transition: 0.18s ease;
-            }
-
-            *,
-            *::before,
-            *::after {
-                box-sizing: border-box;
-            }
-
-            html {
-                scroll-behavior: smooth;
-            }
-
-            body {
-                margin: 0;
-                font-family: var(--font-body);
-                background: var(--bg);
-                color: var(--text-hi);
-                min-height: 100vh;
-                overflow-x: hidden;
-            }
-
-            /* ─── BACKGROUND MESH ─── */
-            body::before {
-                content: "";
-                position: fixed;
-                inset: 0;
-                background:
-                    radial-gradient(
-                        ellipse 60% 50% at 80% 10%,
-                        rgba(42, 92, 255, 0.07) 0%,
-                        transparent 70%
-                    ),
-                    radial-gradient(
-                        ellipse 40% 60% at 10% 80%,
-                        rgba(42, 92, 255, 0.04) 0%,
-                        transparent 70%
-                    );
-                pointer-events: none;
-                z-index: 0;
-            }
-
-            /* ─── NAVBAR ─── */
-            .navbar {
-                position: sticky;
-                top: 0;
-                z-index: 100;
-                background: rgba(10, 12, 16, 0.85);
-                backdrop-filter: blur(16px);
-                border-bottom: 1px solid var(--border);
-                padding: 0 24px;
-            }
-            .navbar-content {
-                max-width: 1340px;
-                margin: 0 auto;
-                display: flex;
-                align-items: center;
-                gap: 32px;
-                height: 58px;
-            }
-            .navbar-brand {
-                font-family: var(--font-display);
-                font-size: 1.4rem;
-                font-weight: 900;
-                letter-spacing: 0.04em;
-                text-transform: uppercase;
-                text-decoration: none;
-                color: var(--text-hi);
-                display: flex;
-                align-items: center;
-                gap: 8px;
-            }
-            .navbar-brand span.accent {
-                color: var(--accent);
-            }
-            .navbar-nav {
-                list-style: none;
-                display: flex;
-                gap: 4px;
-                margin: 0;
-                padding: 0;
-                margin-left: auto;
-            }
-            .navbar-link {
-                text-decoration: none;
-                color: var(--text-mid);
-                font-weight: 600;
-                font-size: 0.85rem;
-                letter-spacing: 0.06em;
-                text-transform: uppercase;
-                padding: 6px 14px;
-                border-radius: 6px;
-                transition:
-                    color var(--transition),
-                    background var(--transition);
-            }
-            .navbar-link:hover {
-                color: var(--text-hi);
-                background: var(--bg-raised);
-            }
-            .navbar-link.active {
-                color: var(--accent);
-                background: var(--accent-glow);
-            }
-
-            /* ─── LAYOUT ─── */
-            .page-wrap {
-                position: relative;
-                z-index: 1;
-                max-width: 1340px;
-                margin: 0 auto;
-                padding: 32px 24px 60px;
-            }
-
-            /* ─── PAGE HEADER ─── */
-            .page-header {
-                margin-bottom: 32px;
-            }
-            .page-title {
-                font-family: var(--font-display);
-                font-size: clamp(2.4rem, 5vw, 3.6rem);
-                font-weight: 900;
-                letter-spacing: -0.01em;
-                text-transform: uppercase;
-                line-height: 1;
-                margin: 0 0 8px 0;
-            }
-            .page-title .dim {
-                color: var(--text-lo);
-            }
-            .page-subtitle {
-                color: var(--text-mid);
-                font-size: 0.95rem;
-                margin: 0;
-            }
-
-            .stat-bar {
-                display: flex;
-                gap: 24px;
-                margin-top: 16px;
-                flex-wrap: wrap;
-            }
-            .stat-pill {
-                display: flex;
-                align-items: center;
-                gap: 8px;
-                background: var(--bg-card);
-                border: 1px solid var(--border);
-                border-radius: 999px;
-                padding: 6px 14px;
-                font-size: 0.82rem;
-                color: var(--text-mid);
-            }
-            .stat-pill i {
-                color: var(--accent);
-                font-size: 0.75rem;
-            }
-            .stat-pill strong {
-                color: var(--text-hi);
-            }
-
-            /* ─── GRID ─── */
-            .sim-layout {
-                display: grid;
-                grid-template-columns: 300px 1fr;
-                gap: 20px;
-                align-items: start;
-            }
-
-            /* ─── SIDEBAR ─── */
-            .sidebar {
-                position: sticky;
-                top: 78px;
-                background: var(--bg-card);
-                border: 1px solid var(--border);
-                border-radius: var(--radius);
-                overflow: hidden;
-                display: flex;
-                flex-direction: column;
-                max-height: calc(100vh - 100px);
-            }
-            .sidebar-header {
-                padding: 18px 20px 14px;
-                border-bottom: 1px solid var(--border);
-                background: var(--bg-raised);
-                flex-shrink: 0;
-            }
-            .sidebar-title {
-                font-family: var(--font-display);
-                font-size: 1rem;
-                font-weight: 800;
-                text-transform: uppercase;
-                letter-spacing: 0.08em;
-                color: var(--text-hi);
-                margin: 0 0 14px 0;
-            }
-
-            .filter-row {
-                display: flex;
-                gap: 10px;
-            }
-            .filter-group {
-                flex: 1;
-            }
-            .filter-label {
-                display: block;
-                font-size: 0.72rem;
-                font-weight: 700;
-                letter-spacing: 0.1em;
-                text-transform: uppercase;
-                color: var(--text-lo);
-                margin-bottom: 5px;
-            }
-            .filter-select {
-                width: 100%;
-                padding: 8px 10px;
-                background: var(--bg);
-                border: 1px solid var(--border);
-                border-radius: 6px;
-                color: var(--text-hi);
-                font-family: var(--font-body);
-                font-size: 0.88rem;
-                font-weight: 600;
-                cursor: pointer;
-                appearance: none;
-                background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2348566e' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
-                background-repeat: no-repeat;
-                background-position: right 10px center;
-                transition: border-color var(--transition);
-            }
-            .filter-select:focus {
-                outline: none;
-                border-color: var(--accent);
-            }
-            .filter-select option {
-                background: var(--bg-card);
-            }
-
-            /* Team & Event search & list */
-            .sidebar-scrollable {
-                overflow-y: auto;
-                scrollbar-width: thin;
-                scrollbar-color: var(--border) transparent;
-                flex-grow: 1;
-            }
-            .teams-section {
-                padding: 14px 20px;
-                border-bottom: 1px solid var(--border);
-            }
-            .teams-label {
-                font-size: 0.72rem;
-                font-weight: 700;
-                letter-spacing: 0.1em;
-                text-transform: uppercase;
-                color: var(--text-lo);
-                margin-bottom: 8px;
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-            }
-            .selected-count {
-                background: var(--accent);
-                color: white;
-                font-size: 0.68rem;
-                font-weight: 700;
-                border-radius: 999px;
-                padding: 1px 7px;
-                min-width: 18px;
-                text-align: center;
-                display: none;
-            }
-            .selected-count.visible {
-                display: inline-block;
-            }
-
-            .search-wrap {
-                position: relative;
-                margin-bottom: 8px;
-            }
-            .search-wrap i {
-                position: absolute;
-                left: 10px;
-                top: 50%;
-                transform: translateY(-50%);
-                color: var(--text-lo);
-                font-size: 0.8rem;
-                pointer-events: none;
-            }
-            .search-input {
-                width: 100%;
-                padding: 8px 10px 8px 32px;
-                background: var(--bg);
-                border: 1px solid var(--border);
-                border-radius: 6px;
-                color: var(--text-hi);
-                font-family: var(--font-body);
-                font-size: 0.88rem;
-                transition: border-color var(--transition);
-            }
-            .search-input::placeholder {
-                color: var(--text-lo);
-            }
-            .search-input:focus {
-                outline: none;
-                border-color: var(--accent);
-            }
-
-            .school-list {
-                max-height: 240px;
-                overflow-y: auto;
-                border-radius: 6px;
-                border: 1px solid var(--border);
-                background: var(--bg);
-                scrollbar-width: thin;
-                scrollbar-color: var(--border) transparent;
-            }
-            .school-item {
-                display: flex;
-                align-items: center;
-                gap: 10px;
-                padding: 9px 12px;
-                font-size: 0.88rem;
-                font-weight: 500;
-                border-bottom: 1px solid var(--border);
-                cursor: pointer;
-                transition: background var(--transition);
-                user-select: none;
-            }
-            .school-item:last-child {
-                border-bottom: none;
-            }
-            .school-item:hover {
-                background: var(--bg-raised);
-            }
-            .school-item.checked {
-                background: var(--accent-glow);
-                color: var(--accent);
-            }
-            .school-item input[type="checkbox"] {
-                width: 15px;
-                height: 15px;
-                cursor: pointer;
-                accent-color: var(--accent);
-                flex-shrink: 0;
-            }
-
-            .sidebar-actions {
-                padding: 14px 20px;
-                flex-shrink: 0;
-                background: var(--bg-card);
-            }
-
-            .btn-simulate {
-                width: 100%;
-                padding: 13px;
-                background: var(--accent);
-                color: white;
-                border: none;
-                border-radius: var(--radius);
-                font-family: var(--font-display);
-                font-size: 1.05rem;
-                font-weight: 800;
-                letter-spacing: 0.06em;
-                text-transform: uppercase;
-                cursor: pointer;
-                transition:
-                    background var(--transition),
-                    transform var(--transition),
-                    box-shadow var(--transition);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                gap: 8px;
-                box-shadow: 0 4px 20px rgba(42, 92, 255, 0.3);
-            }
-            .btn-simulate:hover:not(:disabled) {
-                background: #3d6bff;
-                transform: translateY(-1px);
-                box-shadow: 0 8px 28px rgba(42, 92, 255, 0.45);
-            }
-            .btn-simulate:active:not(:disabled) {
-                transform: translateY(0);
-            }
-            .btn-simulate:disabled {
-                background: var(--bg-raised);
-                color: var(--text-lo);
-                cursor: not-allowed;
-                box-shadow: none;
-            }
-
-            .btn-reset {
-                width: 100%;
-                margin-top: 8px;
-                padding: 8px;
-                background: transparent;
-                border: 1px solid var(--border);
-                color: var(--text-mid);
-                border-radius: var(--radius);
-                font-family: var(--font-body);
-                font-size: 0.82rem;
-                font-weight: 600;
-                cursor: pointer;
-                transition:
-                    background var(--transition),
-                    color var(--transition);
-            }
-            .btn-reset:hover {
-                background: var(--bg-raised);
-                color: var(--text-hi);
-            }
-
-            /* ─── RESULTS AREA ─── */
-            .results-area {
-                min-height: 400px;
-            }
-
-            /* Empty State */
-            .empty-state {
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-                min-height: 400px;
-                text-align: center;
-                border: 2px dashed var(--border);
-                border-radius: var(--radius);
-                padding: 40px;
-                gap: 12px;
-            }
-            .empty-state-icon {
-                font-size: 3rem;
-                color: var(--text-lo);
-                margin-bottom: 8px;
-                opacity: 0.5;
-            }
-            .empty-state h2 {
-                font-family: var(--font-display);
-                font-size: 1.6rem;
-                font-weight: 800;
-                text-transform: uppercase;
-                letter-spacing: 0.04em;
-                color: var(--text-mid);
-                margin: 0;
-            }
-            .empty-state p {
-                color: var(--text-lo);
-                font-size: 0.9rem;
-                margin: 0;
-                max-width: 380px;
-                line-height: 1.6;
-            }
-
-            /* Loading state */
-            .loading-state {
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-                min-height: 400px;
-                gap: 16px;
-                text-align: center;
-            }
-            .loading-spinner {
-                width: 48px;
-                height: 48px;
-                border: 3px solid var(--border);
-                border-top-color: var(--accent);
-                border-radius: 50%;
-                animation: spin 0.8s linear infinite;
-            }
-            @keyframes spin {
-                to {
-                    transform: rotate(360deg);
-                }
-            }
-            .loading-label {
-                font-family: var(--font-display);
-                font-size: 1.1rem;
-                font-weight: 700;
-                text-transform: uppercase;
-                letter-spacing: 0.06em;
-                color: var(--text-mid);
-            }
-            .loading-sub {
-                font-size: 0.83rem;
-                color: var(--text-lo);
-            }
-
-            /* ─── STANDINGS CARD ─── */
-            .results-wrap {
-                display: flex;
-                flex-direction: column;
-                gap: 20px;
-                animation: fadeInUp 0.35s ease;
-            }
-            @keyframes fadeInUp {
-                from {
-                    opacity: 0;
-                    transform: translateY(12px);
-                }
-                to {
-                    opacity: 1;
-                    transform: translateY(0);
-                }
-            }
-
-            .standings-card {
-                background: var(--bg-card);
-                border: 1px solid var(--border);
-                border-radius: var(--radius);
-                overflow: hidden;
-            }
-            .card-header {
-                display: flex;
-                align-items: center;
-                gap: 12px;
-                padding: 16px 20px;
-                border-bottom: 1px solid var(--border);
-                background: var(--bg-raised);
-            }
-            .card-header-icon {
-                width: 34px;
-                height: 34px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                background: var(--accent-glow);
-                border: 1px solid var(--border-glow);
-                border-radius: 8px;
-                color: var(--accent);
-                font-size: 0.9rem;
-            }
-            .card-header-title {
-                font-family: var(--font-display);
-                font-size: 1.1rem;
-                font-weight: 800;
-                text-transform: uppercase;
-                letter-spacing: 0.06em;
-                margin: 0;
-            }
-            .card-header-sub {
-                font-size: 0.78rem;
-                color: var(--text-lo);
-                margin-top: 1px;
-            }
-
-            /* Standings podium */
-            .podium-row {
-                display: flex;
-                gap: 12px;
-                padding: 20px;
-                flex-wrap: wrap;
-            }
-            .podium-item {
-                flex: 1;
-                min-width: 140px;
-                background: var(--bg);
-                border: 1px solid var(--border);
-                border-radius: 8px;
-                padding: 16px 18px;
-                position: relative;
-                overflow: hidden;
-                transition: transform var(--transition);
-            }
-            .podium-item:hover {
-                transform: translateY(-2px);
-            }
-            .podium-item.p1 {
-                border-color: var(--gold);
-                background: var(--gold-bg);
-            }
-            .podium-item.p2 {
-                border-color: var(--silver);
-                background: var(--silver-bg);
-            }
-            .podium-item.p3 {
-                border-color: var(--bronze);
-                background: var(--bronze-bg);
-            }
-            .podium-rank {
-                font-family: var(--font-display);
-                font-size: 2.5rem;
-                font-weight: 900;
-                line-height: 1;
-                margin-bottom: 4px;
-            }
-            .p1 .podium-rank {
-                color: var(--gold);
-            }
-            .p2 .podium-rank {
-                color: var(--silver);
-            }
-            .p3 .podium-rank {
-                color: var(--bronze);
-            }
-            .podium-item:not(.p1):not(.p2):not(.p3) .podium-rank {
-                color: var(--text-mid);
-                font-size: 1.8rem;
-            }
-            .podium-name {
-                font-weight: 700;
-                font-size: 0.95rem;
-                line-height: 1.3;
-            }
-            .podium-pts {
-                font-family: var(--font-mono);
-                font-size: 1.4rem;
-                font-weight: 600;
-                margin-top: 6px;
-            }
-            .p1 .podium-pts {
-                color: var(--gold);
-            }
-            .p2 .podium-pts {
-                color: var(--silver);
-            }
-            .p3 .podium-pts {
-                color: var(--bronze);
-            }
-            .podium-pts-label {
-                font-size: 0.72rem;
-                color: var(--text-lo);
-                font-weight: 600;
-                text-transform: uppercase;
-                letter-spacing: 0.08em;
-            }
-
-            /* ─── SECTION HEADING ─── */
-            .section-heading {
-                font-family: var(--font-display);
-                font-size: 1.5rem;
-                font-weight: 800;
-                text-transform: uppercase;
-                letter-spacing: 0.04em;
-                margin: 8px 0 12px 0;
-                display: flex;
-                align-items: center;
-                gap: 12px;
-                color: var(--text-hi);
-            }
-            .section-heading::after {
-                content: "";
-                flex: 1;
-                height: 1px;
-                background: var(--border);
-            }
-
-            /* ─── EVENT CARDS ─── */
-            .events-grid {
-                display: flex;
-                flex-direction: column;
-                gap: 14px;
-            }
-            .event-card {
-                background: var(--bg-card);
-                border: 1px solid var(--border);
-                border-radius: var(--radius);
-                overflow: hidden;
-                transition: border-color var(--transition);
-            }
-            .event-card:hover {
-                border-color: #2d3a55;
-            }
-
-            .event-header {
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                padding: 12px 18px;
-                border-bottom: 1px solid var(--border);
-                background: var(--bg-raised);
-                gap: 10px;
-            }
-            .event-name {
-                font-family: var(--font-display);
-                font-size: 1.1rem;
-                font-weight: 800;
-                text-transform: uppercase;
-                letter-spacing: 0.04em;
-                margin: 0;
-            }
-            .event-tags {
-                display: flex;
-                gap: 6px;
-                flex-shrink: 0;
-            }
-            .event-tag {
-                font-size: 0.68rem;
-                font-weight: 700;
-                letter-spacing: 0.08em;
-                text-transform: uppercase;
-                padding: 3px 8px;
-                border-radius: 4px;
-                background: var(--bg);
-                border: 1px solid var(--border);
-                color: var(--text-lo);
-            }
-            .event-tag.relay {
-                border-color: #2a5cff55;
-                color: var(--accent);
-                background: var(--accent-glow);
-            }
-            .event-tag.field {
-                border-color: #55334455;
-                color: #bb8866;
-                background: rgba(85, 33, 44, 0.2);
-            }
-
-            /* Event table */
-            .event-table {
-                width: 100%;
-                border-collapse: collapse;
-            }
-            .event-table thead th {
-                background: var(--bg);
-                padding: 8px 14px;
-                text-align: left;
-                font-size: 0.7rem;
-                font-weight: 700;
-                color: var(--text-lo);
-                text-transform: uppercase;
-                letter-spacing: 0.1em;
-                border-bottom: 1px solid var(--border);
-            }
-            .event-table thead th:last-child,
-            .event-table td:last-child {
-                text-align: center;
-            }
-            .event-table tbody tr {
-                transition: background var(--transition);
-            }
-            .event-table tbody tr:hover {
-                background: var(--bg-raised) !important;
-            }
-            .event-table tbody tr:not(:last-child) td {
-                border-bottom: 1px solid var(--border);
-            }
-
-            .event-table td {
-                padding: 10px 14px;
-                font-size: 0.9rem;
-            }
-
-            /* Row medal classes */
-            .row-gold {
-                background: var(--gold-bg);
-            }
-            .row-silver {
-                background: var(--silver-bg);
-            }
-            .row-bronze {
-                background: var(--bronze-bg);
-            }
-
-            .place-badge {
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-                width: 28px;
-                height: 28px;
-                border-radius: 50%;
-                font-family: var(--font-display);
-                font-size: 0.85rem;
-                font-weight: 800;
-            }
-            .place-badge.g {
-                background: var(--gold);
-                color: #1a1200;
-            }
-            .place-badge.s {
-                background: var(--silver);
-                color: #111820;
-            }
-            .place-badge.b {
-                background: var(--bronze);
-                color: #1a0e00;
-            }
-            .place-badge.n {
-                background: var(--bg-raised);
-                color: var(--text-mid);
-            }
-
-            .athlete-name {
-                font-weight: 600;
-            }
-            .school-name {
-                color: var(--text-mid);
-                font-size: 0.85rem;
-            }
-            .mark-val {
-                font-family: var(--font-mono);
-                font-size: 0.95rem;
-                font-weight: 600;
-                text-align: right !important;
-                color: var(--text-hi);
-            }
-            .pts-val {
-                font-family: var(--font-mono);
-                font-size: 0.88rem;
-                font-weight: 700;
-                color: var(--accent);
-            }
-            .pts-val.zero {
-                color: var(--text-lo);
-            }
-
-            /* ─── TEAM COLOR DOTS ─── */
-            .team-dot {
-                width: 8px;
-                height: 8px;
-                border-radius: 50%;
-                display: inline-block;
-                margin-right: 6px;
-                flex-shrink: 0;
-            }
-
-            /* ─── ERROR STATE ─── */
-            .error-card {
-                background: rgba(239, 68, 68, 0.06);
-                border: 1px solid rgba(239, 68, 68, 0.3);
-                border-radius: var(--radius);
-                padding: 24px;
-            }
-            .error-card h3 {
-                color: #ef4444;
-                font-family: var(--font-display);
-                font-size: 1.2rem;
-                text-transform: uppercase;
-                margin: 0 0 8px;
-            }
-            .error-card p {
-                color: var(--text-mid);
-                font-size: 0.9rem;
-                margin: 0;
-            }
-
-            /* ─── RESPONSIVE ─── */
-            @media (max-width: 860px) {
-                .sim-layout {
-                    grid-template-columns: 1fr;
-                }
-                .sidebar {
-                    position: static;
-                    max-height: none;
-                }
-                .podium-row {
-                    flex-wrap: wrap;
-                }
-                .podium-item {
-                    min-width: calc(50% - 6px);
-                }
-            }
-            @media (max-width: 500px) {
-                .page-title {
-                    font-size: 2rem;
-                }
-                .podium-item {
-                    min-width: 100%;
-                }
-                .event-table thead th:nth-child(3),
-                .event-table td:nth-child(3) {
-                    display: none;
-                }
-            }
-        </style>
-    </head>
-    <body>
-        <header>
-            <nav class="navbar">
-                <div class="navbar-content">
-                    <a href="index.html" class="navbar-brand"
-                        >Track<span class="accent">Stats</span></a
-                    >
-                    <ul class="navbar-nav">
-                        <li>
-                            <a href="rankings.html" class="navbar-link"
-                                >Rankings</a
-                            >
-                        </li>
-                        <li>
-                            <a href="simulator.html" class="navbar-link active"
-                                >Simulator</a
-                            >
-                        </li>
-                    </ul>
-                </div>
-            </nav>
-        </header>
-
-        <main class="page-wrap">
-            <div class="page-header">
-                <h1 class="page-title">
-                    Virtual Meet <span class="dim">Simulator</span>
-                </h1>
-                <p class="page-subtitle">
-                    Pit teams head-to-head using athletes' seasonal bests —
-                    projected results, real scores.
-                </p>
-                <div class="stat-bar">
-                    <div class="stat-pill">
-                        <i class="fas fa-bolt"></i>
-                        <strong>NFHS</strong> 8-place scoring
-                    </div>
-                    <div class="stat-pill">
-                        <i class="fas fa-users"></i> Up to
-                        <strong>3</strong> athletes per event per team
-                    </div>
-                    <div class="stat-pill">
-                        <i class="fas fa-flag-checkered"></i> Track &amp; Field
-                        events
-                    </div>
-                </div>
-            </div>
-
-            <div class="sim-layout">
-                <aside class="sidebar">
-                    <div class="sidebar-header">
-                        <div class="sidebar-title">Configuration</div>
-                        <div class="filter-row">
-                            <div class="filter-group">
-                                <label class="filter-label">Season</label>
-                                <select id="sim-season" class="filter-select">
-                                    <option value="outdoor">Outdoor</option>
-                                    <option value="indoor">Indoor</option>
-                                </select>
-                            </div>
-                            <div class="filter-group">
-                                <label class="filter-label">Gender</label>
-                                <select id="sim-gender" class="filter-select">
-                                    <option value="M">Boys</option>
-                                    <option value="W">Girls</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="sidebar-scrollable">
-                        <div class="teams-section">
-                            <div class="teams-label">
-                                Select Teams
-                                <span class="selected-count" id="selected-count">0</span>
-                            </div>
-                            <div class="search-wrap">
-                                <i class="fas fa-search"></i>
-                                <input
-                                    type="text"
-                                    id="school-search"
-                                    class="search-input"
-                                    placeholder="Search schools…"
-                                />
-                            </div>
-                            <div id="school-selector" class="school-list">
-                                <div style="padding: 20px; text-align: center; color: var(--text-lo);">
-                                    <i class="fas fa-circle-notch fa-spin"></i>&nbsp; Loading teams…
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="teams-section" style="border-bottom: none;">
-                            <div class="teams-label">
-                                Select Events
-                                <span class="selected-count" id="event-count">0</span>
-                            </div>
-                            <div class="search-wrap">
-                                <i class="fas fa-search"></i>
-                                <input
-                                    type="text"
-                                    id="event-search"
-                                    class="search-input"
-                                    placeholder="Search events…"
-                                />
-                            </div>
-                            <div style="text-align: right; margin-bottom: 6px;">
-                                 <button id="toggle-events-btn" style="background: none; border: none; color: var(--accent); font-size: 0.75rem; font-weight: 600; cursor: pointer; padding: 0;">Deselect All</button>
-                            </div>
-                            <div id="event-selector" class="school-list" style="max-height: 200px;">
-                                <div style="padding: 20px; text-align: center; color: var(--text-lo);">
-                                    <i class="fas fa-circle-notch fa-spin"></i>&nbsp; Loading events…
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="sidebar-actions">
-                        <button id="run-sim" class="btn-simulate" disabled>
-                            <i class="fas fa-play"></i> Run Simulation
-                        </button>
-                        <button
-                            id="reset-sim"
-                            class="btn-reset"
-                            style="display: none"
-                        >
-                            <i class="fas fa-undo"></i> Clear Team Selection
-                        </button>
-                    </div>
-                </aside>
-
-                <section class="results-area" id="results-area">
-                    <div class="empty-state">
-                        <div class="empty-state-icon">
-                            <i class="fas fa-stopwatch"></i>
-                        </div>
-                        <h2>Ready to Simulate</h2>
-                        <p>
-                            Select two or more teams from the sidebar and hit
-                            <strong>Run Simulation</strong> to see projected
-                            meet results scored with NFHS 8-place rules.
-                        </p>
-                    </div>
-                </section>
-            </div>
-        </main>
-
-        <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-        <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-        <script src="firebase-config.js"></script>
-        <script src="firebase-helpers.js"></script>
-
-        <script>
-            /* ═══════════════════════════════════════════════
-   CONSTANTS & STATE
-   ─────────────────────────────────────────────
-═══════════════════════════════════════════════ */
-
-            const SCORING = {
-                individual: [10, 8, 6, 5, 4, 3, 2, 1],
-                relay: [10, 8, 6, 5, 4, 3, 2, 1],
-            };
-            const TEAM_COLORS = [
-                "#2a5cff",
-                "#ff4e2a",
-                "#2aff9f",
-                "#ffd02a",
-                "#c62aff",
-                "#2afff0",
-                "#ff2a7a",
-                "#a2ff2a",
-            ];
-            const INVALID_MARKS = new Set([
-                "DNS",
-                "DNF",
-                "DQ",
-                "SCR",
-                "NM",
-                "NH",
-                "FS",
-                "ND",
-            ]);
-
-            // Cached reference data loaded once on init
-            let athletesMap = {}; 
-            let eventsMap = {}; 
-            let meetsMap = {}; 
-            let allSchools = []; 
-            let allEventsList = [];
-            let teamColorMap = {};
-
-            /* ─── Firebase ─── */
-            async function waitForFirebase() {
-                let retries = 50;
-                while (!window.firebaseDatabase && retries-- > 0)
-                    await new Promise((r) => setTimeout(r, 100));
-                if (!window.firebaseDatabase)
-                    throw new Error("Cannot connect to Firebase.");
-            }
-
-            /* ─── Mark parsing ─── */
-            function isFieldEvent(name) {
-                return [
-                    "shot",
-                    "discus",
-                    "javelin",
-                    "jump",
-                    "vault",
-                    "pole",
-                    "weight",
-                    "hammer",
-                ].some((k) => (name || "").toLowerCase().includes(k));
-            }
-            function isRelay(name) {
-                const l = (name || "").toLowerCase();
-                return (
-                    l.includes("relay") || l.includes("4x") || l.includes("4 x")
-                );
-            }
-
-            function parseMark(mark, eventName) {
-                if (
-                    !mark ||
-                    INVALID_MARKS.has(mark.toString().trim().toUpperCase())
-                )
-                    return isFieldEvent(eventName) ? -Infinity : Infinity;
-
-                const s = mark
-                    .toString()
-                    .replace(/[a-zA-Z*#]/g, "")
-                    .trim();
-
-                if (isFieldEvent(eventName)) {
-                    const fi = s.match(/^(\d+)['\-](\d+(?:\.\d+)?)$/);
-                    if (fi) return parseFloat(fi[1]) * 12 + parseFloat(fi[2]);
-                    const v = parseFloat(s);
-                    return isNaN(v) ? -Infinity : v;
-                } else {
-                    if (s.includes(":")) {
-                        const [m, sec] = s.split(":");
-                        const val = parseFloat(m) * 60 + parseFloat(sec);
-                        return isNaN(val) ? Infinity : val;
-                    }
-                    const v = parseFloat(s);
-                    return isNaN(v) ? Infinity : v;
-                }
-            }
-
-            function formatDisplayMark(mark) {
-                return mark ? mark.toString().toUpperCase() : "—";
-            }
-
-            /* ─── URL slug helpers ─── */
-            function getUrlParams() {
-                const params = new URLSearchParams(window.location.search);
-                return {
-                    teams: params.get("teams") ? params.get("teams").split(",").filter((t) => t.trim()) : [],
-                    events: params.get("events") ? params.get("events").split(",").filter((e) => e.trim()) : null,
-                    season: params.get("season")?.toLowerCase() || "",
-                    gender: params.get("gender")?.toUpperCase() || "",
-                };
-            }
-
-            /* ─── UI helpers ─── */
-            function updateSimState() {
-                const teamCheckboxes = document.querySelectorAll("#school-selector input:checked");
-                const eventCheckboxes = document.querySelectorAll("#event-selector input:checked");
-                
-                const count = teamCheckboxes.length;
-                const eventCount = eventCheckboxes.length;
-                
-                const btn = document.getElementById("run-sim");
-                const badge = document.getElementById("selected-count");
-                const eventBadge = document.getElementById("event-count");
-                const resetBtn = document.getElementById("reset-sim");
-
-                badge.textContent = count;
-                badge.classList.toggle("visible", count > 0);
-                
-                eventBadge.textContent = eventCount;
-                eventBadge.classList.toggle("visible", eventCount > 0);
-
-                btn.disabled = count < 2 || eventCount === 0;
-                btn.innerHTML = count < 2
-                    ? `<i class="fas fa-play"></i> Select ${2 - count} More Team${2 - count !== 1 ? "s" : ""}`
-                    : (eventCount === 0 ? `<i class="fas fa-play"></i> Select Events` : `<i class="fas fa-play"></i> Simulate ${count} Teams`);
-                resetBtn.style.display = count > 0 ? "block" : "none";
-
-                // Update URL slug
-                const selectedSchools = Array.from(teamCheckboxes).map((cb) => cb.value);
-                const selectedEvents = Array.from(eventCheckboxes).map((cb) => cb.value);
-                const season = document.getElementById("sim-season").value.toLowerCase();
-                const gender = document.getElementById("sim-gender").value.toUpperCase();
-                
-                const params = new URLSearchParams();
-                if (selectedSchools.length) params.set("teams", selectedSchools.join(","));
-                
-                // Only put events in URL if NOT ALL are selected to keep url cleaner
-                if (allEventsList.length > 0 && selectedEvents.length > 0 && selectedEvents.length < allEventsList.length) {
-                    params.set("events", selectedEvents.join(","));
-                }
-                
-                if (season) params.set("season", season);
-                if (gender) params.set("gender", gender);
-                
-                const queryString = params.toString();
-                const newUrl = queryString ? `?${queryString}` : window.location.pathname;
-                window.history.replaceState(null, "", newUrl);
-            }
-
-            /* ═══════════════════════════════════════════════
-   INIT — load reference tables, build lists
-═══════════════════════════════════════════════ */
-            async function initSimulator() {
-                const schoolContainer = document.getElementById("school-selector");
-                try {
-                    await waitForFirebase();
-
-                    const [athSnap, evSnap, meetSnap] = await Promise.all([
-                        window.firebaseDatabase.ref("Track/athletes").once("value"),
-                        window.firebaseDatabase.ref("Track/events").once("value"),
-                        window.firebaseDatabase.ref("Track/meets").once("value"),
-                    ]);
-
-                    athSnap.forEach((c) => { athletesMap[c.key] = c.val(); });
-                    evSnap.forEach((c) => { eventsMap[c.key] = c.val(); });
-                    meetSnap.forEach((c) => { meetsMap[c.key] = c.val(); });
-
-                    // Build school list
-                    const schoolSet = new Map();
-                    Object.values(athletesMap).forEach((a) => {
-                        const s = (a.school || "").trim();
-                        if (s && !schoolSet.has(s)) schoolSet.set(s, s);
-                    });
-                    allSchools = Array.from(schoolSet.values())
-                        .sort((a, b) => a.localeCompare(b))
-                        .map((name) => ({ name, key: name }));
-
-                    // Build event list
-                    allEventsList = Object.keys(eventsMap)
-                        .map(key => ({ id: key, name: eventsMap[key].name || "Unknown Event" }))
-                        .sort((a, b) => a.name.localeCompare(b.name));
-
-                    // Parse URL & setup initial UI checks
-                    const urlParams = getUrlParams();
-                    
-                    renderSchoolList(allSchools, new Set(urlParams.teams));
-                    
-                    // If urlParams.events is null, all will be selected by default
-                    let initialEventSet = null; 
-                    if(urlParams.events) {
-                        initialEventSet = new Set(urlParams.events);
-                    } else {
-                        initialEventSet = new Set(allEventsList.map(e => e.id));
-                    }
-                    renderEventList(allEventsList, initialEventSet);
-
-                    if (urlParams.season) document.getElementById("sim-season").value = urlParams.season;
-                    if (urlParams.gender) document.getElementById("sim-gender").value = urlParams.gender;
-                    
-                    updateSimState();
-
-                    // Search Listeners
-                    document.getElementById("school-search").addEventListener("input", (e) => {
-                        const q = e.target.value.toLowerCase();
-                        renderSchoolList(allSchools.filter((s) => s.name.toLowerCase().includes(q)));
-                    });
-                    
-                    document.getElementById("event-search").addEventListener("input", (e) => {
-                        const q = e.target.value.toLowerCase();
-                        renderEventList(allEventsList.filter((ev) => ev.name.toLowerCase().includes(q)));
-                    });
-
-                    // Action Listeners
-                    document.getElementById("reset-sim").addEventListener("click", () => {
-                        document.querySelectorAll("#school-selector input:checked").forEach((cb) => {
-                            cb.checked = false;
-                            cb.closest(".school-item").classList.remove("checked");
-                        });
-                        updateSimState();
-                    });
-
-                    document.getElementById("toggle-events-btn").addEventListener("click", (e) => {
-                        const container = document.getElementById("event-selector");
-                        const allChecked = container.querySelectorAll("input:checked").length === container.querySelectorAll("input").length;
-                        
-                        container.querySelectorAll("input[type='checkbox']").forEach((cb) => {
-                            cb.checked = !allChecked;
-                            cb.closest(".school-item").classList.toggle("checked", !allChecked);
-                        });
-                        
-                        e.target.textContent = allChecked ? "Select All" : "Deselect All";
-                        updateSimState();
-                    });
-
-                    document.getElementById("sim-season").addEventListener("change", updateSimState);
-                    document.getElementById("sim-gender").addEventListener("change", updateSimState);
-
-                    // Auto-run if URL contains teams
-                    if (urlParams.teams.length >= 2) {
-                        setTimeout(() => runSimulation(), 100);
-                    }
-
-                } catch (err) {
-                    console.error(err);
-                    schoolContainer.innerHTML = `<div style="padding:18px;color:#ef4444;text-align:center;">
-      <i class="fas fa-triangle-exclamation"></i> Failed to load data: ${err.message}
-    </div>`;
-                }
-            }
-
-            function renderSchoolList(list, initialCheckedSet = null) {
-                const container = document.getElementById("school-selector");
-                if (!list?.length) {
-                    container.innerHTML = `<div style="padding:18px;text-align:center;color:var(--text-lo);">No schools found.</div>`;
-                    return;
-                }
-
-                const checkedSet = initialCheckedSet || new Set(
-                    Array.from(container.querySelectorAll("input:checked")).map((cb) => cb.value)
-                );
-
-                container.innerHTML = list.map((school) => {
-                        const checked = checkedSet.has(school.key);
-                        const safeId = school.key.replace(/[^a-zA-Z0-9]/g, "_");
-                        return `
-      <label class="school-item${checked ? " checked" : ""}" for="school-${safeId}">
-        <input type="checkbox" value="${school.key}" id="school-${safeId}"${checked ? " checked" : ""}>
-        ${school.name}
-      </label>`;
-                }).join("");
-
-                container.querySelectorAll('input[type="checkbox"]').forEach((cb) => {
-                    cb.addEventListener("change", (e) => {
-                        e.target.closest(".school-item").classList.toggle("checked", e.target.checked);
-                        updateSimState();
-                    });
-                });
-            }
-
-            function renderEventList(list, initialCheckedSet = null) {
-                const container = document.getElementById("event-selector");
-                if (!list?.length) {
-                    container.innerHTML = `<div style="padding:18px;text-align:center;color:var(--text-lo);">No events found.</div>`;
-                    return;
-                }
-
-                let checkedSet = initialCheckedSet;
-                if (!checkedSet) {
-                    // Fallback to preserve state during search
-                    checkedSet = new Set(Array.from(container.querySelectorAll("input:checked")).map((cb) => cb.value));
-                }
-
-                container.innerHTML = list.map((ev) => {
-                        const checked = checkedSet.has(ev.id);
-                        const safeId = ev.id.replace(/[^a-zA-Z0-9]/g, "_");
-                        return `
-      <label class="school-item${checked ? " checked" : ""}" for="event-${safeId}">
-        <input type="checkbox" value="${ev.id}" id="event-${safeId}"${checked ? " checked" : ""}>
-        ${ev.name}
-      </label>`;
-                }).join("");
-
-                container.querySelectorAll('input[type="checkbox"]').forEach((cb) => {
-                    cb.addEventListener("change", (e) => {
-                        e.target.closest(".school-item").classList.toggle("checked", e.target.checked);
-                        
-                        // Update toggle button text based on state
-                        const allChecked = container.querySelectorAll("input:checked").length === container.querySelectorAll("input").length;
-                        document.getElementById("toggle-events-btn").textContent = allChecked ? "Deselect All" : "Select All";
-                        
-                        updateSimState();
-                    });
-                });
-            }
-
-
-            /* ═══════════════════════════════════════════════
-   MAIN SIMULATION
-═══════════════════════════════════════════════ */
-            async function runSimulation() {
-                const selectedSchools = Array.from(document.querySelectorAll("#school-selector input:checked")).map((cb) => cb.value);
-                const selectedEvents = new Set(Array.from(document.querySelectorAll("#event-selector input:checked")).map((cb) => cb.value));
-                
-                if (selectedSchools.length < 2) {
-                    alert("Please select at least 2 teams.");
-                    return;
-                }
-                if (selectedEvents.size === 0) {
-                    alert("Please select at least 1 event to simulate.");
-                    return;
-                }
-
-                const season = document.getElementById("sim-season").value.toLowerCase();
-                const genderFilter = document.getElementById("sim-gender").value.toUpperCase();
-                const resultsArea = document.getElementById("results-area");
-
-                teamColorMap = {};
-                selectedSchools.forEach((s, i) => { teamColorMap[s] = TEAM_COLORS[i % TEAM_COLORS.length]; });
-
-                resultsArea.innerHTML = `
-    <div class="loading-state">
-      <div class="loading-spinner"></div>
-      <div class="loading-label">Simulating Meet…</div>
-      <div class="loading-sub">Fetching results &amp; crunching seasonal bests</div>
-    </div>`;
-
-                try {
-                    const resSnap = await window.firebaseDatabase.ref("Track/results").once("value");
-
-                    const selectedSet = new Set(selectedSchools);
-                    const filteredResults = [];
-
-                    resSnap.forEach((child) => {
-                        const r = child.val();
-                        
-                        // Ignore events that are filtered out
-                        if (!r.event_id || !selectedEvents.has(r.event_id)) return;
-                        
-                        const athlete = athletesMap[r.athlete_id] || {};
-                        const meet = meetsMap[r.meet_id] || {};
-                        const event = eventsMap[r.event_id] || {};
-
-                        const resGender = (r.gender || athlete.gender || "").toUpperCase();
-                        const resSeason = (meet.season || "").toLowerCase();
-                        const school = (athlete.school || "").trim();
-
-                        if (!selectedSet.has(school)) return; 
-                        if (resGender !== genderFilter) return; 
-                        if (resSeason !== season) return; 
-                        if (!r.mark) return; 
-
-                        const eventName = event.name || "Unknown Event";
-                        const parsed = parseMark(r.mark, eventName);
-                        if (parsed === Infinity || parsed === -Infinity || Number.isNaN(parsed)) return;
-
-                        const athleteLabel = r.relay_names
-                            ? athlete.school ? `${athlete.school} Relay` : "Relay"
-                            : `${athlete.first_name || ""} ${athlete.last_name || ""}`.trim() || "Unknown";
-
-                        filteredResults.push({
-                            athleteId: r.athlete_id || "relay",
-                            athleteLabel,
-                            school,
-                            eventId: r.event_id,
-                            eventName,
-                            mark: r.mark,
-                            parsed,
-                            relay: isRelay(eventName),
-                            fieldEvent: isFieldEvent(eventName),
-                        });
-                    });
-
-                    if (!filteredResults.length) {
-                        resultsArea.innerHTML = `
-        <div class="empty-state">
-          <div class="empty-state-icon"><i class="fas fa-search"></i></div>
-          <h2>No Results Found</h2>
-          <p>No records matched <strong>${genderFilter === "M" ? "Boys" : "Girls"} · ${season}</strong> for the selected teams and events.</p>
-        </div>`;
-                        return;
-                    }
-
-                    const bestPerAthlete = {}; 
-
-                    filteredResults.forEach((entry) => {
-                        const key = `${entry.athleteId}_${entry.eventId}`;
-                        const existing = bestPerAthlete[key];
-                        const better =
-                            !existing ||
-                            (entry.fieldEvent
-                                ? entry.parsed > existing.parsed
-                                : entry.parsed < existing.parsed);
-                        if (better) bestPerAthlete[key] = entry;
-                    });
-
-                    const teamScores = {};
-                    selectedSchools.forEach((s) => { teamScores[s] = { school: s, points: 0 }; });
-
-                    const eventBuckets = {}; 
-
-                    Object.values(bestPerAthlete).forEach((entry) => {
-                        if (!eventBuckets[entry.eventId]) {
-                            eventBuckets[entry.eventId] = {
-                                name: entry.eventName,
-                                relay: entry.relay,
-                                fieldEvent: entry.fieldEvent,
-                                bySchool: {},
-                            };
-                        }
-                        const bucket = eventBuckets[entry.eventId];
-                        if (!bucket.bySchool[entry.school]) bucket.bySchool[entry.school] = [];
-                        bucket.bySchool[entry.school].push(entry);
-                    });
-
-                    const eventResults = [];
-
-                    Object.values(eventBuckets).forEach((bucket) => {
-                        const entries = [];
-                        const allowed = bucket.relay ? 1 : 3;
-
-                        Object.values(bucket.bySchool).forEach(
-                            (schoolEntries) => {
-                                schoolEntries.sort((a, b) =>
-                                    bucket.fieldEvent ? b.parsed - a.parsed : a.parsed - b.parsed
-                                );
-                                entries.push(...schoolEntries.slice(0, allowed));
-                            }
-                        );
-
-                        entries.sort((a, b) =>
-                            bucket.fieldEvent ? b.parsed - a.parsed : a.parsed - b.parsed
-                        );
-
-                        const scoring = bucket.relay ? SCORING.relay : SCORING.individual;
-                        entries.forEach((e, i) => {
-                            e.place = i + 1;
-                            e.points = scoring[i] || 0;
-                            if (teamScores[e.school]) teamScores[e.school].points += e.points;
-                        });
-
-                        if (entries.length) {
-                            eventResults.push({
-                                name: bucket.name,
-                                relay: bucket.relay,
-                                fieldEvent: bucket.fieldEvent,
-                                entries,
-                            });
-                        }
-                    });
-
-                    renderResults(teamScores, eventResults);
-                } catch (err) {
-                    console.error(err);
-                    resultsArea.innerHTML = `
-      <div class="error-card">
-        <h3><i class="fas fa-triangle-exclamation"></i> Simulation Failed</h3>
-        <p>${err.message}</p>
-      </div>`;
-                }
-            }
-
-            /* ═══════════════════════════════════════════════
-   RENDERING RESULTS
-═══════════════════════════════════════════════ */
-            function renderResults(teamScores, events) {
-                const resultsArea = document.getElementById("results-area");
-                const standings = Object.values(teamScores).sort((a, b) => b.points - a.points);
-
-                const podiumItems = standings.map((team, i) => {
-                        const cls = ["p1", "p2", "p3"][i] || "";
-                        const placeLabel = ["1ST", "2ND", "3RD"][i] || `${i + 1}TH`;
-                        const color = teamColorMap[team.school] || "#8899bb";
-                        return `
-      <div class="podium-item ${cls}">
-        <div class="podium-rank">${placeLabel}</div>
-        <div class="podium-name">
-          <span class="team-dot" style="background:${color}"></span>${team.school}
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Meet Simulator — Mountain State Miles</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <style>
+      :root {
+        --bg:#0a0c10; --bg-card:#12161e; --bg-raised:#1a2030;
+        --border:#252d3d; --border-glow:#2a5cff44;
+        --text-hi:#f0f4ff; --text-mid:#8899bb; --text-lo:#48566e;
+        --accent:#2a5cff; --accent-glow:rgba(42,92,255,0.15);
+        --gold:#f5b731; --silver:#a8b8c8; --bronze:#c47a38;
+        --gold-bg:rgba(245,183,49,0.08); --silver-bg:rgba(168,184,200,0.06); --bronze-bg:rgba(196,122,56,0.06);
+        --font-display:"Barlow Condensed",sans-serif;
+        --font-body:"Barlow",sans-serif;
+        --font-mono:"JetBrains Mono",monospace;
+        --radius:10px; --transition:0.18s ease;
+      }
+      *,*::before,*::after{box-sizing:border-box}
+      html{scroll-behavior:smooth}
+      body{margin:0;font-family:var(--font-body);background:var(--bg);color:var(--text-hi);min-height:100vh;overflow-x:hidden}
+      body::before{content:"";position:fixed;inset:0;background:radial-gradient(ellipse 60% 50% at 80% 10%,rgba(42,92,255,.07) 0%,transparent 70%),radial-gradient(ellipse 40% 60% at 10% 80%,rgba(42,92,255,.04) 0%,transparent 70%);pointer-events:none;z-index:0}
+
+      /* NAVBAR */
+      .navbar{position:sticky;top:0;z-index:100;background:rgba(10,12,16,.85);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);padding:0 24px}
+      .navbar-content{max-width:1340px;margin:0 auto;display:flex;align-items:center;gap:32px;height:58px}
+      .navbar-brand{font-family:var(--font-display);font-size:1.3rem;font-weight:900;letter-spacing:.04em;text-transform:uppercase;text-decoration:none;color:var(--text-hi);display:flex;align-items:center;gap:10px}
+      .navbar-brand .msm-logo{height:30px;width:auto;object-fit:contain;border-radius:4px}
+      .navbar-brand .accent{color:var(--accent)}
+      .navbar-nav{list-style:none;display:flex;gap:4px;margin:0 0 0 auto;padding:0}
+      .navbar-link{text-decoration:none;color:var(--text-mid);font-weight:600;font-size:.85rem;letter-spacing:.06em;text-transform:uppercase;padding:6px 14px;border-radius:6px;transition:color var(--transition),background var(--transition)}
+      .navbar-link:hover{color:var(--text-hi);background:var(--bg-raised)}
+      .navbar-link.active{color:var(--accent);background:var(--accent-glow)}
+
+      /* PAGE LAYOUT */
+      .page-wrap{position:relative;z-index:1;max-width:1340px;margin:0 auto;padding:32px 24px 60px}
+      .page-header{margin-bottom:32px}
+      .page-title{font-family:var(--font-display);font-size:clamp(2.4rem,5vw,3.6rem);font-weight:900;letter-spacing:-.01em;text-transform:uppercase;line-height:1;margin:0 0 8px}
+      .page-title .dim{color:var(--text-lo)}
+      .page-subtitle{color:var(--text-mid);font-size:.95rem;margin:0}
+      .stat-bar{display:flex;gap:24px;margin-top:16px;flex-wrap:wrap}
+      .stat-pill{display:flex;align-items:center;gap:8px;background:var(--bg-card);border:1px solid var(--border);border-radius:999px;padding:6px 14px;font-size:.82rem;color:var(--text-mid)}
+      .stat-pill i{color:var(--accent);font-size:.75rem}
+      .stat-pill strong{color:var(--text-hi)}
+
+      /* GRID */
+      .sim-layout{display:grid;grid-template-columns:318px 1fr;gap:20px;align-items:start}
+
+      /* SIDEBAR */
+      .sidebar{position:sticky;top:78px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;display:flex;flex-direction:column;max-height:calc(100vh - 100px)}
+      .sidebar-header{padding:18px 20px 14px;border-bottom:1px solid var(--border);background:var(--bg-raised);flex-shrink:0}
+      .sidebar-title{font-family:var(--font-display);font-size:1rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--text-hi);margin:0 0 14px}
+      .filter-row{display:flex;gap:10px}
+      .filter-group{flex:1}
+      .filter-label{display:block;font-size:.72rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-lo);margin-bottom:5px}
+      .filter-select{width:100%;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text-hi);font-family:var(--font-body);font-size:.88rem;font-weight:600;cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2348566e' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;transition:border-color var(--transition)}
+      .filter-select:focus{outline:none;border-color:var(--accent)}
+      .filter-select option{background:var(--bg-card)}
+
+      .sidebar-scrollable{overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--border) transparent;flex-grow:1}
+      
+      /* TEAMS */
+      .teams-section{padding:14px 20px;border-bottom:1px solid var(--border)}
+      .section-label{font-size:.72rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-lo);margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+      .selected-count{background:var(--accent);color:white;font-size:.68rem;font-weight:700;border-radius:999px;padding:1px 7px;min-width:18px;text-align:center;display:none}
+      .selected-count.visible{display:inline-block}
+      .search-wrap{position:relative;margin-bottom:8px}
+      .search-wrap i{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text-lo);font-size:.8rem;pointer-events:none}
+      .search-input{width:100%;padding:8px 10px 8px 32px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text-hi);font-family:var(--font-body);font-size:.88rem;transition:border-color var(--transition)}
+      .search-input::placeholder{color:var(--text-lo)}
+      .search-input:focus{outline:none;border-color:var(--accent)}
+      .school-list{max-height:220px;overflow-y:auto;border-radius:6px;border:1px solid var(--border);background:var(--bg);scrollbar-width:thin;scrollbar-color:var(--border) transparent}
+      .school-item{display:flex;align-items:center;gap:8px;padding:8px 12px;font-size:.86rem;font-weight:500;border-bottom:1px solid var(--border);cursor:pointer;transition:background var(--transition);user-select:none}
+      .school-item:last-child{border-bottom:none}
+      .school-item:hover{background:var(--bg-raised)}
+      .school-item.checked{background:var(--accent-glow);color:var(--accent)}
+      .school-item input[type="checkbox"]{width:14px;height:14px;cursor:pointer;accent-color:var(--accent);flex-shrink:0}
+      .school-logo{width:22px;height:22px;border-radius:50%;object-fit:contain;background:white;padding:2px;flex-shrink:0}
+
+      /* EVENTS — ACCORDION CATEGORIES */
+      .events-section{padding:14px 20px}
+      .events-bulk-btns{display:flex;gap:6px;margin-bottom:8px}
+      .bulk-btn{flex:1;padding:5px 8px;background:transparent;border:1px solid var(--border);color:var(--text-mid);border-radius:5px;font-size:.72rem;font-weight:600;cursor:pointer;transition:all var(--transition);text-transform:uppercase;letter-spacing:.05em}
+      .bulk-btn:hover{background:var(--bg-raised);color:var(--text-hi)}
+      .event-category{border:1px solid var(--border);border-radius:6px;margin-bottom:6px;overflow:hidden}
+      .event-category-header{display:flex;align-items:center;justify-content:space-between;padding:9px 12px;background:var(--bg-raised);cursor:pointer;user-select:none;font-size:.78rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;transition:background var(--transition)}
+      .event-category-header:hover{background:#1e2738}
+      .cat-left{display:flex;align-items:center;gap:8px}
+      .cat-icon{color:var(--accent);font-size:.72rem;width:14px;text-align:center}
+      .cat-chevron{color:var(--text-lo);font-size:.7rem;transition:transform var(--transition)}
+      .event-category.open .cat-chevron{transform:rotate(180deg)}
+      .event-category-body{display:none;background:var(--bg)}
+      .event-category.open .event-category-body{display:block}
+      .cat-badge{font-size:.63rem;font-weight:700;background:var(--border);color:var(--text-mid);border-radius:999px;padding:1px 6px;min-width:16px;text-align:center}
+      .cat-badge.active{background:var(--accent);color:white}
+      .event-check-item{display:flex;align-items:center;gap:8px;padding:7px 12px;font-size:.84rem;border-bottom:1px solid var(--border);cursor:pointer;transition:background var(--transition);user-select:none}
+      .event-check-item:last-child{border-bottom:none}
+      .event-check-item:hover{background:var(--bg-raised)}
+      .event-check-item.checked{background:var(--accent-glow);color:var(--accent)}
+      .event-check-item input[type="checkbox"]{width:14px;height:14px;cursor:pointer;accent-color:var(--accent);flex-shrink:0}
+
+      /* SIDEBAR ACTIONS */
+      .sidebar-actions{padding:14px 20px;flex-shrink:0;background:var(--bg-card)}
+      .btn-simulate{width:100%;padding:13px;background:var(--accent);color:white;border:none;border-radius:var(--radius);font-family:var(--font-display);font-size:1.05rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;transition:background var(--transition),transform var(--transition),box-shadow var(--transition);display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 20px rgba(42,92,255,.3)}
+      .btn-simulate:hover:not(:disabled){background:#3d6bff;transform:translateY(-1px);box-shadow:0 8px 28px rgba(42,92,255,.45)}
+      .btn-simulate:active:not(:disabled){transform:translateY(0)}
+      .btn-simulate:disabled{background:var(--bg-raised);color:var(--text-lo);cursor:not-allowed;box-shadow:none}
+      .btn-reset{width:100%;margin-top:8px;padding:8px;background:transparent;border:1px solid var(--border);color:var(--text-mid);border-radius:var(--radius);font-family:var(--font-body);font-size:.82rem;font-weight:600;cursor:pointer;transition:background var(--transition),color var(--transition)}
+      .btn-reset:hover{background:var(--bg-raised);color:var(--text-hi)}
+
+      /* RESULTS AREA */
+      .results-area{min-height:400px}
+      .empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:400px;text-align:center;border:2px dashed var(--border);border-radius:var(--radius);padding:40px;gap:12px}
+      .empty-state-icon{font-size:3rem;color:var(--text-lo);margin-bottom:8px;opacity:.5}
+      .empty-state h2{font-family:var(--font-display);font-size:1.6rem;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:var(--text-mid);margin:0}
+      .empty-state p{color:var(--text-lo);font-size:.9rem;margin:0;max-width:380px;line-height:1.6}
+      .loading-state{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:400px;gap:16px;text-align:center}
+      .loading-spinner{width:48px;height:48px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
+      @keyframes spin{to{transform:rotate(360deg)}}
+      .loading-label{font-family:var(--font-display);font-size:1.1rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-mid)}
+      .loading-sub{font-size:.83rem;color:var(--text-lo)}
+      .results-wrap{display:flex;flex-direction:column;gap:20px;animation:fadeInUp .35s ease}
+      @keyframes fadeInUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+      /* STANDINGS */
+      .standings-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+      .card-header{display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid var(--border);background:var(--bg-raised)}
+      .card-header-icon{width:34px;height:34px;display:flex;align-items:center;justify-content:center;background:var(--accent-glow);border:1px solid var(--border-glow);border-radius:8px;color:var(--accent);font-size:.9rem}
+      .card-header-title{font-family:var(--font-display);font-size:1.1rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin:0}
+      .card-header-sub{font-size:.78rem;color:var(--text-lo);margin-top:1px}
+      .podium-row{display:flex;gap:12px;padding:20px;flex-wrap:wrap}
+      .podium-item{flex:1;min-width:140px;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:16px 18px;position:relative;overflow:hidden;transition:transform var(--transition)}
+      .podium-item:hover{transform:translateY(-2px)}
+      .podium-item.p1{border-color:var(--gold);background:var(--gold-bg)}
+      .podium-item.p2{border-color:var(--silver);background:var(--silver-bg)}
+      .podium-item.p3{border-color:var(--bronze);background:var(--bronze-bg)}
+      .podium-logo{width:38px;height:38px;border-radius:50%;object-fit:contain;background:white;padding:3px;margin-bottom:8px;display:block}
+      .podium-rank{font-family:var(--font-display);font-size:2.5rem;font-weight:900;line-height:1;margin-bottom:4px}
+      .p1 .podium-rank{color:var(--gold)} .p2 .podium-rank{color:var(--silver)} .p3 .podium-rank{color:var(--bronze)}
+      .podium-item:not(.p1):not(.p2):not(.p3) .podium-rank{color:var(--text-mid);font-size:1.8rem}
+      .podium-name{font-weight:700;font-size:.95rem;line-height:1.3;display:flex;align-items:center;gap:6px}
+      .podium-pts{font-family:var(--font-mono);font-size:1.4rem;font-weight:600;margin-top:6px}
+      .p1 .podium-pts{color:var(--gold)} .p2 .podium-pts{color:var(--silver)} .p3 .podium-pts{color:var(--bronze)}
+      .podium-pts-label{font-size:.72rem;color:var(--text-lo);font-weight:600;text-transform:uppercase;letter-spacing:.08em}
+      .section-heading{font-family:var(--font-display);font-size:1.5rem;font-weight:800;text-transform:uppercase;letter-spacing:.04em;margin:8px 0 12px;display:flex;align-items:center;gap:12px;color:var(--text-hi)}
+      .section-heading::after{content:"";flex:1;height:1px;background:var(--border)}
+
+      /* EVENT CARDS */
+      .events-grid{display:flex;flex-direction:column;gap:14px}
+      .event-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;transition:border-color var(--transition)}
+      .event-card:hover{border-color:#2d3a55}
+      .event-header{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-bottom:1px solid var(--border);background:var(--bg-raised);gap:10px;cursor:pointer;user-select:none}
+      .event-card.collapsed .event-header{border-bottom:none}
+      .event-card.collapsed .event-body{display:none}
+      .event-name{font-family:var(--font-display);font-size:1.1rem;font-weight:800;text-transform:uppercase;letter-spacing:.04em;margin:0}
+      .event-tags{display:flex;gap:6px;flex-shrink:0;align-items:center}
+      .event-tag{font-size:.68rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:3px 8px;border-radius:4px;background:var(--bg);border:1px solid var(--border);color:var(--text-lo)}
+      .event-tag.relay{border-color:#2a5cff55;color:var(--accent);background:var(--accent-glow)}
+      .event-tag.field{border-color:#55334455;color:#bb8866;background:rgba(85,33,44,.2)}
+      .toggle-chev{color:var(--text-lo);font-size:.75rem;transition:transform var(--transition);margin-left:4px}
+      .event-card.collapsed .toggle-chev{transform:rotate(-90deg)}
+      .event-table{width:100%;border-collapse:collapse}
+      .event-table thead th{background:var(--bg);padding:8px 14px;text-align:left;font-size:.7rem;font-weight:700;color:var(--text-lo);text-transform:uppercase;letter-spacing:.1em;border-bottom:1px solid var(--border)}
+      .event-table thead th:last-child,.event-table td:last-child{text-align:center}
+      .event-table tbody tr{transition:background var(--transition)}
+      .event-table tbody tr:hover{background:var(--bg-raised) !important}
+      .event-table tbody tr:not(:last-child) td{border-bottom:1px solid var(--border)}
+      .event-table td{padding:10px 14px;font-size:.9rem}
+      .row-gold{background:var(--gold-bg)} .row-silver{background:var(--silver-bg)} .row-bronze{background:var(--bronze-bg)}
+      .place-badge{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;font-family:var(--font-display);font-size:.85rem;font-weight:800}
+      .place-badge.g{background:var(--gold);color:#1a1200} .place-badge.s{background:var(--silver);color:#111820} .place-badge.b{background:var(--bronze);color:#1a0e00} .place-badge.n{background:var(--bg-raised);color:var(--text-mid)}
+      .athlete-name{font-weight:600}
+      .school-cell{display:flex;align-items:center;gap:6px;color:var(--text-mid);font-size:.85rem}
+      .cell-logo{width:18px;height:18px;border-radius:50%;object-fit:contain;background:white;padding:2px;flex-shrink:0}
+      .team-dot{width:8px;height:8px;border-radius:50%;display:inline-block;flex-shrink:0}
+      .mark-val{font-family:var(--font-mono);font-size:.95rem;font-weight:600;text-align:right !important;color:var(--text-hi)}
+      .pts-val{font-family:var(--font-mono);font-size:.88rem;font-weight:700;color:var(--accent)}
+      .pts-val.zero{color:var(--text-lo)}
+      .error-card{background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.3);border-radius:var(--radius);padding:24px}
+      .error-card h3{color:#ef4444;font-family:var(--font-display);font-size:1.2rem;text-transform:uppercase;margin:0 0 8px}
+      .error-card p{color:var(--text-mid);font-size:.9rem;margin:0}
+
+      /* ── HIGH POINT ATHLETES ── */
+      .hp-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+      .hp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr))}
+      .hp-athlete{padding:16px 18px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);position:relative;transition:background var(--transition)}
+      .hp-athlete:hover{background:var(--bg-raised)}
+      .hp-medal{position:absolute;top:14px;right:14px;font-family:var(--font-display);font-size:1.5rem;font-weight:900;line-height:1;color:var(--text-lo)}
+      .hp-medal.m1{color:var(--gold)} .hp-medal.m2{color:var(--silver)} .hp-medal.m3{color:var(--bronze)}
+      .hp-school-row{display:flex;align-items:center;gap:6px;margin-bottom:5px}
+      .hp-logo{width:20px;height:20px;border-radius:50%;object-fit:contain;background:white;padding:2px;flex-shrink:0}
+      .hp-school-name{font-size:.72rem;font-weight:700;color:var(--text-mid);text-transform:uppercase;letter-spacing:.06em}
+      .hp-name{font-family:var(--font-display);font-size:1.1rem;font-weight:800;text-transform:uppercase;letter-spacing:.02em;line-height:1.2;margin-bottom:4px;padding-right:28px;color:var(--text-hi)}
+      .hp-pts{font-family:var(--font-mono);font-size:1rem;font-weight:700;color:var(--accent);margin-bottom:8px}
+      .hp-pills{display:flex;flex-wrap:wrap;gap:4px}
+      .hp-pill{font-size:.63rem;font-weight:700;letter-spacing:.04em;padding:2px 7px;border-radius:999px;border:1px solid var(--border);color:var(--text-lo);background:var(--bg);white-space:nowrap}
+      .hp-pill.p1{border-color:rgba(245,183,49,.5);color:var(--gold);background:var(--gold-bg)}
+      .hp-pill.p2{border-color:rgba(168,184,200,.4);color:var(--silver);background:var(--silver-bg)}
+      .hp-pill.p3{border-color:rgba(196,122,56,.4);color:var(--bronze);background:var(--bronze-bg)}
+      .hp-pill.p4,.hp-pill.p5,.hp-pill.p6,.hp-pill.p7,.hp-pill.p8{border-color:var(--border);color:var(--text-lo);background:var(--bg)}
+
+      @media(max-width:860px){.sim-layout{grid-template-columns:1fr}.sidebar{position:static;max-height:none}.podium-row{flex-wrap:wrap}.podium-item{min-width:calc(50% - 6px)}}
+      @media(max-width:500px){.page-title{font-size:2rem}.podium-item{min-width:100%}.event-table thead th:nth-child(3),.event-table td:nth-child(3){display:none}}
+    </style>
+  </head>
+  <body>
+    <header>
+      <nav class="navbar">
+        <div class="navbar-content">
+          <a href="index.html" class="navbar-brand">
+            <img src="../assets/msm-logo.png" alt="MSM" class="msm-logo" onerror="this.style.display='none'">
+            Mountain <span class="accent">State Miles</span>
+          </a>
+          <ul class="navbar-nav">
+            <li><a href="rankings.html" class="navbar-link">Rankings</a></li>
+            <li><a href="simulator.html" class="navbar-link active">Simulator</a></li>
+          </ul>
         </div>
-        <div class="podium-pts">${team.points}</div>
-        <div class="podium-pts-label">Points</div>
-      </div>`;
-                }).join("");
+      </nav>
+    </header>
 
-                const placeClass = (p) => p === 1 ? "g" : p === 2 ? "s" : p === 3 ? "b" : "n";
-                const rowClass = (p) => p === 1 ? "row-gold" : p === 2 ? "row-silver" : p === 3 ? "row-bronze" : "";
+    <main class="page-wrap">
+      <div class="page-header">
+        <h1 class="page-title">Virtual Meet <span class="dim">Simulator</span></h1>
+        <p class="page-subtitle">Pit teams head-to-head using athletes' seasonal bests — projected results, real scores.</p>
+        <div class="stat-bar">
+          <div class="stat-pill"><i class="fas fa-bolt"></i><strong>NFHS</strong> 8-place scoring</div>
+          <div class="stat-pill"><i class="fas fa-users"></i>Up to <strong>3</strong> athletes per event per team</div>
+          <div class="stat-pill"><i class="fas fa-flag-checkered"></i>Track &amp; Field events</div>
+          <div class="stat-pill"><i class="fas fa-check-circle"></i>Seasonal best per athlete</div>
+        </div>
+      </div>
 
-                const eventCards = events
-                    .sort((a, b) => a.name.localeCompare(b.name))
-                    .map((event) => {
-                        const rows = event.entries.map((e) => {
-                                const color = teamColorMap[e.school] || "#8899bb";
-                                return `
-          <tr class="${rowClass(e.place)}">
+      <div class="sim-layout">
+        <aside class="sidebar">
+          <div class="sidebar-header">
+            <div class="sidebar-title">Configuration</div>
+            <div class="filter-row">
+              <div class="filter-group">
+                <label class="filter-label">Season</label>
+                <select id="sim-season" class="filter-select">
+                  <option value="outdoor">Outdoor</option>
+                  <option value="indoor">Indoor</option>
+                </select>
+              </div>
+              <div class="filter-group">
+                <label class="filter-label">Gender</label>
+                <select id="sim-gender" class="filter-select">
+                  <option value="M">Boys</option>
+                  <option value="W">Girls</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="sidebar-scrollable">
+            <div class="teams-section">
+              <div class="section-label">
+                Select Teams
+                <span class="selected-count" id="selected-count">0</span>
+              </div>
+              <div class="search-wrap">
+                <i class="fas fa-search"></i>
+                <input type="text" id="school-search" class="search-input" placeholder="Search schools…" />
+              </div>
+              <div id="school-selector" class="school-list">
+                <div style="padding:20px;text-align:center;color:var(--text-lo);">
+                  <i class="fas fa-circle-notch fa-spin"></i>&nbsp; Loading teams…
+                </div>
+              </div>
+            </div>
+
+            <div class="events-section">
+              <div class="section-label" style="margin-bottom:8px;">
+                Select Events
+                <span class="selected-count" id="event-count">0</span>
+              </div>
+              <div class="events-bulk-btns">
+                <button class="bulk-btn" id="select-all-events"><i class="fas fa-check-double"></i> Select All</button>
+                <button class="bulk-btn" id="deselect-all-events"><i class="fas fa-times"></i> Clear</button>
+              </div>
+              <div id="event-categories">
+                <div style="padding:20px;text-align:center;color:var(--text-lo);">
+                  <i class="fas fa-circle-notch fa-spin"></i>&nbsp; Loading events…
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="sidebar-actions">
+            <button id="run-sim" class="btn-simulate" disabled>
+              <i class="fas fa-play"></i> Run Simulation
+            </button>
+            <button id="reset-sim" class="btn-reset" style="display:none">
+              <i class="fas fa-undo"></i> Clear Team Selection
+            </button>
+          </div>
+        </aside>
+
+        <section class="results-area" id="results-area">
+          <div class="empty-state">
+            <div class="empty-state-icon"><i class="fas fa-stopwatch"></i></div>
+            <h2>Ready to Simulate</h2>
+            <p>Select two or more teams from the sidebar and hit <strong>Run Simulation</strong> to see projected meet results scored with NFHS 8-place rules.</p>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <script src="firebase-helpers.js"></script>
+
+    <script>
+    /* ═══════════════════════════════════════
+       CONSTANTS & STATE
+    ═══════════════════════════════════════ */
+    const SCORING = { individual:[10,8,6,5,4,3,2,1], relay:[10,8,6,5,4,3,2,1] };
+    const TEAM_COLORS = ["#2a5cff","#ff4e2a","#2aff9f","#ffd02a","#c62aff","#2afff0","#ff2a7a","#a2ff2a"];
+    const INVALID_MARKS = new Set(["DNS","DNF","DQ","SCR","NM","NH","FS","ND","NT","","—","N/A"]);
+    const FALLBACK_LOGO = "../assets/Wvruns Logo.png";
+
+    let athletesMap = {}, eventsMap = {}, meetsMap = {};
+    let allSchools = [], allEventsList = [];
+    let teamColorMap = {}, teamLogoMap = {};
+
+    /* ─── Firebase ─── */
+    async function waitForFirebase() {
+      let r = 50;
+      while (!window.firebaseDatabase && r-- > 0) await new Promise(x => setTimeout(x, 100));
+      if (!window.firebaseDatabase) throw new Error("Cannot connect to Firebase.");
+    }
+
+    /* ─── Logo helpers ─── */
+    function schoolSlug(name) {
+      return name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+    }
+    function logoSrc(school) {
+      return `../CrossCountry/assets/team logos/${schoolSlug(school)}.png`;
+    }
+    function logoTag(school, cls) {
+      return `<img src="${logoSrc(school)}" class="${cls}" alt="" loading="lazy" onerror="this.onerror=null;this.src='${FALLBACK_LOGO}'">`;
+    }
+
+    /* ─── Event helpers ─── */
+    function isFieldEvent(name) {
+      return ["shot","discus","javelin","jump","vault","pole","weight","hammer","throw"]
+        .some(k => (name||"").toLowerCase().includes(k));
+    }
+    function isRelay(name) {
+      const l = (name||"").toLowerCase();
+      return l.includes("relay") || l.includes("4x") || l.includes("4 x") || l.includes("medley");
+    }
+    function eventCategory(name) {
+      if (isRelay(name)) return "relay";
+      if (isFieldEvent(name)) return "field";
+      return "track";
+    }
+
+    /* ─── Mark parsing (improved accuracy)
+         Handles: "10.23w", "10.23#", "10.23a", "10.23h", "10.23i",
+                  "1:23.45", "55-6.5", "55'6.5\"", metric floats
+    ─── */
+    function parseMark(mark, eventName) {
+      if (!mark) return isFieldEvent(eventName) ? -Infinity : Infinity;
+      const raw = mark.toString().trim().toUpperCase();
+      if (INVALID_MARKS.has(raw)) return isFieldEvent(eventName) ? -Infinity : Infinity;
+
+      // Strip trailing qualifier suffixes: w a h i # * ! (wind, altitude, hand-timed, indoor, etc.)
+      let s = mark.toString().trim().replace(/[wWhHaAiI#\*!]+$/, "").trim();
+      // Keep only: digits, colon, dash, period, apostrophe, quote
+      s = s.replace(/[^\d:'.\-"]/g, "").trim();
+      if (!s) return isFieldEvent(eventName) ? -Infinity : Infinity;
+
+      if (isFieldEvent(eventName)) {
+        // Feet-inches: 55-6.5  or  55'6.5"  or  55'6.5
+        const fi = s.match(/^(\d+)['\-](\d+(?:\.\d+)?)/);
+        if (fi) return parseFloat(fi[1]) * 12 + parseFloat(fi[2]);
+        // Already metric (just a float)
+        const v = parseFloat(s);
+        return isNaN(v) ? -Infinity : v;
+      } else {
+        // Time: [H:]M:SS.ss
+        if (s.includes(":")) {
+          const parts = s.split(":");
+          if (parts.length === 2) {
+            const val = parseFloat(parts[0]) * 60 + parseFloat(parts[1]);
+            return isNaN(val) ? Infinity : val;
+          }
+          if (parts.length === 3) {
+            const val = parseFloat(parts[0])*3600 + parseFloat(parts[1])*60 + parseFloat(parts[2]);
+            return isNaN(val) ? Infinity : val;
+          }
+        }
+        const v = parseFloat(s);
+        return isNaN(v) ? Infinity : v;
+      }
+    }
+
+    /* ─── URL helpers ─── */
+    function getUrlParams() {
+      const p = new URLSearchParams(window.location.search);
+      return {
+        teams: p.get("teams") ? p.get("teams").split(",").filter(t => t.trim()) : [],
+        events: p.get("events") ? p.get("events").split(",").filter(e => e.trim()) : null,
+        season: p.get("season")?.toLowerCase() || "",
+        gender: p.get("gender")?.toUpperCase() || "",
+      };
+    }
+
+    /* ─── UI state ─── */
+    function updateSimState() {
+      const teamCBs = document.querySelectorAll("#school-selector input:checked");
+      const eventCBs = document.querySelectorAll("#event-categories input:checked");
+      const count = teamCBs.length, evCount = eventCBs.length;
+      const btn = document.getElementById("run-sim");
+
+      document.getElementById("selected-count").textContent = count;
+      document.getElementById("selected-count").classList.toggle("visible", count > 0);
+      document.getElementById("event-count").textContent = evCount;
+      document.getElementById("event-count").classList.toggle("visible", evCount > 0);
+
+      btn.disabled = count < 2 || evCount === 0;
+      btn.innerHTML = count < 2
+        ? `<i class="fas fa-play"></i> Select ${2-count} More Team${2-count!==1?"s":""}`
+        : evCount === 0
+          ? `<i class="fas fa-play"></i> Select Events`
+          : `<i class="fas fa-play"></i> Simulate ${count} Teams`;
+      document.getElementById("reset-sim").style.display = count > 0 ? "block" : "none";
+
+      // Update per-category badges
+      document.querySelectorAll(".event-category").forEach(cat => {
+        const total = cat.querySelectorAll("input").length;
+        const checked = cat.querySelectorAll("input:checked").length;
+        const badge = cat.querySelector(".cat-badge");
+        if (badge) { badge.textContent = `${checked}/${total}`; badge.classList.toggle("active", checked > 0); }
+      });
+
+      // Update URL
+      const selSchools = Array.from(teamCBs).map(cb => cb.value);
+      const selEvents = Array.from(eventCBs).map(cb => cb.value);
+      const season = document.getElementById("sim-season").value;
+      const gender = document.getElementById("sim-gender").value;
+      const params = new URLSearchParams();
+      if (selSchools.length) params.set("teams", selSchools.join(","));
+      if (selEvents.length && selEvents.length < allEventsList.length) params.set("events", selEvents.join(","));
+      if (season) params.set("season", season);
+      if (gender) params.set("gender", gender);
+      const qs = params.toString();
+      window.history.replaceState(null, "", qs ? `?${qs}` : window.location.pathname);
+    }
+
+    /* ═══════════════════════════════════════
+       INIT
+    ═══════════════════════════════════════ */
+    async function initSimulator() {
+      const schoolContainer = document.getElementById("school-selector");
+      try {
+        await waitForFirebase();
+        const [athSnap, evSnap, meetSnap] = await Promise.all([
+          window.firebaseDatabase.ref("Track/athletes").once("value"),
+          window.firebaseDatabase.ref("Track/events").once("value"),
+          window.firebaseDatabase.ref("Track/meets").once("value"),
+        ]);
+        athSnap.forEach(c => { athletesMap[c.key] = c.val(); });
+        evSnap.forEach(c => { eventsMap[c.key] = c.val(); });
+        meetSnap.forEach(c => { meetsMap[c.key] = c.val(); });
+
+        const schoolSet = new Map();
+        Object.values(athletesMap).forEach(a => {
+          const s = (a.school || "").trim();
+          if (s && !schoolSet.has(s)) schoolSet.set(s, s);
+        });
+        allSchools = Array.from(schoolSet.values()).sort((a,b) => a.localeCompare(b)).map(name => ({name, key:name}));
+
+        allEventsList = Object.keys(eventsMap)
+          .map(key => ({id:key, name:eventsMap[key].name || "Unknown Event"}))
+          .sort((a,b) => a.name.localeCompare(b.name));
+
+        const urlP = getUrlParams();
+        renderSchoolList(allSchools, new Set(urlP.teams));
+        const initEvSet = urlP.events ? new Set(urlP.events) : new Set(allEventsList.map(e => e.id));
+        renderEventCategories(allEventsList, initEvSet);
+
+        if (urlP.season) document.getElementById("sim-season").value = urlP.season;
+        if (urlP.gender) document.getElementById("sim-gender").value = urlP.gender;
+        updateSimState();
+
+        document.getElementById("school-search").addEventListener("input", e => {
+          const q = e.target.value.toLowerCase();
+          renderSchoolList(allSchools.filter(s => s.name.toLowerCase().includes(q)));
+        });
+        document.getElementById("reset-sim").addEventListener("click", () => {
+          document.querySelectorAll("#school-selector input:checked").forEach(cb => {
+            cb.checked = false; cb.closest(".school-item").classList.remove("checked");
+          });
+          updateSimState();
+        });
+        document.getElementById("select-all-events").addEventListener("click", () => {
+          document.querySelectorAll("#event-categories input[type='checkbox']").forEach(cb => {
+            cb.checked = true; cb.closest(".event-check-item").classList.add("checked");
+          });
+          updateSimState();
+        });
+        document.getElementById("deselect-all-events").addEventListener("click", () => {
+          document.querySelectorAll("#event-categories input[type='checkbox']").forEach(cb => {
+            cb.checked = false; cb.closest(".event-check-item").classList.remove("checked");
+          });
+          updateSimState();
+        });
+        document.getElementById("sim-season").addEventListener("change", updateSimState);
+        document.getElementById("sim-gender").addEventListener("change", updateSimState);
+
+        if (urlP.teams.length >= 2) setTimeout(() => runSimulation(), 100);
+      } catch(err) {
+        console.error(err);
+        schoolContainer.innerHTML = `<div style="padding:18px;color:#ef4444;text-align:center;"><i class="fas fa-triangle-exclamation"></i> Failed to load: ${err.message}</div>`;
+      }
+    }
+
+    function renderSchoolList(list, initialCheckedSet = null) {
+      const container = document.getElementById("school-selector");
+      if (!list?.length) {
+        container.innerHTML = `<div style="padding:18px;text-align:center;color:var(--text-lo);">No schools found.</div>`;
+        return;
+      }
+      const checkedSet = initialCheckedSet || new Set(Array.from(container.querySelectorAll("input:checked")).map(cb => cb.value));
+      container.innerHTML = list.map(school => {
+        const checked = checkedSet.has(school.key);
+        const safeId = school.key.replace(/[^a-zA-Z0-9]/g, "_");
+        return `<label class="school-item${checked?" checked":""}" for="sch-${safeId}">
+          <input type="checkbox" value="${school.key}" id="sch-${safeId}"${checked?" checked":""}>
+          <img src="${logoSrc(school.key)}" class="school-logo" alt="" loading="lazy" onerror="this.onerror=null;this.src='${FALLBACK_LOGO}'">
+          ${school.name}
+        </label>`;
+      }).join("");
+      container.querySelectorAll("input[type='checkbox']").forEach(cb => {
+        cb.addEventListener("change", e => {
+          e.target.closest(".school-item").classList.toggle("checked", e.target.checked);
+          updateSimState();
+        });
+      });
+    }
+
+    function renderEventCategories(events, checkedSet) {
+      const container = document.getElementById("event-categories");
+      const cats = { track:[], field:[], relay:[] };
+      events.forEach(ev => cats[eventCategory(ev.name)].push(ev));
+
+      const catMeta = {
+        track: { label:"Track Events", icon:"fa-person-running" },
+        field: { label:"Field Events", icon:"fa-arrows-up-to-line" },
+        relay: { label:"Relay Events", icon:"fa-people-group" }
+      };
+
+      container.innerHTML = ["track","field","relay"].map(cat => {
+        const evList = cats[cat];
+        if (!evList.length) return "";
+        evList.sort((a,b) => a.name.localeCompare(b.name));
+        const checkedIn = evList.filter(ev => checkedSet.has(ev.id)).length;
+        const items = evList.map(ev => {
+          const checked = checkedSet.has(ev.id);
+          const safeId = ev.id.replace(/[^a-zA-Z0-9]/g, "_");
+          return `<label class="event-check-item${checked?" checked":""}" for="ev-${safeId}">
+            <input type="checkbox" value="${ev.id}" id="ev-${safeId}"${checked?" checked":""}>
+            ${ev.name}
+          </label>`;
+        }).join("");
+        return `<div class="event-category">
+          <div class="event-category-header">
+            <div class="cat-left"><i class="fas ${catMeta[cat].icon} cat-icon"></i>${catMeta[cat].label}</div>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <span class="cat-badge${checkedIn>0?" active":""}">${checkedIn}/${evList.length}</span>
+              <i class="fas fa-chevron-down cat-chevron"></i>
+            </div>
+          </div>
+          <div class="event-category-body">${items}</div>
+        </div>`;
+      }).join("");
+
+      container.querySelectorAll(".event-category-header").forEach(hdr => {
+        hdr.addEventListener("click", () => hdr.closest(".event-category").classList.toggle("open"));
+      });
+      container.querySelectorAll("input[type='checkbox']").forEach(cb => {
+        cb.addEventListener("change", e => {
+          e.target.closest(".event-check-item").classList.toggle("checked", e.target.checked);
+          updateSimState();
+        });
+      });
+    }
+
+    /* ═══════════════════════════════════════
+       SIMULATION ENGINE
+    ═══════════════════════════════════════ */
+    async function runSimulation() {
+      const selectedSchools = Array.from(document.querySelectorAll("#school-selector input:checked")).map(cb => cb.value);
+      const selectedEvents = new Set(Array.from(document.querySelectorAll("#event-categories input:checked")).map(cb => cb.value));
+
+      if (selectedSchools.length < 2) { alert("Please select at least 2 teams."); return; }
+      if (selectedEvents.size === 0) { alert("Please select at least 1 event."); return; }
+
+      const season = document.getElementById("sim-season").value.toLowerCase();
+      const genderFilter = document.getElementById("sim-gender").value.toUpperCase();
+      const resultsArea = document.getElementById("results-area");
+
+      teamColorMap = {}; teamLogoMap = {};
+      selectedSchools.forEach((s, i) => {
+        teamColorMap[s] = TEAM_COLORS[i % TEAM_COLORS.length];
+        teamLogoMap[s] = logoSrc(s);
+      });
+
+      resultsArea.innerHTML = `<div class="loading-state"><div class="loading-spinner"></div><div class="loading-label">Simulating Meet…</div><div class="loading-sub">Fetching results &amp; crunching seasonal bests</div></div>`;
+
+      try {
+        const resSnap = await window.firebaseDatabase.ref("Track/results").once("value");
+        const selectedSet = new Set(selectedSchools);
+        const allEntries = [];
+
+        resSnap.forEach(child => {
+          const r = child.val();
+          if (!r.event_id || !selectedEvents.has(r.event_id)) return;
+          if (!r.mark) return;
+
+          const athlete = athletesMap[r.athlete_id] || {};
+          const meet = meetsMap[r.meet_id] || {};
+          const event = eventsMap[r.event_id] || {};
+          const school = (athlete.school || r.school || "").trim();
+
+          if (!selectedSet.has(school)) return;
+          if ((r.gender || athlete.gender || "").toUpperCase() !== genderFilter) return;
+          if ((meet.season || "").toLowerCase() !== season) return;
+
+          const eventName = event.name || "Unknown Event";
+          const parsed = parseMark(r.mark, eventName);
+          const isField = isFieldEvent(eventName);
+          if (!isFinite(parsed) || isNaN(parsed)) return;
+
+          const isRel = isRelay(eventName);
+          // For relays use school+event as key so multiple relay entries per team collapse correctly
+          const athleteId = isRel
+            ? `relay_${school}_${r.event_id}`
+            : (r.athlete_id || `anon_${school}_${Math.random()}`);
+          const athleteLabel = isRel
+            ? `${school} Relay`
+            : `${athlete.first_name||""} ${athlete.last_name||""}`.trim() || "Unknown";
+
+          allEntries.push({ athleteId, athleteLabel, school, eventId:r.event_id, eventName, mark:r.mark, parsed, relay:isRel, fieldEvent:isField });
+        });
+
+        if (!allEntries.length) {
+          resultsArea.innerHTML = `<div class="empty-state"><div class="empty-state-icon"><i class="fas fa-search"></i></div><h2>No Results Found</h2><p>No records matched <strong>${genderFilter==="M"?"Boys":"Girls"} &middot; ${season}</strong> for the selected teams and events.</p></div>`;
+          return;
+        }
+
+        // Step 1: Keep only each athlete's season best per event
+        const bestPerAthlete = {};
+        allEntries.forEach(e => {
+          const key = `${e.athleteId}_${e.eventId}`;
+          const ex = bestPerAthlete[key];
+          const better = !ex || (e.fieldEvent ? e.parsed > ex.parsed : e.parsed < ex.parsed);
+          if (better) bestPerAthlete[key] = e;
+        });
+
+        // Step 2: Bucket by event
+        const eventBuckets = {};
+        Object.values(bestPerAthlete).forEach(e => {
+          if (!eventBuckets[e.eventId]) eventBuckets[e.eventId] = { name:e.eventName, relay:e.relay, fieldEvent:e.fieldEvent, bySchool:{} };
+          const b = eventBuckets[e.eventId];
+          if (!b.bySchool[e.school]) b.bySchool[e.school] = [];
+          b.bySchool[e.school].push(e);
+        });
+
+        // Step 3: Score each event — max 3 entries per school (1 for relays)
+        const teamScores = {};
+        selectedSchools.forEach(s => { teamScores[s] = { school:s, points:0 }; });
+        const eventResults = [];
+        // Per-athlete accumulator: athleteId -> { label, school, points, placements[] }
+        const athletePointMap = {};
+
+        Object.values(eventBuckets).forEach(bucket => {
+          const allowed = bucket.relay ? 1 : 3;
+          const entries = [];
+          Object.values(bucket.bySchool).forEach(schoolEnts => {
+            schoolEnts.sort((a,b) => bucket.fieldEvent ? b.parsed-a.parsed : a.parsed-b.parsed);
+            entries.push(...schoolEnts.slice(0, allowed));
+          });
+          entries.sort((a,b) => bucket.fieldEvent ? b.parsed-a.parsed : a.parsed-b.parsed);
+          const scoring = bucket.relay ? SCORING.relay : SCORING.individual;
+          entries.forEach((e, i) => {
+            e.place = i + 1;
+            e.points = scoring[i] || 0;
+            if (teamScores[e.school]) teamScores[e.school].points += e.points;
+            // Track individual athletes only (skip relays for high point)
+            if (!e.relay && e.points > 0) {
+              if (!athletePointMap[e.athleteId]) {
+                athletePointMap[e.athleteId] = { label:e.athleteLabel, school:e.school, points:0, placements:[] };
+              }
+              athletePointMap[e.athleteId].points += e.points;
+              athletePointMap[e.athleteId].placements.push({ event:bucket.name, place:e.place, pts:e.points });
+            }
+          });
+          if (entries.length) eventResults.push({ name:bucket.name, relay:bucket.relay, fieldEvent:bucket.fieldEvent, entries });
+        });
+
+        // Build high point leaderboard (top 10 non-relay scorers)
+        const highPointList = Object.values(athletePointMap)
+          .sort((a,b) => b.points - a.points)
+          .slice(0, 10);
+
+        renderResults(teamScores, eventResults, highPointList, genderFilter, season);
+      } catch(err) {
+        console.error(err);
+        resultsArea.innerHTML = `<div class="error-card"><h3><i class="fas fa-triangle-exclamation"></i> Simulation Failed</h3><p>${err.message}</p></div>`;
+      }
+    }
+
+    /* ═══════════════════════════════════════
+       RENDER RESULTS
+    ═══════════════════════════════════════ */
+    function renderResults(teamScores, events, highPointList, gender, season) {
+      const resultsArea = document.getElementById("results-area");
+      const standings = Object.values(teamScores).sort((a,b) => b.points-a.points);
+
+      const podiumItems = standings.map((team, i) => {
+        const cls = ["p1","p2","p3"][i] || "";
+        const placeLabel = ["1ST","2ND","3RD"][i] || `${i+1}TH`;
+        const color = teamColorMap[team.school] || "#8899bb";
+        return `<div class="podium-item ${cls}">
+          ${logoTag(team.school, "podium-logo")}
+          <div class="podium-rank">${placeLabel}</div>
+          <div class="podium-name"><span class="team-dot" style="background:${color}"></span>${team.school}</div>
+          <div class="podium-pts">${team.points}</div>
+          <div class="podium-pts-label">Points</div>
+        </div>`;
+      }).join("");
+
+      // ── HIGH POINT section ──
+      const medClass = i => i===0?"m1":i===1?"m2":i===2?"m3":"";
+      const pillClass = p => p<=3?`p${p}`:p<=8?`p${p}`:"";
+      const hpCards = highPointList.map((ath, i) => {
+        const color = teamColorMap[ath.school] || "#8899bb";
+        const pills = ath.placements
+          .sort((a,b) => a.place - b.place)
+          .map(pl => `<span class="hp-pill ${pillClass(pl.place)}">${pl.event} — ${pl.place}${["st","nd","rd"][pl.place-1]||"th"} (+${pl.pts})</span>`)
+          .join("");
+        return `<div class="hp-athlete">
+          <div class="hp-medal ${medClass(i)}">${["🥇","🥈","🥉"][i]||`#${i+1}`}</div>
+          <div class="hp-school-row">
+            ${logoTag(ath.school,"hp-logo")}
+            <span class="hp-school-name" style="color:${color}">${ath.school}</span>
+          </div>
+          <div class="hp-name">${ath.label}</div>
+          <div class="hp-pts">${ath.points} pts</div>
+          <div class="hp-pills">${pills}</div>
+        </div>`;
+      }).join("");
+
+      const placeClass = p => p===1?"g":p===2?"s":p===3?"b":"n";
+      const rowClass = p => p===1?"row-gold":p===2?"row-silver":p===3?"row-bronze":"";
+      const catOrder = {track:0, field:1, relay:2};
+      const sortedEvents = events.slice().sort((a,b) => {
+        const da = catOrder[eventCategory(a.name)], db = catOrder[eventCategory(b.name)];
+        return da!==db ? da-db : a.name.localeCompare(b.name);
+      });
+
+      const eventCards = sortedEvents.map(event => {
+        const rows = event.entries.map(e => {
+          const color = teamColorMap[e.school] || "#8899bb";
+          return `<tr class="${rowClass(e.place)}">
             <td><span class="place-badge ${placeClass(e.place)}">${e.place}</span></td>
             <td class="athlete-name">${e.athleteLabel}</td>
-            <td class="school-name">
-              <span class="team-dot" style="background:${color}"></span>${e.school}
-            </td>
-            <td class="mark-val">${formatDisplayMark(e.mark)}</td>
-            <td class="pts-val${e.points === 0 ? " zero" : ""}">${e.points > 0 ? "+" + e.points : "—"}</td>
+            <td><div class="school-cell">${logoTag(e.school,"cell-logo")}<span class="team-dot" style="background:${color}"></span>${e.school}</div></td>
+            <td class="mark-val">${e.mark}</td>
+            <td class="pts-val${e.points===0?" zero":""}">${e.points>0?"+"+e.points:"—"}</td>
           </tr>`;
-                        }).join("");
-
-                        const tags = [
-                            event.relay ? `<span class="event-tag relay">Relay</span>` : "",
-                            event.fieldEvent ? `<span class="event-tag field">Field</span>` : `<span class="event-tag">Track</span>`,
-                            `<span class="event-tag">${event.entries.length} comp</span>`,
-                        ].filter(Boolean).join("");
-
-                        return `
-        <div class="event-card">
-          <div class="event-header">
+        }).join("");
+        const tags = [
+          event.relay ? `<span class="event-tag relay">Relay</span>` : "",
+          event.fieldEvent ? `<span class="event-tag field">Field</span>` : `<span class="event-tag">Track</span>`,
+          `<span class="event-tag">${event.entries.length} comp</span>`,
+        ].filter(Boolean).join("");
+        return `<div class="event-card collapsed">
+          <div class="event-header" onclick="this.closest('.event-card').classList.toggle('collapsed')">
             <h3 class="event-name">${event.name}</h3>
-            <div class="event-tags">${tags}</div>
+            <div class="event-tags">${tags}<i class="fas fa-chevron-down toggle-chev"></i></div>
           </div>
-          <table class="event-table">
-            <thead>
-              <tr>
-                <th style="width:46px;">#</th>
-                <th>Athlete</th>
-                <th>School</th>
-                <th style="text-align:right;">Mark</th>
-                <th>Pts</th>
-              </tr>
-            </thead>
-            <tbody>${rows}</tbody>
-          </table>
+          <div class="event-body">
+            <table class="event-table">
+              <thead><tr><th style="width:46px;">#</th><th>Athlete</th><th>School</th><th style="text-align:right;">Mark</th><th>Pts</th></tr></thead>
+              <tbody>${rows}</tbody>
+            </table>
+          </div>
         </div>`;
-                    }).join("");
+      }).join("");
 
-                resultsArea.innerHTML = `
-    <div class="results-wrap">
-      <div class="standings-card">
-        <div class="card-header">
-          <div class="card-header-icon"><i class="fas fa-trophy"></i></div>
-          <div>
-            <div class="card-header-title">Team Standings</div>
-            <div class="card-header-sub">${standings.length} teams · NFHS 8-place scoring</div>
+      resultsArea.innerHTML = `<div class="results-wrap">
+        <div class="standings-card">
+          <div class="card-header">
+            <div class="card-header-icon"><i class="fas fa-trophy"></i></div>
+            <div>
+              <div class="card-header-title">Team Standings</div>
+              <div class="card-header-sub">${standings.length} teams &middot; ${gender==="M"?"Boys":"Girls"} ${season.charAt(0).toUpperCase()+season.slice(1)} &middot; NFHS 8-place scoring</div>
+            </div>
           </div>
+          <div class="podium-row">${podiumItems}</div>
         </div>
-        <div class="podium-row">${podiumItems}</div>
-      </div>
-      <h2 class="section-heading">Event Results</h2>
-      <div class="events-grid">${eventCards}</div>
-    </div>`;
-            }
+        ${highPointList.length ? `
+        <h2 class="section-heading"><i class="fas fa-star" style="color:var(--gold);font-size:1.1rem"></i> High Point Athletes</h2>
+        <div class="hp-card">
+          <div class="hp-grid">${hpCards}</div>
+        </div>` : ""}
+        <h2 class="section-heading">Event Results</h2>
+        <div class="events-grid">${eventCards}</div>
+      </div>`;
+    }
 
-            /* ═══════════════════════════════════════════════
-   BOOT
-═══════════════════════════════════════════════ */
-            document.addEventListener("DOMContentLoaded", () => {
-                initSimulator();
-                document.getElementById("run-sim").addEventListener("click", runSimulation);
-            });
-        </script>
-    </body>
+    /* ─── Boot ─── */
+    document.addEventListener("DOMContentLoaded", () => {
+      initSimulator();
+      document.getElementById("run-sim").addEventListener("click", runSimulation);
+    });
+    </script>
+  </body>
 </html>

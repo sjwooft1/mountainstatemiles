@@ -4,709 +4,778 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Meet Results | Mountain State Miles</title>
-  
   <link rel="icon" type="image/png" href="../assets/Favicon Generator/favicon-96x96.png" sizes="96x96" />
   <link rel="icon" type="image/svg+xml" href="../assets/Favicon Generator/favicon.svg" />
   <link rel="shortcut icon" href="../assets/Favicon Generator/favicon.ico" />
   <link rel="apple-touch-icon" sizes="180x180" href="../assets/Favicon Generator/apple-touch-icon.png" />
   <link rel="manifest" href="../assets/Favicon Generator/site.webmanifest" />
-  
   <link rel="stylesheet" href="/assets/main.css">
-<link rel="stylesheet" href="/assets/msm-loader.css" />
-  
-  <script>
-    window.addEventListener("DOMContentLoaded", () => {
-      const params = new URLSearchParams(window.location.search);
-      const slug = params.get("slug");
-      if (slug) {
-        document.title = `${slug.replace(/-/g, " ")} – Meet Results`;
-      }
-    });
-  </script>
+  <link rel="stylesheet" href="/assets/msm-loader.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 
   <style>
-    /* UI Layout & Containers */
-    .meet-header-card {
-      background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-primary) 100%);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 24px;
-      margin-bottom: 24px;
-      box-shadow: 0 4px 12px var(--shadow-light);
+    /* ─── DESIGN TOKENS ─── */
+    :root {
+      --bg:#0a0c10; --bg-card:#121416; --bg-raised:#1a2030;
+      --border:#252d3d; --border-glow:#2a5cff44;
+      --text-hi:#f0f4ff; --text-mid:#8899bb; --text-lo:#48566e;
+      --accent:#37373f; --accent-glow:rgba(42,92,255,0.15);
+      --gold:#f5b731; --silver:#a8b8c8; --bronze:#c47a38;
+      --gold-bg:rgba(245,183,49,0.10); --silver-bg:rgba(168,184,200,0.07); --bronze-bg:rgba(196,122,56,0.07);
+      --success:#22c55e; --warning:#f59e0b; --danger:#ef4444;
+      --font-display:"Barlow Condensed",sans-serif;
+      --font-body:"Barlow",sans-serif;
+      --font-mono:"JetBrains Mono",monospace;
+      --radius:10px; --t:0.18s ease;
     }
+    *,*::before,*::after{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{margin:0;font-family:var(--font-body);background:var(--bg);color:var(--text-hi);min-height:100vh;overflow-x:hidden}
+    body::before{content:"";position:fixed;inset:0;background:radial-gradient(ellipse 60% 50% at 80% 10%,rgba(42,92,255,.06) 0%,transparent 70%),radial-gradient(ellipse 40% 60% at 10% 80%,rgba(42,92,255,.03) 0%,transparent 70%);pointer-events:none;z-index:0}
 
-    .meet-title {
-      font-size: 2rem;
-      font-weight: 800;
-      color: var(--primary);
-      margin: 0 0 8px 0;
-      font-family: 'Aqeon Demo', sans-serif;
-    }
+    /* NAVBAR */
+    .navbar{position:sticky;top:0;z-index:100;background:rgba(10,12,16,.88);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);padding:0 24px}
+    .navbar-content{max-width:1340px;margin:0 auto;display:flex;align-items:center;gap:32px;height:58px}
+    .navbar-brand{font-family:var(--font-display);font-size:1.3rem;font-weight:900;letter-spacing:.04em;text-transform:uppercase;text-decoration:none;color:var(--text-hi);display:flex;align-items:center;gap:10px}
+    .navbar-brand .msm-logo{height:30px;width:auto;object-fit:contain;border-radius:4px}
+    .navbar-brand .accent{color:var(--accent)}
+    .navbar-nav{list-style:none;display:flex;gap:4px;margin:0 0 0 auto;padding:0}
+    .navbar-link{text-decoration:none;color:var(--text-mid);font-weight:600;font-size:.85rem;letter-spacing:.06em;text-transform:uppercase;padding:6px 14px;border-radius:6px;transition:color var(--t),background var(--t)}
+    .navbar-link:hover{color:var(--text-hi);background:var(--bg-raised)}
+    .navbar-link.active{color:var(--accent);background:var(--accent-glow)}
 
-    .meet-meta {
-      color: var(--text-secondary);
-      font-size: 0.95rem;
-      font-weight: 500;
-      display: flex;
-      gap: 16px;
-      flex-wrap: wrap;
-    }
+    /* PAGE */
+    .page-wrap{position:relative;z-index:1;max-width:1340px;margin:0 auto;padding:28px 24px 60px}
+    .back-link{display:inline-flex;align-items:center;gap:6px;color:var(--text-mid);text-decoration:none;font-size:.85rem;font-weight:600;margin-bottom:20px;transition:color var(--t)}
+    .back-link:hover{color:var(--text-hi)}
 
-    /* Master Tabs (Men / Women) */
-    .gender-tabs {
-      display: flex;
-      gap: 12px;
-      margin-bottom: 24px;
-      border-bottom: 2px solid var(--border);
-    }
+    /* MEET HEADER */
+    .meet-header{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:24px}
+    .meet-header-inner{padding:24px 28px;display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start;justify-content:space-between}
+    .meet-title-block{}
+    .meet-title{font-family:var(--font-display);font-size:clamp(1.8rem,4vw,2.8rem);font-weight:900;text-transform:uppercase;letter-spacing:-.01em;line-height:1;margin:0 0 10px;color:var(--text-hi)}
+    .meet-meta-row{display:flex;gap:16px;flex-wrap:wrap;align-items:center}
+    .meta-chip{display:inline-flex;align-items:center;gap:7px;font-size:.84rem;font-weight:600;color:var(--text-mid);background:var(--bg-raised);border:1px solid var(--border);border-radius:999px;padding:5px 12px}
+    .meta-chip i{color:var(--accent);font-size:.75rem}
 
-    .gender-tab {
-      padding: 12px 32px;
-      background: transparent;
-      border: none;
-      font-size: 1.1rem;
-      font-weight: 700;
-      color: var(--text-tertiary);
-      cursor: pointer;
-      border-bottom: 3px solid transparent;
-      margin-bottom: -2px;
-      transition: all 0.2s;
-    }
+    /* ─── WEATHER WIDGET (improved) ─── */
+    .weather-bar{border-top:1px solid var(--border);padding:18px 28px;background:linear-gradient(90deg,rgba(42,92,255,.04) 0%,transparent 60%)}
+    .weather-loading{display:flex;align-items:center;gap:10px;color:var(--text-mid);font-size:.88rem}
+    .weather-main{display:flex;flex-wrap:wrap;gap:24px;align-items:center}
+    .weather-icon-block{display:flex;align-items:center;gap:14px}
+    .weather-icon{font-size:3rem;line-height:1;filter:drop-shadow(0 2px 8px rgba(0,0,0,.4))}
+    .weather-temp{font-family:var(--font-display);font-size:2.6rem;font-weight:900;line-height:1;color:var(--text-hi)}
+    .weather-temp-unit{font-size:1.2rem;color:var(--text-mid)}
+    .weather-desc{font-size:.88rem;color:var(--text-mid);margin-top:2px;font-weight:500;text-transform:capitalize}
+    .weather-details{display:flex;gap:16px;flex-wrap:wrap;align-items:center}
+    .weather-stat{display:flex;flex-direction:column;align-items:center;background:var(--bg-raised);border:1px solid var(--border);border-radius:8px;padding:8px 14px;min-width:72px;text-align:center}
+    .weather-stat-val{font-family:var(--font-mono);font-size:.95rem;font-weight:600;color:var(--text-hi)}
+    .weather-stat-lbl{font-size:.65rem;font-weight:700;color:var(--text-lo);text-transform:uppercase;letter-spacing:.08em;margin-top:2px}
+    .weather-alert{display:inline-flex;align-items:center;gap:6px;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);border-radius:6px;padding:4px 10px;font-size:.78rem;font-weight:700;color:var(--warning)}
+    .weather-good{display:inline-flex;align-items:center;gap:6px;background:rgba(34,197,94,.10);border:1px solid rgba(34,197,94,.25);border-radius:6px;padding:4px 10px;font-size:.78rem;font-weight:700;color:var(--success)}
+    .weather-hourly{display:flex;gap:8px;overflow-x:auto;padding-top:14px;scrollbar-width:none}
+    .weather-hourly::-webkit-scrollbar{display:none}
+    .hourly-slot{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:52px;background:var(--bg-raised);border:1px solid var(--border);border-radius:8px;padding:8px 6px;flex-shrink:0}
+    .hourly-slot.now{border-color:var(--accent);background:var(--accent-glow)}
+    .hourly-time{font-size:.65rem;font-weight:700;color:var(--text-lo);text-transform:uppercase}
+    .hourly-icon{font-size:1.1rem;line-height:1}
+    .hourly-temp{font-family:var(--font-mono);font-size:.82rem;font-weight:600;color:var(--text-hi)}
+    .hourly-wind{font-size:.62rem;color:var(--text-lo)}
 
-    .gender-tab:hover {
-      color: var(--primary);
-    }
+    /* TABS */
+    .gender-tabs{display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:24px}
+    .gender-tab{padding:12px 28px;background:transparent;border:none;font-family:var(--font-display);font-size:1rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-lo);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;transition:all var(--t)}
+    .gender-tab:hover{color:var(--text-mid)}
+    .gender-tab.active{color:var(--accent);border-bottom-color:var(--accent)}
 
-    .gender-tab.active {
-      color: var(--primary);
-      border-bottom-color: var(--primary);
-    }
+    /* VIEW CONTROLS */
+    .view-controls{display:flex;background:var(--bg-raised);border:1px solid var(--border);border-radius:8px;padding:4px;width:fit-content;margin-bottom:24px;gap:2px}
+    .view-btn{padding:8px 18px;border:none;background:transparent;border-radius:6px;font-weight:600;font-size:.85rem;color:var(--text-mid);cursor:pointer;transition:all var(--t);letter-spacing:.02em}
+    .view-btn.active{background:var(--accent);color:white;box-shadow:0 2px 8px rgba(42,92,255,.4)}
 
-    /* View Controls (Events vs Standings) */
-    .view-controls {
-      display: flex;
-      background: var(--bg-secondary);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 4px;
-      width: fit-content;
-      margin-bottom: 24px;
-    }
+    /* EVENTS GRID */
+    .events-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;margin-bottom:20px}
+    .event-btn{background:var(--bg-card);border:1px solid var(--border);padding:10px 8px;border-radius:8px;font-weight:600;font-size:.83rem;color:var(--text-mid);cursor:pointer;transition:all var(--t);text-align:center;line-height:1.3}
+    .event-btn:hover{border-color:var(--accent);color:var(--text-hi);transform:translateY(-1px)}
+    .event-btn.active{background:var(--accent);color:white;border-color:var(--accent);box-shadow:0 2px 10px rgba(42,92,255,.35)}
 
-    .view-btn {
-      padding: 8px 20px;
-      border: none;
-      background: transparent;
-      border-radius: 6px;
-      font-weight: 600;
-      color: var(--text-secondary);
-      cursor: pointer;
-      transition: 0.2s;
-    }
+    /* HEAT CONTROLS */
+    .heat-filter-container{display:flex;justify-content:space-between;align-items:center;padding:14px 20px;border-bottom:1px solid var(--border);background:var(--bg-raised)}
+    .current-event-title{font-family:var(--font-display);font-size:1.15rem;font-weight:800;text-transform:uppercase;letter-spacing:.04em;margin:0}
+    .heat-pill-group{display:inline-flex;background:var(--bg);border:1px solid var(--border);border-radius:999px;padding:3px;gap:2px}
+    .heat-pill{padding:5px 16px;border:none;background:transparent;border-radius:999px;font-size:.82rem;font-weight:700;color:var(--text-mid);cursor:pointer;transition:.2s}
+    .heat-pill.active{background:var(--accent);color:white}
 
-    .view-btn.active {
-      background: var(--primary);
-      color: var(--bg-primary);
-      box-shadow: 0 2px 4px var(--shadow-light);
-    }
+    /* TABLE CONTAINER */
+    .table-container{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+    .data-table{width:100%;border-collapse:collapse;text-align:left}
+    .data-table th{background:var(--bg-raised);padding:10px 20px;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-lo);border-bottom:1px solid var(--border)}
+    .data-table td{padding:12px 20px;border-bottom:1px solid var(--border);font-weight:500;font-size:.9rem}
+    .data-table tr:last-child td{border-bottom:none}
+    .data-table tbody tr:hover td{background:var(--bg-raised)}
+    .data-table a{color:var(--accent);text-decoration:none;font-weight:600}
+    .data-table a:hover{text-decoration:underline}
+    .school-cell{display:flex;align-items:center;gap:8px}
+    .school-logo-sm{width:22px;height:22px;border-radius:50%;object-fit:contain;background:white;padding:2px;flex-shrink:0}
+    .place-badge{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;font-family:var(--font-display);font-weight:800;font-size:.9rem;background:var(--bg-raised);color:var(--text-mid)}
+    .place-1{background:var(--gold);color:#1a1200} .place-2{background:var(--silver);color:#111820} .place-3{background:var(--bronze);color:#1a0e00}
+    .mark-cell{font-family:var(--font-mono);font-weight:600;color:var(--text-hi)}
 
-    /* Event Grid */
-    .events-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-      gap: 12px;
-      margin-bottom: 24px;
-    }
+    /* TEAM STANDINGS */
+    .standings-logo{width:32px;height:32px;border-radius:50%;object-fit:contain;background:white;padding:3px;flex-shrink:0}
+    .team-pts{font-family:var(--font-mono);font-size:1.1rem;font-weight:700;color:var(--accent)}
+    .rank-num{font-family:var(--font-display);font-size:1.4rem;font-weight:900;color:var(--text-lo);width:36px}
+    .rank-1{color:var(--gold)} .rank-2{color:var(--silver)} .rank-3{color:var(--bronze)}
 
-    .event-btn {
-      background: var(--bg-primary);
-      border: 1px solid var(--border);
-      padding: 12px 8px;
-      border-radius: 8px;
-      font-weight: 600;
-      color: var(--text-secondary);
-      cursor: pointer;
-      transition: all 0.2s;
-      text-align: center;
-    }
+    /* ─── HIGH POINT SECTION ─── */
+    .hp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr))}
+    .hp-athlete{padding:16px 18px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);position:relative;transition:background var(--t);background:var(--bg-card)}
+    .hp-athlete:hover{background:var(--bg-raised)}
+    .hp-medal{position:absolute;top:12px;right:14px;font-size:1.4rem;line-height:1}
+    .hp-school-row{display:flex;align-items:center;gap:7px;margin-bottom:5px}
+    .hp-logo{width:20px;height:20px;border-radius:50%;object-fit:contain;background:white;padding:2px;flex-shrink:0}
+    .hp-school-name{font-size:.72rem;font-weight:700;color:var(--text-mid);text-transform:uppercase;letter-spacing:.06em}
+    .hp-name{font-family:var(--font-display);font-size:1.1rem;font-weight:800;text-transform:uppercase;letter-spacing:.02em;line-height:1.2;margin-bottom:3px;padding-right:30px;color:var(--text-hi)}
+    .hp-pts{font-family:var(--font-mono);font-size:.95rem;font-weight:700;color:var(--accent);margin-bottom:7px}
+    .hp-pills{display:flex;flex-wrap:wrap;gap:4px}
+    .hp-pill{font-size:.62rem;font-weight:700;letter-spacing:.04em;padding:2px 7px;border-radius:999px;border:1px solid var(--border);color:var(--text-lo);background:var(--bg);white-space:nowrap}
+    .hp-pill.p1{border-color:rgba(245,183,49,.5);color:var(--gold);background:var(--gold-bg)}
+    .hp-pill.p2{border-color:rgba(168,184,200,.4);color:var(--silver);background:var(--silver-bg)}
+    .hp-pill.p3{border-color:rgba(196,122,56,.4);color:var(--bronze);background:var(--bronze-bg)}
 
-    .event-btn:hover {
-      border-color: var(--primary);
-      transform: translateY(-2px);
-      box-shadow: 0 4px 8px var(--shadow-light);
-    }
+    /* SECTION HEADING */
+    .section-heading{font-family:var(--font-display);font-size:1.4rem;font-weight:800;text-transform:uppercase;letter-spacing:.04em;margin:0 0 14px;display:flex;align-items:center;gap:10px;color:var(--text-hi)}
+    .section-heading::after{content:"";flex:1;height:1px;background:var(--border)}
 
-    .event-btn.active {
-      background: var(--primary);
-      color: var(--bg-primary);
-      border-color: var(--primary);
-    }
+    /* LOADING / ERROR */
+    .loading-state{text-align:center;padding:80px 20px;color:var(--text-mid)}
+    .loading-spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 16px}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .empty-state{text-align:center;padding:60px 20px;color:var(--text-mid);font-size:.95rem}
+    .error-msg{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.3);color:#fca5a5;padding:16px 20px;border-radius:var(--radius);margin-bottom:24px;display:none;font-weight:600}
 
-    /* Heat Filter Pill */
-    .heat-filter-container {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 16px;
-      padding-bottom: 16px;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .heat-pill-group {
-      display: inline-flex;
-      background: var(--bg-secondary);
-      border: 1px solid var(--border);
-      border-radius: 50px;
-      padding: 4px;
-    }
-
-    .heat-pill {
-      padding: 6px 16px;
-      border: none;
-      background: transparent;
-      border-radius: 50px;
-      font-size: 0.85rem;
-      font-weight: 700;
-      color: var(--text-secondary);
-      cursor: pointer;
-      transition: 0.2s;
-    }
-
-    .heat-pill.active {
-      background: var(--primary);
-      color: var(--bg-primary);
-    }
-
-    /* Tables */
-    .table-container {
-      background: var(--bg-primary);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      overflow: hidden;
-      box-shadow: 0 4px 12px var(--shadow-light);
-    }
-
-    .data-table {
-      width: 100%;
-      border-collapse: collapse;
-      text-align: left;
-    }
-
-    .data-table th {
-      background: var(--bg-secondary);
-      padding: 14px 20px;
-      font-size: 0.85rem;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      color: var(--text-secondary);
-      border-bottom: 2px solid var(--border);
-    }
-
-    .data-table td {
-      padding: 14px 20px;
-      border-bottom: 1px solid var(--border);
-      font-weight: 500;
-    }
-
-    .data-table tr:last-child td {
-      border-bottom: none;
-    }
-
-    .data-table tr:hover td {
-      background: rgba(0,0,0,0.02);
-    }
-
-    .data-table a {
-      color: var(--primary);
-      text-decoration: none;
-      font-weight: 600;
-    }
-
-    .data-table a:hover {
-      text-decoration: underline;
-    }
-
-    .place-badge {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-      background: var(--bg-secondary);
-      font-weight: 800;
-      font-size: 0.9rem;
-    }
-
-    .place-1 { background: #ffd700; color: #856404; }
-    .place-2 { background: #e0e0e0; color: #333333; }
-    .place-3 { background: #cd7f32; color: #4a3000; }
-
-    .score-badge {
-      font-size: 1.1rem;
-      font-weight: 800;
-      color: var(--primary);
-    }
-
-    /* Weather */
-    .weather-widget {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      padding: 12px 16px;
-      background: var(--bg-secondary);
-      border-radius: 8px;
-      margin-top: 16px;
-      width: fit-content;
-      border: 1px solid var(--border);
-    }
-
-    /* Loaders & Errors */
-    .loading-state, .empty-state {
-      text-align: center;
-      padding: 60px 20px;
-      color: var(--text-secondary);
-    }
-    
-    .error-msg {
-      background: #fee2e2;
-      color: #991b1b;
-      padding: 16px;
-      border-radius: 8px;
-      margin-bottom: 24px;
-      display: none;
-      font-weight: 600;
-    }
-
-    @media (max-width: 768px) {
-      .gender-tab { padding: 12px 16px; font-size: 1rem; flex: 1; text-align: center; }
-      .data-table th, .data-table td { padding: 12px 10px; font-size: 0.9rem; }
-      .events-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); }
-      .heat-filter-container { flex-direction: column; align-items: flex-start; gap: 12px; }
+    @media(max-width:768px){
+      .gender-tab{padding:10px 16px;flex:1;text-align:center}
+      .data-table th,.data-table td{padding:10px 12px;font-size:.85rem}
+      .events-grid{grid-template-columns:repeat(auto-fill,minmax(100px,1fr))}
+      .heat-filter-container{flex-direction:column;align-items:flex-start;gap:10px}
+      .weather-details{gap:8px}
+      .meet-header-inner{padding:18px}
+      .weather-bar{padding:14px 18px}
     }
   </style>
 </head>
-
 <body>
 <script src="/assets/msm-loader.js"></script>
-  <header>
-    <nav class="navbar">
-      <div class="navbar-content">
-        <a href="index.html" class="navbar-brand">Track</a>
-        <button class="mobile-menu-toggle" aria-label="Toggle menu">☰</button>
-        <ul class="navbar-nav" id="main-nav">
-          <li><a href="/home/index.html" class="navbar-link">Home</a></li>
-          <li><a href="index.html" class="navbar-link">Track</a></li>
-          <li><a href="meets.html" class="navbar-link active">Meets</a></li>
-          <li><a href="events.html" class="navbar-link">Events</a></li>
-          <li><a href="rankings.html" class="navbar-link">Rankings</a></li>
-          <li><a href="analytics.html" class="navbar-link">Analytics</a></li>
-        </ul>
+<header>
+  <nav class="navbar">
+    <div class="navbar-content">
+      <a href="index.html" class="navbar-brand">
+        <img src="/assets/logo white.png" alt="MSM" class="msm-logo" onerror="this.style.display='none'">
+        MSM</span>
+      </a>
+      <ul class="navbar-nav">
+        <li><a href="/home/index.html" class="navbar-link">Home</a></li>
+        <li><a href="index.html" class="navbar-link">Track</a></li>
+        <li><a href="meets.html" class="navbar-link active">Meets</a></li>
+        <li><a href="events.html" class="navbar-link">Events</a></li>
+        <li><a href="rankings.html" class="navbar-link">Rankings</a></li>
+        <li><a href="analytics.html" class="navbar-link">Analytics</a></li>
+      </ul>
+    </div>
+  </nav>
+</header>
+
+<main class="page-wrap">
+  <a href="meets.html" class="back-link"><i class="fas fa-arrow-left"></i> Back to Meets</a>
+  <div id="error-box" class="error-msg"></div>
+
+  <!-- MEET HEADER -->
+  <div id="meet-header" class="meet-header" style="display:none;">
+    <div class="meet-header-inner">
+      <div class="meet-title-block">
+        <h1 id="meet-title" class="meet-title">Loading...</h1>
+        <div id="meet-meta" class="meet-meta-row"></div>
       </div>
-    </nav>
-  </header>
+    </div>
+    <div id="weather-bar" class="weather-bar" style="display:none;">
+      <div id="weather-content">
+        <div class="weather-loading"><i class="fas fa-circle-notch fa-spin"></i> Loading forecast…</div>
+      </div>
+    </div>
+  </div>
 
-  <main class="content-section">
-    <a href="meets.html" style="display:inline-block; margin-bottom:16px; color:var(--text-secondary); text-decoration:none; font-weight:600;">← Back to Meets</a>
-    
-    <div id="error-box" class="error-msg"></div>
-
-    <div id="meet-header" class="meet-header-card" style="display:none;">
-      <h1 id="meet-title" class="meet-title">Loading Results...</h1>
-      <div id="meet-meta" class="meet-meta"></div>
-      <div id="weather-widget" class="weather-widget" style="display:none;"></div>
+  <!-- MAIN CONTENT -->
+  <div id="main-content" style="display:none;">
+    <div class="gender-tabs">
+      <button id="tab-M" class="gender-tab active" onclick="setGender('M')">Men's Results</button>
+      <button id="tab-W" class="gender-tab" onclick="setGender('W')"> Women's Results</button>
     </div>
 
-    <div id="main-content" style="display:none;">
-      <div class="gender-tabs">
-        <button id="tab-M" class="gender-tab active" onclick="setGender('M')">Men's Results</button>
-        <button id="tab-W" class="gender-tab" onclick="setGender('W')">Women's Results</button>
-      </div>
+    <div class="view-controls">
+      <button id="view-events" class="view-btn active" onclick="setView('events')"><i class="fas fa-list"></i> Results by Event</button>
+      <button id="view-teams" class="view-btn" onclick="setView('teams')"><i class="fas fa-trophy"></i> Team Standings</button>
+      <button id="view-highpoint" class="view-btn" onclick="setView('highpoint')"><i class="fas fa-star"></i> High Point</button>
+    </div>
 
-      <div class="view-controls">
-        <button id="view-events" class="view-btn active" onclick="setView('events')">Results by Event</button>
-        <button id="view-teams" class="view-btn" onclick="setView('teams')">Team Standings</button>
+    <!-- EVENTS VIEW -->
+    <div id="section-events">
+      <div id="event-buttons" class="events-grid"></div>
+      <div class="table-container">
+        <div id="heat-controls" class="heat-filter-container" style="display:none;">
+          <h3 id="current-event-title" class="current-event-title">Event Name</h3>
+          <div class="heat-pill-group">
+            <button id="heat-prelims" class="heat-pill" onclick="setHeat('Prelims')">Prelims</button>
+            <button id="heat-finals" class="heat-pill active" onclick="setHeat('Finals')">Finals</button>
+          </div>
+        </div>
+        <div id="results-table-wrapper"></div>
       </div>
+    </div>
 
-      <div id="section-events">
-        <div id="event-buttons" class="events-grid"></div>
-        
-        <div class="table-container">
-          <div id="heat-controls" class="heat-filter-container" style="display:none; padding: 16px 20px 0;">
-            <h3 id="current-event-title" style="margin:0; font-size:1.1rem;">Event Name</h3>
-            <div class="heat-pill-group">
-              <button id="heat-prelims" class="heat-pill" onclick="setHeat('Prelims')">Prelims</button>
-              <button id="heat-finals" class="heat-pill active" onclick="setHeat('Finals')">Finals</button>
+    <!-- TEAMS VIEW -->
+    <div id="section-teams" style="display:none;">
+      <h2 class="section-heading"><i class="fas fa-trophy" style="color:var(--gold)"></i> Team Standings</h2>
+      <div class="table-container">
+        <table class="data-table">
+          <thead><tr><th style="width:60px">Rank</th><th>School</th><th style="text-align:right;padding-right:28px">Points</th></tr></thead>
+          <tbody id="team-standings-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- HIGH POINT VIEW -->
+    <div id="section-highpoint" style="display:none;">
+      <h2 class="section-heading"><i class="fas fa-star" style="color:var(--gold)"></i> High Point Athletes</h2>
+      <div class="table-container">
+        <div id="hp-grid-wrapper" class="hp-grid"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="loading" class="loading-state">
+    <div class="loading-spinner"></div>
+    Loading meet data…
+  </div>
+</main>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="firebase-config.js"></script>
+
+<script>
+  /* ═══════════════════════════════════
+     DATA STORE & STATE
+  ═══════════════════════════════════ */
+  const FALLBACK_LOGO = "../assets/Wvruns Logo.png";
+  const POINTS = { 1:10, 2:8, 3:6, 4:5, 5:4, 6:3, 7:2, 8:1 };
+
+  let meetInfo = null;
+  let rawResults = [];
+  let structuredData = { M:{}, W:{} };
+  let activeGender = 'M';
+  let activeView = 'events';
+  let activeEvent = null;
+  let activeHeat = 'Finals';
+
+  /* ─── Logo helpers (same pattern as team.html) ─── */
+  function schoolSlug(name) {
+    return (name||"").toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
+  }
+  function logoSrc(school) {
+    return `../CrossCountry/assets/team logos/${schoolSlug(school)}.png`;
+  }
+  function logoTag(school, cls) {
+    return `<img src="${logoSrc(school)}" class="${cls}" alt="" loading="lazy" onerror="this.onerror=null;this.src='${FALLBACK_LOGO}'">`;
+  }
+
+  /* ─── Firebase ─── */
+  async function waitForFirebase() {
+    let a = 0;
+    while (typeof window.firebaseDatabase === 'undefined' && a < 50) {
+      await new Promise(r => setTimeout(r, 100)); a++;
+    }
+    if (!window.firebaseDatabase) throw new Error("Firebase unavailable.");
+  }
+
+  /* ═══════════════════════════════════
+     INIT
+  ═══════════════════════════════════ */
+  async function init() {
+    const slug = new URLSearchParams(window.location.search).get("slug");
+    if (!slug) { showError("No meet specified in the URL."); return; }
+
+    try {
+      await waitForFirebase();
+
+      // 1. Load meet info
+      const meetsSnap = await window.firebaseDatabase.ref('Track/meets').once('value');
+      meetsSnap.forEach(child => {
+        if (child.val().slug === slug || child.key === slug)
+          meetInfo = { id: child.key, ...child.val() };
+      });
+      if (!meetInfo) throw new Error("Meet not found.");
+
+      document.title = `${meetInfo.name} – Meet Results`;
+      renderMeetHeader();
+
+      // 2. Load athletes, events, results in parallel
+      const [athSnap, evSnap, resSnap] = await Promise.all([
+        window.firebaseDatabase.ref('Track/athletes').once('value'),
+        window.firebaseDatabase.ref('Track/events').once('value'),
+        window.firebaseDatabase.ref('Track/results').orderByChild('meet_id').equalTo(meetInfo.id).once('value')
+      ]);
+
+      const athletesMap = {}; athSnap.forEach(c => { athletesMap[c.key] = c.val(); });
+      const eventsMap = {};   evSnap.forEach(c => { eventsMap[c.key] = c.val(); });
+
+      resSnap.forEach(child => {
+        const r = child.val();
+        const athlete = athletesMap[r.athlete_id] || {};
+        const event = eventsMap[r.event_id] || {};
+        rawResults.push({
+          id: child.key,
+          athlete_id: r.athlete_id,
+          athlete_name: `${athlete.first_name||''} ${athlete.last_name||''}`.trim(),
+          school: athlete.school || 'Unattached',
+          mark: r.mark,
+          placement: parseInt(r.placement) || null,
+          gender: r.gender || event.gender || 'M',
+          event_name: event.name || 'Unknown Event',
+          heat: r.heat || 'Finals',
+          relay_names: r.relay_names || null
+        });
+      });
+
+      if (rawResults.length === 0) throw new Error("No results have been uploaded for this meet yet.");
+
+      buildStructuredData();
+
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('main-content').style.display = 'block';
+
+      window.__MSM_COACH_CTX = { kind:'meet', meetId:meetInfo.id, meetName:meetInfo.name||'' };
+      window.dispatchEvent(new CustomEvent('msm-coach-context-updated'));
+
+      setGender('M');
+
+      // Load weather after DOM is ready
+      if (meetInfo.location) {
+        document.getElementById('weather-bar').style.display = 'block';
+        loadWeather(meetInfo.location, meetInfo.date);
+      }
+    } catch(e) {
+      showError(e.message);
+    } finally {
+      document.dispatchEvent(new Event("MSMDataLoaded"));
+    }
+  }
+
+  /* ─── Build structured data ─── */
+  function buildStructuredData() {
+    structuredData = { M:{}, W:{} };
+    rawResults.forEach(r => {
+      if (!structuredData[r.gender]) return;
+      if (!structuredData[r.gender][r.event_name]) structuredData[r.gender][r.event_name] = {};
+      if (!structuredData[r.gender][r.event_name][r.heat]) structuredData[r.gender][r.event_name][r.heat] = [];
+      structuredData[r.gender][r.event_name][r.heat].push(r);
+    });
+    ['M','W'].forEach(g => {
+      Object.keys(structuredData[g]).forEach(e => {
+        Object.keys(structuredData[g][e]).forEach(h => {
+          structuredData[g][e][h].sort((a,b) => {
+            if (a.placement && b.placement) return a.placement - b.placement;
+            if (a.placement) return -1; if (b.placement) return 1; return 0;
+          });
+        });
+      });
+    });
+  }
+
+  /* ─── Render meet header ─── */
+  function renderMeetHeader() {
+    document.getElementById('meet-title').textContent = meetInfo.name;
+    const chips = [
+      meetInfo.date ? `<span class="meta-chip"><i class="fas fa-calendar-days"></i>${meetInfo.date}</span>` : '',
+      meetInfo.location ? `<span class="meta-chip"><i class="fas fa-location-dot"></i>${meetInfo.location}</span>` : '',
+      meetInfo.season ? `<span class="meta-chip"><i class="fas fa-person-running"></i>${meetInfo.season.charAt(0).toUpperCase()+meetInfo.season.slice(1)}</span>` : '',
+    ].filter(Boolean).join('');
+    document.getElementById('meet-meta').innerHTML = chips;
+    document.getElementById('meet-header').style.display = 'block';
+  }
+
+  /* ═══════════════════════════════════
+     WEATHER (IMPROVED)
+     Uses Open-Meteo hourly data to show
+     actual race-time conditions + full
+     forecast bar for meet day
+  ═══════════════════════════════════ */
+  const WMO_CODES = {
+    0:{label:"Clear sky",icon:"☀️"},
+    1:{label:"Mainly clear",icon:"🌤️"},
+    2:{label:"Partly cloudy",icon:"⛅"},
+    3:{label:"Overcast",icon:"☁️"},
+    45:{label:"Foggy",icon:"🌫️"},
+    48:{label:"Icy fog",icon:"🌫️"},
+    51:{label:"Light drizzle",icon:"🌦️"},
+    53:{label:"Drizzle",icon:"🌦️"},
+    55:{label:"Heavy drizzle",icon:"🌧️"},
+    61:{label:"Light rain",icon:"🌧️"},
+    63:{label:"Rain",icon:"🌧️"},
+    65:{label:"Heavy rain",icon:"🌧️"},
+    71:{label:"Light snow",icon:"🌨️"},
+    73:{label:"Snow",icon:"❄️"},
+    75:{label:"Heavy snow",icon:"❄️"},
+    80:{label:"Rain showers",icon:"🌦️"},
+    81:{label:"Showers",icon:"🌧️"},
+    82:{label:"Heavy showers",icon:"⛈️"},
+    95:{label:"Thunderstorm",icon:"⛈️"},
+    96:{label:"Thunderstorm + hail",icon:"⛈️"},
+    99:{label:"Severe thunderstorm",icon:"⛈️"},
+  };
+  function wmoInfo(code) {
+    return WMO_CODES[code] || WMO_CODES[Math.floor(code/10)*10] || {label:"Mixed conditions",icon:"🌡️"};
+  }
+
+  // Known WV venue coordinates
+  const VENUE_COORDS = {
+    'grafton': {lat:39.34,lon:-80.03},
+    'morgantown': {lat:39.64,lon:-79.96},
+    'parkersburg': {lat:39.27,lon:-81.56},
+    'charleston': {lat:38.35,lon:-81.63},
+    'huntington': {lat:38.42,lon:-82.45},
+    'fairmont': {lat:39.49,lon:-80.14},
+    'clarksburg': {lat:39.28,lon:-80.34},
+    'elkins': {lat:38.93,lon:-79.85},
+    'lewisburg': {lat:37.80,lon:-80.44},
+    'beckley': {lat:37.78,lon:-81.19},
+    'bluefield': {lat:37.27,lon:-81.22},
+    'weston': {lat:39.04,lon:-80.47},
+    'princeton': {lat:37.37,lon:-81.10},
+    'oak hill': {lat:37.98,lon:-81.15},
+    'ripley': {lat:38.82,lon:-81.71},
+    'point pleasant': {lat:38.85,lon:-82.14},
+    'williamstown': {lat:39.40,lon:-81.45},
+    'waverly': {lat:39.33,lon:-81.40},
+    'sissonville': {lat:38.53,lon:-81.64},
+    'nitro': {lat:38.41,lon:-81.84},
+    
+  };
+
+  function findCoords(location) {
+    if (!location) return null;
+    const low = location.toLowerCase();
+    for (const [key, coords] of Object.entries(VENUE_COORDS)) {
+      if (low.includes(key)) return coords;
+    }
+    return null;
+  }
+
+  async function geocodeLocation(location) {
+    try {
+      const res = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(location)}&count=1&language=en&format=json`);
+      const data = await res.json();
+      if (data.results?.[0]) return { lat: data.results[0].latitude, lon: data.results[0].longitude };
+    } catch(e) {}
+    return null;
+  }
+
+  async function loadWeather(location, meetDate) {
+    const container = document.getElementById('weather-content');
+    try {
+      // Find coords
+      let coords = findCoords(location);
+      if (!coords) coords = await geocodeLocation(location);
+      if (!coords) { document.getElementById('weather-bar').style.display = 'none'; return; }
+
+      // Fetch hourly + daily data
+      const url = `https://api.open-meteo.com/v1/forecast?latitude=${coords.lat}&longitude=${coords.lon}`
+        + `&hourly=temperature_2m,weathercode,windspeed_10m,precipitation_probability,relativehumidity_2m`
+        + `&daily=temperature_2m_max,temperature_2m_min,weathercode,windspeed_10m_max,precipitation_sum,sunrise,sunset`
+        + `&temperature_unit=fahrenheit&windspeed_unit=mph&timezone=auto&forecast_days=7`;
+
+      const res = await fetch(url);
+      const data = await res.json();
+
+      // Find the date index to use
+      const today = new Date().toISOString().split('T')[0];
+      let dayIdx = 0;
+      if (meetDate) {
+        const idx = data.daily.time.indexOf(meetDate);
+        if (idx >= 0) dayIdx = idx;
+      }
+
+      const maxTemp = Math.round(data.daily.temperature_2m_max[dayIdx]);
+      const minTemp = Math.round(data.daily.temperature_2m_min[dayIdx]);
+      const dayCode = data.daily.weathercode[dayIdx];
+      const maxWind = Math.round(data.daily.windspeed_10m_max[dayIdx]);
+      const precip = data.daily.precipitation_sum[dayIdx];
+      const sunrise = data.daily.sunrise[dayIdx]?.split('T')[1]?.slice(0,5) || '';
+      const sunset = data.daily.sunset[dayIdx]?.split('T')[1]?.slice(0,5) || '';
+      const wInfo = wmoInfo(dayCode);
+
+      // Humidity: average from hourly for that day
+      const dateStr = data.daily.time[dayIdx];
+      const hourlyIdxStart = data.hourly.time.findIndex(t => t.startsWith(dateStr));
+      let avgHumidity = 0;
+      if (hourlyIdxStart >= 0) {
+        const slice = data.hourly.relativehumidity_2m.slice(hourlyIdxStart, hourlyIdxStart+24);
+        avgHumidity = Math.round(slice.reduce((a,b)=>a+b,0)/slice.length);
+      }
+
+      // Running condition assessment
+      let condTag = '';
+      const isRaceDay = dateStr === today;
+      if (dayCode >= 95) condTag = `<span class="weather-alert"><i class="fas fa-triangle-exclamation"></i> Thunderstorm Risk</span>`;
+      else if (dayCode >= 61) condTag = `<span class="weather-alert"><i class="fas fa-cloud-rain"></i> Rain Expected</span>`;
+      else if (maxWind > 20) condTag = `<span class="weather-alert"><i class="fas fa-wind"></i> Windy Conditions</span>`;
+      else if (maxTemp > 90) condTag = `<span class="weather-alert"><i class="fas fa-temperature-high"></i> Heat Advisory</span>`;
+      else if (maxTemp < 35) condTag = `<span class="weather-alert"><i class="fas fa-snowflake"></i> Cold Conditions</span>`;
+      else condTag = `<span class="weather-good"><i class="fas fa-check-circle"></i> Good Running Conditions</span>`;
+
+      // Hourly forecast for meet day (show 8am–8pm range)
+      let hourlyHTML = '';
+      if (hourlyIdxStart >= 0) {
+        const nowHour = new Date().getHours();
+        const slots = [];
+        for (let i = 8; i <= 20; i++) {
+          const hIdx = hourlyIdxStart + i;
+          if (hIdx >= data.hourly.time.length) break;
+          const t = data.hourly.temperature_2m[hIdx];
+          const c = data.hourly.weathercode[hIdx];
+          const w = data.hourly.windspeed_10m[hIdx];
+          const pp = data.hourly.precipitation_probability[hIdx];
+          const isNow = isRaceDay && i === nowHour;
+          const label = i < 12 ? `${i}am` : i === 12 ? '12pm' : `${i-12}pm`;
+          slots.push(`<div class="hourly-slot${isNow?' now':''}">
+            <span class="hourly-time">${label}</span>
+            <span class="hourly-icon">${wmoInfo(c).icon}</span>
+            <span class="hourly-temp">${Math.round(t)}°</span>
+            <span class="hourly-wind">${Math.round(w)} mph</span>
+          </div>`);
+        }
+        if (slots.length) hourlyHTML = `<div class="weather-hourly">${slots.join('')}</div>`;
+      }
+
+      const isForecast = dateStr >= today;
+      const headerLabel = isForecast ? 'Meet Day Forecast' : 'Meet Day Conditions';
+
+      container.innerHTML = `
+        <div style="font-size:.72rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-lo);margin-bottom:12px">${headerLabel} · ${location}</div>
+        <div class="weather-main">
+          <div class="weather-icon-block">
+            <div class="weather-icon">${wInfo.icon}</div>
+            <div>
+              <div class="weather-temp">${maxTemp}<span class="weather-temp-unit">°F</span></div>
+              <div class="weather-desc">${wInfo.label} · Low ${minTemp}°</div>
             </div>
           </div>
-          <div id="results-table-wrapper"></div>
-        </div>
-      </div>
-
-      <div id="section-teams" style="display:none;">
-        <div class="table-container">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th style="width: 80px;">Rank</th>
-                <th>School</th>
-                <th>Points</th>
-              </tr>
-            </thead>
-            <tbody id="team-standings-body"></tbody>
-          </table>
-        </div>
-      </div>
-
-    </div>
-    
-    <div id="loading" class="loading-state">
-      <div class="loading-spinner" style="border: 3px solid var(--border); border-top-color: var(--primary); width: 30px; height: 30px; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 16px;"></div>
-      Loading meet data...
-    </div>
-  </main>
-
-  <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
-
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-  <script src="firebase-config.js"></script>
-
-  <script>
-    // --- Data Store ---
-    let meetInfo = null;
-    let rawResults = [];
-    
-    // Structured Data: structure[Gender][Event][Heat] = [results]
-    let structuredData = { M: {}, W: {} }; 
-    
-    // UI State
-    let activeGender = 'M';
-    let activeView = 'events'; // 'events' or 'teams'
-    let activeEvent = null;
-    let activeHeat = 'Finals';
-
-    const pointsSystem = { 1: 10, 2: 8, 3: 6, 4: 4, 5: 2, 6: 1 };
-
-    async function init() {
-      const slug = new URLSearchParams(window.location.search).get("slug");
-      const errBox = document.getElementById("error-box");
-      
-      if (!slug) {
-        showError("No meet specified in the URL.");
-        document.dispatchEvent(new Event("MSMDataLoaded"));
-        return;
-      }
-
-      try {
-        await waitForFirebase();
-        
-        // 1. Load Meet Details
-        const meetsSnap = await window.firebaseDatabase.ref('Track/meets').once('value');
-        meetsSnap.forEach(child => {
-          if (child.val().slug === slug || child.key === slug) {
-            meetInfo = { id: child.key, ...child.val() };
-          }
-        });
-
-        if (!meetInfo) throw new Error("Meet not found.");
-
-        // Update Header
-        document.getElementById('meet-title').textContent = meetInfo.name;
-        document.getElementById('meet-meta').innerHTML = `
-          <span>📅 ${meetInfo.date || 'TBA'}</span>
-          <span>📍 ${meetInfo.location || 'Location Unknown'}</span>
-          ${meetInfo.season ? `<span style="text-transform:uppercase;">🏃 ${meetInfo.season}</span>` : ''}
-        `;
-        document.getElementById('meet-header').style.display = 'block';
-        if(meetInfo.location) loadWeather(meetInfo.location, meetInfo.date);
-
-        // 2. Fetch Athletes & Events caches
-        const [athSnap, evSnap, resSnap] = await Promise.all([
-          window.firebaseDatabase.ref('Track/athletes').once('value'),
-          window.firebaseDatabase.ref('Track/events').once('value'),
-          window.firebaseDatabase.ref('Track/results').orderByChild('meet_id').equalTo(meetInfo.id).once('value')
-        ]);
-
-        const athletesMap = {}; athSnap.forEach(c => { athletesMap[c.key] = c.val(); });
-        const eventsMap = {};   evSnap.forEach(c => { eventsMap[c.key] = c.val(); });
-
-        // 3. Process Results
-        resSnap.forEach(child => {
-          const r = child.val();
-          const athlete = athletesMap[r.athlete_id] || {};
-          const event = eventsMap[r.event_id] || {};
-          
-          const gender = r.gender || event.gender || 'M';
-          const eventName = event.name || 'Unknown Event';
-          const heat = r.heat || 'Finals';
-
-          rawResults.push({
-            id: child.key,
-            athlete_id: r.athlete_id,
-            athlete_name: `${athlete.first_name || ''} ${athlete.last_name || ''}`.trim(),
-            school: athlete.school || 'Unattached',
-            mark: r.mark,
-            placement: parseInt(r.placement) || null,
-            gender: gender,
-            event_name: eventName,
-            heat: heat,
-            relay_names: r.relay_names // IMPORTANT: Pass the relay names if they exist
-          });
-        });
-
-        if (rawResults.length === 0) throw new Error("No results have been uploaded for this meet yet.");
-
-        buildStructuredData();
-        
-        document.getElementById('loading').style.display = 'none';
-        document.getElementById('main-content').style.display = 'block';
-
-        window.__MSM_COACH_CTX = {
-          kind: 'meet',
-          meetId: meetInfo.id,
-          meetName: meetInfo.name || ''
-        };
-        window.dispatchEvent(new CustomEvent('msm-coach-context-updated'));
-        
-        // Render initial view
-        setGender('M');
-
-      } catch(e) {
-        showError(e.message);
-      } finally {
-        document.dispatchEvent(new Event("MSMDataLoaded"));
-      }
-    }
-
-    function buildStructuredData() {
-      structuredData = { M: {}, W: {} };
-      rawResults.forEach(r => {
-        if (!structuredData[r.gender]) return; // Failsafe
-        if (!structuredData[r.gender][r.event_name]) structuredData[r.gender][r.event_name] = {};
-        if (!structuredData[r.gender][r.event_name][r.heat]) structuredData[r.gender][r.event_name][r.heat] = [];
-        
-        structuredData[r.gender][r.event_name][r.heat].push(r);
-      });
-
-      // Sort placements
-      ['M', 'W'].forEach(g => {
-        Object.keys(structuredData[g]).forEach(e => {
-          Object.keys(structuredData[g][e]).forEach(h => {
-            structuredData[g][e][h].sort((a,b) => {
-              if (a.placement && b.placement) return a.placement - b.placement;
-              if (a.placement) return -1;
-              if (b.placement) return 1;
-              return 0;
-            });
-          });
-        });
-      });
-    }
-
-    // --- Interaction Logic ---
-    function setGender(gender) {
-      activeGender = gender;
-      document.getElementById('tab-M').classList.toggle('active', gender === 'M');
-      document.getElementById('tab-W').classList.toggle('active', gender === 'W');
-      
-      if(activeView === 'events') refreshEventsView();
-      if(activeView === 'teams') refreshTeamsView();
-    }
-
-    function setView(view) {
-      activeView = view;
-      document.getElementById('view-events').classList.toggle('active', view === 'events');
-      document.getElementById('view-teams').classList.toggle('active', view === 'teams');
-      
-      document.getElementById('section-events').style.display = view === 'events' ? 'block' : 'none';
-      document.getElementById('section-teams').style.display = view === 'teams' ? 'block' : 'none';
-      
-      if(view === 'events') refreshEventsView();
-      if(view === 'teams') refreshTeamsView();
-    }
-
-    function refreshEventsView() {
-      const eventsContainer = document.getElementById('event-buttons');
-      const eventsList = Object.keys(structuredData[activeGender]).sort();
-      
-      if (eventsList.length === 0) {
-        eventsContainer.innerHTML = '';
-        document.getElementById('results-table-wrapper').innerHTML = '<div class="empty-state">No events found for this category.</div>';
-        document.getElementById('heat-controls').style.display = 'none';
-        return;
-      }
-
-      eventsContainer.innerHTML = eventsList.map(e => 
-        `<button class="event-btn ${e === activeEvent ? 'active' : ''}" onclick="setEvent('${e.replace(/'/g, "\\'")}')">${e}</button>`
-      ).join('');
-
-      if (!eventsList.includes(activeEvent)) {
-        setEvent(eventsList[0]);
-      } else {
-        setEvent(activeEvent);
-      }
-    }
-
-    function setEvent(eventName) {
-      activeEvent = eventName;
-      
-      // Update active button styling visually without full re-render
-      document.querySelectorAll('.event-btn').forEach(b => {
-        b.classList.toggle('active', b.textContent === eventName);
-      });
-
-      const heatsForEvent = structuredData[activeGender][eventName];
-      const hasPrelims = heatsForEvent['Prelims'] && heatsForEvent['Prelims'].length > 0;
-      const hasFinals = heatsForEvent['Finals'] && heatsForEvent['Finals'].length > 0;
-
-      const heatControls = document.getElementById('heat-controls');
-      document.getElementById('current-event-title').textContent = eventName;
-
-      if (hasPrelims && hasFinals) {
-        heatControls.style.display = 'flex';
-        setHeat(activeHeat === 'Prelims' ? 'Prelims' : 'Finals'); // keep current if valid
-      } else {
-        heatControls.style.display = 'block'; // Show title
-        document.querySelector('.heat-pill-group').style.display = 'none'; // Hide buttons
-        setHeat(hasFinals ? 'Finals' : 'Prelims');
-      }
-    }
-
-    function setHeat(heat) {
-      activeHeat = heat;
-      document.getElementById('heat-prelims').classList.toggle('active', heat === 'Prelims');
-      document.getElementById('heat-finals').classList.toggle('active', heat === 'Finals');
-      
-      const wrapper = document.getElementById('results-table-wrapper');
-      const results = structuredData[activeGender][activeEvent]?.[heat];
-
-      if (!results || results.length === 0) {
-        wrapper.innerHTML = '<div class="empty-state">No results for this round.</div>';
-        return;
-      }
-
-      // RELAY NAMES LOGIC INTEGRATED HERE
-      wrapper.innerHTML = `
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th style="width:60px; text-align:center;">Place</th>
-              <th>Athlete</th>
-              <th>School</th>
-              <th>Mark</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${results.map(r => {
-              const nameDisplay = r.relay_names 
-                ? `<div style="line-height: 1.2;"><strong>${r.school} Relay</strong><br><span style="font-size:0.8rem; color:var(--text-secondary); font-weight:normal;">${r.relay_names}</span></div>` 
-                : `<a href="athlete.html?id=${r.athlete_id}">${r.athlete_name}</a>`;
-
-              return `
-              <tr>
-                <td style="text-align:center;">${getPlaceBadge(r.placement)}</td>
-                <td>${nameDisplay}</td>
-                <td>${r.school}</td>
-                <td style="font-weight:700;">${r.mark || '—'}</td>
-              </tr>
-            `}).join('')}
-          </tbody>
-        </table>
-      `;
-    }
-
-    function refreshTeamsView() {
-      const tbody = document.getElementById('team-standings-body');
-      const scores = {};
-
-      // Calculate scores (Finals ONLY across ALL events for this gender)
-      const events = structuredData[activeGender];
-      Object.keys(events).forEach(eventName => {
-        const finals = events[eventName]['Finals'] || [];
-        finals.forEach(r => {
-          if (r.placement && pointsSystem[r.placement]) {
-            if (!scores[r.school]) scores[r.school] = 0;
-            scores[r.school] += pointsSystem[r.placement];
-          }
-        });
-      });
-
-      const sortedTeams = Object.entries(scores)
-        .map(([school, pts]) => ({ school, pts }))
-        .sort((a,b) => b.pts - a.pts);
-
-      if (sortedTeams.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="3" class="empty-state">No team scores calculated. Only Top 6 Finals placements score points.</td></tr>';
-        return;
-      }
-
-      tbody.innerHTML = sortedTeams.map((team, idx) => `
-        <tr>
-          <td style="font-weight:700; color:var(--text-secondary);">${idx + 1}</td>
-          <td style="font-weight:600;">${team.school}</td>
-          <td class="score-badge">${team.pts}</td>
-        </tr>
-      `).join('');
-    }
-
-    function getPlaceBadge(place) {
-      if (!place) return '—';
-      if (place <= 3) return `<span class="place-badge place-${place}">${place}</span>`;
-      return place;
-    }
-
-    function showError(msg) {
-      const e = document.getElementById("error-box");
-      document.getElementById('loading').style.display = 'none';
-      e.textContent = msg;
-      e.style.display = "block";
-    }
-
-    async function waitForFirebase() {
-      let attempts = 0;
-      while (typeof window.firebaseDatabase === 'undefined' && attempts < 50) {
-        await new Promise(r => setTimeout(r, 100)); attempts++;
-      }
-    }
-
-    // --- Weather (Simplified port of your existing widget) ---
-    async function loadWeather(loc, date) {
-      const coords = {
-        'grafton high school': {lat:39.34, lon:-80.03},
-        'morgantown high school': {lat:39.64, lon:-79.96},
-        'parkersburg high school': {lat:39.27, lon:-81.56}
-      }[loc.toLowerCase().trim()];
-      
-      if(!coords) return;
-      
-      try {
-        const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${coords.lat}&longitude=${coords.lon}&daily=temperature_2m_max,temperature_2m_min,weather_code&temperature_unit=fahrenheit&timezone=auto`);
-        const data = await res.json();
-        
-        const wWidget = document.getElementById('weather-widget');
-        const max = Math.round(data.daily.temperature_2m_max[0]);
-        const min = Math.round(data.daily.temperature_2m_min[0]);
-        const code = data.daily.weather_code[0];
-        
-        let icon = '⛅';
-        if(code <= 1) icon = '☀️';
-        if(code >= 61) icon = '🌧️';
-
-        wWidget.innerHTML = `
-          <div style="font-size:2rem;">${icon}</div>
-          <div>
-            <div style="font-size:0.8rem; color:var(--text-secondary); text-transform:uppercase; font-weight:700;">Meet Forecast</div>
-            <div style="font-weight:800;">High: ${max}° <span style="color:var(--text-tertiary); margin:0 4px;">|</span> Low: ${min}°</div>
+          <div class="weather-details">
+            <div class="weather-stat">
+              <span class="weather-stat-val">${maxWind}</span>
+              <span class="weather-stat-lbl">Wind mph</span>
+            </div>
+            <div class="weather-stat">
+              <span class="weather-stat-val">${avgHumidity}%</span>
+              <span class="weather-stat-lbl">Humidity</span>
+            </div>
+            <div class="weather-stat">
+              <span class="weather-stat-val">${precip > 0 ? precip.toFixed(1)+'"' : '0"'}</span>
+              <span class="weather-stat-lbl">Precip</span>
+            </div>
+            ${sunrise ? `<div class="weather-stat">
+              <span class="weather-stat-val">${sunrise}</span>
+              <span class="weather-stat-lbl">Sunrise</span>
+            </div>` : ''}
+            ${sunset ? `<div class="weather-stat">
+              <span class="weather-stat-val">${sunset}</span>
+              <span class="weather-stat-lbl">Sunset</span>
+            </div>` : ''}
+            ${condTag}
           </div>
-        `;
-        wWidget.style.display = 'flex';
-      } catch(e) {} // ignore weather errors
+        </div>
+        ${hourlyHTML}
+      `;
+    } catch(e) {
+      container.innerHTML = `<div style="color:var(--text-lo);font-size:.85rem;"><i class="fas fa-cloud-slash"></i> Weather unavailable</div>`;
     }
+  }
 
-    document.addEventListener('DOMContentLoaded', init);
-  </script>
-  <script src="track-coach-auth.js"></script>
-  <script src="track-coach-toolbar.js"></script>
+  /* ═══════════════════════════════════
+     INTERACTION
+  ═══════════════════════════════════ */
+  function setGender(gender) {
+    activeGender = gender;
+    document.getElementById('tab-M').classList.toggle('active', gender==='M');
+    document.getElementById('tab-W').classList.toggle('active', gender==='W');
+    if (activeView==='events') refreshEventsView();
+    if (activeView==='teams') refreshTeamsView();
+    if (activeView==='highpoint') refreshHighPointView();
+  }
+
+  function setView(view) {
+    activeView = view;
+    ['events','teams','highpoint'].forEach(v => {
+      document.getElementById(`view-${v}`).classList.toggle('active', v===view);
+      document.getElementById(`section-${v}`).style.display = v===view ? 'block' : 'none';
+    });
+    if (view==='events') refreshEventsView();
+    if (view==='teams') refreshTeamsView();
+    if (view==='highpoint') refreshHighPointView();
+  }
+
+  function refreshEventsView() {
+    const eventsContainer = document.getElementById('event-buttons');
+    const eventsList = Object.keys(structuredData[activeGender]).sort();
+    if (!eventsList.length) {
+      eventsContainer.innerHTML = '';
+      document.getElementById('results-table-wrapper').innerHTML = '<div class="empty-state">No events found.</div>';
+      document.getElementById('heat-controls').style.display = 'none';
+      return;
+    }
+    eventsContainer.innerHTML = eventsList.map(e =>
+      `<button class="event-btn${e===activeEvent?' active':''}" onclick="setEvent('${e.replace(/'/g,"\\'")}')">${e}</button>`
+    ).join('');
+    if (!eventsList.includes(activeEvent)) setEvent(eventsList[0]);
+    else setEvent(activeEvent);
+  }
+
+  function setEvent(eventName) {
+    activeEvent = eventName;
+    document.querySelectorAll('.event-btn').forEach(b =>
+      b.classList.toggle('active', b.textContent===eventName)
+    );
+    const heatsForEvent = structuredData[activeGender][eventName];
+    const hasPrelims = heatsForEvent['Prelims']?.length > 0;
+    const hasFinals = heatsForEvent['Finals']?.length > 0;
+    const heatControls = document.getElementById('heat-controls');
+    document.getElementById('current-event-title').textContent = eventName;
+    const pillGroup = document.querySelector('.heat-pill-group');
+    if (hasPrelims && hasFinals) {
+      heatControls.style.display = 'flex';
+      pillGroup.style.display = 'inline-flex';
+      setHeat(activeHeat === 'Prelims' ? 'Prelims' : 'Finals');
+    } else {
+      heatControls.style.display = 'flex';
+      pillGroup.style.display = 'none';
+      setHeat(hasFinals ? 'Finals' : 'Prelims');
+    }
+  }
+
+  function setHeat(heat) {
+    activeHeat = heat;
+    document.getElementById('heat-prelims').classList.toggle('active', heat==='Prelims');
+    document.getElementById('heat-finals').classList.toggle('active', heat==='Finals');
+    const wrapper = document.getElementById('results-table-wrapper');
+    const results = structuredData[activeGender][activeEvent]?.[heat];
+    if (!results?.length) { wrapper.innerHTML = '<div class="empty-state">No results for this round.</div>'; return; }
+
+    wrapper.innerHTML = `
+      <table class="data-table">
+        <thead><tr>
+          <th style="width:60px;text-align:center">#</th>
+          <th>Athlete</th>
+          <th>School</th>
+          <th style="text-align:right;padding-right:24px">Mark</th>
+        </tr></thead>
+        <tbody>${results.map(r => {
+          const nameDisplay = r.relay_names
+            ? `<div><strong>${r.school} Relay</strong><br><span style="font-size:.78rem;color:var(--text-mid)">${r.relay_names}</span></div>`
+            : `<a href="athlete.html?id=${r.athlete_id}">${r.athlete_name||'Unknown'}</a>`;
+          return `<tr>
+            <td style="text-align:center">${getPlaceBadge(r.placement)}</td>
+            <td>${nameDisplay}</td>
+            <td><div class="school-cell">${logoTag(r.school,'school-logo-sm')}${r.school}</div></td>
+            <td style="text-align:right;padding-right:24px" class="mark-cell">${r.mark||'—'}</td>
+          </tr>`;
+        }).join('')}</tbody>
+      </table>`;
+  }
+
+  function refreshTeamsView() {
+    const tbody = document.getElementById('team-standings-body');
+    const scores = {};
+    const events = structuredData[activeGender];
+    Object.keys(events).forEach(eventName => {
+      const finals = events[eventName]['Finals'] || [];
+      finals.forEach(r => {
+        if (r.placement && POINTS[r.placement]) {
+          if (!scores[r.school]) scores[r.school] = 0;
+          scores[r.school] += POINTS[r.placement];
+        }
+      });
+    });
+    const sorted = Object.entries(scores).map(([s,p])=>({school:s,pts:p})).sort((a,b)=>b.pts-a.pts);
+    if (!sorted.length) {
+      tbody.innerHTML = '<tr><td colspan="3" class="empty-state">No team scores yet.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = sorted.map((team,i) => {
+      const rankCls = i<3 ? ` rank-${i+1}` : '';
+      return `<tr>
+        <td><span class="rank-num${rankCls}">${i+1}</span></td>
+        <td><div class="school-cell">${logoTag(team.school,'standings-logo')}<span style="font-weight:600">${team.school}</span></div></td>
+        <td style="text-align:right;padding-right:24px"><span class="team-pts">${team.pts}</span></td>
+      </tr>`;
+    }).join('');
+  }
+
+  function refreshHighPointView() {
+    const wrapper = document.getElementById('hp-grid-wrapper');
+    const athleteScores = {};
+    const events = structuredData[activeGender];
+
+    Object.keys(events).forEach(eventName => {
+      const isRel = eventName.toLowerCase().includes('relay') || eventName.toLowerCase().includes('4x') || eventName.toLowerCase().includes('medley');
+      if (isRel) return; // Skip relays for individual high point
+      const finals = events[eventName]['Finals'] || [];
+      finals.forEach(r => {
+        if (!r.placement || !POINTS[r.placement] || !r.athlete_id) return;
+        const key = r.athlete_id;
+        if (!athleteScores[key]) athleteScores[key] = { name:r.athlete_name, school:r.school, pts:0, placements:[] };
+        athleteScores[key].pts += POINTS[r.placement];
+        athleteScores[key].placements.push({ event:eventName, place:r.placement, pts:POINTS[r.placement] });
+      });
+    });
+
+    const topAthletes = Object.values(athleteScores).sort((a,b)=>b.pts-a.pts).slice(0,12);
+    if (!topAthletes.length) { wrapper.innerHTML = '<div class="empty-state">No individual scores yet.</div>'; return; }
+
+    const medals = ['🥇','🥈','🥉'];
+    const pillCls = p => p<=3 ? `p${p}` : '';
+    const ordinal = p => p===1?'st':p===2?'nd':p===3?'rd':'th';
+
+    wrapper.innerHTML = topAthletes.map((ath, i) => {
+      const pills = ath.placements.slice().sort((a,b)=>a.place-b.place).map(pl =>
+        `<span class="hp-pill ${pillCls(pl.place)}">${pl.event} — ${pl.place}${ordinal(pl.place)} (+${pl.pts})</span>`
+      ).join('');
+      return `<div class="hp-athlete">
+        <div class="hp-medal">${medals[i]||`#${i+1}`}</div>
+        <div class="hp-school-row">${logoTag(ath.school,'hp-logo')}<span class="hp-school-name">${ath.school}</span></div>
+        <div class="hp-name">${ath.name||'Unknown'}</div>
+        <div class="hp-pts">${ath.pts} pts</div>
+        <div class="hp-pills">${pills}</div>
+      </div>`;
+    }).join('');
+  }
+
+  function getPlaceBadge(place) {
+    if (!place) return '—';
+    if (place <= 3) return `<span class="place-badge place-${place}">${place}</span>`;
+    return `<span class="place-badge">${place}</span>`;
+  }
+
+  function showError(msg) {
+    document.getElementById('loading').style.display = 'none';
+    const e = document.getElementById('error-box');
+    e.textContent = msg; e.style.display = 'block';
+  }
+
+  document.addEventListener('DOMContentLoaded', init);
+</script>
+<script src="track-coach-auth.js"></script>
+<script src="track-coach-toolbar.js"></script>
 </body>
 </html>
