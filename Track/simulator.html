@@ -15,6 +15,7 @@
         --accent:#2a5cff; --accent-glow:rgba(42,92,255,0.15);
         --gold:#f5b731; --silver:#a8b8c8; --bronze:#c47a38;
         --gold-bg:rgba(245,183,49,0.08); --silver-bg:rgba(168,184,200,0.06); --bronze-bg:rgba(196,122,56,0.06);
+        --green:#22c55e; --green-bg:rgba(34,197,94,0.08);
         --font-display:"Barlow Condensed",sans-serif;
         --font-body:"Barlow",sans-serif;
         --font-mono:"JetBrains Mono",monospace;
@@ -36,6 +37,14 @@
       .navbar-link:hover{color:var(--text-hi);background:var(--bg-raised)}
       .navbar-link.active{color:var(--accent);background:var(--accent-glow)}
 
+      /* VIEW ONLY BANNER */
+      .view-only-banner{display:none;background:linear-gradient(90deg,rgba(42,92,255,.15),rgba(42,92,255,.05));border-bottom:1px solid var(--border-glow);padding:8px 24px;text-align:center;font-size:.82rem;font-weight:600;color:var(--accent);letter-spacing:.04em}
+      .view-only-banner i{margin-right:6px}
+      body.view-only .view-only-banner{display:block}
+      body.view-only .sidebar{opacity:.6;pointer-events:none;user-select:none}
+      body.view-only .sidebar::after{content:"View Only";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-family:var(--font-display);font-size:1.5rem;font-weight:900;color:var(--accent);text-transform:uppercase;letter-spacing:.1em;opacity:.3;pointer-events:none;z-index:10}
+      body.view-only .sidebar{position:relative}
+
       /* PAGE LAYOUT */
       .page-wrap{position:relative;z-index:1;max-width:1340px;margin:0 auto;padding:32px 24px 60px}
       .page-header{margin-bottom:32px}
@@ -46,6 +55,16 @@
       .stat-pill{display:flex;align-items:center;gap:8px;background:var(--bg-card);border:1px solid var(--border);border-radius:999px;padding:6px 14px;font-size:.82rem;color:var(--text-mid)}
       .stat-pill i{color:var(--accent);font-size:.75rem}
       .stat-pill strong{color:var(--text-hi)}
+
+      /* VIEW-ONLY TOGGLE */
+      .view-only-toggle{margin-left:auto;display:flex;align-items:center;gap:8px}
+      .toggle-switch{position:relative;display:inline-block;width:38px;height:20px}
+      .toggle-switch input{opacity:0;width:0;height:0}
+      .toggle-slider{position:absolute;cursor:pointer;inset:0;background:var(--bg-raised);border:1px solid var(--border);border-radius:999px;transition:.2s}
+      .toggle-slider::before{content:"";position:absolute;height:14px;width:14px;left:2px;bottom:2px;background:var(--text-lo);border-radius:50%;transition:.2s}
+      .toggle-switch input:checked + .toggle-slider{background:var(--accent-glow);border-color:var(--accent)}
+      .toggle-switch input:checked + .toggle-slider::before{transform:translateX(18px);background:var(--accent)}
+      .toggle-label{font-size:.78rem;font-weight:600;color:var(--text-mid);text-transform:uppercase;letter-spacing:.06em}
 
       /* GRID */
       .sim-layout{display:grid;grid-template-columns:318px 1fr;gap:20px;align-items:start}
@@ -63,7 +82,13 @@
 
       .sidebar-scrollable{overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--border) transparent;flex-grow:1}
       
-      /* TEAMS */
+      /* MODE TABS */
+      .mode-tabs{display:flex;gap:0;border-bottom:1px solid var(--border)}
+      .mode-tab{flex:1;padding:10px 8px;font-family:var(--font-display);font-size:.8rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;background:transparent;border:none;color:var(--text-lo);cursor:pointer;border-bottom:2px solid transparent;transition:all var(--transition);margin-bottom:-1px}
+      .mode-tab.active{color:var(--accent);border-bottom-color:var(--accent);background:var(--accent-glow)}
+      .mode-tab:hover:not(.active){color:var(--text-mid);background:var(--bg-raised)}
+
+      /* TEAMS / MEETS LIST */
       .teams-section{padding:14px 20px;border-bottom:1px solid var(--border)}
       .section-label{font-size:.72rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-lo);margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
       .selected-count{background:var(--accent);color:white;font-size:.68rem;font-weight:700;border-radius:999px;padding:1px 7px;min-width:18px;text-align:center;display:none}
@@ -73,7 +98,7 @@
       .search-input{width:100%;padding:8px 10px 8px 32px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text-hi);font-family:var(--font-body);font-size:.88rem;transition:border-color var(--transition)}
       .search-input::placeholder{color:var(--text-lo)}
       .search-input:focus{outline:none;border-color:var(--accent)}
-      .school-list{max-height:220px;overflow-y:auto;border-radius:6px;border:1px solid var(--border);background:var(--bg);scrollbar-width:thin;scrollbar-color:var(--border) transparent}
+      .school-list{max-height:180px;overflow-y:auto;border-radius:6px;border:1px solid var(--border);background:var(--bg);scrollbar-width:thin;scrollbar-color:var(--border) transparent}
       .school-item{display:flex;align-items:center;gap:8px;padding:8px 12px;font-size:.86rem;font-weight:500;border-bottom:1px solid var(--border);cursor:pointer;transition:background var(--transition);user-select:none}
       .school-item:last-child{border-bottom:none}
       .school-item:hover{background:var(--bg-raised)}
@@ -103,6 +128,16 @@
       .event-check-item.checked{background:var(--accent-glow);color:var(--accent)}
       .event-check-item input[type="checkbox"]{width:14px;height:14px;cursor:pointer;accent-color:var(--accent);flex-shrink:0}
 
+      /* QUALIFYING SECTION */
+      .qual-section{padding:14px 20px;border-bottom:1px solid var(--border)}
+      .qual-controls{display:flex;flex-direction:column;gap:10px;margin-bottom:12px}
+      .qual-row{display:flex;gap:8px;align-items:center}
+      .qual-row label{font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-lo);flex-shrink:0;min-width:80px}
+      .qual-num{width:60px;padding:6px 8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text-hi);font-family:var(--font-mono);font-size:.88rem;text-align:center}
+      .qual-num:focus{outline:none;border-color:var(--accent)}
+      .qual-hint{font-size:.7rem;color:var(--text-lo);line-height:1.5;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;margin-bottom:6px}
+      .qual-hint strong{color:var(--text-mid)}
+
       /* SIDEBAR ACTIONS */
       .sidebar-actions{padding:14px 20px;flex-shrink:0;background:var(--bg-card)}
       .btn-simulate{width:100%;padding:13px;background:var(--accent);color:white;border:none;border-radius:var(--radius);font-family:var(--font-display);font-size:1.05rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;transition:background var(--transition),transform var(--transition),box-shadow var(--transition);display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 20px rgba(42,92,255,.3)}
@@ -125,6 +160,34 @@
       .loading-sub{font-size:.83rem;color:var(--text-lo)}
       .results-wrap{display:flex;flex-direction:column;gap:20px;animation:fadeInUp .35s ease}
       @keyframes fadeInUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+      /* QUALIFICATION FLOW DISPLAY */
+      .qual-pipeline{display:flex;flex-direction:column;gap:16px;margin-bottom:20px}
+      .qual-stage{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+      .qual-stage-header{display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--border);background:var(--bg-raised)}
+      .qual-stage-icon{width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:8px;font-size:.85rem}
+      .qual-stage-icon.regional{background:rgba(245,183,49,.1);border:1px solid rgba(245,183,49,.3);color:var(--gold)}
+      .qual-stage-icon.state{background:var(--accent-glow);border:1px solid var(--border-glow);color:var(--accent)}
+      .qual-stage-title{font-family:var(--font-display);font-size:1rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em}
+      .qual-stage-sub{font-size:.75rem;color:var(--text-lo);margin-top:1px}
+      .qual-stage-body{padding:14px 18px}
+      .qualifier-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px}
+      .qualifier-chip{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:.82rem;font-weight:600;transition:border-color var(--transition)}
+      .qualifier-chip.top-place{border-color:rgba(245,183,49,.4);background:var(--gold-bg)}
+      .qualifier-chip.wildcard{border-color:rgba(34,197,94,.4);background:var(--green-bg)}
+      .qualifier-chip .chip-badge{font-size:.65rem;font-weight:700;padding:1px 6px;border-radius:999px;margin-left:auto;flex-shrink:0}
+      .qualifier-chip.top-place .chip-badge{background:rgba(245,183,49,.2);color:var(--gold)}
+      .qualifier-chip.wildcard .chip-badge{background:rgba(34,197,94,.2);color:var(--green)}
+      .qual-legend{display:flex;gap:12px;margin-top:8px;flex-wrap:wrap}
+      .qual-legend-item{display:flex;align-items:center;gap:5px;font-size:.72rem;color:var(--text-lo)}
+      .qual-legend-dot{width:8px;height:8px;border-radius:50%}
+      .qual-legend-dot.top-place{background:var(--gold)}
+      .qual-legend-dot.wildcard{background:var(--green)}
+      .region-results-tabs{display:flex;gap:4px;margin-bottom:12px;flex-wrap:wrap}
+      .region-results-tab{padding:5px 12px;background:var(--bg);border:1px solid var(--border);border-radius:5px;font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-lo);cursor:pointer;transition:all var(--transition)}
+      .region-results-tab.active{background:var(--accent-glow);border-color:var(--accent);color:var(--accent)}
+      .region-panel{display:none}
+      .region-panel.active{display:block}
 
       /* STANDINGS */
       .standings-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
@@ -180,11 +243,14 @@
       .mark-val{font-family:var(--font-mono);font-size:.95rem;font-weight:600;text-align:right !important;color:var(--text-hi)}
       .pts-val{font-family:var(--font-mono);font-size:.88rem;font-weight:700;color:var(--accent)}
       .pts-val.zero{color:var(--text-lo)}
+      .qual-tag{font-size:.62rem;font-weight:700;padding:2px 6px;border-radius:4px;margin-left:4px;vertical-align:middle}
+      .qual-tag.q-top{background:rgba(245,183,49,.15);color:var(--gold);border:1px solid rgba(245,183,49,.3)}
+      .qual-tag.q-wild{background:rgba(34,197,94,.15);color:var(--green);border:1px solid rgba(34,197,94,.3)}
       .error-card{background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.3);border-radius:var(--radius);padding:24px}
       .error-card h3{color:#ef4444;font-family:var(--font-display);font-size:1.2rem;text-transform:uppercase;margin:0 0 8px}
       .error-card p{color:var(--text-mid);font-size:.9rem;margin:0}
 
-      /* ── HIGH POINT ATHLETES ── */
+      /* HIGH POINT ATHLETES */
       .hp-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
       .hp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr))}
       .hp-athlete{padding:16px 18px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);position:relative;transition:background var(--transition)}
@@ -219,15 +285,23 @@
             <li><a href="rankings.html" class="navbar-link">Rankings</a></li>
             <li><a href="simulator.html" class="navbar-link active">Simulator</a></li>
           </ul>
+          <div class="view-only-toggle">
+            <span class="toggle-label"><i class="fas fa-eye" style="font-size:.75rem;margin-right:4px"></i>View Only</span>
+            <label class="toggle-switch">
+              <input type="checkbox" id="view-only-toggle">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
         </div>
       </nav>
+      <div class="view-only-banner"><i class="fas fa-eye"></i> View-Only Mode — Configuration is locked</div>
     </header>
 
     <main class="page-wrap">
       <div class="page-header">
         <h1 class="page-title">Virtual Meet <span class="dim">Simulator</span></h1>
-        <p class="page-subtitle">Pit teams head-to-head using athletes' seasonal bests — projected results, real scores.</p>
-        <div class="stat-bar">
+        <p class="page-subtitle">Simulate qualifying meets to determine who advances, then run the championship meet.</p>
+        <div class="stat-bar" id="stat-bar">
           <div class="stat-pill"><i class="fas fa-bolt"></i><strong>NFHS</strong> 8-place scoring</div>
           <div class="stat-pill"><i class="fas fa-users"></i>Up to <strong>3</strong> athletes per event per team</div>
           <div class="stat-pill"><i class="fas fa-flag-checkered"></i>Track &amp; Field events</div>
@@ -257,35 +331,94 @@
             </div>
           </div>
 
+          <div class="mode-tabs">
+            <button class="mode-tab active" id="tab-direct" onclick="switchMode('direct')">
+              <i class="fas fa-play" style="margin-right:4px;font-size:.7rem"></i> Direct Meet
+            </button>
+            <button class="mode-tab" id="tab-qualifying" onclick="switchMode('qualifying')">
+              <i class="fas fa-sitemap" style="margin-right:4px;font-size:.7rem"></i> Qualifying
+            </button>
+          </div>
+
           <div class="sidebar-scrollable">
-            <div class="teams-section">
-              <div class="section-label">
-                Select Teams
-                <span class="selected-count" id="selected-count">0</span>
+            <div id="panel-direct">
+              <div class="teams-section">
+                <div class="section-label">
+                  Select Teams
+                  <span class="selected-count" id="selected-count">0</span>
+                </div>
+                <div class="search-wrap">
+                  <i class="fas fa-search"></i>
+                  <input type="text" id="school-search" class="search-input" placeholder="Search schools…" />
+                </div>
+                <div id="school-selector" class="school-list">
+                  <div style="padding:20px;text-align:center;color:var(--text-lo);">
+                    <i class="fas fa-circle-notch fa-spin"></i>&nbsp; Loading teams…
+                  </div>
+                </div>
               </div>
-              <div class="search-wrap">
-                <i class="fas fa-search"></i>
-                <input type="text" id="school-search" class="search-input" placeholder="Search schools…" />
-              </div>
-              <div id="school-selector" class="school-list">
-                <div style="padding:20px;text-align:center;color:var(--text-lo);">
-                  <i class="fas fa-circle-notch fa-spin"></i>&nbsp; Loading teams…
+
+              <div class="events-section">
+                <div class="section-label" style="margin-bottom:8px;">
+                  Select Events
+                  <span class="selected-count" id="event-count">0</span>
+                </div>
+                <div class="events-bulk-btns">
+                  <button class="bulk-btn" id="select-all-events"><i class="fas fa-check-double"></i> Select All</button>
+                  <button class="bulk-btn" id="deselect-all-events"><i class="fas fa-times"></i> Clear</button>
+                </div>
+                <div id="event-categories">
+                  <div style="padding:20px;text-align:center;color:var(--text-lo);">
+                    <i class="fas fa-circle-notch fa-spin"></i>&nbsp; Loading events…
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div class="events-section">
-              <div class="section-label" style="margin-bottom:8px;">
-                Select Events
-                <span class="selected-count" id="event-count">0</span>
+            <div id="panel-qualifying" style="display:none">
+              <div class="qual-section">
+                <div class="section-label" style="margin-bottom:10px">Qualifying Rules</div>
+                <div class="qual-hint">
+                  Select actual meets from the database to act as qualifiers. <strong>Top qualifiers</strong> are the best finishers per selected meet per event; <strong>wildcards</strong> are the next-best marks pooled from all selected meets.
+                </div>
+                <div class="qual-controls">
+                  <div class="qual-row">
+                    <label>Top / Meet</label>
+                    <input type="number" class="qual-num" id="top-per-region" value="4" min="1" max="20">
+                    <span style="font-size:.75rem;color:var(--text-lo)">per event</span>
+                  </div>
+                  <div class="qual-row">
+                    <label>Wildcards</label>
+                    <input type="number" class="qual-num" id="num-wildcards" value="8" min="0" max="40">
+                    <span style="font-size:.75rem;color:var(--text-lo)">next-best</span>
+                  </div>
+                </div>
+
+                <div class="section-label" style="margin-top:16px; margin-bottom:8px">Select Qualifying Meets</div>
+                <div class="search-wrap">
+                  <i class="fas fa-search"></i>
+                  <input type="text" id="qual-meet-search" class="search-input" placeholder="Search meets…" />
+                </div>
+                <div id="qual-meets-list" class="school-list">
+                  <div style="padding:20px;text-align:center;color:var(--text-lo);">
+                    <i class="fas fa-circle-notch fa-spin"></i>&nbsp; Loading meets…
+                  </div>
+                </div>
               </div>
-              <div class="events-bulk-btns">
-                <button class="bulk-btn" id="select-all-events"><i class="fas fa-check-double"></i> Select All</button>
-                <button class="bulk-btn" id="deselect-all-events"><i class="fas fa-times"></i> Clear</button>
-              </div>
-              <div id="event-categories">
-                <div style="padding:20px;text-align:center;color:var(--text-lo);">
-                  <i class="fas fa-circle-notch fa-spin"></i>&nbsp; Loading events…
+
+              <div class="events-section">
+                <div class="section-label" style="margin-bottom:8px;">
+                  Select Events
+                  <span class="selected-count" id="q-event-count">0</span>
+                </div>
+                <div class="events-bulk-btns">
+                  <button class="bulk-btn" id="q-select-all-events"><i class="fas fa-check-double"></i> Select All</button>
+                  <button class="bulk-btn" id="q-deselect-all-events"><i class="fas fa-times"></i> Clear</button>
+                </div>
+                <div id="q-event-categories">
+                  <div style="padding:20px;text-align:center;color:var(--text-lo);">
+                    <i class="fas fa-circle-notch fa-spin"></i>&nbsp; Loading events…
+                  </div>
                 </div>
               </div>
             </div>
@@ -296,7 +429,7 @@
               <i class="fas fa-play"></i> Run Simulation
             </button>
             <button id="reset-sim" class="btn-reset" style="display:none">
-              <i class="fas fa-undo"></i> Clear Team Selection
+              <i class="fas fa-undo"></i> Clear Selection
             </button>
           </div>
         </aside>
@@ -305,7 +438,7 @@
           <div class="empty-state">
             <div class="empty-state-icon"><i class="fas fa-stopwatch"></i></div>
             <h2>Ready to Simulate</h2>
-            <p>Select two or more teams from the sidebar and hit <strong>Run Simulation</strong> to see projected meet results scored with NFHS 8-place rules.</p>
+            <p>Select <strong>Direct Meet</strong> to pit teams head-to-head, or use <strong>Qualifying</strong> mode to select meets that feed into a championship.</p>
           </div>
         </section>
       </div>
@@ -321,13 +454,30 @@
        CONSTANTS & STATE
     ═══════════════════════════════════════ */
     const SCORING = { individual:[10,8,6,5,4,3,2,1], relay:[10,8,6,5,4,3,2,1] };
-    const TEAM_COLORS = ["#2a5cff","#ff4e2a","#2aff9f","#ffd02a","#c62aff","#2afff0","#ff2a7a","#a2ff2a"];
+    const TEAM_COLORS = ["#2a5cff","#ff4e2a","#2aff9f","#ffd02a","#c62aff","#2afff0","#ff2a7a","#a2ff2a","#ff9f2a","#2affdf","#ff2af0","#9fff2a"];
     const INVALID_MARKS = new Set(["DNS","DNF","DQ","SCR","NM","NH","FS","ND","NT","","—","N/A"]);
     const FALLBACK_LOGO = "../assets/Wvruns Logo.png";
+    const REGION_COLORS = ["#f5b731","#2a5cff","#c62aff","#22c55e","#ff4e2a","#2afff0","#ff2a7a","#a2ff2a"];
 
     let athletesMap = {}, eventsMap = {}, meetsMap = {};
-    let allSchools = [], allEventsList = [];
+    let allSchools = [], allEventsList = [], allMeets = [];
     let teamColorMap = {}, teamLogoMap = {};
+    let currentMode = "direct";
+
+    /* ─── View-only mode ─── */
+    document.getElementById("view-only-toggle").addEventListener("change", e => {
+      document.body.classList.toggle("view-only", e.target.checked);
+    });
+
+    /* ─── Mode switching ─── */
+    function switchMode(mode) {
+      currentMode = mode;
+      document.getElementById("tab-direct").classList.toggle("active", mode === "direct");
+      document.getElementById("tab-qualifying").classList.toggle("active", mode === "qualifying");
+      document.getElementById("panel-direct").style.display = mode === "direct" ? "" : "none";
+      document.getElementById("panel-qualifying").style.display = mode === "qualifying" ? "" : "none";
+      updateSimState();
+    }
 
     /* ─── Firebase ─── */
     async function waitForFirebase() {
@@ -337,12 +487,8 @@
     }
 
     /* ─── Logo helpers ─── */
-    function schoolSlug(name) {
-      return name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-    }
-    function logoSrc(school) {
-      return `../CrossCountry/assets/team logos/${schoolSlug(school)}.png`;
-    }
+    function schoolSlug(name) { return name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''); }
+    function logoSrc(school) { return `../CrossCountry/assets/team logos/${schoolSlug(school)}.png`; }
     function logoTag(school, cls) {
       return `<img src="${logoSrc(school)}" class="${cls}" alt="" loading="lazy" onerror="this.onerror=null;this.src='${FALLBACK_LOGO}'">`;
     }
@@ -362,40 +508,23 @@
       return "track";
     }
 
-    /* ─── Mark parsing (improved accuracy)
-         Handles: "10.23w", "10.23#", "10.23a", "10.23h", "10.23i",
-                  "1:23.45", "55-6.5", "55'6.5\"", metric floats
-    ─── */
     function parseMark(mark, eventName) {
       if (!mark) return isFieldEvent(eventName) ? -Infinity : Infinity;
       const raw = mark.toString().trim().toUpperCase();
       if (INVALID_MARKS.has(raw)) return isFieldEvent(eventName) ? -Infinity : Infinity;
-
-      // Strip trailing qualifier suffixes: w a h i # * ! (wind, altitude, hand-timed, indoor, etc.)
       let s = mark.toString().trim().replace(/[wWhHaAiI#\*!]+$/, "").trim();
-      // Keep only: digits, colon, dash, period, apostrophe, quote
       s = s.replace(/[^\d:'.\-"]/g, "").trim();
       if (!s) return isFieldEvent(eventName) ? -Infinity : Infinity;
-
       if (isFieldEvent(eventName)) {
-        // Feet-inches: 55-6.5  or  55'6.5"  or  55'6.5
         const fi = s.match(/^(\d+)['\-](\d+(?:\.\d+)?)/);
         if (fi) return parseFloat(fi[1]) * 12 + parseFloat(fi[2]);
-        // Already metric (just a float)
         const v = parseFloat(s);
         return isNaN(v) ? -Infinity : v;
       } else {
-        // Time: [H:]M:SS.ss
         if (s.includes(":")) {
           const parts = s.split(":");
-          if (parts.length === 2) {
-            const val = parseFloat(parts[0]) * 60 + parseFloat(parts[1]);
-            return isNaN(val) ? Infinity : val;
-          }
-          if (parts.length === 3) {
-            const val = parseFloat(parts[0])*3600 + parseFloat(parts[1])*60 + parseFloat(parts[2]);
-            return isNaN(val) ? Infinity : val;
-          }
+          if (parts.length === 2) { const val = parseFloat(parts[0]) * 60 + parseFloat(parts[1]); return isNaN(val) ? Infinity : val; }
+          if (parts.length === 3) { const val = parseFloat(parts[0])*3600 + parseFloat(parts[1])*60 + parseFloat(parts[2]); return isNaN(val) ? Infinity : val; }
         }
         const v = parseFloat(s);
         return isNaN(v) ? Infinity : v;
@@ -415,44 +544,51 @@
 
     /* ─── UI state ─── */
     function updateSimState() {
-      const teamCBs = document.querySelectorAll("#school-selector input:checked");
-      const eventCBs = document.querySelectorAll("#event-categories input:checked");
-      const count = teamCBs.length, evCount = eventCBs.length;
       const btn = document.getElementById("run-sim");
-
-      document.getElementById("selected-count").textContent = count;
-      document.getElementById("selected-count").classList.toggle("visible", count > 0);
-      document.getElementById("event-count").textContent = evCount;
-      document.getElementById("event-count").classList.toggle("visible", evCount > 0);
-
-      btn.disabled = count < 2 || evCount === 0;
-      btn.innerHTML = count < 2
-        ? `<i class="fas fa-play"></i> Select ${2-count} More Team${2-count!==1?"s":""}`
-        : evCount === 0
-          ? `<i class="fas fa-play"></i> Select Events`
+      if (currentMode === "direct") {
+        const teamCBs = document.querySelectorAll("#school-selector input:checked");
+        const eventCBs = document.querySelectorAll("#event-categories input:checked");
+        const count = teamCBs.length, evCount = eventCBs.length;
+        document.getElementById("selected-count").textContent = count;
+        document.getElementById("selected-count").classList.toggle("visible", count > 0);
+        document.getElementById("event-count").textContent = evCount;
+        document.getElementById("event-count").classList.toggle("visible", evCount > 0);
+        btn.disabled = count < 2 || evCount === 0;
+        btn.innerHTML = count < 2
+          ? `<i class="fas fa-play"></i> Select ${2-count} More Team${2-count!==1?"s":""}`
+          : evCount === 0 ? `<i class="fas fa-play"></i> Select Events`
           : `<i class="fas fa-play"></i> Simulate ${count} Teams`;
-      document.getElementById("reset-sim").style.display = count > 0 ? "block" : "none";
-
-      // Update per-category badges
-      document.querySelectorAll(".event-category").forEach(cat => {
-        const total = cat.querySelectorAll("input").length;
-        const checked = cat.querySelectorAll("input:checked").length;
-        const badge = cat.querySelector(".cat-badge");
-        if (badge) { badge.textContent = `${checked}/${total}`; badge.classList.toggle("active", checked > 0); }
-      });
-
-      // Update URL
-      const selSchools = Array.from(teamCBs).map(cb => cb.value);
-      const selEvents = Array.from(eventCBs).map(cb => cb.value);
-      const season = document.getElementById("sim-season").value;
-      const gender = document.getElementById("sim-gender").value;
-      const params = new URLSearchParams();
-      if (selSchools.length) params.set("teams", selSchools.join(","));
-      if (selEvents.length && selEvents.length < allEventsList.length) params.set("events", selEvents.join(","));
-      if (season) params.set("season", season);
-      if (gender) params.set("gender", gender);
-      const qs = params.toString();
-      window.history.replaceState(null, "", qs ? `?${qs}` : window.location.pathname);
+        document.getElementById("reset-sim").style.display = count > 0 ? "block" : "none";
+        document.querySelectorAll("#event-categories .event-category").forEach(cat => {
+          const total = cat.querySelectorAll("input").length;
+          const checked = cat.querySelectorAll("input:checked").length;
+          const badge = cat.querySelector(".cat-badge");
+          if (badge) { badge.textContent = `${checked}/${total}`; badge.classList.toggle("active", checked > 0); }
+        });
+      } else {
+        // Qualifying mode updates
+        const meetCBs = document.querySelectorAll("#qual-meets-list input:checked");
+        const meetCount = meetCBs.length;
+        const evCount = document.querySelectorAll("#q-event-categories input:checked").length;
+        
+        btn.disabled = meetCount === 0 || evCount === 0;
+        
+        if (meetCount === 0) {
+          btn.innerHTML = `<i class="fas fa-sitemap"></i> Select Qualifying Meets`;
+        } else if (evCount === 0) {
+          btn.innerHTML = `<i class="fas fa-sitemap"></i> Select Events`;
+        } else {
+          btn.innerHTML = `<i class="fas fa-sitemap"></i> Run ${meetCount} Meet${meetCount!==1?"s":""} + Championship`;
+        }
+        
+        document.getElementById("reset-sim").style.display = meetCount > 0 ? "block" : "none";
+        document.querySelectorAll("#q-event-categories .event-category").forEach(cat => {
+          const total = cat.querySelectorAll("input").length;
+          const checked = cat.querySelectorAll("input:checked").length;
+          const badge = cat.querySelector(".cat-badge");
+          if (badge) { badge.textContent = `${checked}/${total}`; badge.classList.toggle("active", checked > 0); }
+        });
+      }
     }
 
     /* ═══════════════════════════════════════
@@ -477,30 +613,49 @@
           if (s && !schoolSet.has(s)) schoolSet.set(s, s);
         });
         allSchools = Array.from(schoolSet.values()).sort((a,b) => a.localeCompare(b)).map(name => ({name, key:name}));
-
         allEventsList = Object.keys(eventsMap)
           .map(key => ({id:key, name:eventsMap[key].name || "Unknown Event"}))
           .sort((a,b) => a.name.localeCompare(b.name));
 
+        // Format all meets for the selection list
+        allMeets = Object.keys(meetsMap).map(id => ({ id, ...meetsMap[id] })).sort((a,b) => (b.date || "").localeCompare(a.date || ""));
+
         const urlP = getUrlParams();
         renderSchoolList(allSchools, new Set(urlP.teams));
+        renderMeetsList(allMeets);
+        
         const initEvSet = urlP.events ? new Set(urlP.events) : new Set(allEventsList.map(e => e.id));
-        renderEventCategories(allEventsList, initEvSet);
+        renderEventCategories("event-categories", allEventsList, initEvSet);
+        renderEventCategories("q-event-categories", allEventsList, initEvSet);
 
         if (urlP.season) document.getElementById("sim-season").value = urlP.season;
         if (urlP.gender) document.getElementById("sim-gender").value = urlP.gender;
-        updateSimState();
 
+        // Wire direct mode controls
         document.getElementById("school-search").addEventListener("input", e => {
           const q = e.target.value.toLowerCase();
           renderSchoolList(allSchools.filter(s => s.name.toLowerCase().includes(q)));
         });
+        
+        // Wire qualify meet search
+        document.getElementById("qual-meet-search").addEventListener("input", e => {
+          const q = e.target.value.toLowerCase();
+          renderMeetsList(allMeets.filter(m => (m.name || "").toLowerCase().includes(q)));
+        });
+
         document.getElementById("reset-sim").addEventListener("click", () => {
-          document.querySelectorAll("#school-selector input:checked").forEach(cb => {
-            cb.checked = false; cb.closest(".school-item").classList.remove("checked");
-          });
+          if (currentMode === "direct") {
+            document.querySelectorAll("#school-selector input:checked").forEach(cb => {
+              cb.checked = false; cb.closest(".school-item").classList.remove("checked");
+            });
+          } else {
+            document.querySelectorAll("#qual-meets-list input:checked").forEach(cb => {
+              cb.checked = false; cb.closest(".school-item").classList.remove("checked");
+            });
+          }
           updateSimState();
         });
+
         document.getElementById("select-all-events").addEventListener("click", () => {
           document.querySelectorAll("#event-categories input[type='checkbox']").forEach(cb => {
             cb.checked = true; cb.closest(".event-check-item").classList.add("checked");
@@ -513,9 +668,23 @@
           });
           updateSimState();
         });
+        document.getElementById("q-select-all-events").addEventListener("click", () => {
+          document.querySelectorAll("#q-event-categories input[type='checkbox']").forEach(cb => {
+            cb.checked = true; cb.closest(".event-check-item").classList.add("checked");
+          });
+          updateSimState();
+        });
+        document.getElementById("q-deselect-all-events").addEventListener("click", () => {
+          document.querySelectorAll("#q-event-categories input[type='checkbox']").forEach(cb => {
+            cb.checked = false; cb.closest(".event-check-item").classList.remove("checked");
+          });
+          updateSimState();
+        });
+
         document.getElementById("sim-season").addEventListener("change", updateSimState);
         document.getElementById("sim-gender").addEventListener("change", updateSimState);
 
+        updateSimState();
         if (urlP.teams.length >= 2) setTimeout(() => runSimulation(), 100);
       } catch(err) {
         console.error(err);
@@ -525,10 +694,7 @@
 
     function renderSchoolList(list, initialCheckedSet = null) {
       const container = document.getElementById("school-selector");
-      if (!list?.length) {
-        container.innerHTML = `<div style="padding:18px;text-align:center;color:var(--text-lo);">No schools found.</div>`;
-        return;
-      }
+      if (!list?.length) { container.innerHTML = `<div style="padding:18px;text-align:center;color:var(--text-lo);">No schools found.</div>`; return; }
       const checkedSet = initialCheckedSet || new Set(Array.from(container.querySelectorAll("input:checked")).map(cb => cb.value));
       container.innerHTML = list.map(school => {
         const checked = checkedSet.has(school.key);
@@ -547,17 +713,43 @@
       });
     }
 
-    function renderEventCategories(events, checkedSet) {
-      const container = document.getElementById("event-categories");
+    function renderMeetsList(list, initialCheckedSet = new Set()) {
+      const container = document.getElementById("qual-meets-list");
+      if (!list?.length) { container.innerHTML = `<div style="padding:18px;text-align:center;color:var(--text-lo);">No meets found.</div>`; return; }
+
+      const checkedSet = new Set(Array.from(container.querySelectorAll("input:checked")).map(cb => cb.value));
+      initialCheckedSet.forEach(v => checkedSet.add(v));
+
+      container.innerHTML = list.map(meet => {
+        const checked = checkedSet.has(meet.id);
+        const safeId = meet.id.replace(/[^a-zA-Z0-9]/g, "_");
+        const dateStr = meet.date ? ` &middot; ${meet.date}` : '';
+        return `<label class="school-item${checked?" checked":""}" for="meet-${safeId}">
+          <input type="checkbox" value="${meet.id}" id="meet-${safeId}"${checked?" checked":""}>
+          <div style="display:flex;flex-direction:column;flex:1">
+            <span style="font-weight:700;margin-bottom:2px">${meet.name}</span>
+            <span style="font-size:0.75rem;color:var(--text-lo);text-transform:uppercase;letter-spacing:0.04em">${meet.season || ''}${dateStr}</span>
+          </div>
+        </label>`;
+      }).join("");
+
+      container.querySelectorAll("input[type='checkbox']").forEach(cb => {
+        cb.addEventListener("change", e => {
+          e.target.closest(".school-item").classList.toggle("checked", e.target.checked);
+          updateSimState();
+        });
+      });
+    }
+
+    function renderEventCategories(containerId, events, checkedSet) {
+      const container = document.getElementById(containerId);
       const cats = { track:[], field:[], relay:[] };
       events.forEach(ev => cats[eventCategory(ev.name)].push(ev));
-
       const catMeta = {
         track: { label:"Track Events", icon:"fa-person-running" },
         field: { label:"Field Events", icon:"fa-arrows-up-to-line" },
         relay: { label:"Relay Events", icon:"fa-people-group" }
       };
-
       container.innerHTML = ["track","field","relay"].map(cat => {
         const evList = cats[cat];
         if (!evList.length) return "";
@@ -565,7 +757,7 @@
         const checkedIn = evList.filter(ev => checkedSet.has(ev.id)).length;
         const items = evList.map(ev => {
           const checked = checkedSet.has(ev.id);
-          const safeId = ev.id.replace(/[^a-zA-Z0-9]/g, "_");
+          const safeId = (containerId + "_" + ev.id).replace(/[^a-zA-Z0-9]/g, "_");
           return `<label class="event-check-item${checked?" checked":""}" for="ev-${safeId}">
             <input type="checkbox" value="${ev.id}" id="ev-${safeId}"${checked?" checked":""}>
             ${ev.name}
@@ -582,7 +774,6 @@
           <div class="event-category-body">${items}</div>
         </div>`;
       }).join("");
-
       container.querySelectorAll(".event-category-header").forEach(hdr => {
         hdr.addEventListener("click", () => hdr.closest(".event-category").classList.toggle("open"));
       });
@@ -595,124 +786,262 @@
     }
 
     /* ═══════════════════════════════════════
-       SIMULATION ENGINE
+       DATA FETCHING — shared
+    ═══════════════════════════════════════ */
+    async function fetchAllEntries(selectedEvents, genderFilter, season) {
+      const resSnap = await window.firebaseDatabase.ref("Track/results").once("value");
+      const allEntries = [];
+      resSnap.forEach(child => {
+        const r = child.val();
+        if (!r.event_id || !selectedEvents.has(r.event_id)) return;
+        if (!r.mark) return;
+        const athlete = athletesMap[r.athlete_id] || {};
+        const meet = meetsMap[r.meet_id] || {};
+        const event = eventsMap[r.event_id] || {};
+        const school = (athlete.school || r.school || "").trim();
+        if ((r.gender || athlete.gender || "").toUpperCase() !== genderFilter) return;
+        if ((meet.season || "").toLowerCase() !== season) return;
+        const eventName = event.name || "Unknown Event";
+        const parsed = parseMark(r.mark, eventName);
+        const isField = isFieldEvent(eventName);
+        if (!isFinite(parsed) || isNaN(parsed)) return;
+        const isRel = isRelay(eventName);
+        const athleteId = isRel ? `relay_${school}_${r.event_id}` : (r.athlete_id || `anon_${school}_${Math.random()}`);
+        const athleteLabel = isRel ? `${school} Relay` : `${athlete.first_name||""} ${athlete.last_name||""}`.trim() || "Unknown";
+        if (!school) return;
+        allEntries.push({ athleteId, athleteLabel, school, eventId:r.event_id, eventName, mark:r.mark, parsed, relay:isRel, fieldEvent:isField, meetId:r.meet_id });
+      });
+      return allEntries;
+    }
+
+    // Get season-best per athlete per event, filtered to a school set
+    function buildSeasonBests(allEntries, schoolSet) {
+      const bestPerAthlete = {};
+      allEntries.forEach(e => {
+        if (schoolSet && !schoolSet.has(e.school)) return;
+        const key = `${e.athleteId}_${e.eventId}`;
+        const ex = bestPerAthlete[key];
+        const better = !ex || (e.fieldEvent ? e.parsed > ex.parsed : e.parsed < ex.parsed);
+        if (better) bestPerAthlete[key] = e;
+      });
+      return bestPerAthlete;
+    }
+
+    // Score a meet from season bests
+    function scoreMeet(bestPerAthlete, schools) {
+      const eventBuckets = {};
+      Object.values(bestPerAthlete).forEach(e => {
+        if (schools && !schools.has(e.school)) return;
+        if (!eventBuckets[e.eventId]) eventBuckets[e.eventId] = { name:e.eventName, relay:e.relay, fieldEvent:e.fieldEvent, bySchool:{} };
+        const b = eventBuckets[e.eventId];
+        if (!b.bySchool[e.school]) b.bySchool[e.school] = [];
+        b.bySchool[e.school].push(e);
+      });
+
+      const teamScores = {};
+      if (schools) schools.forEach(s => { teamScores[s] = { school:s, points:0 }; });
+      const eventResults = [];
+      const athletePointMap = {};
+
+      Object.values(eventBuckets).forEach(bucket => {
+        const allowed = bucket.relay ? 1 : 3;
+        const entries = [];
+        Object.values(bucket.bySchool).forEach(schoolEnts => {
+          schoolEnts.sort((a,b) => bucket.fieldEvent ? b.parsed-a.parsed : a.parsed-b.parsed);
+          entries.push(...schoolEnts.slice(0, allowed));
+        });
+        entries.sort((a,b) => bucket.fieldEvent ? b.parsed-a.parsed : a.parsed-b.parsed);
+        const scoring = bucket.relay ? SCORING.relay : SCORING.individual;
+        entries.forEach((e, i) => {
+          e.place = i + 1;
+          e.points = scoring[i] || 0;
+          if (!teamScores[e.school]) teamScores[e.school] = { school:e.school, points:0 };
+          teamScores[e.school].points += e.points;
+          if (!e.relay && e.points > 0) {
+            if (!athletePointMap[e.athleteId]) athletePointMap[e.athleteId] = { label:e.athleteLabel, school:e.school, points:0, placements:[] };
+            athletePointMap[e.athleteId].points += e.points;
+            athletePointMap[e.athleteId].placements.push({ event:bucket.name, place:e.place, pts:e.points });
+          }
+        });
+        if (entries.length) eventResults.push({ name:bucket.name, relay:bucket.relay, fieldEvent:bucket.fieldEvent, entries });
+      });
+
+      const highPointList = Object.values(athletePointMap).sort((a,b) => b.points-a.points).slice(0,10);
+      return { teamScores, eventResults, highPointList };
+    }
+
+    /* ═══════════════════════════════════════
+       QUALIFYING LOGIC
+    ═══════════════════════════════════════ */
+    function computeQualifiers(regionResults, allEntries, selectedEvents, topPerRegion, numWildcards) {
+      const topPerRegion_ = parseInt(topPerRegion) || 4;
+      const numWildcards_ = parseInt(numWildcards) || 8;
+
+      const qualifiedAthletesByEvent = {}; // eventName -> Set of athleteIds
+      const qualifiersList = []; // {athleteId, athleteLabel, school, eventName, mark, parsed, relay, fieldEvent, qualType, regionIdx, regionName, place}
+
+      regionResults.forEach((rr, ri) => {
+        rr.eventResults.forEach(ev => {
+          if (!qualifiedAthletesByEvent[ev.name]) qualifiedAthletesByEvent[ev.name] = new Set();
+          // Top N per region per event
+          const topEntries = ev.entries.slice(0, topPerRegion_);
+          topEntries.forEach(e => {
+            if (!qualifiedAthletesByEvent[ev.name].has(e.athleteId)) {
+              qualifiedAthletesByEvent[ev.name].add(e.athleteId);
+              qualifiersList.push({ ...e, qualType:"top", regionIdx:ri, regionName:rr.regionName });
+            }
+          });
+        });
+      });
+
+      // Wildcard: collect all remaining athletes across all region events, pick best N
+      regionResults.forEach((rr, ri) => {
+        rr.eventResults.forEach(ev => {
+          ev.entries.forEach(e => {
+            if (!qualifiedAthletesByEvent[ev.name]?.has(e.athleteId)) {
+              qualifiersList.push({ ...e, qualType:"wildcard_candidate", regionIdx:ri, regionName:rr.regionName });
+            }
+          });
+        });
+      });
+
+      // For wildcards: sort candidates by mark (best first), pick top numWildcards_ per event
+      const wildcardCandidatesByEvent = {};
+      qualifiersList.filter(q => q.qualType === "wildcard_candidate").forEach(q => {
+        if (!wildcardCandidatesByEvent[q.eventName]) wildcardCandidatesByEvent[q.eventName] = [];
+        wildcardCandidatesByEvent[q.eventName].push(q);
+      });
+
+      const finalQualifiers = qualifiersList.filter(q => q.qualType === "top");
+
+      Object.entries(wildcardCandidatesByEvent).forEach(([evName, candidates]) => {
+        const isField = candidates[0]?.fieldEvent;
+        candidates.sort((a,b) => isField ? b.parsed - a.parsed : a.parsed - b.parsed);
+        let added = 0;
+        for (const c of candidates) {
+          if (added >= numWildcards_) break;
+          if (!qualifiedAthletesByEvent[evName]?.has(c.athleteId)) {
+            finalQualifiers.push({ ...c, qualType:"wildcard" });
+            qualifiedAthletesByEvent[evName].add(c.athleteId);
+            added++;
+          }
+        }
+      });
+
+      // Build qualified school set
+      const qualifiedSchools = new Set(finalQualifiers.map(q => q.school));
+      return { finalQualifiers, qualifiedSchools };
+    }
+
+    /* ═══════════════════════════════════════
+       RUN SIMULATION
     ═══════════════════════════════════════ */
     async function runSimulation() {
+      if (currentMode === "direct") return runDirectSimulation();
+      return runQualifyingSimulation();
+    }
+
+    async function runDirectSimulation() {
       const selectedSchools = Array.from(document.querySelectorAll("#school-selector input:checked")).map(cb => cb.value);
       const selectedEvents = new Set(Array.from(document.querySelectorAll("#event-categories input:checked")).map(cb => cb.value));
-
       if (selectedSchools.length < 2) { alert("Please select at least 2 teams."); return; }
       if (selectedEvents.size === 0) { alert("Please select at least 1 event."); return; }
-
       const season = document.getElementById("sim-season").value.toLowerCase();
       const genderFilter = document.getElementById("sim-gender").value.toUpperCase();
       const resultsArea = document.getElementById("results-area");
 
       teamColorMap = {}; teamLogoMap = {};
-      selectedSchools.forEach((s, i) => {
-        teamColorMap[s] = TEAM_COLORS[i % TEAM_COLORS.length];
-        teamLogoMap[s] = logoSrc(s);
-      });
+      selectedSchools.forEach((s, i) => { teamColorMap[s] = TEAM_COLORS[i % TEAM_COLORS.length]; teamLogoMap[s] = logoSrc(s); });
 
       resultsArea.innerHTML = `<div class="loading-state"><div class="loading-spinner"></div><div class="loading-label">Simulating Meet…</div><div class="loading-sub">Fetching results &amp; crunching seasonal bests</div></div>`;
-
       try {
-        const resSnap = await window.firebaseDatabase.ref("Track/results").once("value");
+        const allEntries = await fetchAllEntries(selectedEvents, genderFilter, season);
         const selectedSet = new Set(selectedSchools);
-        const allEntries = [];
+        const bestPerAthlete = buildSeasonBests(allEntries, selectedSet);
+        const { teamScores, eventResults, highPointList } = scoreMeet(bestPerAthlete, selectedSet);
 
-        resSnap.forEach(child => {
-          const r = child.val();
-          if (!r.event_id || !selectedEvents.has(r.event_id)) return;
-          if (!r.mark) return;
-
-          const athlete = athletesMap[r.athlete_id] || {};
-          const meet = meetsMap[r.meet_id] || {};
-          const event = eventsMap[r.event_id] || {};
-          const school = (athlete.school || r.school || "").trim();
-
-          if (!selectedSet.has(school)) return;
-          if ((r.gender || athlete.gender || "").toUpperCase() !== genderFilter) return;
-          if ((meet.season || "").toLowerCase() !== season) return;
-
-          const eventName = event.name || "Unknown Event";
-          const parsed = parseMark(r.mark, eventName);
-          const isField = isFieldEvent(eventName);
-          if (!isFinite(parsed) || isNaN(parsed)) return;
-
-          const isRel = isRelay(eventName);
-          // For relays use school+event as key so multiple relay entries per team collapse correctly
-          const athleteId = isRel
-            ? `relay_${school}_${r.event_id}`
-            : (r.athlete_id || `anon_${school}_${Math.random()}`);
-          const athleteLabel = isRel
-            ? `${school} Relay`
-            : `${athlete.first_name||""} ${athlete.last_name||""}`.trim() || "Unknown";
-
-          allEntries.push({ athleteId, athleteLabel, school, eventId:r.event_id, eventName, mark:r.mark, parsed, relay:isRel, fieldEvent:isField });
-        });
-
-        if (!allEntries.length) {
+        if (!Object.values(bestPerAthlete).length) {
           resultsArea.innerHTML = `<div class="empty-state"><div class="empty-state-icon"><i class="fas fa-search"></i></div><h2>No Results Found</h2><p>No records matched <strong>${genderFilter==="M"?"Boys":"Girls"} &middot; ${season}</strong> for the selected teams and events.</p></div>`;
           return;
         }
+        renderResults(teamScores, eventResults, highPointList, genderFilter, season, null);
+      } catch(err) {
+        console.error(err);
+        resultsArea.innerHTML = `<div class="error-card"><h3><i class="fas fa-triangle-exclamation"></i> Simulation Failed</h3><p>${err.message}</p></div>`;
+      }
+    }
 
-        // Step 1: Keep only each athlete's season best per event
-        const bestPerAthlete = {};
+    async function runQualifyingSimulation() {
+      const selectedEvents = new Set(Array.from(document.querySelectorAll("#q-event-categories input:checked")).map(cb => cb.value));
+      const season = document.getElementById("sim-season").value.toLowerCase();
+      const genderFilter = document.getElementById("sim-gender").value.toUpperCase();
+      const topPerRegion = parseInt(document.getElementById("top-per-region").value) || 4;
+      const numWildcards = parseInt(document.getElementById("num-wildcards").value) || 8;
+      const resultsArea = document.getElementById("results-area");
+
+      const selectedMeetIds = Array.from(document.querySelectorAll("#qual-meets-list input:checked")).map(cb => cb.value);
+
+      if (selectedEvents.size === 0) { alert("Please select at least 1 event."); return; }
+      if (selectedMeetIds.length === 0) { alert("Please select at least 1 qualifying meet."); return; }
+
+      resultsArea.innerHTML = `<div class="loading-state"><div class="loading-spinner"></div><div class="loading-label">Running Qualifying Meets…</div><div class="loading-sub">Simulating ${selectedMeetIds.length} regional meets then determining qualifiers</div></div>`;
+
+      try {
+        // Fetch all entries
+        const allEntries = await fetchAllEntries(selectedEvents, genderFilter, season);
+
+        // Find which schools participated in these specific meets
+        const involvedSchools = new Set();
         allEntries.forEach(e => {
-          const key = `${e.athleteId}_${e.eventId}`;
-          const ex = bestPerAthlete[key];
-          const better = !ex || (e.fieldEvent ? e.parsed > ex.parsed : e.parsed < ex.parsed);
-          if (better) bestPerAthlete[key] = e;
+          if (selectedMeetIds.includes(e.meetId)) involvedSchools.add(e.school);
         });
 
-        // Step 2: Bucket by event
-        const eventBuckets = {};
-        Object.values(bestPerAthlete).forEach(e => {
-          if (!eventBuckets[e.eventId]) eventBuckets[e.eventId] = { name:e.eventName, relay:e.relay, fieldEvent:e.fieldEvent, bySchool:{} };
-          const b = eventBuckets[e.eventId];
-          if (!b.bySchool[e.school]) b.bySchool[e.school] = [];
-          b.bySchool[e.school].push(e);
-        });
+        // Build color map
+        teamColorMap = {}; teamLogoMap = {};
+        let colorIdx = 0;
+        involvedSchools.forEach(s => { teamColorMap[s] = TEAM_COLORS[colorIdx++ % TEAM_COLORS.length]; teamLogoMap[s] = logoSrc(s); });
 
-        // Step 3: Score each event — max 3 entries per school (1 for relays)
-        const teamScores = {};
-        selectedSchools.forEach(s => { teamScores[s] = { school:s, points:0 }; });
-        const eventResults = [];
-        // Per-athlete accumulator: athleteId -> { label, school, points, placements[] }
-        const athletePointMap = {};
-
-        Object.values(eventBuckets).forEach(bucket => {
-          const allowed = bucket.relay ? 1 : 3;
-          const entries = [];
-          Object.values(bucket.bySchool).forEach(schoolEnts => {
-            schoolEnts.sort((a,b) => bucket.fieldEvent ? b.parsed-a.parsed : a.parsed-b.parsed);
-            entries.push(...schoolEnts.slice(0, allowed));
+        // Run each selected meet acting as a "Region"
+        const meetResults = selectedMeetIds.map((meetId, ri) => {
+          const meetName = meetsMap[meetId]?.name || `Meet ${meetId}`;
+          const meetEntries = allEntries.filter(e => e.meetId === meetId);
+          
+          // Get the best mark per athlete IN THIS SPECIFIC MEET. 
+          const bests = buildSeasonBests(meetEntries, null); 
+          const { teamScores, eventResults, highPointList } = scoreMeet(bests, null);
+          
+          // Attach eventId to entries for qualification matching
+          eventResults.forEach(ev => {
+            const evId = allEventsList.find(e => e.name === ev.name)?.id;
+            ev.eventId = evId;
+            ev.entries.forEach(e => { e.eventId = evId; });
           });
-          entries.sort((a,b) => bucket.fieldEvent ? b.parsed-a.parsed : a.parsed-b.parsed);
-          const scoring = bucket.relay ? SCORING.relay : SCORING.individual;
-          entries.forEach((e, i) => {
-            e.place = i + 1;
-            e.points = scoring[i] || 0;
-            if (teamScores[e.school]) teamScores[e.school].points += e.points;
-            // Track individual athletes only (skip relays for high point)
-            if (!e.relay && e.points > 0) {
-              if (!athletePointMap[e.athleteId]) {
-                athletePointMap[e.athleteId] = { label:e.athleteLabel, school:e.school, points:0, placements:[] };
-              }
-              athletePointMap[e.athleteId].points += e.points;
-              athletePointMap[e.athleteId].placements.push({ event:bucket.name, place:e.place, pts:e.points });
-            }
-          });
-          if (entries.length) eventResults.push({ name:bucket.name, relay:bucket.relay, fieldEvent:bucket.fieldEvent, entries });
+          
+          return { regionIdx: ri, regionName: meetName, regionColor: REGION_COLORS[ri % REGION_COLORS.length], teamScores, eventResults, highPointList };
         });
 
-        // Build high point leaderboard (top 10 non-relay scorers)
-        const highPointList = Object.values(athletePointMap)
-          .sort((a,b) => b.points - a.points)
-          .slice(0, 10);
+        // Determine qualifiers
+        const { finalQualifiers, qualifiedSchools } = computeQualifiers(meetResults, allEntries, selectedEvents, topPerRegion, numWildcards);
 
-        renderResults(teamScores, eventResults, highPointList, genderFilter, season);
+        // Run championship with qualified schools (uses their entire season best)
+        const champBests = buildSeasonBests(allEntries, qualifiedSchools);
+        
+        // Only use athletes who qualified for that particular event
+        const qualAthIdsByEvent = {};
+        finalQualifiers.forEach(q => {
+          if (!qualAthIdsByEvent[q.eventName]) qualAthIdsByEvent[q.eventName] = new Set();
+          qualAthIdsByEvent[q.eventName].add(q.athleteId);
+        });
+        
+        // Filter bestPerAthlete to only qualified athletes per event
+        const champFiltered = {};
+        Object.entries(champBests).forEach(([key, e]) => {
+          if (qualAthIdsByEvent[e.eventName]?.has(e.athleteId)) champFiltered[key] = e;
+        });
+        
+        const { teamScores: champScores, eventResults: champEvents, highPointList: champHP } = scoreMeet(champFiltered, qualifiedSchools);
+
+        renderQualifyingResults(meetResults, finalQualifiers, champScores, champEvents, champHP, genderFilter, season, topPerRegion, numWildcards);
       } catch(err) {
         console.error(err);
         resultsArea.innerHTML = `<div class="error-card"><h3><i class="fas fa-triangle-exclamation"></i> Simulation Failed</h3><p>${err.message}</p></div>`;
@@ -722,7 +1051,7 @@
     /* ═══════════════════════════════════════
        RENDER RESULTS
     ═══════════════════════════════════════ */
-    function renderResults(teamScores, events, highPointList, gender, season) {
+    function renderResults(teamScores, events, highPointList, gender, season, qualInfo) {
       const resultsArea = document.getElementById("results-area");
       const standings = Object.values(teamScores).sort((a,b) => b.points-a.points);
 
@@ -739,21 +1068,14 @@
         </div>`;
       }).join("");
 
-      // ── HIGH POINT section ──
       const medClass = i => i===0?"m1":i===1?"m2":i===2?"m3":"";
       const pillClass = p => p<=3?`p${p}`:p<=8?`p${p}`:"";
       const hpCards = highPointList.map((ath, i) => {
         const color = teamColorMap[ath.school] || "#8899bb";
-        const pills = ath.placements
-          .sort((a,b) => a.place - b.place)
-          .map(pl => `<span class="hp-pill ${pillClass(pl.place)}">${pl.event} — ${pl.place}${["st","nd","rd"][pl.place-1]||"th"} (+${pl.pts})</span>`)
-          .join("");
+        const pills = ath.placements.sort((a,b) => a.place-b.place).map(pl => `<span class="hp-pill ${pillClass(pl.place)}">${pl.event} — ${pl.place}${["st","nd","rd"][pl.place-1]||"th"} (+${pl.pts})</span>`).join("");
         return `<div class="hp-athlete">
           <div class="hp-medal ${medClass(i)}">${["🥇","🥈","🥉"][i]||`#${i+1}`}</div>
-          <div class="hp-school-row">
-            ${logoTag(ath.school,"hp-logo")}
-            <span class="hp-school-name" style="color:${color}">${ath.school}</span>
-          </div>
+          <div class="hp-school-row">${logoTag(ath.school,"hp-logo")}<span class="hp-school-name" style="color:${color}">${ath.school}</span></div>
           <div class="hp-name">${ath.label}</div>
           <div class="hp-pts">${ath.points} pts</div>
           <div class="hp-pills">${pills}</div>
@@ -771,9 +1093,10 @@
       const eventCards = sortedEvents.map(event => {
         const rows = event.entries.map(e => {
           const color = teamColorMap[e.school] || "#8899bb";
+          const qualTag = e.qualType === "top" ? `<span class="qual-tag q-top">Regional</span>` : e.qualType === "wildcard" ? `<span class="qual-tag q-wild">Wildcard</span>` : "";
           return `<tr class="${rowClass(e.place)}">
             <td><span class="place-badge ${placeClass(e.place)}">${e.place}</span></td>
-            <td class="athlete-name">${e.athleteLabel}</td>
+            <td class="athlete-name">${e.athleteLabel}${qualTag}</td>
             <td><div class="school-cell">${logoTag(e.school,"cell-logo")}<span class="team-dot" style="background:${color}"></span>${e.school}</div></td>
             <td class="mark-val">${e.mark}</td>
             <td class="pts-val${e.points===0?" zero":""}">${e.points>0?"+"+e.points:"—"}</td>
@@ -811,12 +1134,214 @@
         </div>
         ${highPointList.length ? `
         <h2 class="section-heading"><i class="fas fa-star" style="color:var(--gold);font-size:1.1rem"></i> High Point Athletes</h2>
-        <div class="hp-card">
-          <div class="hp-grid">${hpCards}</div>
-        </div>` : ""}
+        <div class="hp-card"><div class="hp-grid">${hpCards}</div></div>` : ""}
         <h2 class="section-heading">Event Results</h2>
         <div class="events-grid">${eventCards}</div>
       </div>`;
+    }
+
+    function renderQualifyingResults(regionMeetResults, finalQualifiers, champScores, champEvents, champHP, gender, season, topPerRegion, numWildcards) {
+      const resultsArea = document.getElementById("results-area");
+
+      // Build qualifier summary per event
+      const qualByEvent = {};
+      finalQualifiers.forEach(q => {
+        if (!qualByEvent[q.eventName]) qualByEvent[q.eventName] = [];
+        qualByEvent[q.eventName].push(q);
+      });
+
+      // ── Regional meet summaries ──
+      const regionTabBtns = regionMeetResults.map((rr, ri) =>
+        `<button class="region-results-tab${ri===0?" active":""}" onclick="switchRegionTab(${ri})">${rr.regionName}</button>`
+      ).join("");
+
+      const regionPanels = regionMeetResults.map((rr, ri) => {
+        const standings = Object.values(rr.teamScores).sort((a,b) => b.points-a.points);
+        const podium = standings.slice(0,3).map((team,i) => {
+          const cls = ["p1","p2","p3"][i]||"";
+          const placeLabel = ["1ST","2ND","3RD"][i]||`${i+1}TH`;
+          const color = teamColorMap[team.school]||"#8899bb";
+          return `<div class="podium-item ${cls}" style="min-width:120px;padding:12px 14px;">
+            ${logoTag(team.school,"podium-logo")}
+            <div class="podium-rank" style="font-size:2rem">${placeLabel}</div>
+            <div class="podium-name"><span class="team-dot" style="background:${color}"></span>${team.school}</div>
+            <div class="podium-pts">${team.points}</div>
+            <div class="podium-pts-label">Points</div>
+          </div>`;
+        }).join("");
+
+        const allStandingsRows = standings.map((team,i) => {
+          const color = teamColorMap[team.school]||"#8899bb";
+          return `<tr>
+            <td style="width:36px;padding:7px 10px;"><span class="place-badge ${["g","s","b"][i]||"n"}" style="width:24px;height:24px;font-size:.75rem">${i+1}</span></td>
+            <td style="padding:7px 10px;">${logoTag(team.school,"cell-logo")}</td>
+            <td style="padding:7px 10px;font-weight:600"><span class="team-dot" style="background:${color};margin-right:5px"></span>${team.school}</td>
+            <td style="padding:7px 10px;font-family:var(--font-mono);color:var(--accent);font-weight:700">${team.points}</td>
+          </tr>`;
+        }).join("");
+
+        return `<div class="region-panel${ri===0?" active":""}" id="region-panel-${ri}">
+          <div style="padding:0 0 12px">
+            <div style="font-size:.75rem;color:var(--text-lo);margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em;font-weight:700">Team Standings</div>
+            <div class="podium-row" style="padding:0;gap:8px;margin-bottom:12px">${podium}</div>
+            <table class="event-table" style="background:var(--bg);border-radius:6px;overflow:hidden;border:1px solid var(--border)">
+              <thead><tr><th style="width:36px">#</th><th></th><th>School</th><th>Pts</th></tr></thead>
+              <tbody>${allStandingsRows}</tbody>
+            </table>
+          </div>
+        </div>`;
+      }).join("");
+
+      // ── Qualifier chips by event ──
+      const qualEventNames = Object.keys(qualByEvent).sort();
+      const qualEventCards = qualEventNames.map(evName => {
+        const qs = qualByEvent[evName];
+        qs.sort((a,b) => a.fieldEvent ? b.parsed - a.parsed : a.parsed - b.parsed);
+        const chips = qs.map(q => {
+          const color = teamColorMap[q.school]||"#8899bb";
+          const badgeLabel = q.qualType === "top" ? `${q.regionName} #${q.place}` : "Wildcard";
+          return `<div class="qualifier-chip ${q.qualType==="top"?"top-place":"wildcard"}">
+            ${logoTag(q.school,"cell-logo")}
+            <div style="flex:1;min-width:0">
+              <div style="font-size:.78rem;font-weight:700;color:var(--text-hi);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${q.athleteLabel}</div>
+              <div style="font-size:.68rem;color:var(--text-lo)">${q.school} &middot; ${q.mark}</div>
+            </div>
+            <span class="chip-badge">${badgeLabel}</span>
+          </div>`;
+        }).join("");
+        return `<div style="margin-bottom:12px">
+          <div style="font-family:var(--font-display);font-size:.9rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;color:var(--text-hi)">${evName} <span style="color:var(--text-lo);font-size:.72rem;font-weight:600">(${qs.length} qualifiers)</span></div>
+          <div class="qualifier-grid">${chips}</div>
+        </div>`;
+      }).join("");
+
+      // ── Championship ──
+      const champStandings = Object.values(champScores).sort((a,b) => b.points-a.points);
+      const champPodium = champStandings.map((team,i) => {
+        const cls = ["p1","p2","p3"][i]||"";
+        const placeLabel = ["1ST","2ND","3RD"][i]||`${i+1}TH`;
+        const color = teamColorMap[team.school]||"#8899bb";
+        return `<div class="podium-item ${cls}">
+          ${logoTag(team.school,"podium-logo")}
+          <div class="podium-rank">${placeLabel}</div>
+          <div class="podium-name"><span class="team-dot" style="background:${color}"></span>${team.school}</div>
+          <div class="podium-pts">${team.points}</div>
+          <div class="podium-pts-label">Points</div>
+        </div>`;
+      }).join("");
+
+      const medClass = i => i===0?"m1":i===1?"m2":i===2?"m3":"";
+      const pillClass = p => p<=3?`p${p}`:p<=8?`p${p}`:"";
+      const champHPCards = champHP.map((ath,i) => {
+        const color = teamColorMap[ath.school]||"#8899bb";
+        const pills = ath.placements.sort((a,b) => a.place-b.place).map(pl => `<span class="hp-pill ${pillClass(pl.place)}">${pl.event} — ${pl.place}${["st","nd","rd"][pl.place-1]||"th"} (+${pl.pts})</span>`).join("");
+        return `<div class="hp-athlete">
+          <div class="hp-medal ${medClass(i)}">${["🥇","🥈","🥉"][i]||`#${i+1}`}</div>
+          <div class="hp-school-row">${logoTag(ath.school,"hp-logo")}<span class="hp-school-name" style="color:${color}">${ath.school}</span></div>
+          <div class="hp-name">${ath.label}</div>
+          <div class="hp-pts">${ath.points} pts</div>
+          <div class="hp-pills">${pills}</div>
+        </div>`;
+      }).join("");
+
+      const placeClass = p => p===1?"g":p===2?"s":p===3?"b":"n";
+      const rowClass = p => p===1?"row-gold":p===2?"row-silver":p===3?"row-bronze":"";
+      const catOrder = {track:0, field:1, relay:2};
+      const sortedChampEvents = champEvents.slice().sort((a,b) => {
+        const da = catOrder[eventCategory(a.name)], db = catOrder[eventCategory(b.name)];
+        return da!==db ? da-db : a.name.localeCompare(b.name);
+      });
+
+      const champEventCards = sortedChampEvents.map(event => {
+        const rows = event.entries.map(e => {
+          const color = teamColorMap[e.school]||"#8899bb";
+          const qInfo = finalQualifiers.find(q => q.athleteId === e.athleteId && q.eventName === event.name);
+          const qualTag = qInfo
+            ? (qInfo.qualType==="top" ? `<span class="qual-tag q-top">${qInfo.regionName}</span>` : `<span class="qual-tag q-wild">Wildcard</span>`)
+            : "";
+          return `<tr class="${rowClass(e.place)}">
+            <td><span class="place-badge ${placeClass(e.place)}">${e.place}</span></td>
+            <td class="athlete-name">${e.athleteLabel}${qualTag}</td>
+            <td><div class="school-cell">${logoTag(e.school,"cell-logo")}<span class="team-dot" style="background:${color}"></span>${e.school}</div></td>
+            <td class="mark-val">${e.mark}</td>
+            <td class="pts-val${e.points===0?" zero":""}">${e.points>0?"+"+e.points:"—"}</td>
+          </tr>`;
+        }).join("");
+        const tags = [
+          event.relay?`<span class="event-tag relay">Relay</span>`:"",
+          event.fieldEvent?`<span class="event-tag field">Field</span>`:`<span class="event-tag">Track</span>`,
+          `<span class="event-tag">${event.entries.length} comp</span>`,
+        ].filter(Boolean).join("");
+        return `<div class="event-card collapsed">
+          <div class="event-header" onclick="this.closest('.event-card').classList.toggle('collapsed')">
+            <h3 class="event-name">${event.name}</h3>
+            <div class="event-tags">${tags}<i class="fas fa-chevron-down toggle-chev"></i></div>
+          </div>
+          <div class="event-body">
+            <table class="event-table">
+              <thead><tr><th style="width:46px;">#</th><th>Athlete</th><th>School</th><th style="text-align:right;">Mark</th><th>Pts</th></tr></thead>
+              <tbody>${rows}</tbody>
+            </table>
+          </div>
+        </div>`;
+      }).join("");
+
+      resultsArea.innerHTML = `<div class="results-wrap">
+
+        <div class="qual-pipeline">
+          <div class="qual-stage">
+            <div class="qual-stage-header">
+              <div class="qual-stage-icon regional"><i class="fas fa-map-marked-alt"></i></div>
+              <div>
+                <div class="qual-stage-title">Step 1 — Qualifying Meets</div>
+                <div class="qual-stage-sub">${regionMeetResults.length} selected meet${regionMeetResults.length!==1?"s":""} · Top ${topPerRegion} per event qualify + ${numWildcards} wildcards</div>
+              </div>
+            </div>
+            <div class="qual-stage-body">
+              <div class="region-results-tabs">${regionTabBtns}</div>
+              <div id="region-panels">${regionPanels}</div>
+            </div>
+          </div>
+
+          <div class="qual-stage">
+            <div class="qual-stage-header">
+              <div class="qual-stage-icon" style="background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);color:var(--green)"><i class="fas fa-check-double"></i></div>
+              <div>
+                <div class="qual-stage-title">Step 2 — Qualifiers</div>
+                <div class="qual-stage-sub">Top ${topPerRegion}/meet + ${numWildcards} pooled wildcards per event</div>
+              </div>
+            </div>
+            <div class="qual-stage-body">
+              <div class="qual-legend">
+                <div class="qual-legend-item"><div class="qual-legend-dot top-place"></div> Top Meet Qualifier</div>
+                <div class="qual-legend-item"><div class="qual-legend-dot wildcard"></div> Wildcard (next-best pooled overall)</div>
+              </div>
+              <div style="margin-top:12px">${qualEventCards || '<div style="color:var(--text-lo);padding:12px">No qualifiers found — check that meets have results in the selected season/gender/events.</div>'}</div>
+            </div>
+          </div>
+
+          <div class="qual-stage">
+            <div class="qual-stage-header">
+              <div class="qual-stage-icon state"><i class="fas fa-trophy"></i></div>
+              <div>
+                <div class="qual-stage-title">Step 3 — Championship Meet</div>
+                <div class="qual-stage-sub">${Object.keys(champScores).length} qualifying schools · NFHS 8-place scoring · ${gender==="M"?"Boys":"Girls"} ${season.charAt(0).toUpperCase()+season.slice(1)}</div>
+              </div>
+            </div>
+            <div class="qual-stage-body">
+              <div class="podium-row" style="padding:0 0 16px">${champPodium}</div>
+              ${champHP.length ? `<div style="margin-bottom:16px"><div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-lo);margin-bottom:8px">High Point Athletes</div><div class="hp-card"><div class="hp-grid">${champHPCards}</div></div></div>` : ""}
+              <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-lo);margin-bottom:8px">Event Results</div>
+              <div class="events-grid">${champEventCards}</div>
+            </div>
+          </div>
+        </div>
+      </div>`;
+    }
+
+    function switchRegionTab(idx) {
+      document.querySelectorAll(".region-results-tab").forEach((btn,i) => btn.classList.toggle("active", i===idx));
+      document.querySelectorAll(".region-panel").forEach((panel,i) => panel.classList.toggle("active", i===idx));
     }
 
     /* ─── Boot ─── */
