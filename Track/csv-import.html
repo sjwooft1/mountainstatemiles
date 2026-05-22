@@ -272,6 +272,7 @@
                                 <th>CSV Original Event</th>
                                 <th>Athlete / Relay</th>
                                 <th>School</th>
+                                <th>Division</th>
                                 <th>Mark</th>
                             </tr>
                         </thead>
@@ -295,6 +296,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <script src="firebase-config.js"></script>
+    <script src="firebase-helpers.js"></script>
 
     <script>
         class MeetImporter {
@@ -340,16 +342,50 @@
                 }
             }
 
+            // Parse division / round from AthleticsNet-style event titles
+            parseEventField(rawEvent) {
+                let name = String(rawEvent || "").trim();
+                let division = "";
+                let heat = "Finals";
+
+                const lower = name.toLowerCase();
+                if (/\bprelims?\b/.test(lower)) heat = "Prelims";
+                else if (/\bfinals?\b/.test(lower)) heat = "Finals";
+
+                for (const div of ["AAAA", "AAA", "AA", "A"]) {
+                    const re = new RegExp(`\\b${div}\\b`, "i");
+                    if (re.test(name)) {
+                        division = div;
+                        name = name.replace(re, " ").trim();
+                        break;
+                    }
+                }
+
+                name = name
+                    .replace(/\s*-\s*/g, " ")
+                    .replace(/\b(prelims?|finals?|heats?)\b/gi, "")
+                    .replace(/\s+/g, " ")
+                    .trim();
+
+                return { cleanEventName: name, division, heat };
+            }
+
             // String utility
             normalizeString(str) {
                 if (!str) return "";
                 let s = str.toLowerCase();
-                const noise = ["high school", "hs", "middle school", "ms", "junior high", "jh", "varsity", "jv", "freshman", "frosh", "open", "finals", "prelims", "heats"];
+                const noise = [
+                    "high school", "hs", "middle school", "ms", "junior high", "jh",
+                    "varsity", "jv", "freshman", "frosh", "open", "finals", "prelims", "heats",
+                    "aaaa", "aaa", "aa"
+                ];
                 noise.forEach((n) => (s = s.replace(new RegExp(`\\b${n}\\b`, "g"), "")));
                 s = s.replace(/\bmeters?\b/g, "m");
+                s = s.replace(/\b(\d+)\s*meter\b/g, "$1m");
                 s = s.replace(/(\d+)\s+m\b/g, "$1m"); 
                 s = s.replace(/(\d+x\d+)(?!m)/g, "$1m");
                 s = s.replace(/\bdash\b/g, "").replace(/\brun\b/g, "");
+                s = s.replace(/\bhurdles?\b/g, "hurdle");
                 return s.replace(/[^a-z0-9]/g, "");
             }
 
@@ -357,14 +393,23 @@
             resolveEventId(rawName, gender) {
                 const g = gender === "W" || gender === "F" ? "girls" : "boys";
                 const baseNorm = this.normalizeString(rawName);
-                const primaryKey = g + baseNorm;
-                
-                if (this.normalizedEventMap[primaryKey]) return this.normalizedEventMap[primaryKey];
-                if (this.normalizedEventMap[baseNorm]) return this.normalizedEventMap[baseNorm];
-                
-                for (let [normKey, id] of Object.entries(this.normalizedEventMap)) {
-                    if (normKey.includes(g) && (normKey.includes(baseNorm) || baseNorm.includes(normKey.replace(g, "")))) {
-                        return id;
+                const candidates = new Set([baseNorm]);
+                if (baseNorm.endsWith("hurdle")) candidates.add(baseNorm + "s");
+                if (baseNorm.endsWith("hurdles")) candidates.add(baseNorm.slice(0, -1));
+                candidates.add(baseNorm.replace(/(\d+)m/, "$1meter"));
+
+                for (const norm of candidates) {
+                    const primaryKey = g + norm;
+                    if (this.normalizedEventMap[primaryKey]) return this.normalizedEventMap[primaryKey];
+                    if (this.normalizedEventMap[norm]) return this.normalizedEventMap[norm];
+                }
+
+                for (const norm of candidates) {
+                    for (let [normKey, id] of Object.entries(this.normalizedEventMap)) {
+                        const stripped = normKey.replace(/^(boys|girls)/, "");
+                        if (normKey.includes(g) && (normKey.includes(norm) || norm.includes(stripped) || stripped.includes(norm))) {
+                            return id;
+                        }
                     }
                 }
                 return null;
@@ -416,10 +461,14 @@
                 this.parsedRows = [];
                 const lines = text.split("\n");
                 const uniqueEvents = new Set();
+                let headerCols = null;
 
                 lines.forEach((line, idx) => {
                     if (line.trim() === "") return; // skip blanks
-                    if (idx === 0 && line.toLowerCase().includes("event_name")) return; // skip header
+                    if (line.toLowerCase().includes("event_name")) {
+                        headerCols = this.parseCSVLine(line).map(h => h.toLowerCase().trim());
+                        return;
+                    }
 
                     const p = this.parseCSVLine(line);
                     if (p.length < 5) return;
@@ -427,18 +476,33 @@
                     const rawEvent = p[0];
                     const gender = p[7] || "Boys";
                     const cleanGender = gender.toLowerCase().includes("girl") || gender.toLowerCase().startsWith("w") || gender.toLowerCase().startsWith("f") ? "W" : "M";
-                    const eventId = this.resolveEventId(rawEvent, cleanGender);
+                    const parsedEvent = this.parseEventField(rawEvent);
+                    const eventId = this.resolveEventId(parsedEvent.cleanEventName, cleanGender);
+
+                    let division = parsedEvent.division;
+                    if (headerCols) {
+                        const divIdx = headerCols.findIndex(h => h === "division" || h === "class");
+                        if (divIdx >= 0) {
+                            const fromCol = normalizeDivision(p[divIdx]);
+                            if (fromCol) division = fromCol;
+                        }
+                    } else if (p[8]) {
+                        const fromCol = normalizeDivision(p[8]);
+                        if (fromCol) division = fromCol;
+                    }
 
                     this.parsedRows.push({
                         raw_event: rawEvent,
+                        clean_event: parsedEvent.cleanEventName,
                         event_id: eventId,
                         place: p[1],
                         grade: p[2],
                         athlete_name: p[3],
                         mark: p[4],
                         school: p[5] || "Unattached",
-                        heat: rawEvent.toLowerCase().includes("prelim") ? "Prelims" : "Finals",
+                        heat: parsedEvent.heat,
                         gender: cleanGender,
+                        division,
                         meet_id: meetId,
                     });
                     uniqueEvents.add(rawEvent);
@@ -497,10 +561,11 @@
                                 ? `<span class="badge badge-success">✓ Matched</span>` 
                                 : `<span class="badge badge-danger">✗ Invalid</span>`}
                         </td>
-                        <td>${r.event_id ? `<strong>${this.eventIdToName[r.event_id]}</strong>` : `<span class="text-muted">No Match</span>`}</td>
+                        <td>${r.event_id ? `<strong>${this.eventIdToName[r.event_id]}</strong>` : `<span class="text-muted">No Match</span>`}<br><span style="font-size:0.7rem;color:var(--text-muted)">${r.clean_event || ""}</span></td>
                         <td style="color: var(--text-muted); font-size: 0.75rem;">${r.raw_event}</td>
                         <td>${r.athlete_name}</td>
                         <td>${r.school}</td>
+                        <td>${r.division || '—'}</td>
                         <td><strong>${r.mark}</strong></td>
                     </tr>
                 `).join("");
@@ -578,6 +643,7 @@
                         school: row.school,
                         timestamp: new Date().toISOString(),
                     };
+                    if (row.division) resultData.division = row.division;
                 
                     // If it's a relay, also save the specific runners' names as a bonus field
                     if (isRelay) {

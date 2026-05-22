@@ -95,6 +95,7 @@ function normalizeRow(result, maps) {
     markType,
     placement,
     heat: result.heat || "",
+    division: String(result.division || "").trim().toUpperCase(),
     bestTimeSeconds,
     bestFieldMark,
     timestamp: result.timestamp || "",

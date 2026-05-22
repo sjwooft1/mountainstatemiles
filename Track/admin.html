@@ -867,6 +867,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script src="firebase-config.js"></script>
+<script src="firebase-helpers.js"></script>
 <script src="../admin-logger.js"></script>
 <script>
   // ==========================================
@@ -1112,6 +1113,17 @@
                 </select>
               </div>
             </div>
+
+            <div class="form-group">
+              <label class="form-label">Division</label>
+              <select id="manual-division" class="form-input">
+                <option value="">— None —</option>
+                <option value="A">A</option>
+                <option value="AA">AA</option>
+                <option value="AAA">AAA</option>
+                <option value="AAAA">AAAA</option>
+              </select>
+            </div>
             
             <div style="display: flex; gap: 12px; margin-top: 8px;">
               <button class="btn btn-primary" onclick="submitManualResult()" style="flex: 1; justify-content: center;">✅ Submit Result</button>
@@ -1136,6 +1148,7 @@
     const placement = document.getElementById('manual-placement').value || null;
     const heat = document.getElementById('manual-heat').value.trim() || null;
     const gender = document.getElementById('manual-gender').value || '';
+    const division = normalizeDivision(document.getElementById('manual-division')?.value || '');
     
     // Validation
     if (!meetId) {
@@ -1166,6 +1179,7 @@
         gender: gender,
         timestamp: new Date().toISOString()
       };
+      if (division) resultData.division = division;
       
       const ref = await window.firebaseDatabase.ref('Track/results').push(resultData);
       
@@ -1469,6 +1483,24 @@
           </div>
         `;
       }
+
+      if (col.type === 'multiselect') {
+        const selected = normalizeDivisions(value);
+        return `
+          <div class="form-group">
+            <label class="form-label">${col.label}</label>
+            <div style="display:flex;flex-wrap:wrap;gap:12px;padding:8px 0;">
+              ${(col.options || []).map(opt => `
+                <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.9rem;">
+                  <input type="checkbox" name="${col.key}" value="${opt}" ${selected.includes(opt) ? 'checked' : ''}>
+                  ${opt}
+                </label>
+              `).join('')}
+            </div>
+            <p style="font-size:0.8rem;color:var(--muted);margin:6px 0 0;">Leave unchecked for a single-class meet.</p>
+          </div>
+        `;
+      }
       
       return `
         <div class="form-group">
@@ -1510,6 +1542,18 @@
       if (input.type === 'number') value = value ? parseFloat(value) : null;
       formData[input.name] = value;
     });
+
+    const divisionChecks = modal.querySelectorAll('input[type="checkbox"][name="divisions"]:checked');
+    if (modal.querySelector('input[type="checkbox"][name="divisions"]')) {
+      const picked = Array.from(divisionChecks).map(cb => cb.value);
+      if (picked.length) formData.divisions = picked;
+      else delete formData.divisions;
+    }
+    if (formData.division !== undefined) {
+      const div = normalizeDivision(formData.division);
+      if (div) formData.division = div;
+      else delete formData.division;
+    }
     
     // Validate required fields for results
     if (currentSection === 'results') {
@@ -1646,7 +1690,8 @@
       { key: 'date', label: 'Date', type: 'date' },
       { key: 'description', label: 'Description', type: 'text' },
       { key: 'location', label: 'Location', type: 'text' },
-      { key: 'season', label: 'Season', type: 'select', options: ['indoor', 'outdoor'] }
+      { key: 'season', label: 'Season', type: 'select', options: ['indoor', 'outdoor'] },
+      { key: 'divisions', label: 'Divisions', type: 'multiselect', options: WV_DIVISIONS }
     ];
     
     currentOptions = {
@@ -1699,6 +1744,7 @@
                 <th class="sortable" onclick="sortMeetsTable('name')">Name</th>
                 <th class="sortable" onclick="sortMeetsTable('date')">Date</th>
                 <th class="sortable" onclick="sortMeetsTable('season')">Season</th>
+                <th>Divisions</th>
                 <th class="sortable" onclick="sortMeetsTable('location')">Location</th>
                 <th style="width:120px;">Actions</th>
               </tr>
@@ -1710,6 +1756,7 @@
                   <td><strong>${row.name}</strong><br><span style="font-size:0.8em; color:var(--muted)">${row.slug}</span></td>
                   <td>${row.date}</td>
                   <td><span style="padding:2px 6px; border-radius:4px; font-size:0.8em; background:${row.season === 'indoor' ? '#0f3460' : '#4a2511'}">${row.season}</span></td>
+                  <td>${formatDivisionsCell(row.divisions)}</td>
                   <td>${row.location || '—'}</td>
                   <td>
                     <button class="btn btn-secondary btn-small" onclick="openEditModal('${row.id}')">Edit</button>
@@ -2011,6 +2058,7 @@
           <td><strong>${row.name}</strong><br><span style="font-size:0.8em; color:var(--muted)">${row.slug}</span></td>
           <td>${row.date}</td>
           <td><span style="padding:2px 6px; border-radius:4px; font-size:0.8em; background:${row.season === 'indoor' ? '#0f3460' : '#4a2511'}">${row.season}</span></td>
+          <td>${formatDivisionsCell(row.divisions)}</td>
           <td>${row.location || '—'}</td>
           <td>
             <button class="btn btn-secondary btn-small" onclick="openEditModal('${row.id}')">Edit</button>
@@ -2022,6 +2070,12 @@
     document.getElementById('meets-checkbox-all').checked = false;
     updateMeetsSelectionCount();
     updateRecordCount(filtered.length);
+  }
+
+  function formatDivisionsCell(divisions) {
+    const list = normalizeDivisions(divisions);
+    if (!list.length) return '<span style="color:var(--muted)">—</span>';
+    return list.map(d => `<span style="display:inline-block;margin:2px 4px 2px 0;padding:2px 8px;border-radius:999px;font-size:0.75em;font-weight:700;background:rgba(255,123,45,0.15);border:1px solid rgba(255,123,45,0.35);">${d}</span>`).join('');
   }
 
   function sortMeetsTable(column) {
@@ -2843,6 +2897,7 @@
         mark: result.mark || '—',
         placement: result.placement || '—',
         heat: result.heat || '—',
+        division: result.division || '—',
         gender: result.gender || '—',
         timestamp: result.timestamp || ''
       });
@@ -2861,7 +2916,8 @@
       { key: 'meet_name', label: 'Meet', type: 'text' },
       { key: 'mark', label: 'Mark', type: 'text' },
       { key: 'placement', label: 'Place', type: 'number' },
-      { key: 'heat', label: 'Heat', type: 'text' }
+      { key: 'heat', label: 'Heat', type: 'text' },
+      { key: 'division', label: 'Division', type: 'select', options: ['', ...WV_DIVISIONS] }
     ];
     
     currentOptions = {
@@ -2905,6 +2961,9 @@
             <option value="M">Men/Boys</option>
             <option value="W">Women/Girls</option>
           </select>
+          <select id="filter-division-quick" class="form-input" style="width:auto; min-width: 120px; font-size:0.85rem; padding:6px 10px;">
+            <option value="">All divisions</option>
+          </select>
           <button class="btn btn-secondary btn-small" onclick="clearQuickResultsFilters()" style="font-size:0.8rem;">Clear</button>
         </div>
 
@@ -2926,6 +2985,7 @@
                 <th class="sortable" onclick="sortTable('mark')">Mark</th>
                 <th class="sortable" onclick="sortTable('placement')">Place</th>
                 <th class="sortable" onclick="sortTable('heat')">Heat</th>
+                <th class="sortable" onclick="sortTable('division')">Division</th>
                 <th style="width: 120px;">Actions</th>
               </tr>
             </thead>
@@ -3022,6 +3082,7 @@
         <td><strong>${row.mark}</strong></td>
         <td>${row.placement}</td>
         <td>${row.heat}</td>
+        <td>${row.division && row.division !== '—' ? row.division : '<span style="color:var(--muted)">—</span>'}</td>
         <td>
           <button class="btn btn-secondary btn-small" onclick="openEditResultModal('${row.id}')">Edit</button>
           <button class="btn btn-danger btn-small" onclick="confirmDelete('${row.id}')">Del</button>
@@ -3035,16 +3096,22 @@
     const meetSel = document.getElementById('filter-meet-quick');
     const eventSel = document.getElementById('filter-event-quick');
     const genderSel = document.getElementById('filter-gender-quick');
+    const divisionSel = document.getElementById('filter-division-quick');
     const searchInput = document.getElementById('filter-search-quick');
     if (!meetSel || !eventSel || !genderSel || !searchInput) return;
 
     const meets = [...new Set(data.map(r => r.meet_name))].filter(Boolean).sort();
     const events = [...new Set(data.map(r => r.event_name))].filter(Boolean).sort();
     const genders = [...new Set(data.map(r => r.event_gender).filter(Boolean))].sort();
+    const divisions = [...new Set(data.map(r => r.division).filter(d => d && d !== '—'))].sort();
 
     meetSel.innerHTML = '<option value=\"\">All meets</option>' + meets.map(m => `<option value=\"${m}\">${m}</option>`).join('');
     eventSel.innerHTML = '<option value=\"\">All events</option>' + events.map(e => `<option value=\"${e}\">${e}</option>`).join('');
     genderSel.innerHTML = '<option value=\"\">Any gender</option>' + genders.map(g => `<option value=\"${g}\">${g}</option>`).join('');
+    if (divisionSel) {
+      divisionSel.innerHTML = '<option value=\"\">All divisions</option>' + divisions.map(d => `<option value=\"${d}\">${d}</option>`).join('');
+      divisionSel.onchange = applyQuickResultsFilters;
+    }
 
     meetSel.onchange = applyQuickResultsFilters;
     eventSel.onchange = applyQuickResultsFilters;
@@ -3060,10 +3127,12 @@
     const meetSel = document.getElementById('filter-meet-quick');
     const eventSel = document.getElementById('filter-event-quick');
     const genderSel = document.getElementById('filter-gender-quick');
+    const divisionSel = document.getElementById('filter-division-quick');
     const searchInput = document.getElementById('filter-search-quick');
     if (meetSel) meetSel.value = '';
     if (eventSel) eventSel.value = '';
     if (genderSel) genderSel.value = '';
+    if (divisionSel) divisionSel.value = '';
     if (searchInput) searchInput.value = '';
     applyQuickResultsFilters();
   }
@@ -3073,11 +3142,13 @@
     const meetSel = document.getElementById('filter-meet-quick');
     const eventSel = document.getElementById('filter-event-quick');
     const genderSel = document.getElementById('filter-gender-quick');
+    const divisionSel = document.getElementById('filter-division-quick');
     const searchInput = document.getElementById('filter-search-quick');
 
     const meet = meetSel ? meetSel.value : '';
     const event = eventSel ? eventSel.value : '';
     const gender = genderSel ? genderSel.value : '';
+    const division = divisionSel ? divisionSel.value : '';
     const q = (searchInput ? searchInput.value : '').toLowerCase().trim();
 
     let rows = window.currentRawData.slice();
@@ -3085,6 +3156,7 @@
       if (meet && r.meet_name !== meet) return false;
       if (event && r.event_name !== event) return false;
       if (gender && r.event_gender !== gender) return false;
+      if (division && r.division !== division) return false;
       if (q) {
         const hay = `${r.athlete_name || ''} ${r.athlete_school || ''}`.toLowerCase();
         if (!hay.includes(q)) return false;
@@ -4474,6 +4546,13 @@
           <option value="W">Women</option>
         </select>
       </div>
+      <div class="form-group">
+        <label class="form-label">Division</label>
+        <select name="division" class="form-input">
+          <option value="">— None —</option>
+          ${WV_DIVISIONS.map(d => `<option value="${d}">${d}</option>`).join('')}
+        </select>
+      </div>
     `;
     
     openModal('Add Result', formHTML, 'Create');
@@ -4536,6 +4615,13 @@
           <option value="">-- Auto --</option>
           <option value="M" ${record.gender === 'M' ? 'selected' : ''}>Men</option>
           <option value="W" ${record.gender === 'W' ? 'selected' : ''}>Women</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Division</label>
+        <select name="division" class="form-input">
+          <option value="">— None —</option>
+          ${WV_DIVISIONS.map(d => `<option value="${d}" ${record.division === d ? 'selected' : ''}>${d}</option>`).join('')}
         </select>
       </div>
     `;

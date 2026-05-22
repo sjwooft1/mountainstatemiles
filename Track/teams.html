@@ -206,7 +206,7 @@
         for (const team of teams.filter(t => t.name.toLowerCase().includes(filter.toLowerCase()))) {
           const card = document.createElement("div");
           card.className = "team-card";
-          const logoUrl = `../CrossCountry/assets/team logos/${team.slug}.png`;
+          const logoUrl = `../assets/team logos/${team.slug}.png`;
           const fallbackLogo = `../assets/Wvruns Logo.png`;
           card.innerHTML = `
             <img src="${logoUrl}" alt="${team.name} Logo" onerror="this.onerror=null; this.src='${fallbackLogo}';">

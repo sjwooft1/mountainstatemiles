@@ -4,6 +4,49 @@
 const db = window.firebaseDatabase;
 const CC_PREFIX = 'Track'; // CrossCountry data prefix
 
+/** WV high school classification divisions */
+const WV_DIVISIONS = ['A', 'AA', 'AAA', 'AAAA'];
+
+function normalizeDivision(value) {
+  const d = String(value || '').trim().toUpperCase();
+  return WV_DIVISIONS.includes(d) ? d : '';
+}
+
+function normalizeDivisions(value) {
+  if (!value) return [];
+  const list = Array.isArray(value)
+    ? value
+    : String(value).split(/[,|]/);
+  const seen = new Set();
+  const out = [];
+  list.forEach((item) => {
+    const d = normalizeDivision(item);
+    if (d && !seen.has(d)) {
+      seen.add(d);
+      out.push(d);
+    }
+  });
+  return WV_DIVISIONS.filter((d) => seen.has(d));
+}
+
+function divisionsFromResults(results, meetDivisions) {
+  const configured = normalizeDivisions(meetDivisions);
+  if (configured.length) return configured;
+  const fromData = new Set();
+  (results || []).forEach((r) => {
+    const d = normalizeDivision(r.division);
+    if (d) fromData.add(d);
+  });
+  return WV_DIVISIONS.filter((d) => fromData.has(d));
+}
+
+function resultMatchesDivision(resultDivision, activeDivision) {
+  if (!activeDivision || activeDivision === 'ALL') return true;
+  const div = normalizeDivision(resultDivision);
+  if (!div) return false;
+  return div === activeDivision;
+}
+
 // Helper function to convert Firebase snapshot to array
 function snapshotToArray(snapshot) {
   if (!snapshot.exists()) return [];

@@ -328,6 +328,16 @@
                   <option value="W">Girls</option>
                 </select>
               </div>
+              <div class="filter-group">
+                <label class="filter-label">Division</label>
+                <select id="sim-division" class="filter-select">
+                  <option value="">All divisions</option>
+                  <option value="A">A</option>
+                  <option value="AA">AA</option>
+                  <option value="AAA">AAA</option>
+                  <option value="AAAA">AAAA</option>
+                </select>
+              </div>
             </div>
           </div>
 
@@ -488,7 +498,7 @@
 
     /* ─── Logo helpers ─── */
     function schoolSlug(name) { return name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''); }
-    function logoSrc(school) { return `../CrossCountry/assets/team logos/${schoolSlug(school)}.png`; }
+    function logoSrc(school) { return `../assets/team logos/${schoolSlug(school)}.png`; }
     function logoTag(school, cls) {
       return `<img src="${logoSrc(school)}" class="${cls}" alt="" loading="lazy" onerror="this.onerror=null;this.src='${FALLBACK_LOGO}'">`;
     }
@@ -724,11 +734,13 @@
         const checked = checkedSet.has(meet.id);
         const safeId = meet.id.replace(/[^a-zA-Z0-9]/g, "_");
         const dateStr = meet.date ? ` &middot; ${meet.date}` : '';
+        const divs = normalizeDivisions(meet.divisions);
+        const divBadge = divs.length ? ` · ${divs.join('/')}` : '';
         return `<label class="school-item${checked?" checked":""}" for="meet-${safeId}">
           <input type="checkbox" value="${meet.id}" id="meet-${safeId}"${checked?" checked":""}>
           <div style="display:flex;flex-direction:column;flex:1">
             <span style="font-weight:700;margin-bottom:2px">${meet.name}</span>
-            <span style="font-size:0.75rem;color:var(--text-lo);text-transform:uppercase;letter-spacing:0.04em">${meet.season || ''}${dateStr}</span>
+            <span style="font-size:0.75rem;color:var(--text-lo);text-transform:uppercase;letter-spacing:0.04em">${meet.season || ''}${dateStr}${divBadge}</span>
           </div>
         </label>`;
       }).join("");
@@ -788,7 +800,7 @@
     /* ═══════════════════════════════════════
        DATA FETCHING — shared
     ═══════════════════════════════════════ */
-    async function fetchAllEntries(selectedEvents, genderFilter, season) {
+    async function fetchAllEntries(selectedEvents, genderFilter, season, divisionFilter) {
       const resSnap = await window.firebaseDatabase.ref("Track/results").once("value");
       const allEntries = [];
       resSnap.forEach(child => {
@@ -801,6 +813,7 @@
         const school = (athlete.school || r.school || "").trim();
         if ((r.gender || athlete.gender || "").toUpperCase() !== genderFilter) return;
         if ((meet.season || "").toLowerCase() !== season) return;
+        if (divisionFilter && !resultMatchesDivision(r.division, divisionFilter)) return;
         const eventName = event.name || "Unknown Event";
         const parsed = parseMark(r.mark, eventName);
         const isField = isFieldEvent(eventName);
@@ -809,9 +822,20 @@
         const athleteId = isRel ? `relay_${school}_${r.event_id}` : (r.athlete_id || `anon_${school}_${Math.random()}`);
         const athleteLabel = isRel ? `${school} Relay` : `${athlete.first_name||""} ${athlete.last_name||""}`.trim() || "Unknown";
         if (!school) return;
-        allEntries.push({ athleteId, athleteLabel, school, eventId:r.event_id, eventName, mark:r.mark, parsed, relay:isRel, fieldEvent:isField, meetId:r.meet_id });
+        allEntries.push({ athleteId, athleteLabel, school, eventId:r.event_id, eventName, mark:r.mark, parsed, relay:isRel, fieldEvent:isField, meetId:r.meet_id, division: normalizeDivision(r.division) });
       });
       return allEntries;
+    }
+
+    function getMeetDivisionLabels(meetId, entries) {
+      const meet = meetsMap[meetId];
+      const configured = normalizeDivisions(meet?.divisions);
+      if (configured.length) return configured;
+      const fromEntries = new Set();
+      (entries || []).filter(e => e.meetId === meetId).forEach(e => {
+        if (e.division) fromEntries.add(e.division);
+      });
+      return WV_DIVISIONS.filter(d => fromEntries.has(d));
     }
 
     // Get season-best per athlete per event, filtered to a school set
@@ -948,6 +972,7 @@
       if (selectedEvents.size === 0) { alert("Please select at least 1 event."); return; }
       const season = document.getElementById("sim-season").value.toLowerCase();
       const genderFilter = document.getElementById("sim-gender").value.toUpperCase();
+      const divisionFilter = document.getElementById("sim-division")?.value || "";
       const resultsArea = document.getElementById("results-area");
 
       teamColorMap = {}; teamLogoMap = {};
@@ -955,7 +980,7 @@
 
       resultsArea.innerHTML = `<div class="loading-state"><div class="loading-spinner"></div><div class="loading-label">Simulating Meet…</div><div class="loading-sub">Fetching results &amp; crunching seasonal bests</div></div>`;
       try {
-        const allEntries = await fetchAllEntries(selectedEvents, genderFilter, season);
+        const allEntries = await fetchAllEntries(selectedEvents, genderFilter, season, divisionFilter);
         const selectedSet = new Set(selectedSchools);
         const bestPerAthlete = buildSeasonBests(allEntries, selectedSet);
         const { teamScores, eventResults, highPointList } = scoreMeet(bestPerAthlete, selectedSet);
@@ -975,6 +1000,7 @@
       const selectedEvents = new Set(Array.from(document.querySelectorAll("#q-event-categories input:checked")).map(cb => cb.value));
       const season = document.getElementById("sim-season").value.toLowerCase();
       const genderFilter = document.getElementById("sim-gender").value.toUpperCase();
+      const divisionFilter = document.getElementById("sim-division")?.value || "";
       const topPerRegion = parseInt(document.getElementById("top-per-region").value) || 4;
       const numWildcards = parseInt(document.getElementById("num-wildcards").value) || 8;
       const resultsArea = document.getElementById("results-area");
@@ -988,7 +1014,7 @@
 
       try {
         // Fetch all entries
-        const allEntries = await fetchAllEntries(selectedEvents, genderFilter, season);
+        const allEntries = await fetchAllEntries(selectedEvents, genderFilter, season, divisionFilter);
 
         // Find which schools participated in these specific meets
         const involvedSchools = new Set();
@@ -1001,23 +1027,32 @@
         let colorIdx = 0;
         involvedSchools.forEach(s => { teamColorMap[s] = TEAM_COLORS[colorIdx++ % TEAM_COLORS.length]; teamLogoMap[s] = logoSrc(s); });
 
-        // Run each selected meet acting as a "Region"
-        const meetResults = selectedMeetIds.map((meetId, ri) => {
+        // Run each selected meet (and division, when applicable) as a "Region"
+        let regionCounter = 0;
+        const meetResults = selectedMeetIds.flatMap((meetId) => {
           const meetName = meetsMap[meetId]?.name || `Meet ${meetId}`;
-          const meetEntries = allEntries.filter(e => e.meetId === meetId);
-          
-          // Get the best mark per athlete IN THIS SPECIFIC MEET. 
-          const bests = buildSeasonBests(meetEntries, null); 
-          const { teamScores, eventResults, highPointList } = scoreMeet(bests, null);
-          
-          // Attach eventId to entries for qualification matching
-          eventResults.forEach(ev => {
-            const evId = allEventsList.find(e => e.name === ev.name)?.id;
-            ev.eventId = evId;
-            ev.entries.forEach(e => { e.eventId = evId; });
+          const configuredDivs = getMeetDivisionLabels(meetId, allEntries);
+          const divsToRun = divisionFilter
+            ? [divisionFilter]
+            : (configuredDivs.length ? configuredDivs : [""]);
+
+          return divsToRun.map((div) => {
+            const ri = regionCounter++;
+            let meetEntries = allEntries.filter(e => e.meetId === meetId);
+            if (div) meetEntries = meetEntries.filter(e => resultMatchesDivision(e.division, div));
+
+            const bests = buildSeasonBests(meetEntries, null);
+            const { teamScores, eventResults, highPointList } = scoreMeet(bests, null);
+
+            eventResults.forEach(ev => {
+              const evId = allEventsList.find(e => e.name === ev.name)?.id;
+              ev.eventId = evId;
+              ev.entries.forEach(e => { e.eventId = evId; });
+            });
+
+            const regionName = div ? `${meetName} (${div})` : meetName;
+            return { regionIdx: ri, regionName, regionColor: REGION_COLORS[ri % REGION_COLORS.length], teamScores, eventResults, highPointList };
           });
-          
-          return { regionIdx: ri, regionName: meetName, regionColor: REGION_COLORS[ri % REGION_COLORS.length], teamScores, eventResults, highPointList };
         });
 
         // Determine qualifiers
