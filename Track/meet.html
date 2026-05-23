@@ -278,7 +278,6 @@
      DATA STORE & STATE
   ═══════════════════════════════════ */
   const FALLBACK_LOGO = "../assets/Wvruns Logo.png";
-  const POINTS = { 1:10, 2:8, 3:6, 4:5, 5:4, 6:3, 7:2, 8:1 };
 
   let meetInfo = null;
   let rawResults = [];
@@ -749,10 +748,12 @@
     const events = structuredData[activeGender];
     Object.keys(events).forEach(eventName => {
       const finals = events[eventName]['Finals'] || [];
-      finals.forEach(r => {
-        if (r.placement && POINTS[r.placement]) {
+      if (!finals.length) return;
+      const scored = applyNfhsScoringFromPlacements(finals.map((r) => ({ ...r })));
+      scored.forEach((r) => {
+        if (r.points > 0) {
           if (!scores[r.school]) scores[r.school] = 0;
-          scores[r.school] += POINTS[r.placement];
+          scores[r.school] += r.points;
         }
       });
     });
@@ -766,7 +767,7 @@
       return `<tr>
         <td><span class="rank-num${rankCls}">${i+1}</span></td>
         <td><div class="school-cell">${logoTag(team.school,'standings-logo')}<span style="font-weight:600">${team.school}</span></div></td>
-        <td style="text-align:right;padding-right:24px"><span class="team-pts">${team.pts}</span></td>
+        <td style="text-align:right;padding-right:24px"><span class="team-pts">${formatScorePoints(team.pts)}</span></td>
       </tr>`;
     }).join('');
   }
@@ -780,12 +781,14 @@
       const isRel = eventName.toLowerCase().includes('relay') || eventName.toLowerCase().includes('4x') || eventName.toLowerCase().includes('medley');
       if (isRel) return; // Skip relays for individual high point
       const finals = events[eventName]['Finals'] || [];
-      finals.forEach(r => {
-        if (!r.placement || !POINTS[r.placement] || !r.athlete_id) return;
+      if (!finals.length) return;
+      const scored = applyNfhsScoringFromPlacements(finals.map((r) => ({ ...r })));
+      scored.forEach(r => {
+        if (!r.points || !r.athlete_id) return;
         const key = r.athlete_id;
         if (!athleteScores[key]) athleteScores[key] = { name:r.athlete_name, school:r.school, pts:0, placements:[] };
-        athleteScores[key].pts += POINTS[r.placement];
-        athleteScores[key].placements.push({ event:eventName, place:r.placement, pts:POINTS[r.placement] });
+        athleteScores[key].pts += r.points;
+        athleteScores[key].placements.push({ event:eventName, place:r.place || r.placement, pts:r.points, tied:r.tied });
       });
     });
 
@@ -798,13 +801,13 @@
 
     wrapper.innerHTML = topAthletes.map((ath, i) => {
       const pills = ath.placements.slice().sort((a,b)=>a.place-b.place).map(pl =>
-        `<span class="hp-pill ${pillCls(pl.place)}">${pl.event} — ${pl.place}${ordinal(pl.place)} (+${pl.pts})</span>`
+        `<span class="hp-pill ${pillCls(pl.place)}">${pl.event} — ${pl.place}${ordinal(pl.place)} (+${formatScorePoints(pl.pts)}${pl.tied ? " tie" : ""})</span>`
       ).join('');
       return `<div class="hp-athlete">
         <div class="hp-medal">${medals[i]||`#${i+1}`}</div>
         <div class="hp-school-row">${logoTag(ath.school,'hp-logo')}<span class="hp-school-name">${ath.school}</span></div>
         <div class="hp-name">${ath.name||'Unknown'}</div>
-        <div class="hp-pts">${ath.pts} pts</div>
+        <div class="hp-pts">${formatScorePoints(ath.pts)} pts</div>
         <div class="hp-pills">${pills}</div>
       </div>`;
     }).join('');

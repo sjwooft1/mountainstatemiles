@@ -47,6 +47,124 @@ function resultMatchesDivision(resultDivision, activeDivision) {
   return div === activeDivision;
 }
 
+/** NFHS 8-place scoring table (places 1–8) */
+const NFHS_SCORE_POINTS = [10, 8, 6, 5, 4, 3, 2, 1];
+
+/**
+ * Format team/athlete points (supports 0.5 from tie splits per NFHS Rule 6-3 Art. 4).
+ */
+function formatScorePoints(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n) || n <= 0) return '0';
+  const rounded = Math.round(n * 100) / 100;
+  if (Math.abs(rounded - Math.round(rounded)) < 1e-9) return String(Math.round(rounded));
+  return rounded.toFixed(1).replace(/\.0$/, '');
+}
+
+function nfhsPointsForTieGroup(startSlotIndex, tieCount, pointsTable = NFHS_SCORE_POINTS) {
+  if (tieCount <= 0) return 0;
+  let sum = 0;
+  for (let k = 0; k < tieCount && startSlotIndex + k < pointsTable.length; k++) {
+    sum += pointsTable[startSlotIndex + k];
+  }
+  return sum / tieCount;
+}
+
+function marksEqualForScoring(a, b, fieldEvent) {
+  const pa = a.parsed;
+  const pb = b.parsed;
+  if (pa != null && pb != null && Number.isFinite(pa) && Number.isFinite(pb)) {
+    return pa === pb;
+  }
+  const ma = String(a.mark ?? '').trim();
+  const mb = String(b.mark ?? '').trim();
+  return ma !== '' && ma === mb;
+}
+
+/**
+ * Assign place + points from sorted marks. Tied marks split combined place points (NFHS 6-3-4).
+ * Example: tie for 2nd → (8+6)/2 = 7 pts each; next finisher is 4th for 5 pts.
+ */
+function applyNfhsScoringFromMarks(entries, options = {}) {
+  const pointsTable = options.pointsTable || NFHS_SCORE_POINTS;
+  const fieldEvent = Boolean(options.fieldEvent);
+  const maxPlaces = options.maxPlaces ?? 8;
+
+  const sorted = [...entries].sort((a, b) => {
+    const pa = a.parsed;
+    const pb = b.parsed;
+    if (pa != null && pb != null && Number.isFinite(pa) && Number.isFinite(pb)) {
+      return fieldEvent ? pb - pa : pa - pb;
+    }
+    return 0;
+  });
+
+  let slotIndex = 0;
+  let i = 0;
+  while (i < sorted.length && slotIndex < maxPlaces) {
+    let j = i + 1;
+    while (j < sorted.length && marksEqualForScoring(sorted[i], sorted[j], fieldEvent)) j += 1;
+    const tieCount = j - i;
+    const place = slotIndex + 1;
+    const pointsEach = nfhsPointsForTieGroup(slotIndex, tieCount, pointsTable);
+    for (let t = i; t < j; t++) {
+      sorted[t].place = place;
+      sorted[t].points = pointsEach;
+      sorted[t].tied = tieCount > 1;
+    }
+    slotIndex += tieCount;
+    i = j;
+  }
+  while (i < sorted.length) {
+    sorted[i].place = slotIndex + 1;
+    sorted[i].points = 0;
+    sorted[i].tied = false;
+    slotIndex += 1;
+    i += 1;
+  }
+  return sorted;
+}
+
+/**
+ * Assign points when official placements are already recorded (e.g. imported meet results).
+ * Athletes with the same place split points for those scoring positions.
+ */
+function applyNfhsScoringFromPlacements(entries, options = {}) {
+  const pointsTable = options.pointsTable || NFHS_SCORE_POINTS;
+  const maxPlaces = options.maxPlaces ?? 8;
+
+  const withPlace = entries
+    .map((e) => ({ entry: e, place: parseInt(e.placement, 10) }))
+    .filter((x) => Number.isFinite(x.place) && x.place > 0);
+
+  const placeNumbers = [...new Set(withPlace.map((x) => x.place))].sort((a, b) => a - b);
+  let slotIndex = 0;
+
+  placeNumbers.forEach((placeNum) => {
+    if (slotIndex >= maxPlaces) return;
+    const group = withPlace.filter((x) => x.place === placeNum).map((x) => x.entry);
+    const tieCount = group.length;
+    if (placeNum > slotIndex + 1) slotIndex = placeNum - 1;
+    const pointsEach = nfhsPointsForTieGroup(slotIndex, tieCount, pointsTable);
+    group.forEach((e) => {
+      e.place = placeNum;
+      e.points = pointsEach;
+      e.scoredPoints = pointsEach;
+      e.tied = tieCount > 1;
+    });
+    slotIndex += tieCount;
+  });
+
+  entries.forEach((e) => {
+    if (!Number.isFinite(parseInt(e.placement, 10)) || parseInt(e.placement, 10) <= 0) {
+      e.points = 0;
+      e.scoredPoints = 0;
+    }
+  });
+
+  return entries;
+}
+
 // Helper function to convert Firebase snapshot to array
 function snapshotToArray(snapshot) {
   if (!snapshot.exists()) return [];

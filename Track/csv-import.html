@@ -220,6 +220,104 @@
             width: 0%;
             transition: width 0.2s ease;
         }
+
+        .card-header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-bottom: 12px;
+        }
+        .card-header-row h3 { margin: 0; }
+        .card-hint {
+            margin: 0 0 16px;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+        .imported-toolbar {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+        .imported-toolbar input,
+        .imported-toolbar select {
+            flex: 1;
+            min-width: 160px;
+        }
+        .imported-summary {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+        .imported-summary .pill {
+            padding: 6px 12px;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+        }
+        .imported-summary .pill strong { color: var(--text-main); }
+        .imported-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 10px;
+            max-height: 320px;
+            overflow-y: auto;
+            padding: 4px;
+        }
+        .imported-chip {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 12px 14px;
+            font-size: 0.85rem;
+        }
+        .imported-chip.done { border-color: rgba(16, 185, 129, 0.45); background: rgba(16, 185, 129, 0.08); }
+        .imported-chip-title {
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 4px;
+            line-height: 1.3;
+        }
+        .imported-chip-meta {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+        .imported-chip-count {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--success);
+        }
+        .imported-empty {
+            padding: 24px;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            border: 1px dashed var(--border);
+            border-radius: 10px;
+        }
+        .imported-loading {
+            padding: 20px;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        .evt-status {
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-left: 6px;
+            vertical-align: middle;
+        }
+        .evt-status.in-db { background: rgba(16, 185, 129, 0.15); color: var(--success); }
+        .evt-status.new { background: rgba(249, 115, 22, 0.15); color: var(--primary); }
     </style>
 </head>
 <body>
@@ -231,6 +329,24 @@
             <select id="meetSelect">
                 <option value="">Loading meets data...</option>
             </select>
+        </div>
+
+        <div class="card" id="importedEventsCard" style="display: none;">
+            <div class="card-header-row">
+                <h3><span style="color:var(--primary)">1b.</span> Already Imported</h3>
+                <button type="button" class="btn-secondary" id="refreshImportedBtn" onclick="importer.refreshImportedEvents()">↻ Refresh</button>
+            </div>
+            <p class="card-hint">Events with results already saved for this meet. Use this while the meet is live so you only paste what is still missing.</p>
+            <div class="imported-toolbar">
+                <input type="text" id="importedSearch" placeholder="Search imported events…" oninput="importer.filterImportedEvents()" />
+                <select id="importedGenderFilter" onchange="importer.filterImportedEvents()">
+                    <option value="">All genders</option>
+                    <option value="M">Boys</option>
+                    <option value="W">Girls</option>
+                </select>
+            </div>
+            <div class="imported-summary" id="importedSummary"></div>
+            <div id="importedEventsList" class="imported-loading">Select a meet to load imported events.</div>
         </div>
 
         <div class="card">
@@ -304,7 +420,11 @@
                 this.parsedRows = [];
                 this.normalizedEventMap = {}; 
                 this.eventIdToName = {};
+                this.eventMeta = {};
                 this.athletesCache = {};
+                this.meetImportedGroups = [];
+                this.meetImportedKeySet = new Set();
+                this.currentMeetId = "";
             }
 
             async init() {
@@ -321,8 +441,10 @@
                     const eventsSnap = await firebase.database().ref("Track/events").once("value");
                     eventsSnap.forEach((s) => {
                         const id = s.key;
-                        const name = s.val().name;
+                        const val = s.val() || {};
+                        const name = val.name;
                         this.eventIdToName[id] = name;
+                        this.eventMeta[id] = val;
                         const normKey = this.normalizeString(name);
                         this.normalizedEventMap[normKey] = id;
                     });
@@ -335,11 +457,158 @@
                         this.athletesCache[key] = s.key;
                     });
 
+                    const meetSel = document.getElementById("meetSelect");
+                    meetSel.addEventListener("change", () => this.onMeetSelected());
+
                     console.log("Database initialized and cached.");
                 } catch (err) {
                     console.error("Error initializing Firebase:", err);
                     alert("Failed to load data from Firebase. Check console.");
                 }
+            }
+
+            importGroupKey(eventId, gender, division, heat) {
+                return [eventId || "", gender || "", division || "", heat || "Finals"].join("|");
+            }
+
+            genderLabel(g) {
+                const t = String(g || "").toUpperCase();
+                if (t === "W" || t === "F") return "Girls";
+                if (t === "M") return "Boys";
+                return "Mixed";
+            }
+
+            onMeetSelected() {
+                const meetId = document.getElementById("meetSelect").value;
+                this.currentMeetId = meetId;
+                const card = document.getElementById("importedEventsCard");
+                if (!meetId) {
+                    card.style.display = "none";
+                    this.meetImportedGroups = [];
+                    this.meetImportedKeySet = new Set();
+                    return;
+                }
+                card.style.display = "block";
+                this.loadImportedEventsForMeet(meetId);
+            }
+
+            refreshImportedEvents() {
+                if (!this.currentMeetId) return;
+                this.loadImportedEventsForMeet(this.currentMeetId);
+            }
+
+            async loadImportedEventsForMeet(meetId) {
+                const listEl = document.getElementById("importedEventsList");
+                const summaryEl = document.getElementById("importedSummary");
+                listEl.className = "imported-loading";
+                listEl.textContent = "Loading imported events…";
+                summaryEl.innerHTML = "";
+
+                try {
+                    const snap = await firebase.database().ref("Track/results")
+                        .orderByChild("meet_id").equalTo(meetId).once("value");
+
+                    const buckets = {};
+                    snap.forEach((child) => {
+                        const r = child.val() || {};
+                        if (!r.event_id) return;
+                        const eventId = r.event_id;
+                        const gender = (r.gender || this.eventMeta[eventId]?.gender || "M").toString().toUpperCase();
+                        const division = normalizeDivision(r.division) || "";
+                        const heat = r.heat || "Finals";
+                        const key = this.importGroupKey(eventId, gender, division, heat);
+                        if (!buckets[key]) {
+                            buckets[key] = {
+                                key,
+                                eventId,
+                                eventName: this.eventIdToName[eventId] || "Unknown Event",
+                                gender,
+                                division,
+                                heat,
+                                count: 0,
+                            };
+                        }
+                        buckets[key].count += 1;
+                    });
+
+                    this.meetImportedGroups = Object.values(buckets).sort((a, b) => {
+                        const nameCmp = a.eventName.localeCompare(b.eventName);
+                        if (nameCmp !== 0) return nameCmp;
+                        const gCmp = a.gender.localeCompare(b.gender);
+                        if (gCmp !== 0) return gCmp;
+                        const dCmp = (a.division || "").localeCompare(b.division || "");
+                        if (dCmp !== 0) return dCmp;
+                        return (a.heat || "").localeCompare(b.heat || "");
+                    });
+
+                    this.meetImportedKeySet = new Set(this.meetImportedGroups.map((g) => g.key));
+                    this.filterImportedEvents();
+                    if (this.parsedRows.length) this.renderEventCheckboxes(this.getUniqueRawEvents());
+                } catch (err) {
+                    console.error(err);
+                    listEl.className = "imported-empty";
+                    listEl.textContent = "Could not load imported events. Check console.";
+                }
+            }
+
+            filterImportedEvents() {
+                const listEl = document.getElementById("importedEventsList");
+                const summaryEl = document.getElementById("importedSummary");
+                const q = (document.getElementById("importedSearch")?.value || "").toLowerCase().trim();
+                const genderFilter = document.getElementById("importedGenderFilter")?.value || "";
+
+                let groups = this.meetImportedGroups.slice();
+                if (genderFilter) groups = groups.filter((g) => g.gender === genderFilter);
+                if (q) {
+                    groups = groups.filter((g) => {
+                        const hay = `${g.eventName} ${g.division} ${g.heat} ${this.genderLabel(g.gender)}`.toLowerCase();
+                        return hay.includes(q);
+                    });
+                }
+
+                const totalResults = groups.reduce((sum, g) => sum + g.count, 0);
+                summaryEl.innerHTML = `
+                    <span class="pill"><strong>${groups.length}</strong> event groups</span>
+                    <span class="pill"><strong>${totalResults}</strong> results in DB</span>
+                    <span class="pill">Meet ID: <strong>${this.currentMeetId}</strong></span>
+                `;
+
+                if (!this.meetImportedGroups.length) {
+                    listEl.className = "imported-empty";
+                    listEl.textContent = "Nothing imported for this meet yet. Paste results below to get started.";
+                    return;
+                }
+                if (!groups.length) {
+                    listEl.className = "imported-empty";
+                    listEl.textContent = "No imported events match your search.";
+                    return;
+                }
+
+                listEl.className = "imported-grid";
+                listEl.innerHTML = groups.map((g) => {
+                    const meta = [
+                        this.genderLabel(g.gender),
+                        g.division || null,
+                        g.heat,
+                    ].filter(Boolean).join(" · ");
+                    return `
+                        <div class="imported-chip done">
+                            <div class="imported-chip-title">${g.eventName}</div>
+                            <div class="imported-chip-meta">${meta}</div>
+                            <div class="imported-chip-count">${g.count} result${g.count !== 1 ? "s" : ""} saved</div>
+                        </div>`;
+                }).join("");
+            }
+
+            getUniqueRawEvents() {
+                return [...new Set(this.parsedRows.map((r) => r.raw_event))].sort();
+            }
+
+            isRawEventAlreadyImported(rawEvent) {
+                const row = this.parsedRows.find((r) => r.raw_event === rawEvent);
+                if (!row?.event_id) return false;
+                const key = this.importGroupKey(row.event_id, row.gender, row.division, row.heat);
+                return this.meetImportedKeySet.has(key);
             }
 
             // Parse division / round from AthleticsNet-style event titles
@@ -509,6 +778,11 @@
                 });
 
                 this.renderEventCheckboxes(Array.from(uniqueEvents));
+                if (this.currentMeetId !== meetId) {
+                    this.currentMeetId = meetId;
+                    document.getElementById("importedEventsCard").style.display = "block";
+                    this.loadImportedEventsForMeet(meetId);
+                }
                 document.getElementById("resultsArea").style.display = "block";
                 
                 // Scroll down smoothly
@@ -522,10 +796,14 @@
                 container.innerHTML = "";
                 events.sort().forEach((evt) => {
                     const safe = evt.replace(/"/g, "&quot;");
+                    const inDb = this.isRawEventAlreadyImported(evt);
+                    const status = inDb
+                        ? '<span class="evt-status in-db">In DB</span>'
+                        : '<span class="evt-status new">New</span>';
                     container.innerHTML += `
                         <label class="event-checkbox">
-                            <input type="checkbox" class="evt-cb" value="${safe}" checked onchange="importer.updateUI()">
-                            ${evt}
+                            <input type="checkbox" class="evt-cb" value="${safe}" ${inDb ? "" : "checked"} onchange="importer.updateUI()">
+                            ${evt}${status}
                         </label>`;
                 });
             }
@@ -663,9 +941,9 @@
                 btn.innerText = "Import Complete ✓";
                 btn.classList.replace("btn-primary", "btn-secondary");
                 alert("Successfully imported " + toImport.length + " results!");
-                
-                // Optional: Reload page to clear state
-                // location.reload();
+
+                await this.loadImportedEventsForMeet(toImport[0]?.meet_id || this.currentMeetId);
+                document.getElementById("pasteArea").value = "";
             }
         }
 

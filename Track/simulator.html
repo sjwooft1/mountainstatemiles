@@ -302,7 +302,7 @@
         <h1 class="page-title">Virtual Meet <span class="dim">Simulator</span></h1>
         <p class="page-subtitle">Simulate qualifying meets to determine who advances, then run the championship meet.</p>
         <div class="stat-bar" id="stat-bar">
-          <div class="stat-pill"><i class="fas fa-bolt"></i><strong>NFHS</strong> 8-place scoring</div>
+          <div class="stat-pill"><i class="fas fa-bolt"></i><strong>NFHS</strong> 8-place · ties split pts</div>
           <div class="stat-pill"><i class="fas fa-users"></i>Up to <strong>3</strong> athletes per event per team</div>
           <div class="stat-pill"><i class="fas fa-flag-checkered"></i>Track &amp; Field events</div>
           <div class="stat-pill"><i class="fas fa-check-circle"></i>Seasonal best per athlete</div>
@@ -463,7 +463,7 @@
     /* ═══════════════════════════════════════
        CONSTANTS & STATE
     ═══════════════════════════════════════ */
-    const SCORING = { individual:[10,8,6,5,4,3,2,1], relay:[10,8,6,5,4,3,2,1] };
+    const SCORING = NFHS_SCORE_POINTS;
     const TEAM_COLORS = ["#2a5cff","#ff4e2a","#2aff9f","#ffd02a","#c62aff","#2afff0","#ff2a7a","#a2ff2a","#ff9f2a","#2affdf","#ff2af0","#9fff2a"];
     const INVALID_MARKS = new Set(["DNS","DNF","DQ","SCR","NM","NH","FS","ND","NT","","—","N/A"]);
     const FALLBACK_LOGO = "../assets/Wvruns Logo.png";
@@ -874,17 +874,14 @@
           schoolEnts.sort((a,b) => bucket.fieldEvent ? b.parsed-a.parsed : a.parsed-b.parsed);
           entries.push(...schoolEnts.slice(0, allowed));
         });
-        entries.sort((a,b) => bucket.fieldEvent ? b.parsed-a.parsed : a.parsed-b.parsed);
-        const scoring = bucket.relay ? SCORING.relay : SCORING.individual;
-        entries.forEach((e, i) => {
-          e.place = i + 1;
-          e.points = scoring[i] || 0;
+        applyNfhsScoringFromMarks(entries, { fieldEvent: bucket.fieldEvent, pointsTable: SCORING });
+        entries.forEach((e) => {
           if (!teamScores[e.school]) teamScores[e.school] = { school:e.school, points:0 };
-          teamScores[e.school].points += e.points;
+          teamScores[e.school].points += e.points || 0;
           if (!e.relay && e.points > 0) {
             if (!athletePointMap[e.athleteId]) athletePointMap[e.athleteId] = { label:e.athleteLabel, school:e.school, points:0, placements:[] };
             athletePointMap[e.athleteId].points += e.points;
-            athletePointMap[e.athleteId].placements.push({ event:bucket.name, place:e.place, pts:e.points });
+            athletePointMap[e.athleteId].placements.push({ event:bucket.name, place:e.place, pts:e.points, tied: e.tied });
           }
         });
         if (entries.length) eventResults.push({ name:bucket.name, relay:bucket.relay, fieldEvent:bucket.fieldEvent, entries });
@@ -1098,7 +1095,7 @@
           ${logoTag(team.school, "podium-logo")}
           <div class="podium-rank">${placeLabel}</div>
           <div class="podium-name"><span class="team-dot" style="background:${color}"></span>${team.school}</div>
-          <div class="podium-pts">${team.points}</div>
+          <div class="podium-pts">${formatScorePoints(team.points)}</div>
           <div class="podium-pts-label">Points</div>
         </div>`;
       }).join("");
@@ -1107,12 +1104,15 @@
       const pillClass = p => p<=3?`p${p}`:p<=8?`p${p}`:"";
       const hpCards = highPointList.map((ath, i) => {
         const color = teamColorMap[ath.school] || "#8899bb";
-        const pills = ath.placements.sort((a,b) => a.place-b.place).map(pl => `<span class="hp-pill ${pillClass(pl.place)}">${pl.event} — ${pl.place}${["st","nd","rd"][pl.place-1]||"th"} (+${pl.pts})</span>`).join("");
+        const pills = ath.placements.sort((a,b) => a.place-b.place).map(pl => {
+          const tieNote = pl.tied ? " (tie)" : "";
+          return `<span class="hp-pill ${pillClass(pl.place)}">${pl.event} — ${pl.place}${["st","nd","rd"][pl.place-1]||"th"} (+${formatScorePoints(pl.pts)}${tieNote})</span>`;
+        }).join("");
         return `<div class="hp-athlete">
           <div class="hp-medal ${medClass(i)}">${["🥇","🥈","🥉"][i]||`#${i+1}`}</div>
           <div class="hp-school-row">${logoTag(ath.school,"hp-logo")}<span class="hp-school-name" style="color:${color}">${ath.school}</span></div>
           <div class="hp-name">${ath.label}</div>
-          <div class="hp-pts">${ath.points} pts</div>
+          <div class="hp-pts">${formatScorePoints(ath.points)} pts</div>
           <div class="hp-pills">${pills}</div>
         </div>`;
       }).join("");
@@ -1134,7 +1134,7 @@
             <td class="athlete-name">${e.athleteLabel}${qualTag}</td>
             <td><div class="school-cell">${logoTag(e.school,"cell-logo")}<span class="team-dot" style="background:${color}"></span>${e.school}</div></td>
             <td class="mark-val">${e.mark}</td>
-            <td class="pts-val${e.points===0?" zero":""}">${e.points>0?"+"+e.points:"—"}</td>
+            <td class="pts-val${e.points===0?" zero":""}">${e.points>0?"+"+formatScorePoints(e.points)+(e.tied?"*":""):"—"}</td>
           </tr>`;
         }).join("");
         const tags = [
@@ -1162,7 +1162,7 @@
             <div class="card-header-icon"><i class="fas fa-trophy"></i></div>
             <div>
               <div class="card-header-title">Team Standings</div>
-              <div class="card-header-sub">${standings.length} teams &middot; ${gender==="M"?"Boys":"Girls"} ${season.charAt(0).toUpperCase()+season.slice(1)} &middot; NFHS 8-place scoring</div>
+              <div class="card-header-sub">${standings.length} teams &middot; ${gender==="M"?"Boys":"Girls"} ${season.charAt(0).toUpperCase()+season.slice(1)} &middot; NFHS 8-place · ties split pts</div>
             </div>
           </div>
           <div class="podium-row">${podiumItems}</div>
@@ -1200,7 +1200,7 @@
             ${logoTag(team.school,"podium-logo")}
             <div class="podium-rank" style="font-size:2rem">${placeLabel}</div>
             <div class="podium-name"><span class="team-dot" style="background:${color}"></span>${team.school}</div>
-            <div class="podium-pts">${team.points}</div>
+            <div class="podium-pts">${formatScorePoints(team.points)}</div>
             <div class="podium-pts-label">Points</div>
           </div>`;
         }).join("");
@@ -1211,7 +1211,7 @@
             <td style="width:36px;padding:7px 10px;"><span class="place-badge ${["g","s","b"][i]||"n"}" style="width:24px;height:24px;font-size:.75rem">${i+1}</span></td>
             <td style="padding:7px 10px;">${logoTag(team.school,"cell-logo")}</td>
             <td style="padding:7px 10px;font-weight:600"><span class="team-dot" style="background:${color};margin-right:5px"></span>${team.school}</td>
-            <td style="padding:7px 10px;font-family:var(--font-mono);color:var(--accent);font-weight:700">${team.points}</td>
+            <td style="padding:7px 10px;font-family:var(--font-mono);color:var(--accent);font-weight:700">${formatScorePoints(team.points)}</td>
           </tr>`;
         }).join("");
 
@@ -1260,7 +1260,7 @@
           ${logoTag(team.school,"podium-logo")}
           <div class="podium-rank">${placeLabel}</div>
           <div class="podium-name"><span class="team-dot" style="background:${color}"></span>${team.school}</div>
-          <div class="podium-pts">${team.points}</div>
+          <div class="podium-pts">${formatScorePoints(team.points)}</div>
           <div class="podium-pts-label">Points</div>
         </div>`;
       }).join("");
@@ -1269,12 +1269,15 @@
       const pillClass = p => p<=3?`p${p}`:p<=8?`p${p}`:"";
       const champHPCards = champHP.map((ath,i) => {
         const color = teamColorMap[ath.school]||"#8899bb";
-        const pills = ath.placements.sort((a,b) => a.place-b.place).map(pl => `<span class="hp-pill ${pillClass(pl.place)}">${pl.event} — ${pl.place}${["st","nd","rd"][pl.place-1]||"th"} (+${pl.pts})</span>`).join("");
+        const pills = ath.placements.sort((a,b) => a.place-b.place).map(pl => {
+          const tieNote = pl.tied ? " (tie)" : "";
+          return `<span class="hp-pill ${pillClass(pl.place)}">${pl.event} — ${pl.place}${["st","nd","rd"][pl.place-1]||"th"} (+${formatScorePoints(pl.pts)}${tieNote})</span>`;
+        }).join("");
         return `<div class="hp-athlete">
           <div class="hp-medal ${medClass(i)}">${["🥇","🥈","🥉"][i]||`#${i+1}`}</div>
           <div class="hp-school-row">${logoTag(ath.school,"hp-logo")}<span class="hp-school-name" style="color:${color}">${ath.school}</span></div>
           <div class="hp-name">${ath.label}</div>
-          <div class="hp-pts">${ath.points} pts</div>
+          <div class="hp-pts">${formatScorePoints(ath.points)} pts</div>
           <div class="hp-pills">${pills}</div>
         </div>`;
       }).join("");
@@ -1299,7 +1302,7 @@
             <td class="athlete-name">${e.athleteLabel}${qualTag}</td>
             <td><div class="school-cell">${logoTag(e.school,"cell-logo")}<span class="team-dot" style="background:${color}"></span>${e.school}</div></td>
             <td class="mark-val">${e.mark}</td>
-            <td class="pts-val${e.points===0?" zero":""}">${e.points>0?"+"+e.points:"—"}</td>
+            <td class="pts-val${e.points===0?" zero":""}">${e.points>0?"+"+formatScorePoints(e.points)+(e.tied?"*":""):"—"}</td>
           </tr>`;
         }).join("");
         const tags = [
@@ -1360,7 +1363,7 @@
               <div class="qual-stage-icon state"><i class="fas fa-trophy"></i></div>
               <div>
                 <div class="qual-stage-title">Step 3 — Championship Meet</div>
-                <div class="qual-stage-sub">${Object.keys(champScores).length} qualifying schools · NFHS 8-place scoring · ${gender==="M"?"Boys":"Girls"} ${season.charAt(0).toUpperCase()+season.slice(1)}</div>
+                <div class="qual-stage-sub">${Object.keys(champScores).length} qualifying schools · NFHS 8-place · ties split pts · ${gender==="M"?"Boys":"Girls"} ${season.charAt(0).toUpperCase()+season.slice(1)}</div>
               </div>
             </div>
             <div class="qual-stage-body">
