@@ -1,550 +1,1519 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Athlete — Track</title>
-<link rel="icon" type="image/png" href="../assets/Favicon Generator/favicon-96x96.png" sizes="96x96" />
-<link rel="icon" type="image/svg+xml" href="../assets/Favicon Generator/favicon.svg" />
-<link rel="shortcut icon" href="../assets/Favicon Generator/favicon.ico" />
-<link rel="apple-touch-icon" sizes="180x180" href="../assets/Favicon Generator/apple-touch-icon.png" />
-<link rel="manifest" href="../assets/Favicon Generator/site.webmanifest" />
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Athlete Profile — Mountain State Miles</title>
+<link rel="icon" type="image/png" href="/assets/Favicon Generator/favicon-96x96.png" sizes="96x96">
+<link rel="icon" type="image/svg+xml" href="/assets/Favicon Generator/favicon.svg">
+<link rel="shortcut icon" href="/assets/Favicon Generator/favicon.ico">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/Favicon Generator/apple-touch-icon.png">
+<link rel="manifest" href="/assets/Favicon Generator/site.webmanifest">
+
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.7.1/jspdf.plugin.autotable.min.js"></script>
+
+<link rel="stylesheet" href="/assets/main.css">
+
 <style>
-  * { box-sizing: border-box; }
-  
-  :root {
-  /* Light Mode (Default) */
-  --primary: #000000;
-  --primary-light: #1a1a1a;
-  --primary-lighter: #333333;
-  --accent: #ffffff;
-  --accent-dark: #f5f5f5;
-  --border: #403e3e;
-  --border-light: #f0f0f0;
-  --text-primary: #000000;
-  --text-secondary: #252424;
-  --text-tertiary: #999999;
-  --bg-primary: #ffffff;
-  --bg-secondary: #f9f9f9;
-  --bg-dark: #000000;
-  --shadow-light: rgba(0, 0, 0, 0.08);
-  --shadow-medium: rgba(0, 0, 0, 0.1);
-  
-  /* Semantics */
-  --success: #10b981;
-  --danger: #ef4444;
-  --warning: #f59e0b;
-  
-  /* Typography */
-  --font-display: 'Aqeon Demo', sans-serif;
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  
-  /* Spacing Scale */
-  --spacing-xs: 0.25rem;
-  --spacing-sm: 0.5rem;
-  --spacing-md: 1rem;
-  --spacing-lg: 1.5rem;
-  --spacing-xl: 2rem;
-  --spacing-2xl: 3rem;
-  --spacing-3xl: 4rem;
-  
-  /* Transitions */
-  --transition: 200ms ease-in-out;
-  
-  /* Border Radius */
-  --radius-sm: 2px;
-  --radius-md: 4px;
-  --radius-lg: 6px;
-  --radius-xl: 8px;
+/* ================================================
+   Athlete page — extends main.css, doesn't replace
+   ================================================ */
+
+body { padding-top: 0; }
+
+.navbar {
+  background: var(--bg-primary);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  width: 100%;
 }
 
-/* Dark Mode */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --primary: #ffffff;
-    --primary-light: #f0f0f0;
-    --primary-lighter: #e0e0e0;
-    --accent: #1a1a1a;
-    --accent-dark: #2a2a2a;
-    --border: #404040;
-    --border-light: #303030;
-    --text-primary: #ffffff;
-    --text-secondary: #b0b0b0;
-    --text-tertiary: #808080;
-    --bg-primary: #1a1a1a;
-    --bg-secondary: #252525;
-    --bg-dark: #0a0a0a;
-    --shadow-light: rgba(0, 0, 0, 0.3);
-    --shadow-medium: rgba(0, 0, 0, 0.5);
-  }
+.navbar-content {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0.75rem 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  height: auto;
 }
 
-/* Explicit Dark Mode Class */
-html[data-theme="dark"] {
-  --primary: #ffffff;
-  --primary-light: #f0f0f0;
-  --primary-lighter: #e0e0e0;
-  --accent: #1a1a1a;
-  --accent-dark: #2a2a2a;
-  --border: #404040;
-  --border-light: #303030;
-  --text-primary: #ffffff;
-  --text-secondary: #b0b0b0;
-  --text-tertiary: #808080;
-  --bg-primary: #1a1a1a;
-  --bg-secondary: #252525;
-  --bg-dark: #0a0a0a;
-  --shadow-light: rgba(0, 0, 0, 0.3);
-  --shadow-medium: rgba(0, 0, 0, 0.5);
+.navbar-brand img { height: 32px; width: auto; display: block; }
+html[data-theme="dark"] .logo-light { display: none; }
+html[data-theme="dark"] .logo-dark  { display: block; }
+html:not([data-theme="dark"]) .logo-light { display: block; }
+html:not([data-theme="dark"]) .logo-dark  { display: none; }
+
+.nav-search-wrap {
+  position: relative;
+  flex: 1;
+  max-width: 380px;
+}
+.nav-search-wrap .search-icon {
+  position: absolute;
+  left: 12px; top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-tertiary);
+  font-size: 0.8rem;
+  pointer-events: none;
+}
+.nav-search-input {
+  width: 100%;
+  padding: 0.5rem 0.75rem 0.5rem 2.1rem;
+  font-size: 0.875rem;
+  font-family: var(--font-sans);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  transition: border-color var(--transition), background var(--transition);
+  outline: none;
+}
+.nav-search-input::placeholder { color: var(--text-tertiary); }
+.nav-search-input:focus {
+  border-color: var(--text-primary);
+  background: var(--bg-primary);
+}
+.search-dropdown {
+  display: none;
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0; right: 0;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 8px 24px var(--shadow-medium);
+  overflow: hidden;
+  z-index: 600;
+  max-height: 320px;
+  overflow-y: auto;
+}
+.search-dropdown.open { display: block; }
+.search-drop-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: background var(--transition);
+  border-bottom: 1px solid var(--border-light);
+  font-size: 0.875rem;
+}
+.search-drop-item:last-child { border-bottom: none; }
+.search-drop-item:hover, .search-drop-item.hl { background: var(--bg-secondary); }
+.search-drop-avatar {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: var(--text-primary);
+  color: var(--bg-primary);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.65rem; font-weight: 700;
+  flex-shrink: 0;
+}
+.search-drop-name  { font-weight: 600; color: var(--text-primary); }
+.search-drop-meta  { font-size: 0.78rem; color: var(--text-tertiary); margin-top: 1px; }
+.search-drop-empty { padding: 14px; text-align: center; color: var(--text-tertiary); font-size: 0.85rem; }
+
+.navbar-links {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  list-style: none;
+  margin: 0; padding: 0;
 }
 
-/* Explicit Light Mode Class */
-html[data-theme="light"] {
-  --primary: #000000;
-  --primary-light: #1a1a1a;
-  --primary-lighter: #333333;
-  --accent: #ffffff;
-  --accent-dark: #f5f5f5;
-  --border: #e0e0e0;
-  --border-light: #f0f0f0;
-  --text-primary: #000000;
-  --text-secondary: #666666;
-  --text-tertiary: #999999;
-  --bg-primary: #ffffff;
-  --bg-secondary: #f9f9f9;
-  --bg-dark: #000000;
-  --shadow-light: rgba(0, 0, 0, 0.08);
-  --shadow-medium: rgba(0, 0, 0, 0.1);
+.theme-toggle {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  cursor: pointer;
+  width: 2.25rem; height: 2.25rem;
+  font-size: 1rem;
+  display: flex; align-items: center; justify-content: center;
+  transition: all var(--transition);
+  flex-shrink: 0;
 }
-  
-  html, body {
-    margin: 0;
-    padding: 0;
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
-    background: var(--accent);
-    color: var(--text-primary);
-    line-height: 1.6;
-  }
-  
-  header {
-    background: var(--bg-secondary);
-    box-shadow: 0 2px 8px var(--bg-secondary);
-    position: sticky;
-    top: 0;
-    z-index: 100;
-  }
-  
-  .navbar {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0 20px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    height: 70px;
-  }
-  
-  .navbar-brand {
-    font-size: 1.3rem;
-    font-weight: 700;
-    color: var(--primary);
-    text-decoration: none;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  
-  .navbar-nav {
-    display: flex;
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    gap: 30px;
-  }
-  
-  .navbar-link {
-    color: var(--text-primary);
-    text-decoration: none;
-    font-weight: 500;
-    transition: color 0.3s;
-    position: relative;
-  }
-  
-  .navbar-link:hover,
-  .navbar-link.active {
-    color: var(--secondary);
-  }
-  
-  .navbar-link.active::after {
-    content: '';
-    position: absolute;
-    bottom: -5px;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: var(--accent);
-    border-radius: 2px;
-  }
-  
-  main {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 60px 20px;
-  }
-  
-  .section-title {
-    font-size: 2.2rem;
-    font-weight: 800;
-    margin: 0 0 40px;
-    color: var(--primary);
-    position: relative;
-    padding-bottom: 15px;
-  }
-  
-  .section-title::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 80px;
-    height: 4px;
-    background: linear-gradient(90deg, var(--accent), var(--accent-dark));
-    border-radius: 2px;
-  }
-  
-  h3 {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: var(--primary);
-    margin: 30px 0 20px;
-  }
-  
-  footer {
-    background: var(--bg-secondary);
-    color: var(--text-primary);
-    text-align: center;
-    padding: 40px 20px;
-    margin-top: 80px;
-  }
-  
-  footer p {
-    margin: 0 0 20px;
-    color: var(--text-secondary);
-  }
-  
-  .btn {
-    display: inline-block;
-    padding: 12px 28px;
-    background: var(--accent);
-    color: white;
-    text-decoration: none;
-    border-radius: 8px;
-    font-weight: 700;
-    transition: all 0.3s;
-    border: none;
-    cursor: pointer;
-  }
-  
-  .btn:hover {
-    background: var(--accent-dark);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(255, 107, 53, 0.3);
-  }
+.theme-toggle:hover { background: var(--bg-secondary); border-color: var(--text-primary); }
+
+.athlete-hero {
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+  padding: 48px 0 40px;
+}
+.athlete-hero-inner {
+  max-width: 1400px; margin: 0 auto;
+  padding: 0 1.5rem;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+.hero-name {
+  font-family: var(--font-display);
+  font-size: clamp(2.2rem, 5vw, 3.8rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: var(--text-primary);
+  margin-bottom: 0.75rem;
+}
+.hero-chips {
+  display: flex; gap: 10px; flex-wrap: wrap;
+}
+.hero-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 12px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: var(--bg-primary);
+}
+.hero-chip i { font-size: 0.7rem; color: var(--text-tertiary); }
+
+.hero-summary {
+  display: flex; gap: 1.5rem; flex-wrap: wrap;
+}
+.hero-stat-box {
+  text-align: center;
+  padding: 14px 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg-primary);
+  min-width: 80px;
+}
+.hero-stat-num {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  line-height: 1;
+}
+.hero-stat-lbl {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-tertiary);
+  margin-top: 4px;
+}
+
+.page-main {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem 5rem;
+}
+
+.section-block { margin-bottom: 3rem; }
+.section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+.section-heading {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.section-heading::before {
+  content: '';
+  display: inline-block;
+  width: 3px; height: 1.1em;
+  background: var(--text-primary);
+  border-radius: 2px;
+}
+
+.export-row { display: flex; gap: 6px; flex-wrap: wrap; }
+.xbtn {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 6px 12px;
+  font-family: var(--font-sans);
+  font-size: 0.78rem; font-weight: 600;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-primary);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition);
+  white-space: nowrap;
+}
+.xbtn:hover {
+  border-color: var(--text-primary);
+  background: var(--text-primary);
+  color: var(--bg-primary);
+}
+.xbtn i { font-size: 0.72rem; }
+
+.pb-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+}
+.pb-card {
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 18px 16px;
+  transition: all var(--transition);
+  animation: fadeUp 0.35s ease both;
+  position: relative;
+  overflow: hidden;
+}
+.pb-card:hover {
+  border-color: var(--text-primary);
+  box-shadow: 0 4px 12px var(--shadow-light);
+  transform: translateY(-2px);
+}
+.pb-card::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--text-primary);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform var(--transition);
+}
+.pb-card:hover::after { transform: scaleX(1); }
+.pb-event-name {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-tertiary);
+  margin-bottom: 6px;
+}
+.pb-mark-val {
+  font-family: var(--font-display);
+  font-size: 1.9rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  line-height: 1;
+}
+
+.charts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(440px, 1fr));
+  gap: 16px;
+}
+@media (max-width: 900px) { .charts-grid { grid-template-columns: 1fr; } }
+
+.chart-card {
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  animation: fadeUp 0.4s ease both;
+}
+.chart-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.chart-card-title {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.chart-card-sub {
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  margin-top: 2px;
+}
+.event-select {
+  padding: 4px 8px;
+  font-family: var(--font-sans);
+  font-size: 0.78rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  cursor: pointer;
+}
+.chart-wrap { position: relative; height: 200px; }
+
+.results-panel {
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+.results-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+  background: var(--bg-secondary);
+}
+.tbl-search {
+  flex: 1; min-width: 180px;
+  padding: 7px 12px;
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  outline: none;
+  transition: border-color var(--transition);
+}
+.tbl-search:focus { border-color: var(--text-primary); }
+.tbl-filter {
+  padding: 7px 10px;
+  font-family: var(--font-sans);
+  font-size: 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.results-table-wrap { overflow-x: auto; }
+table.rt {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+table.rt thead th {
+  padding: 11px 16px;
+  text-align: left;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-tertiary);
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+table.rt thead th:hover { color: var(--text-primary); }
+table.rt thead th.sort-asc::after  { content: ' ↑'; color: var(--text-primary); }
+table.rt thead th.sort-desc::after { content: ' ↓'; color: var(--text-primary); }
+table.rt tbody td {
+  padding: 11px 16px;
+  border-bottom: 1px solid var(--border-light);
+  color: var(--text-secondary);
+  vertical-align: middle;
+}
+table.rt tbody tr:last-child td { border-bottom: none; }
+table.rt tbody tr:hover td { background: var(--bg-secondary); }
+table.rt .mark-col {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.pb-tag {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 5px;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  background: var(--text-primary);
+  color: var(--bg-primary);
+  border-radius: 3px;
+  vertical-align: middle;
+}
+table.rt a {
+  color: var(--text-primary);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color var(--transition);
+}
+table.rt a:hover { border-bottom-color: var(--text-primary); }
+
+.results-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  border-top: 1px solid var(--border);
+  background: var(--bg-secondary);
+  font-size: 0.8rem;
+  color: var(--text-tertiary);
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.pag { display: flex; gap: 4px; }
+.pag-btn {
+  width: 28px; height: 28px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-primary);
+  color: var(--text-secondary);
+  font-size: 0.75rem; font-weight: 600;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all var(--transition);
+}
+.pag-btn:hover, .pag-btn.active {
+  background: var(--text-primary);
+  border-color: var(--text-primary);
+  color: var(--bg-primary);
+}
+.pag-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.skel {
+  background: var(--bg-secondary);
+  border-radius: var(--radius-md);
+  animation: pulse 1.3s ease infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.45; }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.empty-state {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--text-tertiary);
+}
+.empty-state i { font-size: 2rem; margin-bottom: 0.75rem; display: block; }
+.empty-state p { font-size: 0.9rem; }
+
+.toast-tray {
+  position: fixed; bottom: 20px; right: 20px;
+  display: flex; flex-direction: column; gap: 6px;
+  z-index: 9999; pointer-events: none;
+}
+.toast {
+  background: var(--bg-dark, #000);
+  color: #fff;
+  padding: 10px 16px;
+  border-radius: var(--radius-lg);
+  font-size: 0.82rem; font-weight: 500;
+  border-left: 3px solid var(--text-primary);
+  pointer-events: auto;
+  animation: toastIn 0.2s ease;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+}
+@keyframes toastIn {
+  from { opacity: 0; transform: translateX(12px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@media print {
+  header, .athlete-hero .hero-summary, .section-head .export-row,
+  .results-controls, .results-footer, .charts-grid { display: none !important; }
+  .results-panel { border: none; }
+}
+
+@media (max-width: 768px) {
+  .navbar-links { display: none; }
+  .pb-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+  .athlete-hero-inner { flex-direction: column; align-items: flex-start; }
+}
 </style>
 </head>
+
 <body>
-  <header>
-    <nav class="navbar">
-      <a href="index.html" class="navbar-brand">Track & Field</a>
-      <ul class="navbar-nav">
-        <li><a href="/index.html" class="navbar-link">Home</a></li>
-        <li><a href="index.html" class="navbar-link">Track</a></li>
-        <li><a href="meets.html" class="navbar-link">Meets</a></li>
-        <li><a href="events.html" class="navbar-link">Events</a></li>
-        <li><a href="rankings.html" class="navbar-link">Rankings</a></li>
-        <li><a href="analytics.html" class="navbar-link">Analytics</a></li>
+
+<header>
+  <nav class="navbar">
+    <div class="navbar-content">
+      <a href="/Track/index.html" class="navbar-brand" style="border:none; text-decoration:none;">
+        <img src="/assets/images/logob.png" alt="Mountain State Miles" class="logo-light">
+        <img src="/assets/images/logo.png"  alt="Mountain State Miles" class="logo-dark">
+      </a>
+
+      <div class="nav-search-wrap" id="searchWrap">
+        <i class="fas fa-search search-icon"></i>
+        <input type="text" class="nav-search-input" id="searchInput"
+               aria-label="Search athletes" placeholder="Search athletes…" autocomplete="off" spellcheck="false">
+        <div class="search-dropdown" id="searchDropdown"></div>
+      </div>
+
+      <ul class="navbar-links">
+        <li><a href="/index.html"          class="navbar-link">Home</a></li>
+        <li><a href="/Track/index.html"    class="navbar-link active">Track</a></li>
+        <li><a href="/Track/meets.html"    class="navbar-link">Meets</a></li>
+        <li><a href="/Track/events.html"   class="navbar-link">Events</a></li>
+        <li><a href="/Track/rankings.html" class="navbar-link">Rankings</a></li>
+        <li><a href="/Track/analytics.html" class="navbar-link">Analytics</a></li>
       </ul>
-      <button class="theme-toggle" aria-label="Switch theme">🌙</button>
-    </nav>
-  </header>
-  
-  <main>
-    <h1 class="section-title" id="athlete-name">Loading athlete…</h1>
-    <div id="athlete-meta" style="margin-bottom:18px;"></div>
 
-    <h3>Personal Bests</h3>
-    <div id="pbs">Loading…</div>
+      <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+        <i class="fas fa-moon" id="themeIcon"></i>
+      </button>
+    </div>
+  </nav>
+</header>
 
-    <h3 style="margin-top:18px;">Recent Results</h3>
-    <div id="history">Loading…</div>
-  </main>
+<div class="athlete-hero">
+  <div class="athlete-hero-inner">
+    <div>
+      <h1 class="hero-name" id="heroName">
+        <span class="skel" style="display:inline-block;width:280px;height:1em;">&nbsp;</span>
+      </h1>
+      <div class="hero-chips" id="heroChips"></div>
+    </div>
+    <div class="hero-summary" id="heroSummary"></div>
+  </div>
+</div>
 
-  <footer>
-      <div class="row">
-          <!-- 1st Column -->
-          <div class="footer-col">
-              <h4>General</h4>
-              <ul>
-                  <li><a href="/home/index.html">Home</a></li>
-                  <li><a href="/home/about.html">About</a></li>
-                  <li><a href="/home/admin.html">Admin</a></li>
-              </ul>
-          </div>
-
-          <!-- 2nd Column -->
-          <div class="footer-col">
-              <h4>Cross Country</h4>
-              <ul>
-                  <li><a href="/CrossCountry/xc.html">Home</a></li>
-                  <li><a href="/CrossCountry/meets.html">Meets</a></li>
-                  <li><a href="/CrossCountry/schools.html">Schools</a></li>
-                  <li><a href="/CrossCountry/rankings.html">Rankings</a></li>
-                  <li><a href="/CrossCountry/analytics.html">Analytics</a></li>
-              </ul>
-          </div>
-
-          <!-- 3rd Column -->
-          <div class="footer-col">
-              <h4>Track</h4>
-              <ul>
-                  <li><a href="/Track/index.html">Home</a></li>
-                  <li><a href="/Track/meets.html">Meets</a></li>
-                  <li><a href="/Track/teams.html">Teams</a></li>
-                  <li><a href="/Track/rankings.html">Rankings</a></li>
-                  <li><a href="/Track/analytics.html">Analytics</a></li>
-              </ul>
-          </div>
+<main class="page-main">
+  <section class="section-block">
+    <div class="section-head">
+      <h2 class="section-heading">Personal Bests</h2>
+      <div class="export-row">
+        <button class="xbtn" aria-label="Export PBs CSV" onclick="exportPBsCSV()"><i class="fas fa-file-csv"></i> CSV</button>
+        <button class="xbtn" aria-label="Export PBs PDF" onclick="exportPBsPDF()"><i class="fas fa-file-pdf"></i> PDF</button>
+        <button class="xbtn" aria-label="Export PBs JSON" onclick="exportPBsJSON()"><i class="fas fa-code"></i> JSON</button>
       </div>
-      <hr>
-      <div class="row">
-          <div class="footer-bottom">
-              <div style="margin-bottom: 1rem;">
-                  <a href="https://github.com/sjwooft1/mountainstatemiles" target="_blank" rel="noopener noreferrer">
-                      <i class="fab fa-github" style="font-size: 1.5rem;"></i>
-                      <span>GitHub Repository</span>
-                  </a>
-              </div>
-              <p>&#169; 2026 Mountain State Miles — Built by runners, for runners.</p>
-          </div>
-      </div>
-  </footer>
+    </div>
+    <div class="pb-grid" id="pbGrid">
+      <div class="pb-card"><div class="skel" style="width:70px;height:9px;margin-bottom:10px;">&nbsp;</div><div class="skel" style="width:100px;height:32px;">&nbsp;</div></div>
+      <div class="pb-card"><div class="skel" style="width:60px;height:9px;margin-bottom:10px;">&nbsp;</div><div class="skel" style="width:85px;height:32px;">&nbsp;</div></div>
+      <div class="pb-card"><div class="skel" style="width:80px;height:9px;margin-bottom:10px;">&nbsp;</div><div class="skel" style="width:90px;height:32px;">&nbsp;</div></div>
+    </div>
+  </section>
 
-<!-- Firebase SDK -->
+  <section class="section-block">
+    <div class="section-head">
+      <h2 class="section-heading">Performance Charts</h2>
+      <div class="export-row">
+        <button class="xbtn" aria-label="Export Chart PNG" onclick="exportChartPNG()"><i class="fas fa-image"></i> PNG</button>
+      </div>
+    </div>
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-card-head">
+          <div>
+            <div class="chart-card-title">Mark Progression</div>
+            <div class="chart-card-sub">Performance over time per event</div>
+          </div>
+          <select class="event-select" id="progEventSel" aria-label="Select Event for Progression"></select>
+        </div>
+        <div class="chart-wrap"><canvas id="chartProg"></canvas></div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-card-head">
+          <div>
+            <div class="chart-card-title">PR by Event</div>
+            <div class="chart-card-sub">Personal records across all events</div>
+          </div>
+        </div>
+        <div class="chart-wrap"><canvas id="chartPR"></canvas></div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-card-head">
+          <div>
+            <div class="chart-card-title">Meets Activity</div>
+            <div class="chart-card-sub">Events competed per meet</div>
+          </div>
+        </div>
+        <div class="chart-wrap"><canvas id="chartMeets"></canvas></div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-card-head">
+          <div>
+            <div class="chart-card-title">All Events Trend</div>
+            <div class="chart-card-sub">Multi-event mark history</div>
+          </div>
+        </div>
+        <div class="chart-wrap"><canvas id="chartMulti"></canvas></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section-block">
+    <div class="section-head">
+      <h2 class="section-heading">All Results</h2>
+      <div class="export-row">
+        <button class="xbtn" onclick="exportResultsCSV()"><i class="fas fa-file-csv"></i> CSV</button>
+        <button class="xbtn" onclick="exportResultsPDF()"><i class="fas fa-file-pdf"></i> PDF</button>
+        <button class="xbtn" onclick="exportResultsJSON()"><i class="fas fa-code"></i> JSON</button>
+        <button class="xbtn" onclick="exportResultsTSV()"><i class="fas fa-table"></i> TSV</button>
+        <button class="xbtn" onclick="window.print()"><i class="fas fa-print"></i> Print</button>
+      </div>
+    </div>
+
+    <div class="results-panel">
+      <div class="results-controls">
+        <input type="text" class="tbl-search" id="tblSearch" aria-label="Filter results" placeholder="Filter results…">
+        <select class="tbl-filter" id="tblEvent" aria-label="Filter by Event"><option value="">All Events</option></select>
+        <select class="tbl-filter" id="tblMeet" aria-label="Filter by Meet"><option value="">All Meets</option></select>
+        <select class="tbl-filter" id="tblRows" aria-label="Rows per page">
+          <option value="15">15 / page</option>
+          <option value="25">25 / page</option>
+          <option value="50">50 / page</option>
+          <option value="100">100 / page</option>
+        </select>
+      </div>
+
+      <div class="results-table-wrap">
+        <table class="rt" id="mainTable">
+          <thead>
+            <tr>
+              <th id="th-date"  onclick="sortBy('date')">Date</th>
+              <th id="th-event" onclick="sortBy('event')">Event</th>
+              <th id="th-mark"  onclick="sortBy('mark')">Mark</th>
+              <th id="th-meet"  onclick="sortBy('meet')">Meet</th>
+              <th id="th-place" onclick="sortBy('place')">Place</th>
+            </tr>
+          </thead>
+          <tbody id="tblBody">
+            <tr><td colspan="5" style="text-align:center;padding:2.5rem;color:var(--text-tertiary);">
+              <i class="fas fa-circle-notch fa-spin" style="font-size:1.4rem;"></i>
+            </td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="results-footer">
+        <span id="rowCountLabel">Loading…</span>
+        <div class="pag" id="paginationBar"></div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="row">
+    <div class="footer-col">
+      <h4>General</h4>
+      <ul>
+        <li><a href="/home/index.html">Home</a></li>
+        <li><a href="/home/about.html">About</a></li>
+        <li><a href="/home/admin.html">Admin</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Cross Country</h4>
+      <ul>
+        <li><a href="/CrossCountry/xc.html">Home</a></li>
+        <li><a href="/CrossCountry/meets.html">Meets</a></li>
+        <li><a href="/CrossCountry/schools.html">Schools</a></li>
+        <li><a href="/CrossCountry/rankings.html">Rankings</a></li>
+        <li><a href="/CrossCountry/analytics.html">Analytics</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Track</h4>
+      <ul>
+        <li><a href="/Track/index.html">Home</a></li>
+        <li><a href="/Track/meets.html">Meets</a></li>
+        <li><a href="/Track/teams.html">Teams</a></li>
+        <li><a href="/Track/rankings.html">Rankings</a></li>
+        <li><a href="/Track/analytics.html">Analytics</a></li>
+      </ul>
+    </div>
+  </div>
+  <hr>
+  <div class="row">
+    <div class="footer-bottom">
+      <div style="margin-bottom:0.75rem;">
+        <a href="https://github.com/sjwooft1/mountainstatemiles" target="_blank" rel="noopener noreferrer" style="border:none;">
+          <i class="fab fa-github" style="font-size:1.2rem;"></i>
+          <span style="margin-left:6px;">GitHub Repository</span>
+        </a>
+      </div>
+      <p>© 2026 Mountain State Miles — Built by runners, for runners.</p>
+    </div>
+  </div>
+</footer>
+
+<div class="toast-tray" id="toastTray"></div>
+
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-analytics-compat.js"></script>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/handsontable@latest/dist/handsontable.full.min.css">
-<script src="https://cdn.jsdelivr.net/npm/handsontable@latest/dist/handsontable.full.min.js"></script>
 <script src="/assets/theme-toggle.js"></script>
-<script src="firebase-config.js"></script>
+<script src="/Track/firebase-config.js"></script>
+
 <script>
+/* ═══════════════════════════════════════════════════
+   THEME & UTILS
+═══════════════════════════════════════════════════ */
+const themeToggle = document.getElementById('themeToggle');
+const themeIcon   = document.getElementById('themeIcon');
+
+function setTheme(t) {
+  document.documentElement.setAttribute('data-theme', t);
+  themeIcon.className = t === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+  localStorage.setItem('msm-theme', t);
+  if (window._chartsReady) rebuildCharts();
+}
+themeToggle.addEventListener('click', () => {
+  setTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+});
+(function initTheme() {
+  const saved = localStorage.getItem('msm-theme');
+  const sys   = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  setTheme(saved || sys);
+})();
+
+function toast(msg) {
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.textContent = msg;
+  document.getElementById('toastTray').appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+}
+
 async function waitForFirebase() {
-  let attempts = 0;
-  while (typeof window.firebaseDatabase === 'undefined' && attempts < 50) {
-    await new Promise(resolve => setTimeout(resolve, 100));
-    attempts++;
+  let i = 0;
+  while (typeof window.firebaseDatabase === 'undefined' && i < 60) {
+    await new Promise(r => setTimeout(r, 100));
+    i++;
   }
-  if (typeof window.firebaseDatabase === 'undefined') {
-    throw new Error('Firebase database not initialized');
+  if (!window.firebaseDatabase) throw new Error('Firebase not ready');
+}
+
+/* ═══════════════════════════════════════════════════
+   GLOBAL STATE
+═══════════════════════════════════════════════════ */
+const urlParams = new URLSearchParams(window.location.search);
+const athleteId = urlParams.get('id');
+
+let athlete   = null;
+let allResults = [];   
+let pbs        = {};   
+let gCharts    = {};
+
+let tFiltered  = [];
+let tSortKey   = 'date';
+let tSortDir   = 'desc';
+let tPage      = 1;
+let tPerPage   = 15;
+
+/* ═══════════════════════════════════════════════════
+   SEARCH FIX: Wrap push in curly braces!
+═══════════════════════════════════════════════════ */
+let allAthletes  = [];
+let searchTimer;
+
+async function loadAthleteList() {
+  try {
+    await waitForFirebase();
+    const snap = await window.firebaseDatabase.ref('Track/athletes').once('value');
+    snap.forEach(c => {
+      // The braces prevent 'push' from returning a truthy value and canceling the loop
+      allAthletes.push({ id: c.key, ...c.val() }); 
+    });
+  } catch(e) { console.warn("Athlete list for search unavailable."); }
+}
+
+const searchInput    = document.getElementById('searchInput');
+const searchDropdown = document.getElementById('searchDropdown');
+
+searchInput.addEventListener('input', () => {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(runSearch, 150);
+});
+searchInput.addEventListener('keydown', e => {
+  const items = [...searchDropdown.querySelectorAll('.search-drop-item')];
+  let idx = items.findIndex(i => i.classList.contains('hl'));
+  if (e.key === 'ArrowDown') { e.preventDefault(); items.forEach(i=>i.classList.remove('hl')); if(items[++idx]) items[idx].classList.add('hl'); }
+  else if (e.key === 'ArrowUp') { e.preventDefault(); items.forEach(i=>i.classList.remove('hl')); if(items[Math.max(0,--idx)]) items[Math.max(0,idx)].classList.add('hl'); }
+  else if (e.key === 'Enter') { const hl = searchDropdown.querySelector('.hl'); if(hl) hl.click(); }
+  else if (e.key === 'Escape') { searchDropdown.classList.remove('open'); }
+});
+document.addEventListener('click', e => {
+  if (!e.target.closest('#searchWrap')) searchDropdown.classList.remove('open');
+});
+
+function runSearch() {
+  const queryText = searchInput.value.trim().toLowerCase();
+  if (!queryText) { searchDropdown.classList.remove('open'); return; }
+  
+  const terms = queryText.split(/\s+/);
+  const hits = allAthletes.filter(a => {
+    const searchString = `${a.first_name||''} ${a.last_name||''} ${a.school||''}`.toLowerCase();
+    return terms.every(term => searchString.includes(term)); 
+  }).slice(0, 8);
+
+  if (!hits.length) {
+    searchDropdown.innerHTML = `<div class="search-drop-empty">No athletes found</div>`;
+  } else {
+    searchDropdown.innerHTML = hits.map(a => {
+      const full = `${a.first_name||''} ${a.last_name||''}`;
+      const init = ((a.first_name||'')[0]||'')+((a.last_name||'')[0]||'');
+      return `<div class="search-drop-item" data-id="${a.id}">
+        <div class="search-drop-avatar">${init.toUpperCase()}</div>
+        <div>
+          <div class="search-drop-name">${full}</div>
+          <div class="search-drop-meta">${a.school||''}${a.grade?' · Grade '+a.grade:''}</div>
+        </div>
+      </div>`;
+    }).join('');
+    searchDropdown.querySelectorAll('.search-drop-item').forEach(el =>
+      el.addEventListener('click', () => { window.location.href = `athlete.html?id=${el.dataset.id}`; })
+    );
+  }
+  searchDropdown.classList.add('open');
+}
+
+/* ═══════════════════════════════════════════════════
+   LOAD ATHLETE
+═══════════════════════════════════════════════════ */
+async function loadAthlete() {
+  if (!athleteId) {
+    document.getElementById('heroName').textContent = 'No athlete selected';
+    document.getElementById('heroChips').innerHTML = '<p style="color:var(--text-tertiary)">Use the search bar to find an athlete.</p>';
+    document.getElementById('tblBody').innerHTML = '<tr><td colspan="5" style="text-align:center;">No data to load.</td></tr>';
+    return;
+  }
+
+  try {
+    await waitForFirebase();
+
+    const athSnap = await window.firebaseDatabase.ref(`Track/athletes/${athleteId}`).once('value');
+    athlete = athSnap.exists() ? { id: athleteId, ...athSnap.val() } : null;
+    
+    if (!athlete) {
+      document.getElementById('heroName').textContent = 'Athlete not found';
+      return;
+    }
+
+    const fullName = `${athlete.first_name||''} ${athlete.last_name||''}`.trim();
+    document.title = `${fullName} — Mountain State Miles`;
+    document.getElementById('heroName').textContent = fullName;
+    document.getElementById('heroChips').innerHTML = [
+      athlete.school ? `<span class="hero-chip"><i class="fas fa-school"></i>${athlete.school}</span>` : '',
+      athlete.grade  ? `<span class="hero-chip"><i class="fas fa-graduation-cap"></i>Grade ${athlete.grade}</span>` : '',
+      athlete.gender ? `<span class="hero-chip"><i class="fas fa-user"></i>${athlete.gender}</span>` : ''
+    ].join('');
+
+    window.__MSM_COACH_CTX = { kind:'athlete', athleteName:fullName, schoolName:athlete.school||'' };
+    window.dispatchEvent(new CustomEvent('msm-coach-context-updated'));
+
+    const [resultsSnap, meetsSnap, eventsSnap] = await Promise.all([
+      window.firebaseDatabase.ref('Track/results').once('value'),
+      window.firebaseDatabase.ref('Track/meets').once('value'),
+      window.firebaseDatabase.ref('Track/events').once('value')
+    ]);
+
+    const meetsMap  = {};
+    const eventsMap = {};
+    meetsSnap.forEach(c  => { meetsMap[c.key]  = { id: c.key,  ...c.val() }; });
+    eventsSnap.forEach(c => { eventsMap[c.key] = { id: c.key, ...c.val() }; });
+
+    const raw = [];
+    resultsSnap.forEach(c => {
+      const r = { id: c.key, ...c.val() };
+      if (r.athlete_id === athleteId) raw.push(r);
+    });
+
+    allResults = raw.map(r => ({
+      ...r,
+      meet:  meetsMap[r.meet_id]   || {},
+      event: eventsMap[r.event_id] || {}
+    }));
+
+    allResults.sort((a, b) => (b.meet?.date||'').localeCompare(a.meet?.date||''));
+
+    allResults.forEach(r => {
+      const ev  = r.event?.name;
+      if (!ev) return;
+      const val = parseMark(r.mark); 
+      
+      if (!isNaN(val)) {
+        const isField = String(r.mark).includes('-') || String(r.mark).includes('m') || /jump|vault|shot|discus|javelin|throw/i.test(ev);
+        if (!pbs[ev]) {
+          pbs[ev] = { val, display: r.mark, isField };
+        } else {
+          const isNewPB = isField ? (val > pbs[ev].val) : (val < pbs[ev].val);
+          if (isNewPB) pbs[ev] = { val, display: r.mark, isField };
+        }
+      }
+    });
+
+    const uniqueMeets = new Set(allResults.map(r => r.meet_id).filter(Boolean));
+    document.getElementById('heroSummary').innerHTML = `
+      <div class="hero-stat-box"><div class="hero-stat-num">${allResults.length}</div><div class="hero-stat-lbl">Results</div></div>
+      <div class="hero-stat-box"><div class="hero-stat-num">${Object.keys(pbs).length}</div><div class="hero-stat-lbl">Events</div></div>
+      <div class="hero-stat-box"><div class="hero-stat-num">${uniqueMeets.size}</div><div class="hero-stat-lbl">Meets</div></div>
+    `;
+
+    renderPBs();
+    buildCharts();
+    populateTableFilters();
+    tFiltered = [...allResults];
+    renderTable();
+
+  } catch(err) {
+    console.error('Error loading athlete:', err);
+    document.getElementById('heroName').textContent = 'Error loading athlete';
+    document.getElementById('heroChips').innerHTML =
+      '<p style="color:var(--danger,#ef4444)">⚠ Could not load data. Check your connection.</p>';
   }
 }
 
-const params = new URLSearchParams(window.location.search);
-const athleteId = params.get('id');
+function renderPBs() {
+  const grid = document.getElementById('pbGrid');
+  const entries = Object.entries(pbs);
 
-async function loadAthlete() {
-  try {
-    await waitForFirebase();
-    const athSnapshot = await window.firebaseDatabase.ref(`Track/athletes/${athleteId}`).once('value');
-  const ath = athSnapshot.exists() ? { id: athleteId, ...athSnapshot.val() } : null;
-  if (!ath) { document.getElementById('athlete-name').textContent = 'Athlete not found'; return; }
-  document.getElementById('athlete-name').textContent = `${ath.first_name} ${ath.last_name}`;
-  document.getElementById('athlete-meta').innerHTML = `<strong>School:</strong> ${ath.school ?? ''} &nbsp; <strong>Grade:</strong> ${ath.grade ?? ''}`;
+  if (!entries.length) {
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><i class="fas fa-trophy"></i><p>No personal bests recorded yet.</p></div>`;
+    return;
+  }
 
-  const fullName = `${ath.first_name || ''} ${ath.last_name || ''}`.trim();
-  window.__MSM_COACH_CTX = {
-    kind: 'athlete',
-    athleteName: fullName,
-    schoolName: ath.school || ''
+  grid.innerHTML = entries.map(([ev, pb], i) => `
+    <div class="pb-card" style="animation-delay:${i*40}ms">
+      <div class="pb-event-name">${ev}</div>
+      <div class="pb-mark-val">${pb.display}</div>
+    </div>
+  `).join('');
+}
+
+/* ═══════════════════════════════════════════════════
+   CHARTS
+═══════════════════════════════════════════════════ */
+function chartDefaults() {
+  const dark = document.documentElement.getAttribute('data-theme') === 'dark';
+  return {
+    gridColor:  dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)',
+    textColor:  dark ? '#808080' : '#999999',
+    lineColor:  dark ? '#ffffff' : '#000000',
+    fillColor:  dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)',
   };
-  window.dispatchEvent(new CustomEvent('msm-coach-context-updated'));
+}
 
-  // personal bests: find best mark per event for this athlete (naive: min mark)
-  const pbsSnapshot = await window.firebaseDatabase.ref('Track/results')
-    .orderByChild('athlete_id')
-    .equalTo(athleteId)
-    .limitToFirst(1000)
-    .once('value');
-  
-  const pbs = [];
-  pbsSnapshot.forEach(child => {
-    pbs.push({ id: child.key, ...child.val() });
-  });
-  
-  // Load events for results
-  const eventIds = [...new Set(pbs.map(r => r.event_id).filter(Boolean))];
-  const eventsMap = {};
-  if (eventIds.length > 0) {
-    const eventsSnapshot = await window.firebaseDatabase.ref('Track/events').once('value');
-    eventsSnapshot.forEach(child => {
-      if (eventIds.includes(child.key)) {
-        eventsMap[child.key] = { id: child.key, ...child.val() };
+function baseOptions(c, yTitle = '', xTitle = '') {
+  return {
+    responsive: true,
+    maintainAspectRatio: false,
+    animation: { duration: 500 },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: document.documentElement.getAttribute('data-theme') === 'dark' ? '#222' : '#000',
+        titleColor: '#fff',
+        bodyColor: '#ddd',
+        borderColor: '#444',
+        borderWidth: 1,
+        cornerRadius: 6,
+        padding: 10,
+        displayColors: false
       }
-    });
-  }
-  
-  // Attach event data and sort by mark
-  pbs.forEach(r => {
-    r.event = eventsMap[r.event_id] || {};
-  });
-  pbs.sort((a, b) => {
-    const markA = parseFloat(a.mark) || Infinity;
-    const markB = parseFloat(b.mark) || Infinity;
-    return markA - markB;
-  });
+    },
+    scales: {
+      x: {
+        title: { display: !!xTitle, text: xTitle, color: c.textColor, font: { weight: 'bold' } },
+        ticks: { color: c.textColor, font: { size: 10, family: 'Inter, sans-serif' }, maxRotation: 40 },
+        grid:  { color: c.gridColor }
+      },
+      y: {
+        reverse: false, // 🌟 FIX: Disabled axis inversion
+        title: { display: !!yTitle, text: yTitle, color: c.textColor, font: { weight: 'bold' } },
+        ticks:   { color: c.textColor, font: { size: 10, family: 'Inter, sans-serif' } },
+        grid:    { color: c.gridColor }
+      }
+    }
+  };
+}
 
-  if (!pbs || pbs.length===0) {
-    document.getElementById('pbs').innerHTML = '<p>No personal bests found.</p>';
-  } else {
-    // group by event
-    const bests = {};
-    pbs.forEach(r => {
-      const eventName = r.event?.name || 'Unknown';
-      if (!bests[eventName]) bests[eventName] = r.mark;
-    });
-    document.getElementById('pbs').innerHTML = `<ul>${Object.entries(bests).map(([ev,mark]) => `<li><strong>${ev}:</strong> ${mark}</li>`).join('')}</ul>`;
+function parseMark(mark) {
+  if (!mark) return NaN;
+  const m = String(mark).trim().toLowerCase();
+  
+  if (m.includes('-')) {
+    const parts = m.split('-');
+    const feet = parseFloat(parts[0]) || 0;
+    const inches = parseFloat(parts[1]) || 0;
+    return (feet * 12) + inches;
   }
+  
+  if (m.includes(':')) {
+    const parts = m.split(':');
+    const mins = parseFloat(parts[0]) || 0;
+    const secs = parseFloat(parts[1]) || 0;
+    return (mins * 60) + secs;
+  }
+  
+  return parseFloat(m.replace(/[^\d.-]/g, ''));
+}
 
-  // Load history
-  const histSnapshot = await window.firebaseDatabase.ref('Track/results')
-    .orderByChild('athlete_id')
-    .equalTo(athleteId)
-    .limitToFirst(200)
-    .once('value');
+function buildCharts() {
+  populateProgSelect();
+  buildProgChart();
+  buildPRChart();
+  buildMeetsChart();
+  buildMultiChart();
+  window._chartsReady = true;
+}
+
+function rebuildCharts() {
+  Object.values(gCharts).forEach(c => c.destroy());
+  gCharts = {};
+  buildCharts();
+}
+
+function populateProgSelect() {
+  const sel = document.getElementById('progEventSel');
+  const events = [...new Set(allResults.map(r => r.event?.name).filter(Boolean))];
+  sel.innerHTML = events.map(ev => `<option value="${ev}">${ev}</option>`).join('');
+  sel.addEventListener('change', buildProgChart);
+}
+
+function buildProgChart() {
+  const c = chartDefaults();
+  const ev = document.getElementById('progEventSel').value;
   
-  const hist = [];
-  histSnapshot.forEach(child => {
-    hist.push({ id: child.key, ...child.val() });
-  });
+  const isFieldFeetInches = allResults.some(r => r.event?.name === ev && String(r.mark).includes('-'));
+  const isFieldMetric = allResults.some(r => r.event?.name === ev && String(r.mark).toLowerCase().includes('m'));
+
+  const pts = allResults
+    .filter(r => r.event?.name === ev && r.meet?.date && r.mark)
+    .map(r => ({ 
+        x: r.meet.date, 
+        y: parseMark(r.mark),
+        meetName: r.meet?.name || 'Unknown Meet',
+        rawMark: r.mark
+    }))
+    .filter(d => !isNaN(d.y))
+    .sort((a,b) => a.x.localeCompare(b.x));
+
+  if (gCharts.prog) gCharts.prog.destroy();
   
-  // Load meets and events for history
-  const meetIds = [...new Set(hist.map(r => r.meet_id).filter(Boolean))];
-  const histEventIds = [...new Set(hist.map(r => r.event_id).filter(Boolean))];
-  const meetsMap = {};
-  const histEventsMap = {};
+  let options = baseOptions(c, 'Mark / Time', 'Date of Meet'); 
   
-  if (meetIds.length > 0) {
-    const meetsSnapshot = await window.firebaseDatabase.ref('Track/meets').once('value');
-    meetsSnapshot.forEach(child => {
-      if (meetIds.includes(child.key)) {
-        meetsMap[child.key] = { id: child.key, ...child.val() };
+  options.scales.y.ticks.callback = function(value) {
+      if (isFieldFeetInches) {
+          const feet = Math.floor(value / 12);
+          const inches = Math.round(value % 12);
+          return `${feet}-${String(inches).padStart(2, '0')}`;
+      } else if (value >= 60 && !isFieldMetric && !/jump|vault|throw/i.test(ev)) { 
+          const mins = Math.floor(value / 60);
+          const secs = Math.floor(value % 60);
+          return `${mins}:${String(secs).padStart(2, '0')}`;
       }
-    });
-  }
-  
-  if (histEventIds.length > 0) {
-    const eventsSnapshot = await window.firebaseDatabase.ref('Track/events').once('value');
-    eventsSnapshot.forEach(child => {
-      if (histEventIds.includes(child.key)) {
-        histEventsMap[child.key] = { id: child.key, ...child.val() };
-      }
-    });
-  }
-  
-  // Attach meet and event data
-  hist.forEach(r => {
-    r.meet = meetsMap[r.meet_id] || {};
-    r.event = histEventsMap[r.event_id] || {};
+      return value;
+  };
+
+  options.plugins.tooltip.callbacks = {
+      title: (context) => pts[context[0].dataIndex].meetName,
+      label: (context) => `Mark: ${pts[context.dataIndex].rawMark}`
+  };
+
+  gCharts.prog = new Chart(document.getElementById('chartProg'), {
+    type: 'line',
+    data: {
+      labels: pts.map(p => new Date(p.x).toLocaleDateString('en-US',{month:'short',day:'numeric'})),
+      datasets: [{
+        data: pts.map(p => p.y),
+        borderColor: c.lineColor,
+        backgroundColor: c.fillColor,
+        borderWidth: 2,
+        pointBackgroundColor: c.lineColor,
+        pointHoverRadius: 6,
+        pointRadius: 4,
+        tension: 0.3,
+        fill: true
+      }]
+    },
+    options: options
   });
+}
+
+function buildPRChart() {
+  const c = chartDefaults();
+  const labels = Object.keys(pbs);
+  const vals = labels.map(ev => pbs[ev].val);
+  const rawMarks = labels.map(ev => pbs[ev].display);
+
+  if (gCharts.pr) gCharts.pr.destroy();
   
-  // Sort by meet date descending
-  hist.sort((a, b) => {
-    const dateA = a.meet?.date || '';
-    const dateB = b.meet?.date || '';
-    return dateB.localeCompare(dateA);
+  let options = baseOptions(c, 'Best Mark', 'Event');
+  options.plugins.tooltip.callbacks = {
+      label: (context) => `PR: ${rawMarks[context.dataIndex]}`
+  };
+
+  gCharts.pr = new Chart(document.getElementById('chartPR'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        data: vals,
+        backgroundColor: c.fillColor,
+        borderColor: c.lineColor,
+        borderWidth: 1.5,
+        borderRadius: 4,
+        hoverBackgroundColor: c.lineColor
+      }]
+    },
+    options: options
   });
-  const historyContainer = document.getElementById('history');
-  if (!hist || hist.length===0) {
-    historyContainer.innerHTML = '<p>No results found.</p>';
-  } else {
-    historyContainer.innerHTML = '<div id="history-grid" style="height: 400px; width: 100%;"></div>';
+}
+
+function buildMeetsChart() {
+  const c = chartDefaults();
+  const mc = {};
+  allResults.forEach(r => {
+    const n = r.meet?.name || 'Unknown';
+    mc[n] = (mc[n]||0) + 1;
+  });
+  const sorted = Object.entries(mc).sort((a,b)=>b[1]-a[1]).slice(0,8);
+
+  if (gCharts.meets) gCharts.meets.destroy();
+  
+  let options = { ...baseOptions(c, 'Meet Name', 'Events Competed'), indexAxis: 'y' };
+  options.plugins.tooltip.callbacks = {
+      label: (context) => `${context.raw} Events`
+  };
+
+  gCharts.meets = new Chart(document.getElementById('chartMeets'), {
+    type: 'bar',
+    data: {
+      labels: sorted.map(([n]) => n.length > 22 ? n.slice(0,20)+'…' : n),
+      datasets: [{
+        data: sorted.map(([,v]) => v),
+        backgroundColor: c.fillColor,
+        borderColor: c.lineColor,
+        borderWidth: 1.5,
+        borderRadius: 4
+      }]
+    },
+    options: options
+  });
+}
+
+/* 🌟 FIX: MultiChart refactored from scatter to line with shared dates */
+function buildMultiChart() {
+  const c = chartDefaults();
+  const events = [...new Set(allResults.map(r => r.event?.name).filter(Boolean))];
+  
+  // Create a unified X-axis label array so Chart.js correctly aligns dates
+  const rawDates = [...new Set(allResults.filter(r=>r.meet?.date).map(r=>r.meet.date))].sort();
+  const labels = rawDates.map(d => new Date(d).toLocaleDateString('en-US',{month:'short',day:'numeric'}));
+
+  const alphas = ['1','0.8','0.6','0.4','0.2','0.1'];
+  
+  const datasets = events.slice(0,6).map((ev, i) => {
     
-    setTimeout(() => {
-      const headers = ['Date', 'Event', 'Mark', 'Meet'];
-      const rowData = hist.map(r => [
-        r.meet?.date ? new Date(r.meet.date).toLocaleDateString() : '',
-        r.event.name || '',
-        r.mark || '',
-        r.meet.name || '',
-        r.event.slug || '',
-        r.meet.slug || ''
-      ]);
-
-      const columnDefs = [
-        { data: 0, title: 'Date', type: 'text', readOnly: true, width: 120 },
-        {
-          data: 1,
-          title: 'Event',
-          type: 'text',
-          readOnly: true,
-          renderer: function(instance, td, row, col, prop, value, cellProperties) {
-            Handsontable.renderers.TextRenderer.apply(this, arguments);
-            const eventSlug = instance.getDataAtRow(row)[4];
-            if (eventSlug) {
-              td.innerHTML = `<a href="event.html?event=${eventSlug}" style="color: #0056b3; text-decoration: none;">${value || ''}</a>`;
-            }
-          }
-        },
-        { data: 2, title: 'Mark', type: 'text', readOnly: true, width: 120 },
-        {
-          data: 3,
-          title: 'Meet',
-          type: 'text',
-          readOnly: true,
-          renderer: function(instance, td, row, col, prop, value, cellProperties) {
-            Handsontable.renderers.TextRenderer.apply(this, arguments);
-            const meetSlug = instance.getDataAtRow(row)[5];
-            if (meetSlug) {
-              td.innerHTML = `<a href="meet.html?slug=${meetSlug}" style="color: #0056b3; text-decoration: none;">${value || ''}</a>`;
-            }
-          }
-        }
-      ];
-
-      const gridElement = document.getElementById('history-grid');
-      if (gridElement) {
-        new Handsontable(gridElement, {
-          data: rowData,
-          colHeaders: headers,
-          columns: columnDefs,
-          rowHeaders: true,
-          licenseKey: 'non-commercial-and-evaluation',
-          height: 'auto',
-          maxHeight: '400px',
-          stretchH: 'all',
-          columnSorting: true,
-          filters: true,
-          dropdownMenu: true,
-          contextMenu: true,
-          manualColumnResize: true
-        });
+    // Map the event's data explicitly to the shared date labels
+    const data = rawDates.map(dateStr => {
+      const res = allResults.find(r => r.event?.name === ev && r.meet?.date === dateStr && r.mark);
+      if (res) {
+        const yVal = parseMark(res.mark);
+        return isNaN(yVal) ? null : yVal;
       }
-    }, 100);
+      return null;
+    });
+
+    // We store the raw marks so tooltips display nicely instead of parsed decimals
+    const rawMarks = rawDates.map(dateStr => {
+      const res = allResults.find(r => r.event?.name === ev && r.meet?.date === dateStr && r.mark);
+      return res ? res.mark : null;
+    });
+
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const base = isDark ? '255,255,255' : '0,112,243';
+    
+    return {
+      label: ev,
+      data: data,
+      rawMarks: rawMarks, // Custom prop for tooltips
+      borderColor: `rgba(${base},${alphas[i]})`,
+      backgroundColor: `rgba(${base},${alphas[i]})`,
+      borderWidth: 2,
+      pointRadius: 4,
+      pointHoverRadius: 6,
+      tension: 0.3,
+      spanGaps: true, // Tells Chart.js to draw the line across missing meet dates
+      fill: false
+    };
+  });
+
+  if (gCharts.multi) gCharts.multi.destroy();
+  
+  let options = baseOptions(c, 'Mark', 'Date');
+  options.plugins.legend = { display: true, labels: { color: c.textColor, boxWidth: 10, font: { size: 11 } } };
+  options.plugins.tooltip.callbacks = {
+      label: (context) => {
+          const raw = context.dataset.rawMarks[context.dataIndex];
+          return `${context.dataset.label}: ${raw}`;
+      }
+  };
+
+  gCharts.multi = new Chart(document.getElementById('chartMulti'), {
+    type: 'line', // Swapped from scatter to line
+    data: { labels, datasets },
+    options: options
+  });
+}
+
+/* ═══════════════════════════════════════════════════
+   TABLE & EXPORTS
+═══════════════════════════════════════════════════ */
+function populateTableFilters() {
+  const events = [...new Set(allResults.map(r=>r.event?.name).filter(Boolean))].sort();
+  const meets  = [...new Set(allResults.map(r=>r.meet?.name).filter(Boolean))].sort();
+
+  const evSel = document.getElementById('tblEvent');
+  const mtSel = document.getElementById('tblMeet');
+  evSel.innerHTML = '<option value="">All Events</option>' + events.map(e=>`<option>${e}</option>`).join('');
+  mtSel.innerHTML = '<option value="">All Meets</option>'  + meets.map(m=>`<option>${m}</option>`).join('');
+
+  [document.getElementById('tblSearch'), evSel, mtSel].forEach(el => el.addEventListener('input', applyFilters));
+  document.getElementById('tblRows').addEventListener('change', e => { tPerPage=parseInt(e.target.value); tPage=1; renderTable(); });
+}
+
+function applyFilters() {
+  const queryText = document.getElementById('tblSearch').value.toLowerCase().trim();
+  const terms = queryText.split(/\s+/); 
+  
+  const ev = document.getElementById('tblEvent').value;
+  const mt = document.getElementById('tblMeet').value;
+
+  tFiltered = allResults.filter(r => {
+    const text = `${r.event?.name||''} ${r.meet?.name||''} ${r.mark||''} ${r.place||''}`.toLowerCase();
+    const matchesSearch = terms.every(term => text.includes(term));
+    
+    return matchesSearch
+        && (!ev || r.event?.name === ev)
+        && (!mt || r.meet?.name  === mt);
+  });
+  tPage = 1;
+  doSort();
+  renderTable();
+}
+
+function sortBy(key) {
+  tSortDir = (tSortKey === key && tSortDir === 'asc') ? 'desc' : 'asc';
+  tSortKey = key;
+  document.querySelectorAll('table.rt thead th').forEach(th => th.className='');
+  const th = document.getElementById(`th-${key}`);
+  if (th) th.className = tSortDir === 'asc' ? 'sort-asc' : 'sort-desc';
+  doSort();
+  renderTable();
+}
+
+function doSort() {
+  tFiltered.sort((a, b) => {
+    let va, vb;
+    switch(tSortKey) {
+      case 'date':  va=a.meet?.date||'';     vb=b.meet?.date||'';     break;
+      case 'event': va=a.event?.name||'';    vb=b.event?.name||'';    break;
+      case 'meet':  va=a.meet?.name||'';     vb=b.meet?.name||'';     break;
+      case 'place': va=parseInt(a.place)||999; vb=parseInt(b.place)||999; break;
+      case 'mark':  
+        va = parseMark(a.mark); 
+        vb = parseMark(b.mark);
+        if(isNaN(va)) va = tSortDir==='asc' ? Infinity : -Infinity;
+        if(isNaN(vb)) vb = tSortDir==='asc' ? Infinity : -Infinity;
+        
+        const aIsField = pbs[a.event?.name]?.isField;
+        const bIsField = pbs[b.event?.name]?.isField;
+        
+        if (aIsField && bIsField) {
+            return tSortDir === 'asc' ? vb - va : va - vb;
+        } 
+        break;
+      default:      va=''; vb='';
+    }
+    const cmp = typeof va==='number' ? va-vb : String(va).localeCompare(String(vb));
+    return tSortDir==='asc' ? cmp : -cmp;
+  });
+}
+
+function renderTable() {
+  const total  = tFiltered.length;
+  const pages  = Math.max(1, Math.ceil(total/tPerPage));
+  tPage        = Math.min(tPage, pages);
+  const start  = (tPage-1)*tPerPage;
+  const slice  = tFiltered.slice(start, start+tPerPage);
+
+  document.getElementById('rowCountLabel').textContent =
+    total ? `Showing ${start+1}–${Math.min(start+tPerPage,total)} of ${total}` : 'No results';
+
+  const tbody = document.getElementById('tblBody');
+  tbody.innerHTML = ''; 
+  
+  if (!slice.length) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td colspan="5" style="text-align:center;padding:2.5rem;color:var(--text-tertiary);">No matching results.</td>`;
+    tbody.appendChild(tr);
+  } else {
+    const fragment = document.createDocumentFragment();
+    slice.forEach(r => {
+      const date    = r.meet?.date ? new Date(r.meet.date).toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric'}) : '—';
+      const evName  = r.event?.name || '—';
+      const evSlug  = r.event?.slug;
+      const mtName  = r.meet?.name  || '—';
+      const mtSlug  = r.meet?.slug;
+      const mark    = r.mark || '—';
+      const place   = r.place ? `${r.place}${ord(r.place)}` : '—';
+      const isPB    = pbs[evName]?.display === mark;
+      
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${date}</td>
+        <td>${evSlug?`<a href="event.html?event=${evSlug}">${evName}</a>`:evName}</td>
+        <td class="mark-col">${mark}${isPB?'<span class="pb-tag">PB</span>':''}</td>
+        <td>${mtSlug?`<a href="meet.html?slug=${mtSlug}">${mtName}</a>`:mtName}</td>
+        <td>${place}</td>
+      `;
+      fragment.appendChild(tr);
+    });
+    tbody.appendChild(fragment);
   }
-  } catch (error) {
-    console.error('Error loading athlete:', error);
-    document.getElementById('athlete-name').textContent = 'Error Loading Athlete';
-    document.getElementById('athlete-meta').innerHTML = '<p style="color: #dc3545;">⚠️ Error loading athlete data. Please check your connection and try again.</p>';
-    document.getElementById('pbs').innerHTML = '<p style="color: #dc3545;">Error loading data.</p>';
-    document.getElementById('history').innerHTML = '<p style="color: #dc3545;">Error loading data.</p>';
-  }
+
+  const bar = document.getElementById('paginationBar');
+  bar.innerHTML = '';
+  const btn = (label, pg, active, disabled) => {
+    const b = document.createElement('button');
+    b.className = 'pag-btn' + (active?' active':'');
+    b.textContent = label;
+    b.disabled = disabled;
+    if (!disabled) b.onclick = () => { tPage=pg; renderTable(); };
+    return b;
+  };
+  bar.appendChild(btn('‹', tPage-1, false, tPage===1));
+  pageRange(tPage, pages).forEach(p => {
+    if (p==='…') { const s=document.createElement('span'); s.textContent='…'; s.style.cssText='padding:0 4px;color:var(--text-tertiary);line-height:28px;'; bar.appendChild(s); }
+    else bar.appendChild(btn(p, p, p===tPage, false));
+  });
+  bar.appendChild(btn('›', tPage+1, false, tPage===pages));
+}
+
+function pageRange(cur, total) {
+  if (total<=7) return Array.from({length:total},(_,i)=>i+1);
+  if (cur<=4)   return [1,2,3,4,5,'…',total];
+  if (cur>=total-3) return [1,'…',total-4,total-3,total-2,total-1,total];
+  return [1,'…',cur-1,cur,cur+1,'…',total];
+}
+
+function ord(n) {
+  const s=['th','st','nd','rd'], v=n%100;
+  return s[(v-20)%10]||s[v]||s[0];
+}
+
+function athleteSlug() {
+  return athlete ? `${athlete.first_name||''}_${athlete.last_name||''}`.replace(/\s+/g,'_') : 'athlete';
+}
+function dl(name, type, content) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content],{type}));
+  a.download = name; a.click();
+}
+function toCSVRow(cells) {
+  return cells.map(c=>`"${String(c??'').replace(/"/g,'""')}"`).join(',');
+}
+function resultRows() {
+  return tFiltered.map(r=>[
+    r.meet?.date ? new Date(r.meet.date).toLocaleDateString() : '',
+    r.event?.name||'', r.mark||'', r.meet?.name||'', r.place||''
+  ]);
+}
+
+function exportPBsCSV() {
+  const rows=[['Event','Personal Best'],...Object.entries(pbs).map(([ev,pb])=>[ev,pb.display])];
+  dl(`${athleteSlug()}_PBs.csv`,'text/csv', rows.map(toCSVRow).join('\n'));
+  toast('✓ PBs exported as CSV');
+}
+function exportPBsPDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  const name = athlete ? `${athlete.first_name} ${athlete.last_name}` : 'Athlete';
+  doc.setFontSize(18); doc.setFont('helvetica','bold');
+  doc.text(`${name} — Personal Bests`, 14, 20);
+  doc.setFontSize(9); doc.setFont('helvetica','normal');
+  doc.text(`Mountain State Miles · ${new Date().toLocaleDateString()}`, 14, 27);
+  doc.autoTable({
+    head:[['Event','Personal Best']],
+    body: Object.entries(pbs).map(([ev,pb])=>[ev,pb.display]),
+    startY: 33,
+    styles:{fontSize:10},
+    headStyles:{fillColor:[0,0,0],textColor:[255,255,255]}
+  });
+  doc.save(`${athleteSlug()}_PBs.pdf`);
+  toast('✓ PBs exported as PDF');
+}
+function exportPBsJSON() {
+  dl(`${athleteSlug()}_PBs.json`,'application/json',
+    JSON.stringify(Object.entries(pbs).map(([event,pb])=>({event,mark:pb.display})),null,2));
+  toast('✓ PBs exported as JSON');
+}
+
+function exportResultsCSV() {
+  const rows=[['Date','Event','Mark','Meet','Place'],...resultRows()];
+  dl(`${athleteSlug()}_Results.csv`,'text/csv', rows.map(toCSVRow).join('\n'));
+  toast('✓ Results exported as CSV');
+}
+function exportResultsTSV() {
+  const rows=[['Date','Event','Mark','Meet','Place'],...resultRows()];
+  dl(`${athleteSlug()}_Results.tsv`,'text/tab-separated-values', rows.map(r=>r.join('\t')).join('\n'));
+  toast('✓ Results exported as TSV');
+}
+function exportResultsJSON() {
+  dl(`${athleteSlug()}_Results.json`,'application/json',
+    JSON.stringify(tFiltered.map(r=>({
+      date:r.meet?.date||'', event:r.event?.name||'', mark:r.mark||'', meet:r.meet?.name||'', place:r.place||null
+    })),null,2));
+  toast('✓ Results exported as JSON');
+}
+function exportResultsPDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation:'landscape' });
+  const name = athlete ? `${athlete.first_name} ${athlete.last_name}` : 'Athlete';
+  doc.setFontSize(18); doc.setFont('helvetica','bold');
+  doc.text(`${name} — Results`, 14, 16);
+  doc.setFontSize(9); doc.setFont('helvetica','normal');
+  doc.text(`Mountain State Miles · ${new Date().toLocaleDateString()} · ${tFiltered.length} results`, 14, 23);
+  doc.autoTable({
+    head:[['Date','Event','Mark','Meet','Place']],
+    body: resultRows(),
+    startY:28,
+    styles:{fontSize:9},
+    headStyles:{fillColor:[0,0,0],textColor:[255,255,255]},
+    alternateRowStyles:{fillColor:[245,245,245]}
+  });
+  doc.save(`${athleteSlug()}_Results.pdf`);
+  toast('✓ Results exported as PDF');
+}
+function exportChartPNG() {
+  const a = document.createElement('a');
+  a.href = document.getElementById('chartProg').toDataURL('image/png');
+  a.download = `${athleteSlug()}_progression.png`;
+  a.click();
+  toast('✓ Chart exported as PNG');
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  setTimeout(loadAthlete, 100);
+  loadAthleteList();           
+  setTimeout(loadAthlete, 80); 
 });
 </script>
-<script src="track-coach-auth.js"></script>
-<script src="track-coach-toolbar.js"></script>
+
+<script src="/Track/track-coach-auth.js"></script>
+<script src="/Track/track-coach-toolbar.js"></script>
 </body>
 </html>
