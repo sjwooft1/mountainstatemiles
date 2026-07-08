@@ -47,7 +47,7 @@
 
     var brand = document.createElement("p");
     brand.className = "msm-page-loader__brand";
-    brand.textContent = "Mountain State Miles";
+    brand.textContent = "MSM";
     inner.appendChild(brand);
 
     root.appendChild(inner);

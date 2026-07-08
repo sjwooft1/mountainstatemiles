@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MSM Track Exporter</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f7fb;
+            color: #333;
+        }
+        h2 { color: #1e293b; }
+        .filter-panel {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .filter-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+        }
+        label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #64748b;
+        }
+        select, input {
+            padding: 8px;
+            border: 1px solid #cbd5e1;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            background-color: white;
+        }
+        .actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        button {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 4px;
+            font-weight: 500;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+        button:disabled {
+            background-color: #cbd5e1 !important;
+            color: #94a3b8 !important;
+            cursor: not-allowed;
+        }
+        .btn-primary { background-color: #2563eb; color: white; }
+        .btn-primary:hover:not(:disabled) { background-color: #1d4ed8; }
+        .btn-secondary { background-color: #64748b; color: white; }
+        .btn-secondary:hover:not(:disabled) { background-color: #475569; }
+        .btn-export { background-color: #10b981; color: white; }
+        .btn-export:hover:not(:disabled) { background-color: #059669; }
+        
+        #statusMessage {
+            font-size: 0.9rem;
+            font-weight: bold;
+            color: #2563eb;
+        }
+        .table-container {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 0.9rem;
+        }
+        th, td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        th {
+            background-color: #f8fafc;
+            color: #475569;
+            font-weight: 600;
+        }
+        tr:hover { background-color: #f1f5f9; }
+    </style>
+</head>
+<body>
+
+    <h2>MSM Cross Country Exporter</h2>
+
+    <div class="filter-panel">
+        <div class="filter-grid">
+            <div class="filter-group">
+                <label for="seasonFilter">Season</label>
+                <select id="seasonFilter">
+                    <option value="">All Seasons</option>
+                    <option value="indoor">Indoor</option>
+                    <option value="outdoor">Outdoor</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="genderFilter">Gender</label>
+                <select id="genderFilter">
+                    <option value="">All Genders</option>
+                    <option value="M">Male (M)</option>
+                    <option value="F">Female (F)</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="eventFilter">Event</label>
+                <select id="eventFilter"><option value="">All Events</option></select>
+            </div>
+            <div class="filter-group">
+                <label for="categoryFilter">Category</label>
+                <select id="categoryFilter">
+                    <option value="">All Categories</option>
+                    <option value="running">Running</option>
+                    <option value="field">Field</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="schoolFilter">School</label>
+                <select id="schoolFilter"><option value="">All Schools</option></select>
+            </div>
+            <div class="filter-group">
+                <label for="athleteFilter">Athlete</label>
+                <select id="athleteFilter"><option value="">All Athletes</option></select>
+            </div>
+        </div>
+
+        <div class="actions">
+            <button id="applyFiltersBtn" class="btn-primary" disabled>Apply Filters</button>
+            <button id="resetFiltersBtn" class="btn-secondary" disabled>Reset</button>
+            <button id="csvBtn" class="btn-export" disabled>Export CSV</button>
+            <button id="jsonBtn" class="btn-export" disabled>Export JSON</button>
+            <span id="statusMessage">Initializing Firebase...</span>
+        </div>
+    </div>
+
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Meet Name</th>
+                    <th>Event</th>
+                    <th>Category</th>
+                    <th>Athlete</th>
+                    <th>School</th>
+                    <th>Gender</th>
+                    <th>Mark</th>
+                    <th>Place</th>
+                    <th>Heat</th>
+                    <th>Season</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+                <tr><td colspan="11" style="text-align:center;">Awaiting database connection...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+    <script src="firebase-config.js"></script>
+    <script src="firebase-helpers.js"></script>
+    <script>
+        // --- 1. DATA TRANSLATION & UTILITIES (from track-analytics-data.js) ---
+        function toArray(snapshot) {
+            if (!snapshot || !snapshot.exists()) return [];
+            const raw = snapshot.val() || {};
+            return Object.entries(raw).map(([id, value]) => ({ id, ...(value || {}) }));
+        }
+
+        function normalizeGender(value) {
+            const token = String(value || "").trim().toUpperCase();
+            if (token === "W" || token === "F" || token === "GIRLS" || token === "FEMALE") return "F";
+            if (token === "M" || token === "BOYS" || token === "MALE") return "M";
+            return "";
+        }
+
+        function isFieldEvent(eventName) {
+            const name = String(eventName || "").toLowerCase();
+            const fields = ["jump", "vault", "shot", "discus", "javelin", "hammer", "throw", "put"];
+            return fields.some((f) => name.includes(f));
+        }
+
+        function parseTimeToSeconds(mark) {
+            const text = String(mark || "").trim();
+            if (!text) return null;
+            if (text.includes(":")) {
+                const parts = text.split(":").map((n) => parseFloat(n));
+                if (parts.some((n) => Number.isNaN(n))) return null;
+                if (parts.length === 2) return parts[0] * 60 + parts[1];
+                if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+            }
+            const num = parseFloat(text.replace(/[^\d.]/g, ""));
+            return Number.isFinite(num) ? num : null;
+        }
+
+        function parseFieldMark(mark) {
+            const text = String(mark || "").trim().toLowerCase();
+            if (!text) return null;
+            const feetInch = text.match(/(\d+)\D+(\d+(?:\.\d+)?)/);
+            if (feetInch) {
+                const feet = parseFloat(feetInch[1]);
+                const inches = parseFloat(feetInch[2]);
+                return feet + inches / 12;
+            }
+            const num = parseFloat(text.replace(/[^\d.]/g, ""));
+            return Number.isFinite(num) ? num : null;
+        }
+
+        function inferSeason(dateValue) {
+            if (!dateValue) return "";
+            const date = new Date(dateValue);
+            if (Number.isNaN(date.getTime())) return "";
+            const month = date.getMonth() + 1;
+            return month >= 11 || month <= 3 ? "indoor" : "outdoor";
+        }
+
+        function safeDate(value) {
+            if (!value) return "";
+            const d = new Date(value);
+            if (Number.isNaN(d.getTime())) return "";
+            return d.toISOString().slice(0, 10);
+        }
+
+        function normalizeRow(result, maps) {
+            const meet = maps.meetsById.get(result.meet_id) || {};
+            const event = maps.eventsById.get(result.event_id) || {};
+            const athlete = maps.athletesById.get(result.athlete_id) || {};
+
+            const eventName = event.name || result.event_name || "Unknown Event";
+            const athleteName = result.relay_names || result.athlete_name || `${athlete.first_name || ""} ${athlete.last_name || ""}`.trim() || "Unknown Athlete";
+            const schoolName = athlete.school || result.school || result.school_name || "Unknown School";
+            const date = safeDate(meet.date || result.date || result.timestamp);
+            const season = String(event.season || meet.season || inferSeason(date)).toLowerCase();
+            const placement = Number.isFinite(Number(result.placement)) ? Number(result.placement) : (Number.isFinite(Number(result.place)) ? Number(result.place) : null);
+            const gender = normalizeGender(result.gender || athlete.gender || event.gender);
+            const relay = Boolean(result.relay_names || !result.athlete_id);
+            const category = event.category || (isFieldEvent(eventName) ? "field" : "running");
+            const mark = String(result.mark || result.time || "").trim();
+            const markType = isFieldEvent(eventName) ? "field" : "time";
+            const bestTimeSeconds = markType === "time" ? parseTimeToSeconds(mark) : null;
+            const bestFieldMark = markType === "field" ? parseFieldMark(mark) : null;
+
+            return {
+                id: result.id,
+                date,
+                season,
+                meetId: result.meet_id || meet.id || "",
+                meetName: meet.name || result.meet_name || result.meet || "Unknown Meet",
+                eventId: result.event_id || event.id || "",
+                eventName,
+                category,
+                athleteId: result.athlete_id || athlete.id || "",
+                athleteName,
+                schoolName,
+                gender,
+                relay,
+                mark,
+                markType,
+                placement,
+                heat: result.heat || "",
+                division: String(result.division || "").trim().toUpperCase(),
+                bestTimeSeconds,
+                bestFieldMark,
+                timestamp: result.timestamp || "",
+            };
+        }
+
+        function uniqueValues(rows, key) {
+            return [...new Set(rows.map((r) => r[key]).filter(Boolean))].sort((a, b) => String(a).localeCompare(String(b)));
+        }
+
+        // --- 2. LOCAL APPLICATION STATE & CONFIG ---
+        let allRows = [];
+        let filteredRows = [];
+
+        let state = {
+            season: "",
+            gender: "",
+            eventId: "",
+            category: "",
+            schoolName: "",
+            athleteName: ""
+        };
+
+        const idMap = {
+            season: "seasonFilter",
+            gender: "genderFilter",
+            eventId: "eventFilter",
+            category: "categoryFilter",
+            schoolName: "schoolFilter",
+            athleteName: "athleteFilter"
+        };
+
+        function el(id) { return document.getElementById(id); }
+
+        function setOptions(selectId, values, allLabel = "All") {
+            const node = el(selectId);
+            if (!node) return;
+            let optionsHtml = `<option value="">${allLabel}</option>`;
+            values.forEach(v => {
+                optionsHtml += `<option value="${v}">${v}</option>`;
+            });
+            node.innerHTML = optionsHtml;
+        }
+
+        // --- 3. FIREBASE INTEGRATION LOGIC ---
+        async function waitForFirebase() {
+            let attempts = 0;
+            while (typeof window.firebaseDatabase === "undefined" && attempts < 60) {
+                await new Promise((resolve) => setTimeout(resolve, 100));
+                attempts++;
+            }
+            if (!window.firebaseDatabase) throw new Error("Firebase database script missing or failed to initialize.");
+        }
+
+        async function loadAndProcessData() {
+            try {
+                await waitForFirebase();
+                const db = window.firebaseDatabase;
+
+                // Concurrent fetch matching your structure
+                const [meetsSnap, eventsSnap, athletesSnap, resultsSnap] = await Promise.all([
+                    db.ref("crosscountry/meets").once("value"),
+                    db.ref("crosscountry/events").once("value"),
+                    db.ref("crosscountry/athletes").once("value"),
+                    db.ref("crosscountry/results").once("value"),
+                ]);
+
+                const meets = toArray(meetsSnap);
+                const events = toArray(eventsSnap);
+                const athletes = toArray(athletesSnap);
+                const results = toArray(resultsSnap);
+
+                const maps = {
+                    meetsById: new Map(meets.map((m) => [m.id, m])),
+                    eventsById: new Map(events.map((e) => [e.id, e])),
+                    athletesById: new Map(athletes.map((a) => [a.id, a])),
+                };
+
+                // Map and Filter out rows missing both mark and placement
+                allRows = results.map((r) => normalizeRow(r, maps)).filter((r) => r.mark || r.placement !== null);
+                filteredRows = [...allRows];
+
+                el("statusMessage").textContent = `Loaded ${allRows.length} rows successfully!`;
+                el("statusMessage").style.color = "#10b981";
+
+                // Enable DOM elements
+                document.querySelectorAll(".actions button").forEach(btn => btn.disabled = false);
+
+                populateFilters();
+                renderTable();
+
+            } catch (error) {
+                console.error(error);
+                el("statusMessage").textContent = `Error: ${error.message}`;
+                el("statusMessage").style.color = "#ef4444";
+                el("tableBody").innerHTML = `<tr><td colspan="11" style="text-align:center; color:red;">Data initialization failed: ${error.message}</td></tr>`;
+            }
+        }
+
+        // --- 4. DATA FILTER & VIEW INTERACTION ---
+        function populateFilters() {
+            setOptions("eventFilter", uniqueValues(allRows, "eventName"), "All Events");
+            setOptions("schoolFilter", uniqueValues(allRows, "schoolName"), "All Schools");
+            setOptions("athleteFilter", uniqueValues(allRows, "athleteName"), "All Athletes");
+        }
+
+        function pullStateFromInputs() {
+            Object.keys(state).forEach(key => {
+                const node = el(idMap[key]);
+                if (node) state[key] = node.value;
+            });
+        }
+
+        function applyActiveFilters() {
+            filteredRows = allRows.filter(row => {
+                if (state.season && row.season !== state.season) return false;
+                if (state.gender && row.gender !== state.gender) return false;
+                if (state.eventId && row.eventName !== state.eventId) return false; 
+                if (state.category && row.category !== state.category) return false;
+                if (state.schoolName && row.schoolName !== state.schoolName) return false;
+                if (state.athleteName && row.athleteName !== state.athleteName) return false;
+                return true;
+            });
+        }
+
+        function renderTable() {
+            const body = el("tableBody");
+            if (!filteredRows.length) {
+                body.innerHTML = `<tr><td colspan="11" style="text-align:center;">No matching records found.</td></tr>`;
+                return;
+            }
+            body.innerHTML = filteredRows.map(r => `
+                <tr>
+                    <td>${r.date || "-"}</td>
+                    <td>${r.meetName}</td>
+                    <td>${r.eventName}</td>
+                    <td>${r.category}</td>
+                    <td>${r.athleteName}</td>
+                    <td>${r.schoolName}</td>
+                    <td>${r.gender || "-"}</td>
+                    <td>${r.mark || "-"}</td>
+                    <td>${r.placement ?? "-"}</td>
+                    <td>${r.heat || "-"}</td>
+                    <td>${r.season || "-"}</td>
+                </tr>
+            `).join("");
+        }
+
+        function updateView() {
+            pullStateFromInputs();
+            applyActiveFilters();
+            renderTable();
+        }
+
+        // --- 5. EXPORT UTILITIES ---
+        function downloadBlob(blob, filename) {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+        }
+
+        function exportRows(mode) {
+            const ts = new Date().toISOString().replace(/[:.]/g, "-");
+            
+            if (mode === "json") {
+                const blob = new Blob([JSON.stringify(filteredRows, null, 2)], { type: "application/json;charset=utf-8" });
+                downloadBlob(blob, `track-analytics-${ts}.json`);
+                return;
+            }
+            
+            // Standard data table headers
+            const cols = ["date", "meetName", "eventName", "athleteName", "schoolName", "gender", "mark", "placement", "heat", "category", "season"];
+            const lines = [cols.join(",")];
+            
+            filteredRows.forEach(row => {
+                lines.push(cols.map(c => `"${String(row[c] ?? "").replace(/"/g, '""')}"`).join(","));
+            });
+            
+            const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
+            downloadBlob(blob, `track-analytics-${ts}.csv`);
+        }
+
+        // --- 6. INITIALIZATION ---
+        function init() {
+            loadAndProcessData();
+
+            el("applyFiltersBtn").addEventListener("click", updateView);
+            el("resetFiltersBtn").addEventListener("click", () => {
+                Object.keys(state).forEach(key => {
+                    const node = el(idMap[key]);
+                    if (node) node.value = "";
+                });
+                updateView();
+            });
+
+            el("csvBtn").addEventListener("click", () => exportRows("csv"));
+            el("jsonBtn").addEventListener("click", () => exportRows("json"));
+        }
+
+        window.addEventListener("DOMContentLoaded", init);
+    </script>
+</body>
+</html>

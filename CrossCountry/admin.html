@@ -1,2306 +1,841 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-<link rel="stylesheet" href="/assets/msm-loader.css" />
-  <title>Cross Country Admin Dashboard</title>
-  <style>
-    * { box-sizing: border-box; }
-    
-    :root {
-      --bg: #0a0e1a;
-      --panel: #0f1626;
-      --card: #151f2e;
-      --accent: #ff7b2d;
-      --accent-hover: #ff8c42;
-      --muted: #9fb4c8;
-      --border: rgba(255,255,255,0.08);
-      --hover: rgba(255,255,255,0.05);
-      --success: #28a745;
-      --danger: #dc3545;
-      --warning: #ffc107;
-      --info: #007bff;
-    }
-    
-    html, body {
-      height: 100%;
-      margin: 0;
-      padding: 0;
-      font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
-      background: var(--bg);
-      color: #e6f0f7;
-    }
-    
-    body {
-      overflow: hidden;
-    }
-    
-    .app-wrapper {
-      display: flex;
-      height: 100vh;
-      overflow: hidden;
-    }
-    
-    /* Sidebar */
-    .sidebar {
-      width: 280px;
-      background: var(--panel);
-      border-right: 1px solid var(--border);
-      display: flex;
-      flex-direction: column;
-      overflow-y: auto;
-      padding: 24px;
-      gap: 24px;
-    }
-    
-    .sidebar-brand {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding-bottom: 20px;
-      border-bottom: 1px solid var(--border);
-    }
-    
-    .sidebar-brand img {
-      width: 48px;
-      height: 48px;
-      border-radius: 10px;
-      object-fit: contain;
-    }
-    
-    .sidebar-brand h1 {
-      font-size: 1.1rem;
-      margin: 0;
-      font-weight: 700;
-      line-height: 1.2;
-    }
-    
-    .sidebar-brand .subtitle {
-      font-size: 0.75rem;
-      color: var(--muted);
-      margin-top: 4px;
-    }
-    
-    .nav-section {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-    
-    .nav-section-title {
-      font-size: 0.75rem;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      color: var(--muted);
-      padding: 8px 12px;
-      font-weight: 600;
-      margin-top: 8px;
-      margin-bottom: 4px;
-    }
-    
-    .nav-btn {
-      background: transparent;
-      border: none;
-      color: var(--muted);
-      padding: 12px 16px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-weight: 500;
-      transition: all 0.2s;
-      text-align: left;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-size: 0.95rem;
-    }
-    
-    .nav-btn:hover {
-      background: var(--hover);
-      color: #fff;
-    }
-    
-    .nav-btn.active {
-      background: linear-gradient(90deg, var(--accent), var(--accent-hover));
-      color: #fff;
-      box-shadow: 0 4px 12px rgba(255, 123, 45, 0.3);
-    }
-    
-    .sidebar-spacer {
-      flex: 1;
-    }
-    
-    .logout-section {
-      padding-top: 20px;
-      border-top: 1px solid var(--border);
-    }
-    
-    .logout-btn {
-      width: 100%;
-      padding: 12px 16px;
-      border: none;
-      background: var(--danger);
-      color: white;
-      border-radius: 8px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    
-    .logout-btn:hover {
-      background: #c82333;
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
-    }
-    
-    /* Main Content */
-    .main {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
-    
-    .topbar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 20px 24px;
-      background: var(--panel);
-      border-bottom: 1px solid var(--border);
-      gap: 20px;
-    }
-    
-    .topbar h2 {
-      margin: 0;
-      font-size: 1.4rem;
-      font-weight: 700;
-    }
-    
-    .topbar-info {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      margin-left: auto;
-      color: var(--muted);
-      font-size: 0.9rem;
-    }
-    
-    .content {
-      flex: 1;
-      overflow: auto;
-      padding: 24px;
-      background: var(--bg);
-    }
-    
-    /* Grid Container */
-    .grid-container {
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
-    }
-    
-    .grid-header {
-      padding: 16px 20px;
-      background: var(--card);
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 16px;
-      flex-wrap: wrap;
-    }
-    
-    .grid-header h3 {
-      margin: 0;
-      font-size: 1.1rem;
-      font-weight: 600;
-    }
-    
-    .grid-actions {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      flex-wrap: wrap;
-    }
-    
-    .btn {
-      padding: 8px 16px;
-      border: none;
-      border-radius: 6px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s;
-      font-size: 0.9rem;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-    }
-    
-    .btn-primary {
-      background: var(--accent);
-      color: #fff;
-    }
-    
-    .btn-primary:hover {
-      background: var(--accent-hover);
-      transform: translateY(-1px);
-    }
-    
-    .btn-secondary {
-      background: transparent;
-      color: var(--muted);
-      border: 1px solid var(--border);
-    }
-    
-    .btn-secondary:hover {
-      background: var(--hover);
-      color: #fff;
-    }
-    
-    .btn-danger {
-      background: var(--danger);
-      color: #fff;
-    }
-    
-    .btn-danger:hover {
-      background: #c82333;
-      transform: translateY(-1px);
-    }
-    
-    .btn-success {
-      background: var(--success);
-      color: #fff;
-    }
-    
-    .btn-success:hover {
-      background: #218838;
-    }
-    
-    .btn-small {
-      padding: 4px 8px;
-      font-size: 0.8rem;
-    }
-    
-    /* Grid Table */
-    .grid-scroll {
-      flex: 1;
-      overflow: auto;
-      position: relative;
-    }
-    
-    .grid-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.9rem;
-    }
-    
-    .grid-table thead {
-      position: sticky;
-      top: 0;
-      z-index: 10;
-      background: var(--card);
-    }
-    
-    .grid-table th {
-      padding: 12px 16px;
-      text-align: left;
-      font-weight: 600;
-      color: var(--muted);
-      font-size: 0.85rem;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      border-bottom: 2px solid var(--border);
-      white-space: nowrap;
-      user-select: none;
-    }
-    
-    .grid-table th.sortable {
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    
-    .grid-table th.sortable:hover {
-      background: var(--hover);
-      color: #fff;
-    }
-    
-    .grid-table tbody tr {
-      border-bottom: 1px solid var(--border);
-      transition: all 0.15s;
-    }
-    
-    .grid-table tbody tr:hover {
-      background: var(--hover);
-    }
-    
-    .grid-table tbody tr.selected {
-      background: rgba(255, 123, 45, 0.15);
-      border-left: 3px solid var(--accent);
-    }
-    
-    .grid-table td {
-      padding: 12px 16px;
-      border-right: 1px solid var(--border);
-    }
-    
-    .grid-table td:last-child {
-      border-right: none;
-    }
-    
-    .grid-table td input,
-    .grid-table td select {
-      width: 100%;
-      padding: 6px 8px;
-      border: 1px solid var(--border);
-      background: var(--card);
-      color: #e6f0f7;
-      border-radius: 4px;
-      font-size: 0.9rem;
-    }
-    
-    .grid-table td input:focus,
-    .grid-table td select:focus {
-      outline: none;
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(255, 123, 45, 0.1);
-    }
-    
-    .cell-view {
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    
-    .cell-view:hover {
-      color: var(--accent);
-    }
-    
-    .cell-edit-btn {
-      opacity: 0;
-      transition: opacity 0.2s;
-      font-size: 0.8rem;
-      padding: 2px 6px;
-      background: var(--border);
-      border: none;
-      border-radius: 3px;
-      color: var(--muted);
-      cursor: pointer;
-    }
-    
-    .grid-table td:hover .cell-edit-btn {
-      opacity: 1;
-    }
-    
-    /* Empty State */
-    .empty-state {
-      padding: 60px 20px;
-      text-align: center;
-      color: var(--muted);
-    }
-    
-    .empty-state svg {
-      width: 64px;
-      height: 64px;
-      margin-bottom: 16px;
-      opacity: 0.3;
-    }
-    
-    /* Modal */
-    .modal-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0, 0, 0, 0.7);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-      animation: fadeIn 0.2s;
-    }
-    
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
-    
-    .modal {
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      max-width: 600px;
-      width: 90%;
-      max-height: 90vh;
-      overflow: auto;
-      animation: slideUp 0.3s;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-    }
-    
-    @keyframes slideUp {
-      from {
-        opacity: 0;
-        transform: translateY(20px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-    
-    .modal-header {
-      padding: 24px;
-      background: var(--card);
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    
-    .modal-header h2 {
-      margin: 0;
-      font-size: 1.3rem;
-    }
-    
-    .modal-close {
-      background: none;
-      border: none;
-      font-size: 1.5rem;
-      color: var(--muted);
-      cursor: pointer;
-      padding: 0;
-      width: 32px;
-      height: 32px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 6px;
-      transition: all 0.2s;
-    }
-    
-    .modal-close:hover {
-      background: var(--hover);
-      color: #fff;
-    }
-    
-    .modal-body {
-      padding: 24px;
-    }
-    
-    .modal-footer {
-      padding: 16px 24px;
-      border-top: 1px solid var(--border);
-      display: flex;
-      gap: 12px;
-      justify-content: flex-end;
-    }
-    
-    .form-group {
-      margin-bottom: 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-    
-    .form-label {
-      font-weight: 600;
-      color: var(--muted);
-      font-size: 0.9rem;
-    }
-    
-    .form-input {
-      padding: 10px 12px;
-      border: 1px solid var(--border);
-      background: var(--card);
-      color: #e6f0f7;
-      border-radius: 6px;
-      font-size: 0.95rem;
-    }
-    
-    .form-input:focus {
-      outline: none;
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(255, 123, 45, 0.1);
-    }
-    
-    /* CSV Import Section */
-    .csv-section {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 20px;
-      margin-bottom: 20px;
-    }
-    
-    .csv-section h3 {
-      margin: 0 0 16px 0;
-      font-size: 1.1rem;
-    }
-    
-    .csv-dropzone {
-      border: 2px dashed var(--border);
-      border-radius: 8px;
-      padding: 30px;
-      text-align: center;
-      cursor: pointer;
-      transition: all 0.2s;
-      background: var(--panel);
-    }
-    
-    .csv-dropzone:hover {
-      border-color: var(--accent);
-      background: var(--hover);
-    }
-    
-    .csv-dropzone.dragover {
-      border-color: var(--accent);
-      background: rgba(255, 123, 45, 0.1);
-    }
-    
-    .csv-dropzone p {
-      margin: 0;
-      color: #e6f0f7;
-      font-weight: 600;
-    }
-    
-    .csv-dropzone small {
-      color: var(--muted);
-      display: block;
-      margin-top: 8px;
-    }
-    
-    #csv-file-input {
-      display: none;
-    }
-    
-    .csv-preview {
-      background: var(--panel);
-      border-radius: 8px;
-      padding: 16px;
-      border: 1px solid var(--border);
-      margin-top: 16px;
-      max-height: 300px;
-      overflow-y: auto;
-    }
-    
-    .csv-preview table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.85rem;
-    }
-    
-    .csv-preview th {
-      background: var(--card);
-      padding: 8px;
-      text-align: left;
-      font-weight: 600;
-      color: var(--muted);
-      border-bottom: 1px solid var(--border);
-      position: sticky;
-      top: 0;
-    }
-    
-    .csv-preview td {
-      padding: 8px;
-      border-bottom: 1px solid var(--border);
-    }
-    
-    .status-message {
-      padding: 12px 16px;
-      border-radius: 6px;
-      margin: 12px 0;
-      display: none;
-    }
-    
-    .status-message.success {
-      background: rgba(40, 167, 69, 0.2);
-      color: #28a745;
-      border: 1px solid #28a745;
-      display: block;
-    }
-    
-    .status-message.error {
-      background: rgba(220, 53, 69, 0.2);
-      color: #dc3545;
-      border: 1px solid #dc3545;
-      display: block;
-    }
-    
-    .status-message.warning {
-      background: rgba(255, 193, 7, 0.2);
-      color: #ffc107;
-      border: 1px solid #ffc107;
-      display: block;
-    }
-    
-    .status-message.info {
-      background: rgba(0, 123, 255, 0.2);
-      color: #007bff;
-      border: 1px solid #007bff;
-      display: block;
-    }
-    
-    /* Loading */
-    .loading {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      height: 100%;
-      color: var(--muted);
-      font-size: 1rem;
-    }
-    
-    .spinner {
-      display: inline-block;
-      width: 20px;
-      height: 20px;
-      border: 3px solid var(--border);
-      border-top-color: var(--accent);
-      border-radius: 50%;
-      animation: spin 0.6s linear infinite;
-      margin-right: 10px;
-    }
-    
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-    .home-page{
-      color:#ff7b2d
-    }
-    
-    /* Responsive */
-    @media (max-width: 768px) {
-      .app-wrapper {
-        flex-direction: column;
-      }
-      
-      .sidebar {
-        width: 100%;
-        height: auto;
-        border-right: none;
-        border-bottom: 1px solid var(--border);
-        padding: 12px;
-        gap: 12px;
-      }
-      
-      .content {
-        padding: 16px;
-      }
-      
-      .grid-header {
-        flex-direction: column;
-        align-items: stretch;
-      }
-      
-      .grid-actions {
-        flex-direction: column;
-      }
-      
-      .btn {
-        width: 100%;
-        justify-content: center;
-      }
-    }
-    
-    /* Scrollbar */
-    ::-webkit-scrollbar {
-      width: 8px;
-      height: 8px;
-    }
-    
-    ::-webkit-scrollbar-track {
-      background: var(--panel);
-    }
-    
-    ::-webkit-scrollbar-thumb {
-      background: var(--border);
-      border-radius: 4px;
-    }
-    
-    ::-webkit-scrollbar-thumb:hover {
-      background: var(--muted);
-    }
-    
-    .csv-form-group {
-      margin-bottom: 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-    
-    .csv-form-label {
-      font-weight: 600;
-      color: var(--muted);
-      font-size: 0.9rem;
-    }
-    
-    .csv-form-input {
-      padding: 10px 12px;
-      border: 1px solid var(--border);
-      background: var(--card);
-      color: #e6f0f7;
-      border-radius: 6px;
-      font-size: 0.95rem;
-    }
-    
-    .csv-form-input:focus {
-      outline: none;
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(255, 123, 45, 0.1);
-    }
-    
-    .race-type-options {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      margin-bottom: 12px;
-    }
-    
-    .race-type-btn {
-      padding: 8px 16px;
-      border: 2px solid var(--border);
-      background: var(--panel);
-      color: var(--muted);
-      border-radius: 6px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s;
-      font-size: 0.9rem;
-    }
-    
-    .race-type-btn:hover {
-      border-color: var(--accent);
-      background: var(--hover);
-      color: #fff;
-    }
-    
-    .race-type-btn.selected {
-      background: var(--accent);
-      border-color: var(--accent);
-      color: #fff;
-      box-shadow: 0 4px 12px rgba(255, 123, 45, 0.3);
-    }
-    
-    .csv-divider {
-      height: 1px;
-      background: var(--border);
-      margin: 12px 0;
-    }
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Track Admin Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* ==========================================================
+     DESIGN TOKENS
+     Palette is grounded in a meet under the stadium lights:
+     near-black sky, rubberized all-weather track in burnt
+     orange, lane-white text. Indoor/outdoor are colour-coded
+     consistently (cool arena blue vs. sun-baked track rust) so
+     colour always carries real meaning, never decoration only.
+     ========================================================== */
+  :root{
+    --ink:#0a0d12;
+    --ink-raised:#0d1117;
+    --surface:#10141b;
+    --surface-2:#151a23;
+    --surface-3:#1b212c;
+    --hover:rgba(255,255,255,.045);
+    --line:rgba(255,255,255,.08);
+    --line-strong:rgba(255,255,255,.16);
 
-    /* Mobile Navigation */
-    .mobile-menu-button {
-      display: none;
-      width: 48px;
-      height: 48px;
-      padding: 12px;
-      background: transparent;
-      border: none;
-      color: #e6f0f7;
-      font-size: 1.5rem;
-      cursor: pointer;
-      z-index: 999;
+    --track:#ff6a32;
+    --track-bright:#ff8d5c;
+    --track-dim:#c44e1f;
+    --track-wash:rgba(255,106,50,.13);
+    --track-wash-strong:rgba(255,106,50,.24);
+
+    --indoor:#4ea6ff;
+    --indoor-wash:rgba(78,166,255,.15);
+    --outdoor:#ff6a32;
+    --outdoor-wash:rgba(255,106,50,.15);
+
+    --success:#36d27a;
+    --success-wash:rgba(54,210,122,.14);
+    --danger:#ff5470;
+    --danger-wash:rgba(255,84,112,.14);
+    --warning:#ffbe53;
+    --warning-wash:rgba(255,190,83,.14);
+    --info:#4ea6ff;
+    --info-wash:rgba(78,166,255,.14);
+
+    --ink-1:#eef1f6;
+    --ink-2:#9aa6b8;
+    --ink-3:#5f6b7d;
+
+    --font-display:'Oswald',system-ui,-apple-system,sans-serif;
+    --font-body:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
+    --font-mono:'JetBrains Mono',ui-monospace,'SF Mono',Consolas,monospace;
+
+    --r-sm:6px;
+    --r-md:10px;
+    --r-lg:16px;
+    --r-pill:999px;
+
+    --shadow-sm:0 2px 10px rgba(0,0,0,.35);
+    --shadow-md:0 16px 40px -12px rgba(0,0,0,.55);
+    --shadow-lg:0 28px 70px -20px rgba(0,0,0,.7);
+
+    --ease:cubic-bezier(.4,0,.2,1);
+    --sidebar-w:264px;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{height:100%;margin:0;padding:0;}
+  body{
+    font-family:var(--font-body);
+    background:var(--ink);
+    background-image:
+      radial-gradient(900px 600px at 12% -10%, rgba(255,106,50,.07), transparent 60%),
+      radial-gradient(700px 500px at 100% 0%, rgba(78,166,255,.05), transparent 55%);
+    color:var(--ink-1);
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+    overflow:hidden;
+  }
+  ::selection{background:var(--track-wash-strong);color:#fff;}
+  a{color:inherit;}
+
+  /* Scrollbars */
+  *{scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.18) transparent;}
+  *::-webkit-scrollbar{width:9px;height:9px;}
+  *::-webkit-scrollbar-thumb{background:rgba(255,255,255,.16);border-radius:99px;}
+  *::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.28);}
+
+  :focus-visible{
+    outline:2px solid var(--track-bright);
+    outline-offset:2px;
+    border-radius:4px;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{animation-duration:.001ms !important;animation-iteration-count:1 !important;transition-duration:.001ms !important;}
+  }
+
+  /* A thin repeating-dash rule — the page's one recurring motif,
+     reads like lane markings seen from above. Used sparingly as
+     a section divider, never as decoration on its own. */
+  .lane-rule{
+    height:1px;
+    background-image:repeating-linear-gradient(90deg, var(--line-strong) 0 10px, transparent 10px 18px);
+    border:none;
+    margin:0;
+  }
+
+  .mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums;}
+
+  /* ==========================================================
+     APP SHELL
+     ========================================================== */
+  .app-wrapper{display:flex;height:100vh;overflow:hidden;}
+
+  .sidebar{
+    width:var(--sidebar-w);
+    flex-shrink:0;
+    background:linear-gradient(180deg, var(--ink-raised) 0%, var(--ink) 100%);
+    border-right:1px solid var(--line);
+    display:flex;
+    flex-direction:column;
+    overflow-y:auto;
+    padding:22px 18px;
+    gap:22px;
+    z-index:50;
+  }
+
+  .brand{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding-bottom:18px;
+  }
+  .brand img{
+    width:42px;height:42px;border-radius:10px;object-fit:contain;
+    background:var(--surface-2);
+    border:1px solid var(--line);
+  }
+  .brand-name{
+    font-family:var(--font-display);
+    font-size:1.02rem;
+    font-weight:600;
+    letter-spacing:.02em;
+    line-height:1.15;
+    margin:0;
+    color:var(--ink-1);
+  }
+  .brand-sub{
+    font-size:.68rem;
+    color:var(--track-bright);
+    text-transform:uppercase;
+    letter-spacing:.16em;
+    font-weight:600;
+    margin-top:3px;
+  }
+
+  .nav-group{display:flex;flex-direction:column;gap:2px;}
+  .nav-label{
+    font-size:.68rem;
+    text-transform:uppercase;
+    letter-spacing:.14em;
+    color:var(--ink-3);
+    font-weight:600;
+    padding:0 10px;
+    margin:14px 0 6px;
+  }
+  .nav-group:first-of-type .nav-label{margin-top:0;}
+
+  .nav-btn{
+    appearance:none;
+    background:transparent;
+    border:none;
+    color:var(--ink-2);
+    padding:9px 10px;
+    border-radius:var(--r-sm);
+    cursor:pointer;
+    font-family:var(--font-body);
+    font-weight:500;
+    font-size:.89rem;
+    text-align:left;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    position:relative;
+    transition:background .15s var(--ease), color .15s var(--ease);
+    text-decoration:none;
+  }
+  .nav-btn svg{flex-shrink:0;opacity:.85;}
+  .nav-btn:hover{background:var(--hover);color:var(--ink-1);}
+  .nav-btn.active{
+    background:var(--track-wash);
+    color:#fff;
+  }
+  .nav-btn.active::before{
+    content:'';
+    position:absolute;
+    left:-18px;
+    top:8px;
+    bottom:8px;
+    width:3px;
+    background:var(--track);
+    border-radius:0 3px 3px 0;
+  }
+  .nav-btn.active svg{opacity:1;color:var(--track-bright);}
+
+  .sidebar-spacer{flex:1;}
+
+  .logout-section{padding-top:16px;border-top:1px solid var(--line);}
+  .logout-btn{
+    width:100%;
+    padding:10px 14px;
+    border:1px solid var(--line);
+    background:transparent;
+    color:var(--ink-2);
+    border-radius:var(--r-sm);
+    font-weight:600;
+    font-size:.86rem;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    justify-content:center;
+    transition:all .15s var(--ease);
+    font-family:var(--font-body);
+  }
+  .logout-btn:hover{background:var(--danger-wash);border-color:var(--danger);color:#ffb3c0;}
+
+  /* Main column */
+  .main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0;}
+
+  .topbar{
+    display:flex;
+    align-items:center;
+    gap:18px;
+    padding:14px 26px;
+    background:var(--ink-raised);
+    border-bottom:1px solid var(--line);
+    position:relative;
+    z-index:10;
+  }
+  .mobile-menu-button{
+    display:none;
+    width:38px;height:38px;
+    align-items:center;justify-content:center;
+    background:transparent;
+    border:1px solid var(--line);
+    border-radius:var(--r-sm);
+    color:var(--ink-1);
+    cursor:pointer;
+    flex-shrink:0;
+  }
+  .topbar h2{
+    margin:0;
+    font-family:var(--font-display);
+    font-size:1.2rem;
+    font-weight:600;
+    letter-spacing:.01em;
+  }
+  .topbar-links{
+    display:flex;
+    gap:14px;
+    align-items:center;
+    font-size:.85rem;
+  }
+  .topbar-links a{
+    color:var(--ink-2);
+    text-decoration:none;
+    display:flex;
+    align-items:center;
+    gap:6px;
+    padding:6px 4px;
+    border-bottom:1px solid transparent;
+    transition:color .15s, border-color .15s;
+  }
+  .topbar-links a:hover{color:var(--track-bright);border-color:var(--track-bright);}
+
+  .topbar-info{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-left:auto;
+  }
+  .conn-pill{
+    display:inline-flex;
+    align-items:center;
+    gap:7px;
+    padding:6px 11px;
+    border-radius:var(--r-pill);
+    border:1px solid var(--line);
+    background:var(--surface);
+    font-size:.76rem;
+    color:var(--ink-2);
+    white-space:nowrap;
+  }
+  .conn-dot{width:6px;height:6px;border-radius:50%;background:var(--success);box-shadow:0 0 0 3px var(--success-wash);}
+
+  /* The "scoreboard" — record counter rendered like a timer readout */
+  .scoreboard{
+    font-family:var(--font-mono);
+    font-variant-numeric:tabular-nums;
+    font-weight:600;
+    font-size:.82rem;
+    letter-spacing:.04em;
+    background:var(--ink);
+    border:1px solid var(--line-strong);
+    color:var(--track-bright);
+    padding:6px 12px;
+    border-radius:var(--r-sm);
+    text-shadow:0 0 14px rgba(255,106,50,.45);
+    white-space:nowrap;
+  }
+
+  .content{
+    flex:1;
+    overflow:auto;
+    padding:22px 26px;
+  }
+
+  .mobile-menu-overlay{
+    display:none;
+    position:fixed;inset:0;
+    background:rgba(0,0,0,.55);
+    z-index:90;
+  }
+  .mobile-menu-overlay.active{display:block;}
+
+  /* ==========================================================
+     PRIMITIVES — buttons, inputs, badges, cards
+     ========================================================== */
+  .btn{
+    appearance:none;
+    border:1px solid transparent;
+    border-radius:var(--r-sm);
+    font-family:var(--font-body);
+    font-weight:600;
+    font-size:.86rem;
+    padding:8px 14px;
+    cursor:pointer;
+    display:inline-flex;
+    align-items:center;
+    gap:7px;
+    transition:transform .12s var(--ease), background .15s, border-color .15s, color .15s, box-shadow .15s;
+    white-space:nowrap;
+    line-height:1.2;
+  }
+  .btn svg{flex-shrink:0;}
+  .btn:active{transform:translateY(1px);}
+  .btn:disabled{opacity:.55;cursor:not-allowed;transform:none;}
+
+  .btn-primary{background:var(--track);color:#1a0a02;box-shadow:0 6px 16px -4px rgba(255,106,50,.45);}
+  .btn-primary:hover:not(:disabled){background:var(--track-bright);}
+
+  .btn-secondary{background:var(--surface-2);color:var(--ink-1);border-color:var(--line);}
+  .btn-secondary:hover:not(:disabled){background:var(--surface-3);border-color:var(--line-strong);}
+
+  .btn-ghost{background:transparent;color:var(--ink-2);border-color:transparent;}
+  .btn-ghost:hover:not(:disabled){background:var(--hover);color:var(--ink-1);}
+
+  .btn-danger{background:rgba(255,84,112,.16);color:#ffb3c0;border-color:rgba(255,84,112,.4);}
+  .btn-danger:hover:not(:disabled){background:var(--danger);color:#fff;}
+
+  .btn-success{background:var(--success-wash);color:#7cf0ae;border-color:rgba(54,210,122,.4);}
+  .btn-success:hover:not(:disabled){background:var(--success);color:#062;}
+
+  .btn-sm{padding:5px 10px;font-size:.78rem;border-radius:5px;}
+  .btn-block{width:100%;justify-content:center;}
+  .btn-icon{padding:7px;width:34px;height:34px;justify-content:center;}
+
+  .field{display:flex;flex-direction:column;gap:6px;margin-bottom:14px;}
+  .field label{font-size:.82rem;font-weight:600;color:var(--ink-2);}
+  .field .hint{font-size:.74rem;color:var(--ink-3);font-weight:400;margin-top:-2px;}
+
+  .input, select.input, textarea.input{
+    width:100%;
+    padding:9px 11px;
+    background:var(--surface-2);
+    border:1px solid var(--line);
+    color:var(--ink-1);
+    border-radius:var(--r-sm);
+    font-size:.9rem;
+    font-family:var(--font-body);
+    transition:border-color .15s, box-shadow .15s;
+  }
+  .input::placeholder{color:var(--ink-3);}
+  .input:focus, select.input:focus, textarea.input:focus{
+    outline:none;
+    border-color:var(--track);
+    box-shadow:0 0 0 3px var(--track-wash);
+  }
+  select.input{cursor:pointer;}
+  .input-row{display:flex;gap:8px;align-items:center;}
+  .input-row .input{flex:1;}
+
+  .checkbox-row{display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.88rem;color:var(--ink-1);user-select:none;}
+  .checkbox-row input[type="checkbox"]{width:16px;height:16px;accent-color:var(--track);cursor:pointer;}
+
+  .check-grid{
+    display:flex;flex-wrap:wrap;gap:10px;
+    max-height:160px;overflow-y:auto;
+    border:1px solid var(--line);border-radius:var(--r-sm);
+    padding:10px;background:var(--surface);
+  }
+  .check-grid label{display:flex;align-items:center;gap:7px;font-size:.85rem;padding:4px 6px;border-radius:5px;cursor:pointer;}
+  .check-grid label:hover{background:var(--hover);}
+
+  /* Badges — encode real facts: season, action type, etc. */
+  .badge{
+    display:inline-flex;align-items:center;gap:5px;
+    padding:3px 9px;border-radius:var(--r-pill);
+    font-size:.72rem;font-weight:600;letter-spacing:.02em;
+    white-space:nowrap;border:1px solid transparent;
+  }
+  .badge-indoor{background:var(--indoor-wash);color:#8fc6ff;border-color:rgba(78,166,255,.35);}
+  .badge-outdoor{background:var(--outdoor-wash);color:#ffab82;border-color:rgba(255,106,50,.35);}
+  .badge-neutral{background:var(--surface-3);color:var(--ink-2);border-color:var(--line);}
+  .badge-success{background:var(--success-wash);color:#7cf0ae;border-color:rgba(54,210,122,.35);}
+  .badge-danger{background:var(--danger-wash);color:#ffb3c0;border-color:rgba(255,84,112,.35);}
+  .badge-warning{background:var(--warning-wash);color:#ffd591;border-color:rgba(255,190,83,.35);}
+  .badge-track{background:var(--track-wash);color:var(--track-bright);border-color:rgba(255,106,50,.4);}
+
+  .division-chip{
+    display:inline-block;margin:2px 4px 2px 0;padding:2px 9px;
+    border-radius:var(--r-pill);font-size:.72rem;font-weight:700;
+    background:var(--track-wash);border:1px solid rgba(255,106,50,.35);color:var(--track-bright);
+  }
+
+  .panel{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:var(--r-lg);
+    box-shadow:var(--shadow-sm);
+  }
+  .panel-pad{padding:22px;}
+
+  /* ==========================================================
+     STAT CARDS
+     ========================================================== */
+  .stats-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(180px,1fr));
+    gap:14px;
+    margin-bottom:22px;
+  }
+  .stat-card{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:var(--r-lg);
+    padding:18px 20px;
+    position:relative;
+    overflow:hidden;
+  }
+  .stat-card::before{
+    content:'';position:absolute;left:0;top:0;bottom:0;width:3px;
+    background:var(--track);opacity:.7;
+  }
+  .stat-number{
+    font-family:var(--font-display);
+    font-size:2.1rem;
+    font-weight:600;
+    color:var(--ink-1);
+    margin:0;
+    font-variant-numeric:tabular-nums;
+    line-height:1;
+  }
+  .stat-label{
+    color:var(--ink-2);
+    font-size:.78rem;
+    margin:8px 0 0;
+    text-transform:uppercase;
+    letter-spacing:.08em;
+    font-weight:600;
+  }
+
+  .bar-row{display:flex;align-items:center;gap:12px;margin-bottom:10px;}
+  .bar-row .bar-label{width:130px;flex-shrink:0;font-size:.83rem;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .bar-track{flex:1;height:8px;background:var(--surface-3);border-radius:99px;overflow:hidden;}
+  .bar-fill{height:100%;border-radius:99px;background:linear-gradient(90deg, var(--track-dim), var(--track));}
+  .bar-value{width:42px;text-align:right;font-family:var(--font-mono);font-size:.8rem;color:var(--ink-2);flex-shrink:0;}
+
+  /* ==========================================================
+     DATA GRID
+     ========================================================== */
+  .grid-shell{
+    height:100%;display:flex;flex-direction:column;
+    background:var(--surface);border:1px solid var(--line);
+    border-radius:var(--r-lg);overflow:hidden;box-shadow:var(--shadow-sm);
+  }
+  .grid-head{
+    padding:16px 20px;background:var(--surface-2);
+    border-bottom:1px solid var(--line);
+    display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;
+  }
+  .grid-title{
+    margin:0;font-family:var(--font-display);font-size:1.05rem;font-weight:600;
+    display:flex;align-items:center;gap:10px;letter-spacing:.01em;
+  }
+  .grid-count{font-family:var(--font-mono);font-size:.78rem;color:var(--ink-3);font-weight:500;}
+  .grid-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+
+  .filter-strip{
+    padding:10px 20px;background:var(--ink-raised);border-bottom:1px solid var(--line);
+    display:flex;flex-wrap:wrap;gap:8px;align-items:center;
+  }
+  .filter-strip .input{min-width:160px;font-size:.83rem;padding:7px 10px;width:auto;}
+  .filter-strip-label{font-size:.78rem;color:var(--ink-3);text-transform:uppercase;letter-spacing:.08em;font-weight:600;margin-right:2px;}
+
+  .active-filters-bar{
+    padding:10px 20px;background:var(--surface-2);border-bottom:1px solid var(--line);
+    display:none;flex-wrap:wrap;gap:8px;align-items:center;
+  }
+  .filter-tag{
+    display:inline-flex;align-items:center;gap:6px;padding:4px 10px;
+    background:var(--track-wash);border:1px solid rgba(255,106,50,.4);
+    border-radius:var(--r-pill);font-size:.8rem;color:var(--track-bright);
+  }
+  .filter-tag button{background:none;border:none;color:inherit;cursor:pointer;font-size:.95rem;padding:0;line-height:1;opacity:.8;}
+  .filter-tag button:hover{opacity:1;}
+
+  .grid-scroll{flex:1;overflow:auto;position:relative;}
+
+  table.grid-table{width:100%;border-collapse:collapse;font-size:.875rem;}
+  .grid-table thead{position:sticky;top:0;z-index:5;background:var(--surface-2);}
+  .grid-table th{
+    padding:11px 16px;text-align:left;font-weight:600;color:var(--ink-3);
+    font-size:.72rem;text-transform:uppercase;letter-spacing:.07em;
+    border-bottom:1px solid var(--line);white-space:nowrap;user-select:none;
+  }
+  .grid-table th.sortable{cursor:pointer;}
+  .grid-table th.sortable:hover{color:var(--ink-1);}
+  .grid-table th .sort-ind{color:var(--track-bright);margin-left:3px;}
+  .grid-table tbody tr{border-bottom:1px solid var(--line);transition:background .12s;}
+  .grid-table tbody tr:hover{background:var(--hover);}
+  .grid-table tbody tr.row-selected{background:var(--track-wash);}
+  .grid-table td{padding:11px 16px;vertical-align:top;color:var(--ink-1);}
+  .grid-table td.num{font-family:var(--font-mono);font-variant-numeric:tabular-nums;}
+  .cell-sub{font-size:.78rem;color:var(--ink-3);margin-top:2px;}
+  .cell-id{font-family:var(--font-mono);font-size:.7rem;color:var(--ink-3);display:none;margin-top:3px;word-break:break-all;}
+  .cell-id.visible{display:block;}
+
+  .bulk-bar{
+    padding:11px 20px;background:var(--surface-2);border-top:1px solid var(--line);
+    display:none;gap:10px;align-items:center;
+  }
+  .bulk-bar .count{color:var(--ink-2);font-size:.85rem;font-weight:600;margin-right:4px;}
+
+  .empty-state{
+    padding:60px 24px;text-align:center;color:var(--ink-2);
+    display:flex;flex-direction:column;align-items:center;gap:10px;height:100%;justify-content:center;
+  }
+  .empty-state svg{opacity:.45;margin-bottom:4px;}
+  .empty-state .empty-title{font-family:var(--font-display);font-size:1.05rem;color:var(--ink-1);font-weight:600;}
+  .empty-state .empty-sub{font-size:.86rem;max-width:360px;}
+
+  .load-state{
+    height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;color:var(--ink-2);
+  }
+  .spinner{
+    width:34px;height:34px;border-radius:50%;
+    border:3px solid var(--line);border-top-color:var(--track);
+    animation:spin .7s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  /* ==========================================================
+     MODAL
+     ========================================================== */
+  .modal-overlay{
+    position:fixed;inset:0;background:rgba(5,7,11,.7);
+    display:flex;align-items:center;justify-content:center;
+    z-index:1000;padding:20px;
+    animation:fade .15s var(--ease);
+  }
+  @keyframes fade{from{opacity:0;}to{opacity:1;}}
+  @keyframes rise{from{opacity:0;transform:translateY(14px) scale(.98);}to{opacity:1;transform:none;}}
+  .modal{
+    background:var(--ink-raised);border:1px solid var(--line-strong);
+    border-radius:var(--r-lg);max-width:600px;width:100%;max-height:88vh;
+    overflow:auto;box-shadow:var(--shadow-lg);
+    animation:rise .2s var(--ease);
+  }
+  .modal.modal-wide{max-width:880px;}
+  .modal-header{
+    padding:18px 22px;background:var(--surface-2);border-bottom:1px solid var(--line);
+    display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:2;
+  }
+  .modal-header h2{margin:0;font-family:var(--font-display);font-size:1.15rem;font-weight:600;}
+  .modal-close{
+    background:none;border:none;color:var(--ink-2);cursor:pointer;
+    width:30px;height:30px;display:flex;align-items:center;justify-content:center;
+    border-radius:var(--r-sm);transition:background .15s,color .15s;
+  }
+  .modal-close:hover{background:var(--hover);color:var(--ink-1);}
+  .modal-body{padding:22px;}
+  .modal-footer{
+    padding:14px 22px;border-top:1px solid var(--line);
+    display:flex;gap:10px;justify-content:flex-end;background:var(--surface-2);
+    position:sticky;bottom:0;
+  }
+
+  /* ==========================================================
+     TOASTS  (replace native alert())
+     ========================================================== */
+  #toast-stack{
+    position:fixed;bottom:22px;right:22px;z-index:1200;
+    display:flex;flex-direction:column;gap:10px;width:340px;
+  }
+  .toast{
+    display:flex;align-items:flex-start;gap:10px;
+    padding:13px 14px;border-radius:var(--r-md);
+    background:var(--ink-raised);border:1px solid var(--line-strong);
+    box-shadow:var(--shadow-md);font-size:.87rem;color:var(--ink-1);
+    animation:toast-in .2s var(--ease);
+  }
+  @keyframes toast-in{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+  .toast.leaving{animation:toast-out .15s var(--ease) forwards;}
+  @keyframes toast-out{to{opacity:0;transform:translateX(8px);}}
+  .toast-icon{flex-shrink:0;margin-top:1px;}
+  .toast-success .toast-icon{color:var(--success);}
+  .toast-error .toast-icon{color:var(--danger);}
+  .toast-info .toast-icon{color:var(--info);}
+  .toast-msg{flex:1;line-height:1.4;}
+  .toast-close{background:none;border:none;color:var(--ink-3);cursor:pointer;padding:0;flex-shrink:0;}
+  .toast-close:hover{color:var(--ink-1);}
+
+  /* ==========================================================
+     ACTIVITY CONSOLE
+     ========================================================== */
+  .console-shell{display:flex;flex-direction:column;gap:18px;height:100%;}
+  .console-top{display:flex;justify-content:space-between;align-items:flex-start;gap:18px;flex-wrap:wrap;}
+  .console-top h2{margin:0;font-family:var(--font-display);font-size:1.2rem;}
+  .console-top p{margin:6px 0 0;color:var(--ink-2);font-size:.86rem;max-width:520px;}
+  .console-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+
+  .console-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;}
+  .console-stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);padding:14px;text-align:center;}
+  .console-stat b{display:block;font-family:var(--font-display);font-size:1.4rem;color:var(--track-bright);}
+  .console-stat span{display:block;font-size:.7rem;color:var(--ink-3);text-transform:uppercase;letter-spacing:.07em;margin-top:3px;font-weight:600;}
+
+  .console-list{flex:1;overflow-y:auto;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:18px;}
+  .console-date{font-size:.76rem;font-weight:700;color:var(--ink-3);text-transform:uppercase;letter-spacing:.1em;margin:22px 0 10px;padding-bottom:6px;}
+  .console-date:first-child{margin-top:0;}
+  .console-item{display:flex;gap:12px;padding:11px 12px;background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r-md);margin-bottom:8px;transition:border-color .15s;}
+  .console-item:hover{border-color:var(--line-strong);}
+  .console-item-icon{flex-shrink:0;width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;}
+  .console-item-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px;font-size:.78rem;}
+  .console-item-action{font-weight:700;text-transform:uppercase;letter-spacing:.05em;font-size:.7rem;}
+  .console-item-entity{color:var(--track-bright);font-weight:600;}
+  .console-item-time{color:var(--ink-3);margin-left:auto;font-family:var(--font-mono);}
+  .console-item-summary{font-size:.85rem;color:var(--ink-1);}
+  .console-item-user{font-size:.76rem;color:var(--ink-3);margin-top:2px;}
+  .console-changes{margin-top:8px;background:var(--ink);border-radius:6px;padding:8px 10px;display:flex;flex-direction:column;gap:4px;}
+  .console-change{display:flex;gap:8px;align-items:center;font-size:.78rem;flex-wrap:wrap;}
+  .console-change b{color:var(--ink-2);min-width:78px;font-weight:600;}
+  .console-from{color:var(--danger);text-decoration:line-through;}
+  .console-to{color:var(--success);}
+
+  /* Feedback cards */
+  .feedback-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);padding:16px 18px;margin-bottom:10px;}
+  .feedback-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;margin-bottom:10px;}
+  .feedback-msg{white-space:pre-wrap;word-break:break-word;line-height:1.55;color:var(--ink-1);}
+  .feedback-email{margin-top:10px;font-size:.85rem;color:var(--ink-2);}
+
+  /* ==========================================================
+     RESPONSIVE
+     ========================================================== */
+  @media (max-width:860px){
+    body{overflow:auto;}
+    .app-wrapper{flex-direction:column;height:auto;min-height:100vh;}
+    .sidebar{
+      position:fixed;top:0;left:0;bottom:0;
+      transform:translateX(-100%);
+      transition:transform .25s var(--ease);
+      z-index:100;box-shadow:var(--shadow-lg);
     }
-    
-    .mobile-menu-overlay {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0, 0, 0, 0.5);
-      z-index: 998;
-    }
-    
-    .mobile-menu-overlay.active {
-      display: block;
-    }
-    
-    /* Responsive */
-    @media (max-width: 768px) {
-      .app-wrapper {
-        flex-direction: column;
-      }
-      
-      .sidebar {
-        position: fixed;
-        left: 0;
-        top: 0;
-        width: 280px;
-        height: 100vh;
-        z-index: 999;
-        transform: translateX(-100%);
-        transition: transform 0.3s ease;
-        overflow-y: auto;
-        border-right: 1px solid var(--border);
-        border-bottom: none;
-      }
-      
-      .sidebar.mobile-open {
-        transform: translateX(0);
-      }
-      
-      .mobile-menu-button {
-        display: block;
-      }
-      
-      .topbar {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 12px 16px;
-        gap: 8px;
-      }
-      
-      .topbar h2 {
-        font-size: 1.2rem;
-        margin: 0;
-      }
-      
-      .topbar-info {
-        display: none;
-      }
-      
-      .main {
-        width: 100%;
-      }
-      
-      .content {
-        padding: 12px;
-        padding-bottom: 80px;
-      }
-      
-      .grid-header {
-        flex-direction: column;
-        align-items: stretch;
-      }
-      
-      .grid-actions {
-        flex-direction: column;
-        width: 100%;
-      }
-      
-      .grid-actions input,
-      .grid-actions button {
-        width: 100%;
-      }
-      
-      .btn {
-        padding: 12px 16px;
-        font-size: 1rem;
-        min-height: 48px;
-      }
-      
-      .btn-small {
-        padding: 8px 12px;
-        font-size: 0.875rem;
-        min-height: 40px;
-      }
-      
-      /* Mobile table - switch to card view */
-      .grid-table {
-        font-size: 0.85rem;
-      }
-      
-      .grid-table th {
-        padding: 8px 12px;
-        font-size: 0.75rem;
-      }
-      
-      .grid-table td {
-        padding: 8px 12px;
-      }
-      
-      /* Modal responsive */
-      .modal {
-        width: 95%;
-        max-height: 95vh;
-        max-width: 100%;
-      }
-      
-      .modal-body {
-        padding: 16px;
-      }
-      
-      .form-input {
-        padding: 12px;
-        font-size: 16px; /* Prevents zoom on iOS */
-      }
-      
-      .form-group {
-        margin-bottom: 12px;
-      }
-      
-      /* CSV section responsive */
-      .csv-dropzone {
-        padding: 20px;
-      }
-      
-      .csv-dropzone p {
-        font-size: 0.95rem;
-      }
-      
-      .race-type-options {
-        flex-direction: column;
-      }
-      
-      .race-type-btn {
-        width: 100%;
-      }
-      
-      /* Search input */
-      #search-input {
-        width: 100%;
-        margin-bottom: 8px;
-      }
-      
-      /* Empty state */
-      .empty-state {
-        padding: 40px 20px;
-      }
-      
-      /* Stats grid */
-      .stats-grid {
-        grid-template-columns: repeat(2, 1fr);
-      }
-    }
-    
-    @media (max-width: 480px) {
-      .topbar h2 {
-        font-size: 1rem;
-      }
-      
-      .sidebar {
-        width: 100%;
-      }
-      
-      .grid-table {
-        font-size: 0.75rem;
-      }
-      
-      .grid-table th,
-      .grid-table td {
-        padding: 6px 8px;
-      }
-      
-      .btn {
-        padding: 10px 12px;
-        font-size: 0.875rem;
-        min-height: 44px;
-      }
-      
-      .stats-grid {
-        grid-template-columns: 1fr;
-      }
-      
-      .modal {
-        width: 98%;
-      }
-      
-      .grid-header h3 {
-        font-size: 1rem;
-      }
-    }
-    
-    /* Touch-friendly improvements */
-    @media (hover: none) and (pointer: coarse) {
-      .btn {
-        min-height: 48px;
-        min-width: 48px;
-      }
-      
-      .form-input {
-        font-size: 16px;
-        padding: 12px;
-      }
-      
-      .grid-table td {
-        padding: 12px 8px;
-      }
-      
-      .nav-btn {
-        padding: 14px 16px;
-        font-size: 1rem;
-      }
-    }
-  </style>
+    .sidebar.mobile-open{transform:translateX(0);}
+    .mobile-menu-button{display:flex;}
+    .topbar{padding:12px 14px;gap:10px;}
+    .topbar h2{font-size:1.05rem;}
+    .topbar-links{display:none;}
+    .main{width:100%;height:100vh;overflow:hidden;}
+    .content{padding:14px;padding-bottom:60px;}
+    .grid-head{flex-direction:column;align-items:stretch;}
+    .grid-actions{width:100%;}
+    .grid-actions .btn{flex:1;justify-content:center;}
+    .filter-strip{padding:10px 14px;}
+    .filter-strip .input{flex:1;min-width:120px;}
+    .btn{min-height:40px;}
+    .stats-grid{grid-template-columns:repeat(2,1fr);}
+    .input,.field input,.field select{font-size:16px;}
+    #toast-stack{left:14px;right:14px;width:auto;bottom:14px;}
+    .console-stats{grid-template-columns:repeat(2,1fr);}
+  }
+  @media (max-width:480px){
+    .stats-grid{grid-template-columns:1fr;}
+    .console-stats{grid-template-columns:1fr 1fr;}
+    .grid-table{font-size:.8rem;}
+  }
+</style>
 </head>
 <body>
 <script src="/assets/msm-loader.js"></script>
+<script src="firebase-config.js"></script>
+<script src="firebase-helpers.js"></script>
+
+<div class="mobile-menu-overlay" id="mobile-overlay"></div>
+
 <div class="app-wrapper">
-  <aside class="sidebar">
-    <div class="sidebar-brand">
-      <img src="assets/Wvruns Logo.png" alt="logo">
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <img src="../assets/Wvruns Logo.png" alt="Mountain State Miles logo">
       <div>
-        <h1>Mountain State Miles</h1>
-        <div class="subtitle">Cross Country Admin</div>
+        <p class="brand-name">Mountain State Miles</p>
+        <div class="brand-sub">Track Admin</div>
       </div>
     </div>
-    
-    <nav>
-      <div class="nav-section-title">Main</div>
-      <div class="nav-section" id="main-nav">
-        <button class="nav-btn active" data-section="dashboard">📊 Dashboard</button>
-        <button class="nav-btn" data-section="meets">🏃 Meets</button>
-        <button class="nav-btn" data-section="courses">🗺️ Courses</button>
-        <button class="nav-btn" data-section="schools">🏫 Schools</button>
-        <button class="nav-btn" data-section="athletes">👤 Athletes</button>
-        <button class="nav-btn" data-section="results">🏆 Results</button>
-      </div>
-      
-      <div class="nav-section-title">Tools</div>
-      <div class="nav-section" id="tools-nav">
-        <a href="csv-import.html" class="nav-btn" style="text-decoration: none; display: block;">📊 CSV Import</a>
-        <button class="nav-btn" data-section="bulk-edit">⚙️ Bulk Edit</button>
-        <button class="nav-btn" data-section="analytics">📈 Analytics</button>
-        <button class="nav-btn" data-section="feedback">💬 Feedback</button>
-        <button class="nav-btn" data-section="settings">⚙️ Settings</button>
+
+    <nav style="display:flex;flex-direction:column;gap:0;">
+      <div class="nav-group">
+        <div class="nav-label">Main</div>
+        <div id="main-nav" style="display:flex;flex-direction:column;gap:2px;">
+          <button class="nav-btn active" data-section="dashboard">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+            Dashboard
+          </button>
+          <button class="nav-btn" data-section="meets">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>
+            Meets
+          </button>
+          <button class="nav-btn" data-section="events">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8z"/></svg>
+            Events
+          </button>
+          <button class="nav-btn" data-section="athletes">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg>
+            Athletes
+          </button>
+          <button class="nav-btn" data-section="results">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v4a5 5 0 0 1-10 0V4z"/><path d="M7 5H4v2a3 3 0 0 0 3 3M17 5h3v2a3 3 0 0 1-3 3"/></svg>
+            Results
+          </button>
+          <button class="nav-btn" data-section="teams">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 6v6c0 5 3.5 8 8 10 4.5-2 8-5 8-10V6l-8-4z"/></svg>
+            Teams
+          </button>
+        </div>
       </div>
 
-      <div class="nav-section-title">Season Management</div>
-      <div class="nav-section" id="season-nav">
-        <button class="nav-btn" data-section="seasons">📅 Seasons</button>
-        <button class="nav-btn" data-section="athlete-progression">👥 Athlete Progression</button>
+      <div class="nav-group">
+        <div class="nav-label">Tools</div>
+        <div id="tools-nav" style="display:flex;flex-direction:column;gap:2px;">
+          <a href="csv-import.html" class="nav-btn">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/></svg>
+            CSV Import
+          </a>
+          <button class="nav-btn" data-section="manual-entry">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>
+            Manual Entry
+          </button>
+          <button class="nav-btn" data-section="bulk-edit">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m12 2 9 5-9 5-9-5 9-5z"/><path d="m3 12 9 5 9-5M3 17l9 5 9-5"/></svg>
+            Bulk Edit
+          </button>
+          <button class="nav-btn" data-section="analytics">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 16v-4M12 16V8M17 16v-7"/></svg>
+            Analytics
+          </button>
+          <button class="nav-btn" data-section="console">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="m7 9 3 3-3 3M13 15h4"/></svg>
+            Activity Console
+          </button>
+          <button class="nav-btn" data-section="feedback">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            Feedback
+          </button>
+          <button class="nav-btn" data-section="settings">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            Settings
+          </button>
+        </div>
       </div>
     </nav>
-    
+
     <div class="sidebar-spacer"></div>
-    
+
     <div class="logout-section">
-      <button class="logout-btn" id="logout-btn">Log Out</button>
+      <button class="logout-btn" id="logout-btn">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+        Log out
+      </button>
     </div>
   </aside>
-  
+
   <main class="main">
     <div class="topbar">
+      <button class="mobile-menu-button" id="mobile-menu-btn" aria-label="Open menu">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
       <h2 id="page-title">Dashboard</h2>
-      <a href="/home" class="home-page">MSM Home</a>
+      <div class="topbar-links">
+        <a href="/home">MSM Home</a>
+        <a href="meets-dashboard.html">Meets Dashboard</a>
+      </div>
       <div class="topbar-info">
-        <span>🔗 Firebase Connected</span>
-        <span id="record-count">0 records</span>
+        <span class="conn-pill"><span class="conn-dot"></span>Firebase connected</span>
+        <span class="scoreboard" id="record-count">0000</span>
       </div>
     </div>
-    
+
     <div class="content" id="content">
-      <div class="loading">
-        <span class="spinner"></span>
-        Loading...
-      </div>
+      <div class="load-state"><div class="spinner"></div><span>Loading…</span></div>
     </div>
   </main>
 </div>
 
-<!-- Modal Template -->
+<div id="toast-stack"></div>
+
+<!-- Modal template -->
 <template id="modal-template">
-  <div class="modal-overlay" onclick="if(event.target === this) closeModal()">
+  <div class="modal-overlay">
     <div class="modal">
       <div class="modal-header">
-        <h2 id="modal-title">Modal Title</h2>
-        <button class="modal-close" onclick="closeModal()">✕</button>
+        <h2 id="modal-title">Modal title</h2>
+        <button class="modal-close" type="button" data-close>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
       </div>
       <div class="modal-body" id="modal-body"></div>
       <div class="modal-footer">
-        <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
-        <button class="btn btn-primary" id="modal-submit" onclick="handleModalSubmit()">Save</button>
+        <button class="btn btn-secondary" type="button" data-close>Cancel</button>
+        <button class="btn btn-primary" id="modal-submit" type="button">Save</button>
       </div>
     </div>
   </div>
 </template>
-
-
-
-
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-<script src="firebase-config.js"></script>
-<script src="firebase-helpers.js"></script>
-
-<script>
-  // ==========================================
-  // App State
-  // ==========================================
-  let currentSection = 'dashboard';
-  let currentData = [];
-  let currentColumns = [];
-  let currentOptions = {};
-  let sortColumn = null;
-  let sortDirection = 'asc';
-  let csvData = [];
-  
-  // ==========================================
-  // Auth Check
-  // ==========================================
-  if (localStorage.getItem('&#120; &#99; &#97; &#100; &#109; &#105; &#110;') !== '&#116; &#114; &#117; &#101;') {
-    window.location.replace('login.html');
-  }
-  
-  // ==========================================
-  // Navigation
-  // ==========================================
-  document.getElementById('logout-btn').addEventListener('click', () => {
-    localStorage.removeItem('&#120; &#99; &#97; &#100; &#109; &#105; &#110;');
-    window.location.replace('login.html');
-  });
-  
-  document.getElementById('main-nav').addEventListener('click', (e) => {
-    const btn = e.target.closest('button[data-section]');
-    if (!btn) return;
-    
-    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    
-    loadSection(btn.dataset.section);
-  });
-  
-  // Tools navigation
-  document.getElementById('tools-nav').addEventListener('click', (e) => {
-    const btn = e.target.closest('button[data-section]');
-    if (!btn) return;
-    
-    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    
-    loadSection(btn.dataset.section);
-  });
-  
-  // Season navigation
-  document.getElementById('season-nav').addEventListener('click', (e) => {
-    const btn = e.target.closest('button[data-section]');
-    if (!btn) return;
-    
-    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    
-    loadSection(btn.dataset.section);
-  });
-  
-  // ==========================================
-  // Section Loading
-  // ==========================================
-  async function loadSection(section) {
-    currentSection = section;
-    document.getElementById('page-title').textContent = 
-      section.charAt(0).toUpperCase() + section.slice(1);
-    document.getElementById('content').innerHTML = '<div class="loading"><span class="spinner"></span>Loading...</div>';
-    
-    try {
-      switch (section) {
-        case 'dashboard':
-          await renderDashboard();
-          break;
-        case 'meets':
-          await renderMeets();
-          break;
-        case 'courses':
-          await renderCourses();
-          break;
-        case 'schools':
-          await renderSchools();
-          break;
-        case 'athletes':
-          await renderAthletes();
-          break;
-        case 'results':
-          await renderResults();
-          break;
-        case 'bulk-edit':
-          await renderBulkEdit();
-          break;
-        case 'analytics':
-          await renderAnalytics();
-          break;
-        case 'settings':
-          await renderSettings();
-          break;
-        case 'seasons':
-          await renderSeasons();
-          break;
-        case 'athlete-progression':
-          await renderAthleteProgression();
-          break;
-        case 'feedback':
-          await renderFeedback();
-          break;
-      }
-    } catch (error) {
-      console.error('Error loading section:', error);
-      document.getElementById('content').innerHTML = 
-        `<div class="empty-state" style="color: var(--danger);">Error loading section: ${error.message}</div>`;
-    } finally {
-      document.dispatchEvent(new Event("MSMDataLoaded"));
-    }
-  }
-  
-  // ==========================================
-  // Dashboard
-  // ==========================================
-  async function renderDashboard() {
-    const [meetsSnap, schoolsSnap, athletesSnap, resultsSnap] = await Promise.all([
-      window.firebaseDatabase.ref('crosscountry/meets').once('value'),
-      window.firebaseDatabase.ref('crosscountry/schools').once('value'),
-      window.firebaseDatabase.ref('crosscountry/athletes').once('value'),
-      window.firebaseDatabase.ref('crosscountry/results').once('value')
-    ]);
-    
-    const stats = {
-      meets: meetsSnap.numChildren(),
-      schools: schoolsSnap.numChildren(),
-      athletes: athletesSnap.numChildren(),
-      results: resultsSnap.numChildren()
-    };
-    
-    document.getElementById('content').innerHTML = `
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin-bottom: 24px;">
-        <div style="background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 20px; text-align: center;">
-          <div style="font-size: 2.5rem; font-weight: 700; color: var(--accent);">${stats.meets}</div>
-          <div style="color: var(--muted); margin-top: 8px;">Meets</div>
-        </div>
-        <div style="background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 20px; text-align: center;">
-          <div style="font-size: 2.5rem; font-weight: 700; color: var(--accent);">${stats.schools}</div>
-          <div style="color: var(--muted); margin-top: 8px;">Schools</div>
-        </div>
-        <div style="background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 20px; text-align: center;">
-          <div style="font-size: 2.5rem; font-weight: 700; color: var(--accent);">${stats.athletes}</div>
-          <div style="color: var(--muted); margin-top: 8px;">Athletes</div>
-        </div>
-        <div style="background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 20px; text-align: center;">
-          <div style="font-size: 2.5rem; font-weight: 700; color: var(--accent);">${stats.results}</div>
-          <div style="color: var(--muted); margin-top: 8px;">Results</div>
-        </div>
-      </div>
-      <div style="background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 24px;">
-        <h3 style="margin: 0 0 16px 0;">Quick Links</h3>
-        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-          <button class="btn btn-primary" onclick="loadSection('meets')">📊 Manage Meets</button>
-          <button class="btn btn-primary" onclick="loadSection('schools')">🏫 Manage Schools</button>
-          <button class="btn btn-primary" onclick="loadSection('athletes')">👤 Manage Athletes</button>
-          <button class="btn btn-primary" onclick="loadSection('results')">🏆 Manage Results</button>
-        </div>
-      </div>
-    `;
-  }
-  
-  // ==========================================
-  // Feedback (site-wide submissions from /feedback page)
-  // ==========================================
-  async function renderFeedback() {
-    document.getElementById('page-title').textContent = 'Feedback';
-    const snap = await window.firebaseDatabase.ref('feedback').once('value');
-    const items = [];
-    snap.forEach(child => {
-      items.push({ id: child.key, ...child.val() });
-    });
-    items.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-
-    const typeLabels = { feature: 'Feature request', change: 'Change/improvement', comment: 'Comment', results: 'Results feedback' };
-    const typeColors = { feature: 'var(--info)', change: 'var(--accent)', comment: 'var(--muted)', results: 'var(--warning)' };
-
-    if (!items.length) {
-      document.getElementById('content').innerHTML = '<div class="empty-state" style="padding: 40px; text-align: center; color: var(--muted);">No feedback submissions yet. Submissions from the public <a href="/feedback" target="_blank">Feedback page</a> will appear here.</div>';
-      return;
-    }
-
-    document.getElementById('content').innerHTML = `
-      <div style="margin-bottom: 16px; color: var(--muted); font-size: 0.9rem;">Showing ${items.length} submission(s) from the <a href="/feedback" target="_blank" style="color: var(--accent);">Feedback</a> page (newest first).</div>
-      <div style="display: flex; flex-direction: column; gap: 12px;">
-        ${items.map(item => `
-          <div style="background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 16px 20px;">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px; margin-bottom: 10px;">
-              <span style="display: inline-block; padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; background: ${typeColors[item.type] || 'var(--muted)'}; color: #fff;">${typeLabels[item.type] || item.type}</span>
-              <span style="color: var(--muted); font-size: 0.85rem;">${item.createdAt ? new Date(item.createdAt).toLocaleString() : '—'}</span>
-            </div>
-            <div style="white-space: pre-wrap; word-break: break-word; color: #e6f0f7; line-height: 1.5;">${(item.message || '').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
-            ${item.email ? `<div style="margin-top: 10px; font-size: 0.9rem; color: var(--muted);">📧 ${item.email.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>` : ''}
-          </div>
-        `).join('')}
-      </div>
-    `;
-  }
-
-  // ==========================================
-  // Meets
-  // ==========================================
-  async function renderMeets() {
-    const [snapshot, coursesSnap] = await Promise.all([
-      window.firebaseDatabase.ref('crosscountry/meets').once('value'),
-      window.firebaseDatabase.ref('crosscountry/courses').once('value')
-    ]);
-    const data = [];
-    snapshot.forEach(child => {
-      data.push({ id: child.key, ...child.val() });
-    });
-    
-    const courses = [];
-    coursesSnap.forEach(child => {
-      courses.push(child.val().slug);
-    });
-    
-    renderGrid('Meets', [
-      { key: 'name', label: 'Name', type: 'text' },
-      { key: 'slug', label: 'Slug', type: 'text' },
-      { key: 'date', label: 'Date', type: 'date' },
-      { key: 'location', label: 'Location', type: 'text' },
-      { key: 'course_slug', label: 'Course', type: 'select', options: courses },
-      { key: 'description', label: 'Description', type: 'text' }
-    ], data, {
-      onCreate: (row) => createRecord('crosscountry/meets', row),
-      onUpdate: (id, updates) => updateRecord(`crosscountry/meets/${id}`, updates),
-      onDelete: (id) => deleteRecord(`crosscountry/meets/${id}`)
-    });
-  }
-  
-  // ==========================================
-  // Courses
-  // ==========================================
-  async function renderCourses() {
-    const snapshot = await window.firebaseDatabase.ref('crosscountry/courses').once('value');
-    const data = [];
-    snapshot.forEach(child => {
-      data.push({ id: child.key, ...child.val() });
-    });
-    
-    renderGrid('Courses', [
-      { key: 'name', label: 'Course Name', type: 'text' },
-      { key: 'slug', label: 'Slug', type: 'text' },
-      { key: 'location', label: 'Location', type: 'text' },
-      { key: 'distance', label: 'Distance (meters)', type: 'number' },
-      { key: 'description', label: 'Description', type: 'text' },
-      { key: 'difficulty', label: 'Difficulty', type: 'select', options: ['Easy', 'Medium', 'Hard'] }
-    ], data, {
-      onCreate: (row) => createRecord('crosscountry/courses', row),
-      onUpdate: (id, updates) => updateRecord(`crosscountry/courses/${id}`, updates),
-      onDelete: (id) => deleteRecord(`crosscountry/courses/${id}`)
-    });
-  }
-  
-  // ==========================================
-  // Schools
-  // ==========================================
-  async function renderSchools() {
-    const snapshot = await window.firebaseDatabase.ref('crosscountry/schools').once('value');
-    const data = [];
-    snapshot.forEach(child => {
-      data.push({ id: child.key, ...child.val() });
-    });
-    
-    renderGrid('Schools', [
-      { key: 'name', label: 'Name', type: 'text' },
-      { key: 'slug', label: 'Slug', type: 'text' }
-    ], data, {
-      onCreate: (row) => createRecord('crosscountry/schools', row),
-      onUpdate: (id, updates) => updateRecord(`crosscountry/schools/${id}`, updates),
-      onDelete: (id) => deleteRecord(`crosscountry/schools/${id}`)
-    });
-  }
-  
-  // ==========================================
-  // Athletes
-  // ==========================================
-  async function renderAthletes() {
-    const [athletesSnap, schoolsSnap] = await Promise.all([
-      window.firebaseDatabase.ref('crosscountry/athletes').once('value'),
-      window.firebaseDatabase.ref('crosscountry/schools').once('value')
-    ]);
-    
-    const data = [];
-    athletesSnap.forEach(child => {
-      data.push({ id: child.key, ...child.val() });
-    });
-    
-    const schools = [];
-    schoolsSnap.forEach(child => {
-      schools.push(child.val().slug);
-    });
-    
-    renderGrid('Athletes', [
-      { key: 'name', label: 'Name', type: 'text' },
-      { key: 'school_slug', label: 'School', type: 'select', options: schools },
-      { key: 'grade', label: 'Grade', type: 'number' },
-      { key: 'gender', label: 'Gender', type: 'select', options: ['M', 'F'] }
-    ], data, {
-      onCreate: (row) => createRecord('crosscountry/athletes', row),
-      onUpdate: (id, updates) => updateRecord(`crosscountry/athletes/${id}`, updates),
-      onDelete: (id) => deleteRecord(`crosscountry/athletes/${id}`)
-    });
-  }
-  
-  // ==========================================
-  // Results with CSV Import
-  // ==========================================
-  async function renderResults() {
-    const [resultsSnap, meetsSnap, schoolsSnap] = await Promise.all([
-      window.firebaseDatabase.ref('crosscountry/results').once('value'),
-      window.firebaseDatabase.ref('crosscountry/meets').once('value'),
-      window.firebaseDatabase.ref('crosscountry/schools').once('value')
-    ]);
-    
-    const data = [];
-    resultsSnap.forEach(child => {
-      data.push({ id: child.key, ...child.val() });
-    });
-    
-    const meets = [];
-    meetsSnap.forEach(child => {
-      meets.push(child.val().slug);
-    });
-    
-    const schools = [];
-    schoolsSnap.forEach(child => {
-      schools.push(child.val().slug);
-    });
-    
-    // Create grid content with CSV import
-    currentData = data;
-    currentColumns = [
-      { key: 'athlete_name', label: 'Athlete', type: 'text' },
-      { key: 'meet_slug', label: 'Meet', type: 'select', options: meets },
-      { key: 'school_slug', label: 'School', type: 'select', options: schools },
-      { key: 'gender', label: 'Gender', type: 'select', options: ['M', 'F'] },
-      { key: 'time', label: 'Time (sec)', type: 'number' },
-      { key: 'distance', label: 'Distance (m)', type: 'number' },
-      { key: 'place', label: 'Place', type: 'number' },
-      { key: 'race_type', label: 'Race Type', type: 'text' }
-    ];
-    currentOptions = {
-      onCreate: (row) => createRecord('crosscountry/results', row),
-      onUpdate: (id, updates) => updateRecord(`crosscountry/results/${id}`, updates),
-      onDelete: (id) => deleteRecord(`crosscountry/results/${id}`),
-      csvImport: true,
-      csvMeetSlugs: meets
-    };
-    
-    // Render with CSV section
-    renderGridWithCSV('Results', currentColumns, data, currentOptions);
-  }
-  
-  // ==========================================
-  // Bulk Edit
-  // ==========================================
-  async function renderBulkEdit() {
-    document.getElementById('content').innerHTML = `
-      <div class="grid-container">
-        <div class="grid-header">
-          <h3>Bulk Edit Tools</h3>
-        </div>
-        <div class="grid-scroll" style="padding: 16px;">
-          <div class="csv-form-group">
-            <label class="csv-form-label">Delete all results for a meet</label>
-            <div style="display:flex; gap:8px; flex-wrap: wrap;">
-              <select id="bulk-meet-select" class="form-input" style="min-width: 220px;"></select>
-              <button class="btn btn-danger" onclick="bulkDeleteResultsForMeet()">Delete Results</button>
-            </div>
-            <small class="csv-form-label" style="color: var(--muted);">This action cannot be undone.</small>
-          </div>
-          <div id="bulk-status" class="status-message" style="margin-top: 12px;"></div>
-        </div>
-      </div>
-    `;
-    const meetsSnap = await window.firebaseDatabase.ref('crosscountry/meets').once('value');
-    const slugs = [];
-    meetsSnap.forEach(child => slugs.push(child.val().slug));
-    const sel = document.getElementById('bulk-meet-select');
-    sel.innerHTML = '<option value="">-- Select meet --</option>' + slugs.map(s => `<option value="${s}">${s}</option>`).join('');
-  }
-
-  async function bulkDeleteResultsForMeet() {
-    const meet = document.getElementById('bulk-meet-select')?.value || '';
-    const statusEl = document.getElementById('bulk-status');
-    if (!meet) { if (statusEl) { statusEl.className = 'status-message error'; statusEl.textContent = 'Select a meet first.'; } return; }
-    if (!confirm(`Delete all results for meet "${meet}"? This cannot be undone.`)) return;
-    try {
-      const resSnap = await window.firebaseDatabase.ref('crosscountry/results').orderByChild('meet_slug').equalTo(meet).once('value');
-      const updates = {};
-      resSnap.forEach(child => { updates[child.key] = null; });
-      const count = Object.keys(updates).length;
-      if (count === 0) {
-        statusEl.className = 'status-message warning';
-        statusEl.textContent = 'No results found for selected meet.';
-        return;
-      }
-      await window.firebaseDatabase.ref('crosscountry/results').update(updates);
-      statusEl.className = 'status-message success';
-      statusEl.textContent = `Deleted ${count} result(s).`;
-    } catch (e) {
-      statusEl.className = 'status-message error';
-      statusEl.textContent = 'Error: ' + e.message;
-    }
-  }
-
-  // ==========================================
-  // Analytics
-  // ==========================================
-  async function renderAnalytics() {
-    // Navigate to the dedicated analytics page for cross country
-    window.location.href = 'analytics.html';
-  }
-
-  // ==========================================
-  // Settings
-  // ==========================================
-  async function renderSettings() {
-    document.getElementById('content').innerHTML = `
-      <div class="grid-container">
-        <div class="grid-header"><h3>Settings</h3></div>
-        <div class="grid-scroll" style="padding:16px;">
-          <p class="csv-form-label">No configurable settings yet.</p>
-        </div>
-      </div>
-    `;
-  }
-
-  // ==========================================
-  // Seasons
-  // ==========================================
-  async function renderSeasons() {
-    const snapshot = await window.firebaseDatabase.ref('crosscountry/seasons').once('value');
-    const data = [];
-    snapshot.forEach(child => {
-      data.push({ id: child.key, ...child.val() });
-    });
-    
-    renderGrid('Seasons', [
-      { key: 'name', label: 'Season Name', type: 'text' },
-      { key: 'start_date', label: 'Start Date', type: 'date' },
-      { key: 'end_date', label: 'End Date', type: 'date' },
-      { key: 'description', label: 'Description', type: 'text' }
-    ], data, {
-      onCreate: (row) => createRecord('crosscountry/seasons', row),
-      onUpdate: (id, updates) => updateRecord(`crosscountry/seasons/${id}`, updates),
-      onDelete: (id) => deleteRecord(`crosscountry/seasons/${id}`)
-    });
-  }
-  
-  // ==========================================
-  // Athlete Progression
-  // ==========================================
-  async function renderAthleteProgression() {
-    const snapshot = await window.firebaseDatabase.ref('crosscountry/athlete-progression').once('value');
-    const data = [];
-    snapshot.forEach(child => {
-      data.push({ id: child.key, ...child.val() });
-    });
-    
-    renderGrid('Athlete Progression', [
-      { key: 'athlete_name', label: 'Athlete Name', type: 'text' },
-      { key: 'season', label: 'Season', type: 'text' },
-      { key: 'progress', label: 'Progress', type: 'text' }
-    ], data, {
-      onCreate: (row) => createRecord('crosscountry/athlete-progression', row),
-      onUpdate: (id, updates) => updateRecord(`crosscountry/athlete-progression/${id}`, updates),
-      onDelete: (id) => deleteRecord(`crosscountry/athlete-progression/${id}`)
-    });
-  }
-  
-  // ==========================================
-  // Grid Rendering
-  // ==========================================
-  function renderGrid(title, columns, data, options = {}) {
-    currentColumns = columns;
-    currentData = data;
-    currentOptions = options;
-    
-    const html = `
-      <div class="grid-container">
-        <div class="grid-header">
-          <h3>${title} (${data.length})</h3>
-          <div class="grid-actions">
-            <input type="text" id="search-input" placeholder="🔍 Search..." style="padding: 8px 12px; border: 1px solid var(--border); background: var(--card); color: #e6f0f7; border-radius: 6px; min-width: 200px;">
-            <button class="btn btn-primary" onclick="openAddModal()">+ Add</button>
-            <button class="btn btn-secondary" onclick="exportToCSV('${title.toLowerCase()}')">📥 Export</button>
-          </div>
-        </div>
-        <div class="grid-scroll">
-          ${data.length === 0 ? '<div class="empty-state">No records yet. Click "+ Add" to create one.</div>' : `
-            <table class="grid-table">
-              <thead>
-                <tr>
-                  ${columns.map(col => `
-                    <th class="sortable" onclick="sortTable('${col.key}')" style="cursor: pointer;">
-                      ${col.label}
-                      <span id="sort-${col.key}" style="font-size: 0.8rem;"></span>
-                    </th>
-                  `).join('')}
-                  <th style="width: 120px;">Actions</th>
-                </tr>
-              </thead>
-              <tbody id="grid-body">
-                ${renderTableRows(data, columns)}
-              </tbody>
-            </table>
-          `}
-        </div>
-      </div>
-    `;
-    
-    document.getElementById('content').innerHTML = html;
-    document.getElementById('search-input')?.addEventListener('input', filterTable);
-    updateRecordCount(data.length);
-  }
-  
-  function renderGridWithCSV(title, columns, data, options = {}) {
-    const csvHtml = `
-      <div class="csv-section">
-        <h3>📥 CSV Import</h3>
-        <div class="csv-dropzone" id="csv-dropzone" ondrop="handleCSVDrop(event)" ondragover="event.preventDefault(); this.classList.add('dragover')" ondragleave="this.classList.remove('dragover')" onclick="document.getElementById('csv-file-input').click()">
-          <p>📁 Drop CSV file here or click to browse</p>
-          <small>Supported columns: athlete_name, school_slug, gender, time, distance, place, race_type, meet_slug</small>
-          <input type="file" id="csv-file-input" accept=".csv" onchange="handleCSVFile(event)">
-        </div>
-
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-top: 12px;">
-          <div>
-            <label class="csv-form-label">Meet</label>
-            <select id="csv-meet-select" class="form-input">
-              <option value="">-- Use meet_slug from CSV --</option>
-            </select>
-          </div>
-          <div>
-            <label class="csv-form-label">Gender</label>
-            <select id="csv-gender-select" class="form-input">
-              <option value="auto">Auto (from CSV)</option>
-              <option value="M">M</option>
-              <option value="F">F</option>
-            </select>
-          </div>
-          <div>
-            <label class="csv-form-label">Default Distance (m)</label>
-            <input id="csv-distance-input" class="form-input" type="number" placeholder="e.g. 5000" value="5000">
-          </div>
-          <div>
-            <label class="csv-form-label">Race Type</label>
-            <div class="race-type-options" id="csv-race-type-options">
-              <button type="button" class="race-type-btn" data-value="">Auto</button>
-              <button type="button" class="race-type-btn" data-value="Varsity">Varsity</button>
-              <button type="button" class="race-type-btn" data-value="JV">JV</button>
-              <button type="button" class="race-type-btn" data-value="Open">Open</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="csv-divider"></div>
-
-        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-          <button class="btn btn-secondary" id="csv-validate-btn" onclick="validateCSVRows()">🔍 Validate</button>
-          <button class="btn btn-success" id="csv-import-btn" onclick="importCSVRows()">⬆️ Import</button>
-          <button class="btn btn-secondary" id="csv-download-template-btn" onclick="downloadCSVTemplate()">⬇️ Download Template</button>
-        </div>
-
-        <div id="csv-status" class="status-message" style="margin-top: 12px;"></div>
-        <div id="csv-preview" class="csv-preview" style="display: none;"></div>
-      </div>
-    `;
-    
-    const gridHtml = `
-      <div class="grid-container">
-        <div class="grid-header">
-          <h3>${title} (${data.length})</h3>
-          <div class="grid-actions">
-            <input type="text" id="search-input" placeholder="🔍 Search..." style="padding: 8px 12px; border: 1px solid var(--border); background: var(--card); color: #e6f0f7; border-radius: 6px; min-width: 200px;">
-            <button class="btn btn-primary" onclick="openAddModal()">+ Add</button>
-            <button class="btn btn-secondary" onclick="exportToCSV('${title.toLowerCase()}')">📥 Export</button>
-          </div>
-        </div>
-        <div class="grid-scroll">
-          ${data.length === 0 ? '<div class="empty-state">No records yet. Click "+ Add" or import from CSV.</div>' : `
-            <table class="grid-table">
-              <thead>
-                <tr>
-                  ${columns.map(col => `
-                    <th class="sortable" onclick="sortTable('${col.key}')" style="cursor: pointer;">
-                      ${col.label}
-                      <span id="sort-${col.key}" style="font-size: 0.8rem;"></span>
-                    </th>
-                  `).join('')}
-                  <th style="width: 120px;">Actions</th>
-                </tr>
-              </thead>
-              <tbody id="grid-body">
-                ${renderTableRows(data, columns)}
-              </tbody>
-            </table>
-          `}
-        </div>
-      </div>
-    `;
-    
-    document.getElementById('content').innerHTML = csvHtml + gridHtml;
-    document.getElementById('search-input')?.addEventListener('input', filterTable);
-    updateRecordCount(data.length);
-    buildCSVToolsUI();
-  }
-  
-  function renderTableRows(data, columns) {
-    return data.map(row => `
-      <tr>
-        ${columns.map(col => {
-          const value = row[col.key] ?? '';
-          const displayValue = formatValue(value, col.type);
-          return `<td>${displayValue}</td>`;
-        }).join('')}
-        <td>
-          <button class="btn btn-secondary btn-small" onclick="openEditModal('${row.id}')">Edit</button>
-          <button class="btn btn-danger btn-small" onclick="confirmDelete('${row.id}')">Delete</button>
-        </td>
-      </tr>
-    `).join('');
-  }
-  
-  function formatValue(value, type) {
-    if (value === null || value === undefined || value === '') return '—';
-    if (type === 'date') return new Date(value).toLocaleDateString();
-    if (type === 'number') return Number(value).toLocaleString();
-    return String(value);
-  }
-  
-  function updateRecordCount(count) {
-    document.getElementById('record-count').textContent = `${count} records`;
-  }
-  
-  function sortTable(column) {
-    if (sortColumn === column) {
-      sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
-    } else {
-      sortColumn = column;
-      sortDirection = 'asc';
-    }
-    
-    currentData.sort((a, b) => {
-      const aVal = a[column] ?? '';
-      const bVal = b[column] ?? '';
-      const cmp = aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
-      return sortDirection === 'asc' ? cmp : -cmp;
-    });
-    
-    // Update sort indicators
-    document.querySelectorAll('[id^="sort-"]').forEach(el => el.textContent = '');
-    const indicator = document.getElementById(`sort-${column}`);
-    if (indicator) indicator.textContent = sortDirection === 'asc' ? ' ↑' : ' ↓';
-    
-    document.getElementById('grid-body').innerHTML = renderTableRows(currentData, currentColumns);
-  }
-  
-  function filterTable() {
-    const search = (document.getElementById('search-input')?.value || '').toLowerCase();
-    if (!search) {
-      document.getElementById('grid-body').innerHTML = renderTableRows(currentData, currentColumns);
-      updateRecordCount(currentData.length);
-      return;
-    }
-    
-    const filtered = currentData.filter(row => {
-      return currentColumns.some(col => {
-        const value = String(row[col.key] ?? '').toLowerCase();
-        return value.includes(search);
-      });
-    });
-    
-    document.getElementById('grid-body').innerHTML = renderTableRows(filtered, currentColumns);
-    updateRecordCount(filtered.length);
-  }
-  
-  function exportToCSV(filename) {
-    const headers = currentColumns.map(col => col.label).join(',');
-    const rows = currentData.map(row => {
-      return currentColumns.map(col => {
-        const value = row[col.key] ?? '';
-        return `"${String(value).replace(/"/g, '""')}"`;
-      }).join(',');
-    });
-    
-    const csv = [headers, ...rows].join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${filename}-${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-  }
-  
-  // ==========================================
-  // Modal
-  // ==========================================
-  let editingId = null;
-  
-  function openAddModal() {
-    editingId = null;
-    openModal('Add New Record', generateFormHTML({}), 'Create');
-  }
-  
-  async function openEditModal(id) {
-    editingId = id;
-    const record = currentData.find(r => r.id === id);
-    if (!record) return;
-    
-    openModal('Edit Record', generateFormHTML(record), 'Update');
-  }
-  
-  function generateFormHTML(record) {
-    return currentColumns.map(col => {
-      const value = record[col.key] ?? '';
-      
-      if (col.type === 'select') {
-        return `
-          <div class="form-group">
-            <label class="form-label">${col.label}</label>
-            <select class="form-input" name="${col.key}">
-              <option value="">-- Select --</option>
-              ${(col.options || []).map(opt => `
-                <option value="${opt}" ${value === opt ? 'selected' : ''}>${opt}</option>
-              `).join('')}
-            </select>
-          </div>
-        `;
-      }
-      
-      return `
-        <div class="form-group">
-          <label class="form-label">${col.label}</label>
-          <input type="${col.type}" class="form-input" name="${col.key}" value="${String(value)}" placeholder="${col.label}">
-        </div>
-      `;
-    }).join('');
-  }
-  
-  function openModal(title, body, submitText = 'Save') {
-    const template = document.getElementById('modal-template');
-    const clone = template.content.cloneNode(true);
-    
-    clone.querySelector('#modal-title').textContent = title;
-    clone.querySelector('#modal-body').innerHTML = body;
-    clone.querySelector('#modal-submit').textContent = submitText;
-    
-    const overlay = clone.querySelector('.modal-overlay');
-    document.body.appendChild(overlay);
-    
-    window.currentModal = overlay;
-  }
-  
-  function closeModal() {
-    if (window.currentModal) {
-      window.currentModal.remove();
-      window.currentModal = null;
-    }
-  }
-  
-  async function handleModalSubmit() {
-    const modal = window.currentModal;
-    if (!modal) return;
-    
-    const formData = {};
-    modal.querySelectorAll('.form-input').forEach(input => {
-      let value = input.value;
-      if (input.type === 'number') value = value ? parseFloat(value) : null;
-      formData[input.name] = value;
-    });
-    
-    try {
-      if (editingId) {
-        await currentOptions.onUpdate(editingId, formData);
-      } else {
-        await currentOptions.onCreate(formData);
-      }
-      closeModal();
-      await loadSection(currentSection);
-    } catch (error) {
-      alert('Error: ' + error.message);
-    }
-  }
-  
-  async function confirmDelete(id) {
-    if (!confirm('Are you sure you want to delete this record?')) return;
-    try {
-      await currentOptions.onDelete(id);
-      await loadSection(currentSection);
-    } catch (error) {
-      alert('Error: ' + error.message);
-    }
-  }
-  
-  async function handleCSVDrop(e) {
-    e.preventDefault();
-    e.currentTarget.classList.remove('dragover');
-    if (e.dataTransfer.files.length > 0) {
-      processCSVFile(e.dataTransfer.files[0]);
-    }
-  }
-  
-  async function handleCSVFile(e) {
-    if (e.target.files.length > 0) {
-      processCSVFile(e.target.files[0]);
-    }
-  }
-
-  // Helper functions for CSV processing and UI
-  function parseCSV(text) {
-    function splitCSVLine(line) {
-      const out = [];
-      let cur = '';
-      let inQuotes = false;
-      for (let i = 0; i < line.length; i++) {
-        const ch = line[i];
-        if (inQuotes) {
-          if (ch === '"') {
-            if (line[i + 1] === '"') { cur += '"'; i++; }
-            else { inQuotes = false; }
-          } else {
-            cur += ch;
-          }
-        } else {
-          if (ch === '"') inQuotes = true;
-          else if (ch === ',') { out.push(cur); cur = ''; }
-          else cur += ch;
-        }
-      }
-      out.push(cur);
-      return out.map(v => v.trim());
-    }
-    const normalized = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim();
-    const lines = normalized.split('\n').filter(l => l.trim() !== '');
-    if (lines.length < 1) return { headers: [], rows: [] };
-    const headers = splitCSVLine(lines[0]).map(h => h.trim().toLowerCase());
-    const rows = [];
-    for (let i = 1; i < lines.length; i++) {
-      const values = splitCSVLine(lines[i]);
-      const row = {};
-      headers.forEach((h, idx) => row[h] = values[idx] ?? '');
-      rows.push(row);
-    }
-    return { headers, rows };
-  }
-
-  function parseTimeToSeconds(str) {
-    if (str == null) return null;
-    const s = String(str).trim();
-    if (!s) return null;
-    if (/^\d+(\.\d+)?$/.test(s)) return parseFloat(s);
-    const parts = s.split(':').map(p => p.trim());
-    if (parts.length === 3) {
-      const h = parseInt(parts[0], 10);
-      const m = parseInt(parts[1], 10);
-      const sec = parseFloat(parts[2]);
-      if ([h,m,sec].some(x => Number.isNaN(x))) return null;
-      return h * 3600 + m * 60 + sec;
-    } else if (parts.length === 2) {
-      const m = parseInt(parts[0], 10);
-      const sec = parseFloat(parts[1]);
-      if ([m,sec].some(x => Number.isNaN(x))) return null;
-      return m * 60 + sec;
-    } else {
-      return null;
-    }
-  }
-
-  function buildCSVToolsUI() {
-    const meetSelect = document.getElementById('csv-meet-select');
-    if (meetSelect) {
-      const slugs = (currentOptions.csvMeetSlugs || []);
-      meetSelect.innerHTML = '<option value="">-- Use meet_slug from CSV --</option>' + slugs.map(slug => `<option value="${slug}">${slug}</option>`).join('');
-    }
-    const raceBtns = document.getElementById('csv-race-type-options');
-    if (raceBtns) {
-      raceBtns.addEventListener('click', (e) => {
-        const btn = e.target.closest('.race-type-btn');
-        if (!btn) return;
-        raceBtns.querySelectorAll('.race-type-btn').forEach(b => b.classList.remove('selected'));
-        btn.classList.add('selected');
-      });
-      const first = raceBtns.querySelector('.race-type-btn');
-      if (first) first.classList.add('selected');
-    }
-  }
-
-  function validateCSVRows() {
-    if (!csvData || csvData.length === 0) {
-      showCSVStatus('warning', 'Load a CSV first.');
-      return;
-    }
-    let valid = 0, invalid = 0;
-    const selectedMeet = document.getElementById('csv-meet-select')?.value || '';
-    const selectedGender = document.getElementById('csv-gender-select')?.value || 'auto';
-    for (const r of csvData) {
-      const athlete = (r.athlete_name || '').trim();
-      const school = (r.school_slug || '').trim();
-      const meet = (r.meet_slug || '').trim() || selectedMeet;
-      const time = parseTimeToSeconds(r.time);
-      const gender = selectedGender === 'auto' ? (r.gender || '').trim() : selectedGender;
-      if (athlete && school && meet && time != null && (gender === '' || gender === 'M' || gender === 'F')) {
-        valid++;
-      } else {
-        invalid++;
-      }
-    }
-    showCSVStatus(invalid > 0 ? 'warning' : 'success', `Validation complete: ${valid} valid, ${invalid} invalid.`);
-    showCSVPreview();
-  }
-
-  function downloadCSVTemplate() {
-    const headers = ['athlete_name','school_slug','gender','time','distance','place','race_type','meet_slug'].join(',');
-    const sample = 'Jane Doe,river-high,F,20:17.3,5000,12,Varsity,autumn-classic';
-    const csv = headers + '\n' + sample;
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'results-template.csv';
-    a.click();
-    URL.revokeObjectURL(url);
-  }
-
-  async function importCSVRows() {
-    const meetSelect = document.getElementById('csv-meet-select');
-    const selectedMeet = meetSelect?.value || '';
-    const genderSelect = document.getElementById('csv-gender-select');
-    const selectedGender = genderSelect?.value || 'auto';
-    const distanceInput = document.getElementById('csv-distance-input');
-    const defaultDistance = parseInt(distanceInput?.value || '0', 10) || null;
-    const selectedRaceType = document.querySelector('.race-type-btn.selected')?.dataset.value || '';
-
-    if (!csvData || csvData.length === 0) { showCSVStatus('error', 'Please load a CSV first.'); return; }
-
-    const requiredBaseCols = ['athlete_name', 'school_slug', 'time'];
-    const headers = Object.keys(csvData[0] || {});
-    const missing = requiredBaseCols.filter(k => !headers.includes(k));
-    if (missing.length > 0 && (!selectedMeet && !headers.includes('meet_slug'))) {
-      showCSVStatus('error', 'CSV missing required columns: ' + missing.join(', ') + '. Either include meet_slug in CSV or select a meet.');
-      return;
-    }
-
-    const rowsToInsert = [];
-    const seen = new Set();
-    for (const r of csvData) {
-      const athlete_name = r.athlete_name?.trim();
-      const school_slug = r.school_slug?.trim();
-      const meet_slug = (r.meet_slug?.trim()) || selectedMeet;
-      const gender = (selectedGender.toLowerCase() === 'auto') ? (r.gender?.trim() || '') : selectedGender;
-      const race_type = r.race_type?.trim() || selectedRaceType || '';
-      const distance = (r.distance ? parseInt(r.distance, 10) : defaultDistance) ?? null;
-      const timeSeconds = parseTimeToSeconds(r.time);
-      const place = r.place ? parseInt(r.place, 10) : null;
-
-      if (!athlete_name || !school_slug || !meet_slug || timeSeconds == null) {
-        continue;
-      }
-      const key = `${athlete_name}|${meet_slug}|${gender}`;
-      if (seen.has(key)) continue;
-      seen.add(key);
-
-      rowsToInsert.push({
-        athlete_name,
-        school_slug,
-        meet_slug,
-        gender: gender || null,
-        race_type: race_type || null,
-        distance: distance,
-        time: Math.round(timeSeconds * 1000) / 1000,
-        place: Number.isFinite(place) ? place : null
-      });
-    }
-
-    if (rowsToInsert.length === 0) { showCSVStatus('warning', 'No valid rows to import after validation.'); return; }
-
-    showCSVStatus('info', `Importing ${rowsToInsert.length} row(s)...`);
-
-    try {
-      const ref = window.firebaseDatabase.ref('crosscountry/results');
-      const ops = rowsToInsert.map(row => ref.push().set(row));
-      await Promise.all(ops);
-      showCSVStatus('success', `Imported ${rowsToInsert.length} row(s) successfully.`);
-      await loadSection('results');
-    } catch (e) {
-      showCSVStatus('error', 'Failed to import: ' + e.message);
-    }
-  }
-  
-  async function processCSVFile(file) {
-    try {
-      const text = await file.text();
-      const parsed = parseCSV(text);
-      csvData = parsed.rows;
-      if (!csvData || csvData.length === 0) {
-        showCSVStatus('error', 'No data rows found in CSV.');
-        return;
-      }
-      showCSVStatus('success', `Loaded ${csvData.length} rows. Click Validate to check and Import to save.`);
-      showCSVPreview();
-    } catch (error) {
-      showCSVStatus('error', 'Error reading CSV: ' + error.message);
-    }
-  }
-  
-  function showCSVPreview() {
-    const preview = document.getElementById('csv-preview');
-    if (!preview) return;
-    
-    const columns = Object.keys(csvData[0] || {});
-    
-    const html = `
-      <table>
-        <thead>
-          <tr>
-            ${columns.map(col => `<th>${col}</th>`).join('')}
-          </tr>
-        </thead>
-        <tbody>
-          ${csvData.slice(0, 5).map(row => `
-            <tr>
-              ${columns.map(col => `<td>${row[col] || '—'}</td>`).join('')}
-            </tr>
-          `).join('')}
-          ${csvData.length > 5 ? `<tr><td colspan="${columns.length}" style="text-align: center; padding: 12px; color: var(--muted);">... and ${csvData.length - 5} more rows</td></tr>` : ''}
-        </tbody>
-      </table>
-    `;
-    preview.innerHTML = html;
-    preview.style.display = 'block';
-  }
-  
-  function showCSVStatus(type, message) {
-    const statusEl = document.getElementById('csv-status');
-    if (!statusEl) return;
-    
-    statusEl.className = `status-message ${type}`;
-    statusEl.textContent = message;
-  }
-  
-  // ==========================================
-  // Firebase Operations
-  // ==========================================
-  async function createRecord(path, data) {
-    const ref = window.firebaseDatabase.ref(path).push();
-    await ref.set(data);
-    return ref.key;
-  }
-  
-  async function updateRecord(path, updates) {
-    await window.firebaseDatabase.ref(path).update(updates);
-  }
-  
-  async function deleteRecord(path) {
-    await window.firebaseDatabase.ref(path).remove();
-  }
-  
-  // Load initial section
-  loadSection('dashboard');
-
-  // --- Global variable to hold staged data ---
-let stagedImportData = [];
-
-// --- 1. Fetch & Parse Logic ---
-async function fetchAthleticResults() {
-  const url = document.getElementById('athleticUrl').value;
-  const statusDiv = document.getElementById('importStatus');
-  
-  if (!url) return alert("Please enter a URL");
-  
-  statusDiv.innerHTML = "⏳ Fetching page via proxy (this may take a few seconds)...";
-  
-  try {
-    // We use 'allorigins' as a CORS proxy to read the external HTML
-    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
-    const response = await fetch(proxyUrl);
-    const data = await response.json();
-    
-    if (!data.contents) throw new Error("Could not retrieve page content.");
-    
-    statusDiv.innerHTML = "🔍 Parsing HTML...";
-    
-    // Parse the HTML string into a DOM object
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(data.contents, "text/html");
-    
-    // Athletic.net usually puts results in a standard table structure
-    // We look for rows that look like results
-    const rows = doc.querySelectorAll("tr");
-    stagedImportData = [];
-
-    rows.forEach(row => {
-      const cols = row.querySelectorAll("td");
-      if (cols.length < 4) return; // Skip headers or empty rows
-
-      // Extract text from columns
-      const rawText = Array.from(cols).map(c => c.innerText.trim());
-      
-      // Heuristic: Look for a time pattern (e.g., 17:30.5 or 18:00)
-      const timeIndex = rawText.findIndex(txt => /^\d{1,2}:\d{2}(\.\d+)?$/.test(txt));
-      
-      if (timeIndex > -1) {
-        // Assuming Name is usually before Time, and School is near it
-        // This is a heuristic and might need tweaking based on exact table layout
-        let name = rawText[1] || rawText[0]; // Guessing column 1 or 0
-        let school = rawText[2] || ""; 
-        let timeStr = rawText[timeIndex];
-        let place = rawText[0];
-
-        // Basic clean up
-        if (name && timeStr) {
-          stagedImportData.push({
-            athlete_name: name,
-            school: school,
-            time: parseTime(timeStr), // You likely already have a time helper, or use the one below
-            place: parseInt(place) || 0,
-            race_type: "Open", // Default to Open as requested
-            gender: "M" // You might need a dropdown to select default gender for the import
-          });
-        }
-      }
-    });
-
-    if (stagedImportData.length === 0) {
-      statusDiv.innerHTML = "❌ No results found. Ensure you are using the 'All Results' page URL.";
-    } else {
-      statusDiv.innerHTML = `✅ Found <b>${stagedImportData.length}</b> results ready to import.`;
-      document.getElementById('confirmImportBtn').style.display = 'block';
-    }
-
-  } catch (err) {
-    console.error(err);
-    statusDiv.innerHTML = `❌ Error: ${err.message}`;
-  }
-}
-
-// --- Helper: Parse "MM:SS.ms" to seconds ---
-function parseTime(timeStr) {
-  const parts = timeStr.split(':');
-  if (parts.length === 2) {
-    return (parseFloat(parts[0]) * 60 + parseFloat(parts[1])).toFixed(2);
-  }
-  return 0;
-}
-
-// --- 2. Commit to Database ---
-async function processImportedData() {
-  const statusDiv = document.getElementById('importStatus');
-  statusDiv.innerHTML = "💾 Saving to database...";
-  
-  let count = 0;
-  for (const result of stagedImportData) {
-    // Calls your EXISTING createResult function
-    // Ensure you pass the correct field names expected by your DB
-    await createResult({
-        athlete_name: result.athlete_name,
-        school_slug: result.school.toLowerCase().replace(/\s+/g, '-'), // Simple slugify
-        time: result.time,
-        place: result.place,
-        race_type: result.race_type,
-        gender: result.gender,
-        meet_slug: "imported-meet" // You might want to add a dropdown to select the meet
-    });
-    count++;
-  }
-  
-  alert(`Successfully imported ${count} results!`);
-  document.getElementById('importModal').style.display = 'none';
-  // Reload your table here if necessary
-  // renderResults(); 
-}
-</script>
 </body>
 </html>

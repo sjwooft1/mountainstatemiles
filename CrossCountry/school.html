@@ -209,8 +209,8 @@
           document.title = `${school.name} Profile – Mountain State Miles`;
           
           // Set Logo path as requested: assets/team_logos/school_slug.png
-          const logoPath = `assets/team_logos/${schoolSlug}.png`;
-          const fallbackLogo = `../assets/Wvruns Logo.png`;
+          const logoPath = `/assets/team logos/${schoolSlug}.png`;
+          const fallbackLogo = `/assets/images/logob.png`;
           schoolLogoEl.onerror = function() {
             this.onerror = null;
             this.src = fallbackLogo;

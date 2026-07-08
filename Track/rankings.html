@@ -312,11 +312,11 @@
     <div class="filter-bar">
       <div class="filter-group">
         <label class="filter-label" for="select-event">Event</label>
-        <select id="select-event" class="filter-input"><option>Loading events…</option></select>
+        <select id="select-event" class="filter-input" onclick="loadRankings()"><option>Loading events…</option></select>
       </div>
       <div class="filter-group">
         <label class="filter-label" for="select-season">Season</label>
-        <select id="select-season" class="filter-input">
+        <select id="select-season" class="filter-input" onclick="loadRankings()">
           <option value="">All seasons</option>
           <option value="indoor">Indoor</option>
           <option value="outdoor">Outdoor</option>
@@ -324,7 +324,7 @@
       </div>
       <div class="filter-group">
         <label class="filter-label" for="select-gender">Gender</label>
-        <select id="select-gender" class="filter-input">
+        <select id="select-gender" class="filter-input" onclick="loadRankings()">
           <option value="">All genders</option>
           <option value="M">Boys / M</option>
           <option value="W">Girls / F</option>
@@ -333,6 +333,10 @@
       <div class="filter-group">
         <label class="filter-label">&nbsp;</label>
         <button type="button" id="btn-load" class="filter-input btn-load">Load</button>
+      </div>
+      <div class="filter-group">
+        <label class="filter-label">&nbsp;</label>
+        <li><a href="export.html">Export</a></li>
       </div>
     </div>
 
@@ -438,7 +442,10 @@
       if (targetOption) selectEvent.value = targetOption.value;
     }
 
-    
+    if (genderParam) {
+      const g = genderParam.toUpperCase();
+      selectGender.value = (g === 'F' || g === 'W') ? 'W' : (g === 'M' ? 'M' : '');
+    }
 
     if (seasonParam) {
       selectSeason.value = seasonParam.toLowerCase();
@@ -447,6 +454,13 @@
     if (selectEvent.value) {
       loadRankings();
     }
+  }
+
+  function normalizeResultGender(value) {
+    const token = String(value || '').trim().toUpperCase();
+    if (token === 'W' || token === 'F' || token === 'GIRLS' || token === 'FEMALE') return 'W';
+    if (token === 'M' || token === 'BOYS' || token === 'MALE') return 'M';
+    return token;
   }
 
   function isFieldEvent(eventName) {
@@ -621,7 +635,7 @@
       
       let filteredResults = results;
       if (season) filteredResults = filteredResults.filter(r => r.meet && r.meet.season === season);
-      if (gender) filteredResults = filteredResults.filter(r => r.athlete && r.athlete.gender === gender);
+      if (gender) filteredResults = filteredResults.filter(r => normalizeResultGender(r.gender) === gender);
       
       filteredResults.sort((a, b) => {
         const markA = parseMarkValue(a.mark, eventName);
