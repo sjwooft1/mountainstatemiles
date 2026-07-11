@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Meets – Mountain State Miles</title>
   
-  <!-- Favicon Links (Good as is) -->
   <link rel="icon" type="image/png" href="assets/Favicon Generator/favicon-96x96.png" sizes="96x96" />
   <link rel="icon" type="image/svg+xml" href="assets/Favicon Generator/favicon.svg" />
   <link rel="shortcut icon" href="assets/Favicon Generator/favicon.ico" />
@@ -13,13 +12,31 @@
   <link rel="manifest" href="assets/Favicon Generator/site.webmanifest" />
   
   <link rel="stylesheet" href="/assets/main.css" />
-<link rel="stylesheet" href="/assets/msm-loader.css" />
+  <link rel="stylesheet" href="/assets/msm-loader.css" />
+  <style>
+    .content-section{
+      padding-top: 100px;
+    }
+    .course-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      margin-top: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #0b0e13;
+      background: var(--trail, #2fd0a3);
+      padding: 4px 10px;
+      border-radius: 6px;
+      text-decoration: none;
+      transition: filter 0.15s ease;
+    }
+    .course-badge:hover {
+      filter: brightness(1.1);
+      color: #0b0e13;
+    }
+  </style>
 </head>
-<style>
-  .content-section{
-    padding-top: 100px;
-  }
-</style>
 <body>
 <script src="/assets/msm-loader.js"></script>
   <header>
@@ -50,7 +67,6 @@
 
   <footer>
         <div class="row">
-            <!-- 1st Column -->
             <div class="footer-col">
                 <h4>General</h4>
                 <ul>
@@ -59,8 +75,6 @@
                     <li><a href="/news.html">News</a></li>
                 </ul>
             </div>
-
-            <!-- 2nd Column -->
             <div class="footer-col">
                 <h4>Cross Country</h4>
                 <ul>
@@ -71,8 +85,6 @@
                     <li><a href="/CrossCountry/analytics.html">Analytics</a></li>
                 </ul>
             </div>
-
-            <!-- 3rd Column -->
             <div class="footer-col">
                 <h4>Track</h4>
                 <ul>
@@ -99,6 +111,15 @@
   <script src="firebase-helpers.js"></script>
 
   <script>
+    const courseMap = {
+      'cabell midland': 'cabell-midland',
+      'mineral wells': 'chick-fil-a',
+      'meadowood': 'meadowood-park',
+      'beckley': 'beckley-invitational',
+      'south harrison': 'south-harrison',
+      'glen oak': 'glen-oak'
+    };
+
     async function loadMeets() {
       const container = document.getElementById('meets-list');
       try {
@@ -129,12 +150,26 @@
         container.innerHTML = meets.map(meet => {
           const date = formatDate(meet.date);
           const location = meet.location ? meet.location : 'Location TBD';
+          
+          let courseSlug = null;
+          const locLower = location.toLowerCase();
+          for (const [key, slug] of Object.entries(courseMap)) {
+              if (locLower.includes(key)) {
+                  courseSlug = slug;
+                  break;
+              }
+          }
+          
+          const courseBadge = courseSlug 
+            ? `<div><a href="courses/course viewer.html?course=${courseSlug}" class="course-badge">📍 View 3D Course Map</a></div>` 
+            : '';
+
           return `
             <li>
               <a href="meet.html?slug=${meet.slug}">${meet.name}</a>
               <div>${date}</div>
               <div>${location}</div>
-              ${meet.description ? `<div style="margin-top: auto; padding-top: 12px; border-top: 1px solid var(--border);">
+              ${courseBadge}${meet.description ? `<div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border);">
                 ${meet.description}
               </div>` : ''}
             </li>
@@ -148,8 +183,6 @@
       }
     }
 
-    // Call loadMeets when the script runs
-    // Note: You might want to run this after DOMContentLoaded if firebase-config.js needs the DOM ready
     if (typeof getAllMeets === 'function') {
         loadMeets();
     } else {

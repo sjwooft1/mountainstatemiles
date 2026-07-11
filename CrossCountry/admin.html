@@ -1,841 +1,212 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Track Admin Dashboard</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<style>
-  /* ==========================================================
-     DESIGN TOKENS
-     Palette is grounded in a meet under the stadium lights:
-     near-black sky, rubberized all-weather track in burnt
-     orange, lane-white text. Indoor/outdoor are colour-coded
-     consistently (cool arena blue vs. sun-baked track rust) so
-     colour always carries real meaning, never decoration only.
-     ========================================================== */
-  :root{
-    --ink:#0a0d12;
-    --ink-raised:#0d1117;
-    --surface:#10141b;
-    --surface-2:#151a23;
-    --surface-3:#1b212c;
-    --hover:rgba(255,255,255,.045);
-    --line:rgba(255,255,255,.08);
-    --line-strong:rgba(255,255,255,.16);
-
-    --track:#ff6a32;
-    --track-bright:#ff8d5c;
-    --track-dim:#c44e1f;
-    --track-wash:rgba(255,106,50,.13);
-    --track-wash-strong:rgba(255,106,50,.24);
-
-    --indoor:#4ea6ff;
-    --indoor-wash:rgba(78,166,255,.15);
-    --outdoor:#ff6a32;
-    --outdoor-wash:rgba(255,106,50,.15);
-
-    --success:#36d27a;
-    --success-wash:rgba(54,210,122,.14);
-    --danger:#ff5470;
-    --danger-wash:rgba(255,84,112,.14);
-    --warning:#ffbe53;
-    --warning-wash:rgba(255,190,83,.14);
-    --info:#4ea6ff;
-    --info-wash:rgba(78,166,255,.14);
-
-    --ink-1:#eef1f6;
-    --ink-2:#9aa6b8;
-    --ink-3:#5f6b7d;
-
-    --font-display:'Oswald',system-ui,-apple-system,sans-serif;
-    --font-body:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
-    --font-mono:'JetBrains Mono',ui-monospace,'SF Mono',Consolas,monospace;
-
-    --r-sm:6px;
-    --r-md:10px;
-    --r-lg:16px;
-    --r-pill:999px;
-
-    --shadow-sm:0 2px 10px rgba(0,0,0,.35);
-    --shadow-md:0 16px 40px -12px rgba(0,0,0,.55);
-    --shadow-lg:0 28px 70px -20px rgba(0,0,0,.7);
-
-    --ease:cubic-bezier(.4,0,.2,1);
-    --sidebar-w:264px;
-  }
-
-  *{box-sizing:border-box;}
-  html,body{height:100%;margin:0;padding:0;}
-  body{
-    font-family:var(--font-body);
-    background:var(--ink);
-    background-image:
-      radial-gradient(900px 600px at 12% -10%, rgba(255,106,50,.07), transparent 60%),
-      radial-gradient(700px 500px at 100% 0%, rgba(78,166,255,.05), transparent 55%);
-    color:var(--ink-1);
-    -webkit-font-smoothing:antialiased;
-    text-rendering:optimizeLegibility;
-    overflow:hidden;
-  }
-  ::selection{background:var(--track-wash-strong);color:#fff;}
-  a{color:inherit;}
-
-  /* Scrollbars */
-  *{scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.18) transparent;}
-  *::-webkit-scrollbar{width:9px;height:9px;}
-  *::-webkit-scrollbar-thumb{background:rgba(255,255,255,.16);border-radius:99px;}
-  *::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.28);}
-
-  :focus-visible{
-    outline:2px solid var(--track-bright);
-    outline-offset:2px;
-    border-radius:4px;
-  }
-
-  @media (prefers-reduced-motion: reduce){
-    *,*::before,*::after{animation-duration:.001ms !important;animation-iteration-count:1 !important;transition-duration:.001ms !important;}
-  }
-
-  /* A thin repeating-dash rule — the page's one recurring motif,
-     reads like lane markings seen from above. Used sparingly as
-     a section divider, never as decoration on its own. */
-  .lane-rule{
-    height:1px;
-    background-image:repeating-linear-gradient(90deg, var(--line-strong) 0 10px, transparent 10px 18px);
-    border:none;
-    margin:0;
-  }
-
-  .mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums;}
-
-  /* ==========================================================
-     APP SHELL
-     ========================================================== */
-  .app-wrapper{display:flex;height:100vh;overflow:hidden;}
-
-  .sidebar{
-    width:var(--sidebar-w);
-    flex-shrink:0;
-    background:linear-gradient(180deg, var(--ink-raised) 0%, var(--ink) 100%);
-    border-right:1px solid var(--line);
-    display:flex;
-    flex-direction:column;
-    overflow-y:auto;
-    padding:22px 18px;
-    gap:22px;
-    z-index:50;
-  }
-
-  .brand{
-    display:flex;
-    align-items:center;
-    gap:12px;
-    padding-bottom:18px;
-  }
-  .brand img{
-    width:42px;height:42px;border-radius:10px;object-fit:contain;
-    background:var(--surface-2);
-    border:1px solid var(--line);
-  }
-  .brand-name{
-    font-family:var(--font-display);
-    font-size:1.02rem;
-    font-weight:600;
-    letter-spacing:.02em;
-    line-height:1.15;
-    margin:0;
-    color:var(--ink-1);
-  }
-  .brand-sub{
-    font-size:.68rem;
-    color:var(--track-bright);
-    text-transform:uppercase;
-    letter-spacing:.16em;
-    font-weight:600;
-    margin-top:3px;
-  }
-
-  .nav-group{display:flex;flex-direction:column;gap:2px;}
-  .nav-label{
-    font-size:.68rem;
-    text-transform:uppercase;
-    letter-spacing:.14em;
-    color:var(--ink-3);
-    font-weight:600;
-    padding:0 10px;
-    margin:14px 0 6px;
-  }
-  .nav-group:first-of-type .nav-label{margin-top:0;}
-
-  .nav-btn{
-    appearance:none;
-    background:transparent;
-    border:none;
-    color:var(--ink-2);
-    padding:9px 10px;
-    border-radius:var(--r-sm);
-    cursor:pointer;
-    font-family:var(--font-body);
-    font-weight:500;
-    font-size:.89rem;
-    text-align:left;
-    display:flex;
-    align-items:center;
-    gap:10px;
-    position:relative;
-    transition:background .15s var(--ease), color .15s var(--ease);
-    text-decoration:none;
-  }
-  .nav-btn svg{flex-shrink:0;opacity:.85;}
-  .nav-btn:hover{background:var(--hover);color:var(--ink-1);}
-  .nav-btn.active{
-    background:var(--track-wash);
-    color:#fff;
-  }
-  .nav-btn.active::before{
-    content:'';
-    position:absolute;
-    left:-18px;
-    top:8px;
-    bottom:8px;
-    width:3px;
-    background:var(--track);
-    border-radius:0 3px 3px 0;
-  }
-  .nav-btn.active svg{opacity:1;color:var(--track-bright);}
-
-  .sidebar-spacer{flex:1;}
-
-  .logout-section{padding-top:16px;border-top:1px solid var(--line);}
-  .logout-btn{
-    width:100%;
-    padding:10px 14px;
-    border:1px solid var(--line);
-    background:transparent;
-    color:var(--ink-2);
-    border-radius:var(--r-sm);
-    font-weight:600;
-    font-size:.86rem;
-    cursor:pointer;
-    display:flex;
-    align-items:center;
-    gap:8px;
-    justify-content:center;
-    transition:all .15s var(--ease);
-    font-family:var(--font-body);
-  }
-  .logout-btn:hover{background:var(--danger-wash);border-color:var(--danger);color:#ffb3c0;}
-
-  /* Main column */
-  .main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0;}
-
-  .topbar{
-    display:flex;
-    align-items:center;
-    gap:18px;
-    padding:14px 26px;
-    background:var(--ink-raised);
-    border-bottom:1px solid var(--line);
-    position:relative;
-    z-index:10;
-  }
-  .mobile-menu-button{
-    display:none;
-    width:38px;height:38px;
-    align-items:center;justify-content:center;
-    background:transparent;
-    border:1px solid var(--line);
-    border-radius:var(--r-sm);
-    color:var(--ink-1);
-    cursor:pointer;
-    flex-shrink:0;
-  }
-  .topbar h2{
-    margin:0;
-    font-family:var(--font-display);
-    font-size:1.2rem;
-    font-weight:600;
-    letter-spacing:.01em;
-  }
-  .topbar-links{
-    display:flex;
-    gap:14px;
-    align-items:center;
-    font-size:.85rem;
-  }
-  .topbar-links a{
-    color:var(--ink-2);
-    text-decoration:none;
-    display:flex;
-    align-items:center;
-    gap:6px;
-    padding:6px 4px;
-    border-bottom:1px solid transparent;
-    transition:color .15s, border-color .15s;
-  }
-  .topbar-links a:hover{color:var(--track-bright);border-color:var(--track-bright);}
-
-  .topbar-info{
-    display:flex;
-    align-items:center;
-    gap:10px;
-    margin-left:auto;
-  }
-  .conn-pill{
-    display:inline-flex;
-    align-items:center;
-    gap:7px;
-    padding:6px 11px;
-    border-radius:var(--r-pill);
-    border:1px solid var(--line);
-    background:var(--surface);
-    font-size:.76rem;
-    color:var(--ink-2);
-    white-space:nowrap;
-  }
-  .conn-dot{width:6px;height:6px;border-radius:50%;background:var(--success);box-shadow:0 0 0 3px var(--success-wash);}
-
-  /* The "scoreboard" — record counter rendered like a timer readout */
-  .scoreboard{
-    font-family:var(--font-mono);
-    font-variant-numeric:tabular-nums;
-    font-weight:600;
-    font-size:.82rem;
-    letter-spacing:.04em;
-    background:var(--ink);
-    border:1px solid var(--line-strong);
-    color:var(--track-bright);
-    padding:6px 12px;
-    border-radius:var(--r-sm);
-    text-shadow:0 0 14px rgba(255,106,50,.45);
-    white-space:nowrap;
-  }
-
-  .content{
-    flex:1;
-    overflow:auto;
-    padding:22px 26px;
-  }
-
-  .mobile-menu-overlay{
-    display:none;
-    position:fixed;inset:0;
-    background:rgba(0,0,0,.55);
-    z-index:90;
-  }
-  .mobile-menu-overlay.active{display:block;}
-
-  /* ==========================================================
-     PRIMITIVES — buttons, inputs, badges, cards
-     ========================================================== */
-  .btn{
-    appearance:none;
-    border:1px solid transparent;
-    border-radius:var(--r-sm);
-    font-family:var(--font-body);
-    font-weight:600;
-    font-size:.86rem;
-    padding:8px 14px;
-    cursor:pointer;
-    display:inline-flex;
-    align-items:center;
-    gap:7px;
-    transition:transform .12s var(--ease), background .15s, border-color .15s, color .15s, box-shadow .15s;
-    white-space:nowrap;
-    line-height:1.2;
-  }
-  .btn svg{flex-shrink:0;}
-  .btn:active{transform:translateY(1px);}
-  .btn:disabled{opacity:.55;cursor:not-allowed;transform:none;}
-
-  .btn-primary{background:var(--track);color:#1a0a02;box-shadow:0 6px 16px -4px rgba(255,106,50,.45);}
-  .btn-primary:hover:not(:disabled){background:var(--track-bright);}
-
-  .btn-secondary{background:var(--surface-2);color:var(--ink-1);border-color:var(--line);}
-  .btn-secondary:hover:not(:disabled){background:var(--surface-3);border-color:var(--line-strong);}
-
-  .btn-ghost{background:transparent;color:var(--ink-2);border-color:transparent;}
-  .btn-ghost:hover:not(:disabled){background:var(--hover);color:var(--ink-1);}
-
-  .btn-danger{background:rgba(255,84,112,.16);color:#ffb3c0;border-color:rgba(255,84,112,.4);}
-  .btn-danger:hover:not(:disabled){background:var(--danger);color:#fff;}
-
-  .btn-success{background:var(--success-wash);color:#7cf0ae;border-color:rgba(54,210,122,.4);}
-  .btn-success:hover:not(:disabled){background:var(--success);color:#062;}
-
-  .btn-sm{padding:5px 10px;font-size:.78rem;border-radius:5px;}
-  .btn-block{width:100%;justify-content:center;}
-  .btn-icon{padding:7px;width:34px;height:34px;justify-content:center;}
-
-  .field{display:flex;flex-direction:column;gap:6px;margin-bottom:14px;}
-  .field label{font-size:.82rem;font-weight:600;color:var(--ink-2);}
-  .field .hint{font-size:.74rem;color:var(--ink-3);font-weight:400;margin-top:-2px;}
-
-  .input, select.input, textarea.input{
-    width:100%;
-    padding:9px 11px;
-    background:var(--surface-2);
-    border:1px solid var(--line);
-    color:var(--ink-1);
-    border-radius:var(--r-sm);
-    font-size:.9rem;
-    font-family:var(--font-body);
-    transition:border-color .15s, box-shadow .15s;
-  }
-  .input::placeholder{color:var(--ink-3);}
-  .input:focus, select.input:focus, textarea.input:focus{
-    outline:none;
-    border-color:var(--track);
-    box-shadow:0 0 0 3px var(--track-wash);
-  }
-  select.input{cursor:pointer;}
-  .input-row{display:flex;gap:8px;align-items:center;}
-  .input-row .input{flex:1;}
-
-  .checkbox-row{display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.88rem;color:var(--ink-1);user-select:none;}
-  .checkbox-row input[type="checkbox"]{width:16px;height:16px;accent-color:var(--track);cursor:pointer;}
-
-  .check-grid{
-    display:flex;flex-wrap:wrap;gap:10px;
-    max-height:160px;overflow-y:auto;
-    border:1px solid var(--line);border-radius:var(--r-sm);
-    padding:10px;background:var(--surface);
-  }
-  .check-grid label{display:flex;align-items:center;gap:7px;font-size:.85rem;padding:4px 6px;border-radius:5px;cursor:pointer;}
-  .check-grid label:hover{background:var(--hover);}
-
-  /* Badges — encode real facts: season, action type, etc. */
-  .badge{
-    display:inline-flex;align-items:center;gap:5px;
-    padding:3px 9px;border-radius:var(--r-pill);
-    font-size:.72rem;font-weight:600;letter-spacing:.02em;
-    white-space:nowrap;border:1px solid transparent;
-  }
-  .badge-indoor{background:var(--indoor-wash);color:#8fc6ff;border-color:rgba(78,166,255,.35);}
-  .badge-outdoor{background:var(--outdoor-wash);color:#ffab82;border-color:rgba(255,106,50,.35);}
-  .badge-neutral{background:var(--surface-3);color:var(--ink-2);border-color:var(--line);}
-  .badge-success{background:var(--success-wash);color:#7cf0ae;border-color:rgba(54,210,122,.35);}
-  .badge-danger{background:var(--danger-wash);color:#ffb3c0;border-color:rgba(255,84,112,.35);}
-  .badge-warning{background:var(--warning-wash);color:#ffd591;border-color:rgba(255,190,83,.35);}
-  .badge-track{background:var(--track-wash);color:var(--track-bright);border-color:rgba(255,106,50,.4);}
-
-  .division-chip{
-    display:inline-block;margin:2px 4px 2px 0;padding:2px 9px;
-    border-radius:var(--r-pill);font-size:.72rem;font-weight:700;
-    background:var(--track-wash);border:1px solid rgba(255,106,50,.35);color:var(--track-bright);
-  }
-
-  .panel{
-    background:var(--surface);
-    border:1px solid var(--line);
-    border-radius:var(--r-lg);
-    box-shadow:var(--shadow-sm);
-  }
-  .panel-pad{padding:22px;}
-
-  /* ==========================================================
-     STAT CARDS
-     ========================================================== */
-  .stats-grid{
-    display:grid;
-    grid-template-columns:repeat(auto-fit, minmax(180px,1fr));
-    gap:14px;
-    margin-bottom:22px;
-  }
-  .stat-card{
-    background:var(--surface);
-    border:1px solid var(--line);
-    border-radius:var(--r-lg);
-    padding:18px 20px;
-    position:relative;
-    overflow:hidden;
-  }
-  .stat-card::before{
-    content:'';position:absolute;left:0;top:0;bottom:0;width:3px;
-    background:var(--track);opacity:.7;
-  }
-  .stat-number{
-    font-family:var(--font-display);
-    font-size:2.1rem;
-    font-weight:600;
-    color:var(--ink-1);
-    margin:0;
-    font-variant-numeric:tabular-nums;
-    line-height:1;
-  }
-  .stat-label{
-    color:var(--ink-2);
-    font-size:.78rem;
-    margin:8px 0 0;
-    text-transform:uppercase;
-    letter-spacing:.08em;
-    font-weight:600;
-  }
-
-  .bar-row{display:flex;align-items:center;gap:12px;margin-bottom:10px;}
-  .bar-row .bar-label{width:130px;flex-shrink:0;font-size:.83rem;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  .bar-track{flex:1;height:8px;background:var(--surface-3);border-radius:99px;overflow:hidden;}
-  .bar-fill{height:100%;border-radius:99px;background:linear-gradient(90deg, var(--track-dim), var(--track));}
-  .bar-value{width:42px;text-align:right;font-family:var(--font-mono);font-size:.8rem;color:var(--ink-2);flex-shrink:0;}
-
-  /* ==========================================================
-     DATA GRID
-     ========================================================== */
-  .grid-shell{
-    height:100%;display:flex;flex-direction:column;
-    background:var(--surface);border:1px solid var(--line);
-    border-radius:var(--r-lg);overflow:hidden;box-shadow:var(--shadow-sm);
-  }
-  .grid-head{
-    padding:16px 20px;background:var(--surface-2);
-    border-bottom:1px solid var(--line);
-    display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;
-  }
-  .grid-title{
-    margin:0;font-family:var(--font-display);font-size:1.05rem;font-weight:600;
-    display:flex;align-items:center;gap:10px;letter-spacing:.01em;
-  }
-  .grid-count{font-family:var(--font-mono);font-size:.78rem;color:var(--ink-3);font-weight:500;}
-  .grid-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
-
-  .filter-strip{
-    padding:10px 20px;background:var(--ink-raised);border-bottom:1px solid var(--line);
-    display:flex;flex-wrap:wrap;gap:8px;align-items:center;
-  }
-  .filter-strip .input{min-width:160px;font-size:.83rem;padding:7px 10px;width:auto;}
-  .filter-strip-label{font-size:.78rem;color:var(--ink-3);text-transform:uppercase;letter-spacing:.08em;font-weight:600;margin-right:2px;}
-
-  .active-filters-bar{
-    padding:10px 20px;background:var(--surface-2);border-bottom:1px solid var(--line);
-    display:none;flex-wrap:wrap;gap:8px;align-items:center;
-  }
-  .filter-tag{
-    display:inline-flex;align-items:center;gap:6px;padding:4px 10px;
-    background:var(--track-wash);border:1px solid rgba(255,106,50,.4);
-    border-radius:var(--r-pill);font-size:.8rem;color:var(--track-bright);
-  }
-  .filter-tag button{background:none;border:none;color:inherit;cursor:pointer;font-size:.95rem;padding:0;line-height:1;opacity:.8;}
-  .filter-tag button:hover{opacity:1;}
-
-  .grid-scroll{flex:1;overflow:auto;position:relative;}
-
-  table.grid-table{width:100%;border-collapse:collapse;font-size:.875rem;}
-  .grid-table thead{position:sticky;top:0;z-index:5;background:var(--surface-2);}
-  .grid-table th{
-    padding:11px 16px;text-align:left;font-weight:600;color:var(--ink-3);
-    font-size:.72rem;text-transform:uppercase;letter-spacing:.07em;
-    border-bottom:1px solid var(--line);white-space:nowrap;user-select:none;
-  }
-  .grid-table th.sortable{cursor:pointer;}
-  .grid-table th.sortable:hover{color:var(--ink-1);}
-  .grid-table th .sort-ind{color:var(--track-bright);margin-left:3px;}
-  .grid-table tbody tr{border-bottom:1px solid var(--line);transition:background .12s;}
-  .grid-table tbody tr:hover{background:var(--hover);}
-  .grid-table tbody tr.row-selected{background:var(--track-wash);}
-  .grid-table td{padding:11px 16px;vertical-align:top;color:var(--ink-1);}
-  .grid-table td.num{font-family:var(--font-mono);font-variant-numeric:tabular-nums;}
-  .cell-sub{font-size:.78rem;color:var(--ink-3);margin-top:2px;}
-  .cell-id{font-family:var(--font-mono);font-size:.7rem;color:var(--ink-3);display:none;margin-top:3px;word-break:break-all;}
-  .cell-id.visible{display:block;}
-
-  .bulk-bar{
-    padding:11px 20px;background:var(--surface-2);border-top:1px solid var(--line);
-    display:none;gap:10px;align-items:center;
-  }
-  .bulk-bar .count{color:var(--ink-2);font-size:.85rem;font-weight:600;margin-right:4px;}
-
-  .empty-state{
-    padding:60px 24px;text-align:center;color:var(--ink-2);
-    display:flex;flex-direction:column;align-items:center;gap:10px;height:100%;justify-content:center;
-  }
-  .empty-state svg{opacity:.45;margin-bottom:4px;}
-  .empty-state .empty-title{font-family:var(--font-display);font-size:1.05rem;color:var(--ink-1);font-weight:600;}
-  .empty-state .empty-sub{font-size:.86rem;max-width:360px;}
-
-  .load-state{
-    height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;color:var(--ink-2);
-  }
-  .spinner{
-    width:34px;height:34px;border-radius:50%;
-    border:3px solid var(--line);border-top-color:var(--track);
-    animation:spin .7s linear infinite;
-  }
-  @keyframes spin{to{transform:rotate(360deg);}}
-
-  /* ==========================================================
-     MODAL
-     ========================================================== */
-  .modal-overlay{
-    position:fixed;inset:0;background:rgba(5,7,11,.7);
-    display:flex;align-items:center;justify-content:center;
-    z-index:1000;padding:20px;
-    animation:fade .15s var(--ease);
-  }
-  @keyframes fade{from{opacity:0;}to{opacity:1;}}
-  @keyframes rise{from{opacity:0;transform:translateY(14px) scale(.98);}to{opacity:1;transform:none;}}
-  .modal{
-    background:var(--ink-raised);border:1px solid var(--line-strong);
-    border-radius:var(--r-lg);max-width:600px;width:100%;max-height:88vh;
-    overflow:auto;box-shadow:var(--shadow-lg);
-    animation:rise .2s var(--ease);
-  }
-  .modal.modal-wide{max-width:880px;}
-  .modal-header{
-    padding:18px 22px;background:var(--surface-2);border-bottom:1px solid var(--line);
-    display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:2;
-  }
-  .modal-header h2{margin:0;font-family:var(--font-display);font-size:1.15rem;font-weight:600;}
-  .modal-close{
-    background:none;border:none;color:var(--ink-2);cursor:pointer;
-    width:30px;height:30px;display:flex;align-items:center;justify-content:center;
-    border-radius:var(--r-sm);transition:background .15s,color .15s;
-  }
-  .modal-close:hover{background:var(--hover);color:var(--ink-1);}
-  .modal-body{padding:22px;}
-  .modal-footer{
-    padding:14px 22px;border-top:1px solid var(--line);
-    display:flex;gap:10px;justify-content:flex-end;background:var(--surface-2);
-    position:sticky;bottom:0;
-  }
-
-  /* ==========================================================
-     TOASTS  (replace native alert())
-     ========================================================== */
-  #toast-stack{
-    position:fixed;bottom:22px;right:22px;z-index:1200;
-    display:flex;flex-direction:column;gap:10px;width:340px;
-  }
-  .toast{
-    display:flex;align-items:flex-start;gap:10px;
-    padding:13px 14px;border-radius:var(--r-md);
-    background:var(--ink-raised);border:1px solid var(--line-strong);
-    box-shadow:var(--shadow-md);font-size:.87rem;color:var(--ink-1);
-    animation:toast-in .2s var(--ease);
-  }
-  @keyframes toast-in{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
-  .toast.leaving{animation:toast-out .15s var(--ease) forwards;}
-  @keyframes toast-out{to{opacity:0;transform:translateX(8px);}}
-  .toast-icon{flex-shrink:0;margin-top:1px;}
-  .toast-success .toast-icon{color:var(--success);}
-  .toast-error .toast-icon{color:var(--danger);}
-  .toast-info .toast-icon{color:var(--info);}
-  .toast-msg{flex:1;line-height:1.4;}
-  .toast-close{background:none;border:none;color:var(--ink-3);cursor:pointer;padding:0;flex-shrink:0;}
-  .toast-close:hover{color:var(--ink-1);}
-
-  /* ==========================================================
-     ACTIVITY CONSOLE
-     ========================================================== */
-  .console-shell{display:flex;flex-direction:column;gap:18px;height:100%;}
-  .console-top{display:flex;justify-content:space-between;align-items:flex-start;gap:18px;flex-wrap:wrap;}
-  .console-top h2{margin:0;font-family:var(--font-display);font-size:1.2rem;}
-  .console-top p{margin:6px 0 0;color:var(--ink-2);font-size:.86rem;max-width:520px;}
-  .console-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
-
-  .console-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;}
-  .console-stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);padding:14px;text-align:center;}
-  .console-stat b{display:block;font-family:var(--font-display);font-size:1.4rem;color:var(--track-bright);}
-  .console-stat span{display:block;font-size:.7rem;color:var(--ink-3);text-transform:uppercase;letter-spacing:.07em;margin-top:3px;font-weight:600;}
-
-  .console-list{flex:1;overflow-y:auto;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:18px;}
-  .console-date{font-size:.76rem;font-weight:700;color:var(--ink-3);text-transform:uppercase;letter-spacing:.1em;margin:22px 0 10px;padding-bottom:6px;}
-  .console-date:first-child{margin-top:0;}
-  .console-item{display:flex;gap:12px;padding:11px 12px;background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r-md);margin-bottom:8px;transition:border-color .15s;}
-  .console-item:hover{border-color:var(--line-strong);}
-  .console-item-icon{flex-shrink:0;width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;}
-  .console-item-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px;font-size:.78rem;}
-  .console-item-action{font-weight:700;text-transform:uppercase;letter-spacing:.05em;font-size:.7rem;}
-  .console-item-entity{color:var(--track-bright);font-weight:600;}
-  .console-item-time{color:var(--ink-3);margin-left:auto;font-family:var(--font-mono);}
-  .console-item-summary{font-size:.85rem;color:var(--ink-1);}
-  .console-item-user{font-size:.76rem;color:var(--ink-3);margin-top:2px;}
-  .console-changes{margin-top:8px;background:var(--ink);border-radius:6px;padding:8px 10px;display:flex;flex-direction:column;gap:4px;}
-  .console-change{display:flex;gap:8px;align-items:center;font-size:.78rem;flex-wrap:wrap;}
-  .console-change b{color:var(--ink-2);min-width:78px;font-weight:600;}
-  .console-from{color:var(--danger);text-decoration:line-through;}
-  .console-to{color:var(--success);}
-
-  /* Feedback cards */
-  .feedback-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);padding:16px 18px;margin-bottom:10px;}
-  .feedback-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;margin-bottom:10px;}
-  .feedback-msg{white-space:pre-wrap;word-break:break-word;line-height:1.55;color:var(--ink-1);}
-  .feedback-email{margin-top:10px;font-size:.85rem;color:var(--ink-2);}
-
-  /* ==========================================================
-     RESPONSIVE
-     ========================================================== */
-  @media (max-width:860px){
-    body{overflow:auto;}
-    .app-wrapper{flex-direction:column;height:auto;min-height:100vh;}
-    .sidebar{
-      position:fixed;top:0;left:0;bottom:0;
-      transform:translateX(-100%);
-      transition:transform .25s var(--ease);
-      z-index:100;box-shadow:var(--shadow-lg);
-    }
-    .sidebar.mobile-open{transform:translateX(0);}
-    .mobile-menu-button{display:flex;}
-    .topbar{padding:12px 14px;gap:10px;}
-    .topbar h2{font-size:1.05rem;}
-    .topbar-links{display:none;}
-    .main{width:100%;height:100vh;overflow:hidden;}
-    .content{padding:14px;padding-bottom:60px;}
-    .grid-head{flex-direction:column;align-items:stretch;}
-    .grid-actions{width:100%;}
-    .grid-actions .btn{flex:1;justify-content:center;}
-    .filter-strip{padding:10px 14px;}
-    .filter-strip .input{flex:1;min-width:120px;}
-    .btn{min-height:40px;}
-    .stats-grid{grid-template-columns:repeat(2,1fr);}
-    .input,.field input,.field select{font-size:16px;}
-    #toast-stack{left:14px;right:14px;width:auto;bottom:14px;}
-    .console-stats{grid-template-columns:repeat(2,1fr);}
-  }
-  @media (max-width:480px){
-    .stats-grid{grid-template-columns:1fr;}
-    .console-stats{grid-template-columns:1fr 1fr;}
-    .grid-table{font-size:.8rem;}
-  }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mountain State Miles | Admin</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body { background-color: #f8f9fa; }
+    .card { margin-bottom: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+  </style>
 </head>
 <body>
-<script src="/assets/msm-loader.js"></script>
-<script src="firebase-config.js"></script>
-<script src="firebase-helpers.js"></script>
 
-<div class="mobile-menu-overlay" id="mobile-overlay"></div>
-
-<div class="app-wrapper">
-  <aside class="sidebar" id="sidebar">
-    <div class="brand">
-      <img src="../assets/Wvruns Logo.png" alt="Mountain State Miles logo">
-      <div>
-        <p class="brand-name">Mountain State Miles</p>
-        <div class="brand-sub">Track Admin</div>
-      </div>
+  <nav class="navbar navbar-dark bg-dark mb-4">
+    <div class="container">
+      <span class="navbar-brand mb-0 h1">🏔️ Mountain State Miles Admin</span>
+      <span id="db-status" class="badge bg-secondary">Checking DB Status...</span>
     </div>
+  </nav>
 
-    <nav style="display:flex;flex-direction:column;gap:0;">
-      <div class="nav-group">
-        <div class="nav-label">Main</div>
-        <div id="main-nav" style="display:flex;flex-direction:column;gap:2px;">
-          <button class="nav-btn active" data-section="dashboard">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
-            Dashboard
-          </button>
-          <button class="nav-btn" data-section="meets">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>
-            Meets
-          </button>
-          <button class="nav-btn" data-section="events">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8z"/></svg>
-            Events
-          </button>
-          <button class="nav-btn" data-section="athletes">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg>
-            Athletes
-          </button>
-          <button class="nav-btn" data-section="results">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v4a5 5 0 0 1-10 0V4z"/><path d="M7 5H4v2a3 3 0 0 0 3 3M17 5h3v2a3 3 0 0 1-3 3"/></svg>
-            Results
-          </button>
-          <button class="nav-btn" data-section="teams">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 6v6c0 5 3.5 8 8 10 4.5-2 8-5 8-10V6l-8-4z"/></svg>
-            Teams
-          </button>
+  <div class="container">
+    <div class="row">
+      
+      <div class="col-md-8">
+        
+        <div class="card">
+          <div class="card-header bg-primary text-white">Create New Meet</div>
+          <div class="card-body">
+            <form id="create-meet-form">
+              <div class="row g-3">
+                <div class="col-sm-6">
+                  <label class="form-label">Meet Name</label>
+                  <input type="text" id="meet-name" class="form-control" placeholder="e.g., WV State Championship" required>
+                </div>
+                <div class="col-sm-6">
+                  <label class="form-label">Meet Slug</label>
+                  <input type="text" id="meet-slug" class="form-control" placeholder="e.g., wv-state-champ-2026" required>
+                </div>
+                <div class="col-sm-6">
+                  <label class="form-label">Date</label>
+                  <input type="date" id="meet-date" class="form-control" required>
+                </div>
+                <div class="col-sm-6">
+                  <label class="form-label">Divisions (Optional)</label>
+                  <input type="text" id="meet-divisions" class="form-control" placeholder="e.g., AAA, AA, A">
+                </div>
+              </div>
+              <button type="submit" class="btn btn-primary mt-3">Create Meet</button>
+            </form>
+            <div id="create-meet-msg" class="mt-2 text-success" style="display:none;"></div>
+          </div>
         </div>
-      </div>
 
-      <div class="nav-group">
-        <div class="nav-label">Tools</div>
-        <div id="tools-nav" style="display:flex;flex-direction:column;gap:2px;">
-          <a href="csv-import.html" class="nav-btn">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/></svg>
-            CSV Import
-          </a>
-          <button class="nav-btn" data-section="manual-entry">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>
-            Manual Entry
-          </button>
-          <button class="nav-btn" data-section="bulk-edit">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m12 2 9 5-9 5-9-5 9-5z"/><path d="m3 12 9 5 9-5M3 17l9 5 9-5"/></svg>
-            Bulk Edit
-          </button>
-          <button class="nav-btn" data-section="analytics">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 16v-4M12 16V8M17 16v-7"/></svg>
-            Analytics
-          </button>
-          <button class="nav-btn" data-section="console">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="m7 9 3 3-3 3M13 15h4"/></svg>
-            Activity Console
-          </button>
-          <button class="nav-btn" data-section="feedback">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-            Feedback
-          </button>
-          <button class="nav-btn" data-section="settings">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-            Settings
-          </button>
+        <div class="card">
+          <div class="card-header bg-white fw-bold">Recent Meets</div>
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>Date</th>
+                  <th>Name</th>
+                  <th>Slug</th>
+                  <th>Divisions</th>
+                </tr>
+              </thead>
+              <tbody id="meets-table-body">
+                <tr><td colspan="4" class="text-center text-muted">Loading meets...</td></tr>
+              </tbody>
+            </table>
+          </div>
         </div>
+
       </div>
-    </nav>
 
-    <div class="sidebar-spacer"></div>
+      <div class="col-md-4">
+        
+        <div class="card">
+          <div class="card-header bg-success text-white">Bulk Import Results</div>
+          <div class="card-body">
+            <p class="text-muted small">Select a meet and paste your CSV data (no headers) to import results.</p>
+            <form id="import-results-form">
+              <div class="mb-3">
+                <label class="form-label">Select Meet</label>
+                <select id="import-meet-slug" class="form-select" required>
+                  <option value="">Loading meets...</option>
+                </select>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">CSV Data</label>
+                <textarea id="import-csv-data" class="form-control" rows="5" placeholder="John Smith,morgantown,M,18:30.45,5000,1" required></textarea>
+                <div class="form-text">Order: Name, School Slug, Gender, Time, Distance, Place</div>
+              </div>
+              <button type="submit" class="btn btn-success w-100">Run Import</button>
+            </form>
+            <div id="import-msg" class="mt-2 small"></div>
+          </div>
+        </div>
 
-    <div class="logout-section">
-      <button class="logout-btn" id="logout-btn">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
-        Log out
-      </button>
-    </div>
-  </aside>
-
-  <main class="main">
-    <div class="topbar">
-      <button class="mobile-menu-button" id="mobile-menu-btn" aria-label="Open menu">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
-      </button>
-      <h2 id="page-title">Dashboard</h2>
-      <div class="topbar-links">
-        <a href="/home">MSM Home</a>
-        <a href="meets-dashboard.html">Meets Dashboard</a>
-      </div>
-      <div class="topbar-info">
-        <span class="conn-pill"><span class="conn-dot"></span>Firebase connected</span>
-        <span class="scoreboard" id="record-count">0000</span>
-      </div>
-    </div>
-
-    <div class="content" id="content">
-      <div class="load-state"><div class="spinner"></div><span>Loading…</span></div>
-    </div>
-  </main>
-</div>
-
-<div id="toast-stack"></div>
-
-<!-- Modal template -->
-<template id="modal-template">
-  <div class="modal-overlay">
-    <div class="modal">
-      <div class="modal-header">
-        <h2 id="modal-title">Modal title</h2>
-        <button class="modal-close" type="button" data-close>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
-        </button>
-      </div>
-      <div class="modal-body" id="modal-body"></div>
-      <div class="modal-footer">
-        <button class="btn btn-secondary" type="button" data-close>Cancel</button>
-        <button class="btn btn-primary" id="modal-submit" type="button">Save</button>
       </div>
     </div>
   </div>
-</template>
+
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+  <script src="firebase-config.js"></script>
+  <script src="firebase-helpers.js"></script>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", async () => {
+      
+      // 1. Check Database Health
+      const statusBadge = document.getElementById('db-status');
+      const health = await window.checkDatabaseSchema();
+      if (health.success) {
+        statusBadge.textContent = "Database Connected";
+        statusBadge.className = "badge bg-success";
+        loadMeets(); // Load data once connected
+      } else {
+        statusBadge.textContent = "Offline / Error";
+        statusBadge.className = "badge bg-danger";
+        console.error(health.error);
+      }
+
+      // 2. Load Meets into Table and Dropdown
+      async function loadMeets() {
+        const meets = await window.getMeets(10); // get last 10 meets
+        const tbody = document.getElementById('meets-table-body');
+        const select = document.getElementById('import-meet-slug');
+        
+        tbody.innerHTML = "";
+        select.innerHTML = '<option value="">-- Choose a Meet --</option>';
+
+        if (meets.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">No meets found.</td></tr>';
+          return;
+        }
+
+        meets.forEach(meet => {
+          // Table Row
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${meet.date}</td>
+            <td>${meet.name}</td>
+            <td><code>${meet.slug}</code></td>
+            <td>${meet.divisions || '-'}</td>
+          `;
+          tbody.appendChild(tr);
+
+          // Dropdown Option
+          const opt = document.createElement('option');
+          opt.value = meet.slug;
+          opt.textContent = `${meet.name} (${meet.date})`;
+          select.appendChild(opt);
+        });
+      }
+
+      // 3. Handle Meet Creation
+      document.getElementById('create-meet-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const msgDiv = document.getElementById('create-meet-msg');
+        
+        const meetData = {
+          name: document.getElementById('meet-name').value,
+          slug: document.getElementById('meet-slug').value,
+          date: document.getElementById('meet-date').value,
+          divisions: document.getElementById('meet-divisions').value,
+        };
+
+        const result = await window.createMeet(meetData);
+        if (result.error) {
+          msgDiv.textContent = `Error: ${result.error}`;
+          msgDiv.className = "mt-2 text-danger";
+        } else {
+          msgDiv.textContent = "Meet created successfully!";
+          msgDiv.className = "mt-2 text-success";
+          document.getElementById('create-meet-form').reset();
+          loadMeets(); // Refresh table
+        }
+        msgDiv.style.display = "block";
+        setTimeout(() => { msgDiv.style.display = "none"; }, 3000);
+      });
+
+      // 4. Handle CSV Bulk Import
+      document.getElementById('import-results-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const msgDiv = document.getElementById('import-msg');
+        msgDiv.innerHTML = "<span class='text-primary'>Importing...</span>";
+        
+        const meetSlug = document.getElementById('import-meet-slug').value;
+        const csvRaw = document.getElementById('import-csv-data').value;
+        
+        // Very basic CSV parser for text area
+        const rows = csvRaw.trim().split('\n').map(line => {
+          const [athlete_name, school_slug, gender, time, distance, place] = line.split(',').map(s => s.trim());
+          return { athlete_name, school_slug, gender, time, distance, place };
+        }).filter(row => row.athlete_name); // Skip empty lines
+
+        const report = await window.bulkInsertResults(meetSlug, rows);
+        
+        if (report.errors && report.errors.length > 0) {
+          msgDiv.innerHTML = `<span class='text-danger'>Imported ${report.success}/${report.total}. Errors: ${report.errors.join('<br>')}</span>`;
+        } else {
+          msgDiv.innerHTML = `<span class='text-success'>Successfully imported all ${report.success} results!</span>`;
+          document.getElementById('import-csv-data').value = "";
+        }
+      });
+    });
+  </script>
 </body>
 </html>
