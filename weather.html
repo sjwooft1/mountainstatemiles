@@ -10,33 +10,24 @@
     <link rel="shortcut icon" href="/assets/Favicon Generator/favicon.ico" />
     <link rel="apple-touch-icon" sizes="180x180" href="/assets/Favicon Generator/apple-touch-icon.png" />
     <link rel="manifest" href="/assets/Favicon Generator/site.webmanifest" />
-    <link rel="stylesheet" href="/assets/main.css">
+  <link rel="stylesheet" href="/assets/main.css" />
 <link rel="stylesheet" href="/assets/msm-loader.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  
+  <script src="/assets/theme-toggle.js" defer></script>
+  <script src="/assets/components.js" defer></script>
 </head>
 <body>
-<script src="/assets/msm-loader.js"></script>
-    <header>
-        <nav class="navbar">
-            <div class="navbar-content">
-                <a href="/home/index" class="navbar-brand">MSM</a>
-                <button class="mobile-menu-toggle" aria-label="Toggle menu">☰</button>
-                <ul class="navbar-nav" id="main-nav">
-                    <li><a href="/home/index" class="navbar-link">Home</a></li>
-                    <li><a href="/home/about" class="navbar-link">About</a></li>
-                    <li><a href="/Track/index" class="navbar-link">Track & Field</a></li>
-                    <li><a href="/CrossCountry/xc" class="navbar-link">Cross Country</a></li>
-                    <li><a href="/weather" class="navbar-link active">Weather</a></li>
-                </ul>
-                <button class="theme-toggle" aria-label="Switch theme">🌙</button>
-            </div>
-        </nav>
-    </header>
 
-    <div class="page-container">
+  <div id="global-header"></div>
+
+  <main class="content-section">
+<script src="/assets/msm-loader.js"></script>
+<div class="page-container">
         <div class="page-header">
             <h1>🌤️ Meet Location Forecasts</h1>
             <p>Weather forecasts for upcoming meet locations across West Virginia</p>
@@ -54,57 +45,12 @@
 
         <div class="last-updated" id="last-updated"></div>
     </div>
-
-    <footer>
-        <div class="row">
-            <div class="footer-col">
-                <h4>General</h4>
-                <ul>
-                    <li><a href="/home/index">Home</a></li>
-                    <li><a href="/feedback">Feedback</a></li>
-                    <li><a href="/home/admin">Admin</a></li>
-                    <li><a href="/news">News</a></li>
-                </ul>
-            </div>
-
-            <div class="footer-col">
-                <h4>Cross Country</h4>
-                <ul>
-                    <li><a href="/CrossCountry/xc">Home</a></li>
-                    <li><a href="/CrossCountry/meets">Meets</a></li>
-                    <li><a href="/CrossCountry/schools">Schools</a></li>
-                    <li><a href="/CrossCountry/rankings">Rankings</a></li>
-                    <li><a href="/CrossCountry/analytics">Analytics</a></li>
-                </ul>
-            </div>
-
-            <div class="footer-col">
-                <h4>Track</h4>
-                <ul>
-                    <li><a href="/Track/index">Home</a></li>
-                    <li><a href="/Track/meets">Meets</a></li>
-                    <li><a href="/Track/teams">Teams</a></li>
-                    <li><a href="/Track/rankings">Rankings</a></li>
-                    <li><a href="/Track/analytics">Analytics</a></li>
-                </ul>
-            </div>
-        </div>
-        <hr>
-        <div class="row">
-            <div class="footer-bottom">
-                <p>&#169; 2026 Mountain State Miles — Built by runners, for runners.</p>
-            </div>
-        </div>
-    </footer>
-
-    <!-- Firebase SDK -->
+<!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
     <!-- Footer Toggle Script -->
-    <script src="/assets/theme-toggle.js"></script>
-
-    <script>
+<script>
         // Initialize Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyCBQt9I_OSoUuTM61F-JXNBkD98f7PCJcA",
@@ -326,13 +272,8 @@
 
         // Initialize mobile menu
         document.addEventListener('DOMContentLoaded', () => {
-            const menuToggle = document.querySelector('.mobile-menu-toggle');
-            const navMenu = document.getElementById('main-nav');
-            
-            if (menuToggle && navMenu) {
-                menuToggle.addEventListener('click', () => {
-                    navMenu.classList.toggle('mobile-open');
-                });
+
+);
                 
                 document.addEventListener('click', (e) => {
                     if (!navMenu.contains(e.target) && !menuToggle.contains(e.target)) {
@@ -366,5 +307,11 @@
             });
         }
     </script>
+
+  
+  </main>
+
+<div id="global-footer"></div>
+
 </body>
 </html>

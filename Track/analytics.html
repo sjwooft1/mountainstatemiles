@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
     
-    <link rel="stylesheet" href="/assets/main.css" />
+  <link rel="stylesheet" href="/assets/main.css" />
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -29,10 +29,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-    
-    <script src="theme-toggle.js"></script>
-
-    <style>
+<style>
         /* Custom Scrollbar & Utilities */
         ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: transparent; }
@@ -129,8 +126,15 @@
             .bg-brand-600 h2, .bg-brand-600 p { color: black !important; }
         }
     </style>
+
+  
+  <script src="/assets/theme-toggle.js" defer></script>
+  <script src="/assets/components.js" defer></script>
 </head>
 <body class="bg-bg-primary text-text-primary font-sans h-screen flex flex-col overflow-hidden transition-colors duration-200">
+
+  <div id="global-header"></div>
+
 
     <nav id="navbar" class="navbar shrink-0 z-20 relative">
         <div class="navbar-content w-full">
@@ -229,7 +233,7 @@
             </div>
         </aside>
 
-        <main class="flex-1 overflow-y-auto bg-bg-primary relative pb-20 !mt-0 !pt-0">
+        <main class="content-section flex-1 overflow-y-auto bg-bg-primary relative pb-20 !mt-0 !pt-0">
             
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
@@ -875,5 +879,8 @@
 
         document.addEventListener("DOMContentLoaded", init);
     </script>
+
+  <div id="global-footer"></div>
+
 </body>
 </html>

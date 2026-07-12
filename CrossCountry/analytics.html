@@ -15,32 +15,21 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="stylesheet" href="/assets/main.css" />
 <link rel="stylesheet" href="/assets/msm-loader.css" />
   <script src="firebase-config.js"></script>
   <script src="firebase-helpers.js"></script>
+
+  
+  <script src="/assets/theme-toggle.js" defer></script>
+  <script src="/assets/components.js" defer></script>
 </head>
 <body>
-<script src="/assets/msm-loader.js"></script>
-  <header>
-    <nav class="navbar">
-      <div class="navbar-content">
-        <a href="xc.html" class="navbar-brand">XC</a>
-        <button class="mobile-menu-toggle" aria-label="Toggle menu">☰</button>
-        <ul class="navbar-nav" id="main-nav">
-          <li><a href="/home/index" class="navbar-link">Home</a></li>
-          <li><a href="xc.html" class="navbar-link">Cross Country</a></li>
-          <li><a href="schools.html" class="navbar-link">Schools</a></li>
-          <li><a href="meets.html" class="navbar-link">Meets</a></li>
-          <li><a href="rankings.html" class="navbar-link">Rankings</a></li>
-          <li><a href="analytics.html" class="navbar-link active">Analytics</a></li>
-        </ul>
-        <button class="theme-toggle" aria-label="Switch theme">🌙</button>
-      </div>
-    </nav>
-  </header>
 
-  <main class="analytics-container">
+  <div id="global-header"></div>
+
+<script src="/assets/msm-loader.js"></script>
+<main class="content-section analytics-container">
     <h1 class="section-title text-center">📊 Cross Country Analytics & Insights</h1>
     <p class="text-center mb-4">Explore trends, compare schools, and see predicted performances</p>
 
@@ -160,46 +149,7 @@
     </div>
   </main>
 
-  <footer>
-    <div class="row">
-      <div class="footer-col">
-        <h4>General</h4>
-        <ul>
-          <li><a href="/home/index.html">Home</a></li>
-          <li><a href="/home/admin.html">Admin</a></li>
-          <li><a href="/news.html">News</a></li>
-        </ul>
-      </div>
-
-      <div class="footer-col">
-        <h4>Cross Country</h4>
-        <ul>
-          <li><a href="/CrossCountry/xc.html">Home</a></li>
-          <li><a href="/CrossCountry/meets.html">Meets</a></li>
-          <li><a href="/CrossCountry/schools.html">Schools</a></li>
-          <li><a href="/CrossCountry/rankings.html">Rankings</a></li>
-          <li><a href="/CrossCountry/analytics.html">Analytics</a></li>
-        </ul>
-      </div>
-
-      <div class="footer-col">
-        <h4>Track</h4>
-        <ul>
-          <li><a href="/Track/index.html">Home</a></li>
-          <li><a href="/Track/meets.html">Meets</a></li>
-          <li><a href="/Track/teams.html">Teams</a></li>
-          <li><a href="/Track/rankings.html">Rankings</a></li>
-          <li><a href="/Track/analytics.html">Analytics</a></li>
-        </ul>
-      </div>
-    </div>
-    <hr>
-    <div class="row">
-      <div class="footer-bottom">
-        <p>&#169; 2026 Mountain State Miles — Built by runners, for runners.</p>
-      </div>
-    </div>
-  </footer>
+  <div id="global-footer"></div>
 
   <script>
     let allResults = [];
@@ -596,7 +546,8 @@
         records: document.getElementById('export-records').checked,
       };
 
-      let htmlContent = `<!DOCTYPE html><html><head><title>Analytics Report</title><style>body { font-family: Arial, sans-serif; margin: 20px; color: #333; } h1 { color: #002855; border-bottom: 3px solid #10b981; padding-bottom: 10px; margin-bottom: 20px; } .stat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 20px; } .stat-card { background: #f0fdf4; border-left: 4px solid #10b981; padding: 15px; border-radius: 8px; } table { width: 100%; border-collapse: collapse; margin-top: 15px; } th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e5e7eb; } th { background: #f0fdf4; font-weight: 600; color: #002855; }</style></head><body><h1>📊 Cross Country Analytics Report</h1>`;
+      let htmlContent = `<!DOCTYPE html><html><head><title>Analytics Report</title><style>body { font-family: Arial, sans-serif; margin: 20px; color: #333; } h1 { color: #002855; border-bottom: 3px solid #10b981; padding-bottom: 10px; margin-bottom: 20px; } .stat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 20px; } .stat-card { background: #f0fdf4; border-left: 4px solid #10b981; padding: 15px; border-radius: 8px; } table { width: 100%; border-collapse: collapse; margin-top: 15px; } th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e5e7eb; } th { background: #f0fdf4; font-weight: 600; color: #002855; }</style>
+</head><body><h1>📊 Cross Country Analytics Report</h1>`;
 
       if (selectedItems.stats) {
         htmlContent += `<h2>📈 Key Statistics</h2><div class="stat-grid"><div class="stat-card"><div>Average: ${document.getElementById('avg-meet-time').textContent}</div></div><div class="stat-card"><div>Athletes: ${document.getElementById('total-athletes-stat').textContent}</div></div><div class="stat-card"><div>Fastest 5K: ${document.getElementById('fastest-5k').textContent}</div></div><div class="stat-card"><div>Meets: ${document.getElementById('total-meets-stat').textContent}</div></div></div>`;
@@ -635,6 +586,5 @@
       initAnalytics();
     }
   </script>
-  <script src="/assets/theme-toggle.js"></script>
 </body>
 </html>

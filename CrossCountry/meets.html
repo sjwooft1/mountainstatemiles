@@ -35,79 +35,110 @@
       filter: brightness(1.1);
       color: #0b0e13;
     }
+    .meets-controls {
+      margin-bottom: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .search-filter-row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .search-filter-row input, .search-filter-row select {
+      padding: 10px 14px;
+      border-radius: 8px;
+      border: 1px solid var(--border, #ccc);
+      background: var(--card, #fff);
+      color: var(--text, #333);
+      font-size: 14px;
+      flex: 1;
+      min-width: 200px;
+    }
+    .view-toggles {
+      display: flex;
+      gap: 8px;
+    }
+    .view-btn {
+      padding: 6px 16px;
+      border-radius: 6px;
+      border: 1px solid var(--border, #ccc);
+      background: transparent;
+      color: var(--text, #333);
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    .view-btn.active {
+      background: var(--trail, #2fd0a3);
+      color: #0b0e13;
+      border-color: var(--trail, #2fd0a3);
+    }
+    /* Calendar View Styles */
+    .month-header {
+      margin-top: 24px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid var(--border, #eee);
+      color: var(--text, #333);
+    }
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 16px;
+      padding: 0;
+      list-style: none;
+      margin-top: 16px;
+    }
+    .calendar-grid li {
+      background: var(--card, #f9f9f9);
+      border: 1px solid var(--border, #eee);
+      border-radius: 8px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+    }
   </style>
+
+  
+  <script src="/assets/theme-toggle.js" defer></script>
+  <script src="/assets/components.js" defer></script>
 </head>
 <body>
+
+  <div id="global-header"></div>
+
 <script src="/assets/msm-loader.js"></script>
-  <header>
-    <nav class="navbar">
-      <div class="navbar-content">
-        <a href="xc.html" class="navbar-brand">XC</a>
-        <button class="mobile-menu-toggle" aria-label="Toggle menu">☰</button>
-        <ul class="navbar-nav" id="main-nav">
-          <li><a href="/home/index" class="navbar-link">Home</a></li>
-          <li><a href="xc.html" class="navbar-link">Cross Country</a></li>
-          <li><a href="schools.html" class="navbar-link">Schools</a></li>
-          <li><a href="meets.html" class="navbar-link active">Meets</a></li>
-          <li><a href="rankings.html" class="navbar-link">Rankings</a></li>
-          <li><a href="analytics.html" class="navbar-link">Analytics</a></li>
-        </ul>
-        <button class="theme-toggle" aria-label="Switch theme">🌙</button>
+<main class="content-section">
+    <h1>Meets</h1>
+    <p>Browse all cross country and track meets in West Virginia.</p>
+    
+    <div class="meets-controls">
+      <div class="search-filter-row">
+        <input type="text" id="search-input" placeholder="Search meets by name or location..." />
+        <select id="course-filter">
+          <option value="all">All Courses</option>
+          <option value="cabell-midland">Cabell Midland</option>
+          <option value="chick-fil-a">Mineral Wells</option>
+          <option value="meadowood-park">Meadowood</option>
+          <option value="beckley-invitational">Beckley</option>
+          <option value="south-harrison">South Harrison</option>
+          <option value="glen-oak">Glen Oak</option>
+        </select>
       </div>
-    </nav>
-  </header>
-
-  <main class="content-section">
-      <h1>Meets</h1>
-      <p>Browse all cross country and track meets in West Virginia.</p>
-    <div class="meets-container">
-      <ul id="meets-list">Loading meets...</ul>
+      <div class="view-toggles">
+        <button id="btn-list-view" class="view-btn active">List View</button>
+        <button id="btn-cal-view" class="view-btn">Calendar View</button>
+      </div>
     </div>
-  </main>
 
-  <footer>
-        <div class="row">
-            <div class="footer-col">
-                <h4>General</h4>
-                <ul>
-                    <li><a href="/home/index.html">Home</a></li>
-                    <li><a href="/home/admin.html">Admin</a></li>
-                    <li><a href="/news.html">News</a></li>
-                </ul>
-            </div>
-            <div class="footer-col">
-                <h4>Cross Country</h4>
-                <ul>
-                    <li><a href="/CrossCountry/xc.html">Home</a></li>
-                    <li><a href="/CrossCountry/meets.html">Meets</a></li>
-                    <li><a href="/CrossCountry/schools.html">Schools</a></li>
-                    <li><a href="/CrossCountry/rankings.html">Rankings</a></li>
-                    <li><a href="/CrossCountry/analytics.html">Analytics</a></li>
-                </ul>
-            </div>
-            <div class="footer-col">
-                <h4>Track</h4>
-                <ul>
-                    <li><a href="/Track/index.html">Home</a></li>
-                    <li><a href="/Track/meets.html">Meets</a></li>
-                    <li><a href="/Track/teams.html">Teams</a></li>
-                    <li><a href="/Track/rankings.html">Rankings</a></li>
-                    <li><a href="/Track/analytics.html">Analytics</a></li>
-                </ul>
-            </div>
-        </div>
-        <hr>
-        <div class="row">
-            <div class="footer-bottom">
-                <p>&#169; 2026 Mountain State Miles — Built by runners, for runners.</p>
-            </div>
-        </div>
-    </footer>
-
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <div class="meets-container">
+    <ul id="meets-list">Loading meets...</ul>
+  </div>
+</main>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-  <script src="/assets/theme-toggle.js"></script>
-  <script src="firebase-config.js"></script>
+<script src="firebase-config.js"></script>
   <script src="firebase-helpers.js"></script>
 
   <script>
@@ -120,92 +151,156 @@
       'glen oak': 'glen-oak'
     };
 
-    async function loadMeets() {
+    // State Variables
+    let allMeetsData = [];
+    let currentView = 'list'; // can be 'list' or 'calendar'
+
+    async function initMeets() {
       const container = document.getElementById('meets-list');
       try {
-        const meets = await getAllMeets();
+        if (typeof getAllMeets !== 'function') throw new Error("Firebase scripts not loaded");
         
-        if (!meets.length) {
-          container.innerHTML = '<li class="empty-state"><p>No meets found.</p></li>';
-          return;
-        }
-        
-        function formatDate(dateString) {
-          if (!dateString) return 'Date TBD';
-          const parts = dateString.split('-');
-          if (parts.length === 3) {
-            const year = parseInt(parts[0], 10);
-            const month = parseInt(parts[1], 10) - 1;
-            const day = parseInt(parts[2], 10);
-            const date = new Date(year, month, day);
-            return date.toLocaleDateString('en-US', { 
-              weekday: 'short', 
-              month: 'short', 
-              day: 'numeric' 
-            });
-          }
-          return new Date(dateString).toLocaleDateString();
-        }
-        
-        container.innerHTML = meets.map(meet => {
-          const date = formatDate(meet.date);
-          const location = meet.location ? meet.location : 'Location TBD';
-          
-          let courseSlug = null;
-          const locLower = location.toLowerCase();
-          for (const [key, slug] of Object.entries(courseMap)) {
-              if (locLower.includes(key)) {
-                  courseSlug = slug;
-                  break;
-              }
-          }
-          
-          const courseBadge = courseSlug 
-            ? `<div><a href="courses/course viewer.html?course=${courseSlug}" class="course-badge">📍 View 3D Course Map</a></div>` 
-            : '';
+        allMeetsData = await getAllMeets();
+        renderMeets(); // Draw initial state
 
-          return `
-            <li>
-              <a href="meet.html?slug=${meet.slug}">${meet.name}</a>
-              <div>${date}</div>
-              <div>${location}</div>
-              ${courseBadge}${meet.description ? `<div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border);">
-                ${meet.description}
-              </div>` : ''}
-            </li>
-          `;
-        }).join('');
       } catch (e) {
           console.error("Failed to load meets:", e);
-          container.innerHTML = '<li class="empty-state"><p>Failed to load meets.</p></li>';
+          container.innerHTML = '<li class="empty-state"><p>Failed to load meets. Please check your connection.</p></li>';
       } finally {
         document.dispatchEvent(new Event("MSMDataLoaded"));
       }
     }
 
-    if (typeof getAllMeets === 'function') {
-        loadMeets();
-    } else {
-        document.getElementById('meets-list').innerHTML = '<li class="empty-state"><p>Firebase scripts not loaded correctly.</p></li>';
-        document.dispatchEvent(new Event("MSMDataLoaded"));
+    function formatDate(dateString) {
+      if (!dateString) return 'Date TBD';
+      const parts = dateString.split('-');
+      if (parts.length === 3) {
+        const date = new Date(parts[0], parts[1] - 1, parts[2]);
+        return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+      }
+      return new Date(dateString).toLocaleDateString();
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
-      const menuToggle = document.querySelector('.mobile-menu-toggle');
-      const navMenu = document.getElementById('main-nav');
-      
-      if (menuToggle && navMenu) {
-        menuToggle.addEventListener('click', () => {
-          navMenu.classList.toggle('mobile-open');
-        });
+    function getMonthName(dateString) {
+        if (!dateString) return 'TBD';
+        const parts = dateString.split('-');
+        if (parts.length === 3) {
+            const date = new Date(parts[0], parts[1] - 1, parts[2]);
+            return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+        }
+        return 'Other';
+    }
+
+    function getCourseSlug(location) {
+        if (!location) return null;
+        const locLower = location.toLowerCase();
+        for (const [key, slug] of Object.entries(courseMap)) {
+            if (locLower.includes(key)) return slug;
+        }
+        return null;
+    }
+
+    function renderMeets() {
+      const container = document.getElementById('meets-list');
+      const searchTerm = document.getElementById('search-input').value.toLowerCase();
+      const courseFilter = document.getElementById('course-filter').value;
+
+      // 1. Filter Data
+      let filteredMeets = allMeetsData.filter(meet => {
+        const nameMatch = (meet.name || '').toLowerCase().includes(searchTerm);
+        const locMatch = (meet.location || '').toLowerCase().includes(searchTerm);
+        const matchesSearch = nameMatch || locMatch;
         
-        document.addEventListener('click', (e) => {
-          if (!navMenu.contains(e.target) && !menuToggle.contains(e.target)) {
-            navMenu.classList.remove('mobile-open');
-          }
-        });
+        const meetCourseSlug = getCourseSlug(meet.location);
+        const matchesCourse = (courseFilter === 'all') || (meetCourseSlug === courseFilter);
+
+        return matchesSearch && matchesCourse;
+      });
+
+      if (!filteredMeets.length) {
+        container.innerHTML = '<li class="empty-state"><p>No meets match your search.</p></li>';
+        container.className = '';
+        return;
       }
+
+      // 2. Render based on View Type
+      if (currentView === 'list') {
+          container.className = ''; // standard vertical list
+          container.innerHTML = filteredMeets.map(meet => createMeetCard(meet)).join('');
+      } else {
+          // Calendar View (Group by Month)
+          container.className = ''; // Reset class, we will use internal grids
+          container.innerHTML = '';
+          
+          const groupedByMonth = {};
+          filteredMeets.forEach(meet => {
+              const month = getMonthName(meet.date);
+              if (!groupedByMonth[month]) groupedByMonth[month] = [];
+              groupedByMonth[month].push(meet);
+          });
+
+          for (const [month, meets] of Object.entries(groupedByMonth)) {
+              container.innerHTML += `<h2 class="month-header">${month}</h2>`;
+              const gridHtml = `<ul class="calendar-grid">
+                  ${meets.map(meet => createMeetCard(meet)).join('')}
+              </ul>`;
+              container.innerHTML += gridHtml;
+          }
+      }
+    }
+
+    function createMeetCard(meet) {
+        const date = formatDate(meet.date);
+        const location = meet.location || 'Location TBD';
+        const courseSlug = getCourseSlug(location);
+        
+        const courseBadge = courseSlug 
+          ? `<div><a href="courses/course viewer.html?course=${courseSlug}" class="course-badge">📍 View 3D Course</a></div>` 
+          : '';
+
+        return `
+          <li>
+            <a href="meet.html?slug=${meet.slug}" style="font-weight:bold; font-size: 1.1rem; text-decoration:none;">${meet.name}</a>
+            <div style="color: var(--text-dim); margin-top: 4px;">📅 ${date}</div>
+            <div style="color: var(--text-dim);">🗺️ ${location}</div>
+            ${courseBadge}
+            ${meet.description ? `<div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border, #eee); font-size: 0.9rem;">
+              ${meet.description}
+            </div>` : ''}
+          </li>
+        `;
+    }
+
+    // Event Listeners for Filters & Views
+    document.addEventListener('DOMContentLoaded', () => {
+      // Init data
+      initMeets();
+
+      // Hook up search and filter inputs
+      document.getElementById('search-input').addEventListener('input', renderMeets);
+      document.getElementById('course-filter').addEventListener('change', renderMeets);
+
+      // Hook up view toggles
+      const btnList = document.getElementById('btn-list-view');
+      const btnCal = document.getElementById('btn-cal-view');
+
+      btnList.addEventListener('click', () => {
+          currentView = 'list';
+          btnList.classList.add('active');
+          btnCal.classList.remove('active');
+          renderMeets();
+      });
+
+      btnCal.addEventListener('click', () => {
+          currentView = 'calendar';
+          btnCal.classList.add('active');
+          btnList.classList.remove('active');
+          renderMeets();
+      });
     });
   </script>
+
+  <div id="global-footer"></div>
+
 </body>
 </html>

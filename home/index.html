@@ -35,133 +35,61 @@
             href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
         />
         <link rel="stylesheet" href="/assets/main.css" />
-<link rel="stylesheet" href="/assets/msm-loader.css" />
+        <link rel="stylesheet" href="/assets/msm-loader.css" />
+
+        <script src="/assets/theme-toggle.js" defer></script>
+        <script src="/assets/components.js" defer></script>
     </head>
     <body class="home-page">
-<script src="/assets/msm-loader.js"></script>
-        <header>
-            <nav class="navbar">
-                <div class="navbar-content">
-                    <a href="/home/index" class="navbar-brand">MSM</a>
-                    <button class="mobile-menu-toggle" aria-label="Toggle menu">
-                        ☰
-                    </button>
-                    <ul class="navbar-nav" id="main-nav">
-                        <li>
-                            <a href="index" class="navbar-link active">Home</a>
-                        </li>
-                        <li><a href="about" class="navbar-link">About</a></li>
-                        <li>
-                            <a href="/feedback" class="navbar-link">Feedback</a>
-                        </li>
-                        <li>
-                            <a href="/Track/index" class="navbar-link"
-                                >Track & Field</a
-                            >
-                        </li>
-                        <li>
-                            <a href="/CrossCountry/xc" class="navbar-link"
-                                >Cross Country</a
-                            >
-                        </li>
-                        <li>
-                            <a href="/weather" class="navbar-link">Weather</a>
-                        </li>
-                    </ul>
-                    <button class="theme-toggle" aria-label="Switch theme">
-                        🌙
-                    </button>
-                </div>
-            </nav>
-        </header>
+        <div id="global-header"></div>
 
-        <div class="content-wrapper">
-            <div class="hero">
-                <img
-                    src="/assets/images/logob.png"
-                    alt="Mountain State Miles Logo"
-                    class="hero-logo"
-                />
-                <h1>Mountain State Miles</h1>
-                <p>
-                    Your source for West Virginia track & cross country results,
-                    rankings, and records
-                </p>
-            </div>
+        <script src="/assets/msm-loader.js"></script>
 
-            <div class="sport-cards">
-                <a href="/Track/index" class="sport-card">
-                    <h3>🏃 Track & Field</h3>
-                    <p>Meet records, rankings, and results</p>
-                </a>
-                <a href="/CrossCountry/xc" class="sport-card">
-                    <h3>🏅 Cross Country</h3>
-                    <p>School rankings and meet results</p>
-                </a>
-            </div>
-
-            <div class="meets-section" id="news-section">
-                <div class="meets-header">
-                    <h2>📰 Latest Recaps</h2>
-                    <a href="/news" class="view-all-link">View All →</a>
-                </div>
-                <div class="meets-grid" id="news-grid">
-                    <div class="loading-state">Loading recaps...</div>
-                </div>
-            </div>
-        </div>
-
-        <footer>
-            <div class="row">
-                <div class="footer-col">
-                    <h4>General</h4>
-                    <ul>
-                        <li><a href="/home/index">Home</a></li>
-                        <li><a href="/home/about">About</a></li>
-                        <li><a href="/feedback">Feedback</a></li>
-                        <li><a href="/home/admin">Admin</a></li>
-                        <li><a href="/news">News</a></li>
-                    </ul>
-                </div>
-
-                <div class="footer-col">
-                    <h4>Cross Country</h4>
-                    <ul>
-                        <li><a href="/CrossCountry/xc">Home</a></li>
-                        <li><a href="/CrossCountry/meets">Meets</a></li>
-                        <li><a href="/CrossCountry/schools">Schools</a></li>
-                        <li><a href="/CrossCountry/rankings">Rankings</a></li>
-                        <li><a href="/CrossCountry/analytics">Analytics</a></li>
-                    </ul>
-                </div>
-
-                <div class="footer-col">
-                    <h4>Track</h4>
-                    <ul>
-                        <li><a href="/Track/index">Home</a></li>
-                        <li><a href="/Track/meets">Meets</a></li>
-                        <li><a href="/Track/teams">Teams</a></li>
-                        <li><a href="/Track/rankings">Rankings</a></li>
-                        <li><a href="/Track/analytics">Analytics</a></li>
-                    </ul>
-                </div>
-            </div>
-            <hr />
-            <div class="row">
-                <div class="footer-bottom">
+        <main class="content-section">
+            <div class="content-wrapper">
+                <div class="hero">
+                    <img
+                        src="/assets/images/logo.png"
+                        alt="Mountain State Miles Logo"
+                        class="hero-logo"
+                        data-theme-light-src="/assets/images/logo.png"
+                        data-theme-dark-src="/assets/images/logob.png"
+                    />
+                    <h1>Mountain State Miles</h1>
                     <p>
-                        &#169; 2026 Mountain State Miles — Built by runners, for
-                        runners.
+                        Your source for West Virginia track & cross country
+                        results, rankings, and records
                     </p>
                 </div>
+
+                <div class="sport-cards">
+                    <a href="/Track/index" class="sport-card">
+                        <h3>🏃 Track & Field</h3>
+                        <p>Meet records, rankings, and results</p>
+                    </a>
+                    <a href="/CrossCountry/xc" class="sport-card">
+                        <h3>🏅 Cross Country</h3>
+                        <p>School rankings and meet results</p>
+                    </a>
+                </div>
+
+                <div class="meets-section" id="news-section">
+                    <div class="meets-header">
+                        <h2>📰 Latest Recaps</h2>
+                        <a href="/news" class="view-all-link">View All →</a>
+                    </div>
+                    <div class="meets-grid" id="news-grid">
+                        <div class="loading-state">Loading recaps...</div>
+                    </div>
+                </div>
             </div>
-        </footer>
+        </main>
+
+        <div id="global-footer"></div>
 
         <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
         <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
         <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-analytics-compat.js"></script>
-        <script src="/assets/theme-toggle.js"></script>
-
         <script>
             const firebaseConfig = {
                 apiKey: "AIzaSyCBQt9I_OSoUuTM61F-JXNBkD98f7PCJcA",
@@ -236,26 +164,6 @@
 
             document.addEventListener("DOMContentLoaded", () => {
                 loadRecentNews();
-
-                const menuToggle = document.querySelector(
-                    ".mobile-menu-toggle",
-                );
-                const navMenu = document.getElementById("main-nav");
-
-                if (menuToggle && navMenu) {
-                    menuToggle.addEventListener("click", () => {
-                        navMenu.classList.toggle("mobile-open");
-                    });
-
-                    document.addEventListener("click", (e) => {
-                        if (
-                            !navMenu.contains(e.target) &&
-                            !menuToggle.contains(e.target)
-                        ) {
-                            navMenu.classList.remove("mobile-open");
-                        }
-                    });
-                }
             });
         </script>
     </body>

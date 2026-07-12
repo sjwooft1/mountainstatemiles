@@ -9,7 +9,7 @@
   <link rel="shortcut icon" href="../assets/Favicon Generator/favicon.ico" />
   <link rel="apple-touch-icon" sizes="180x180" href="../assets/Favicon Generator/apple-touch-icon.png" />
   <link rel="manifest" href="../assets/Favicon Generator/site.webmanifest" />
-  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="stylesheet" href="/assets/main.css" />
   <link rel="stylesheet" href="/assets/msm-loader.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
@@ -172,29 +172,17 @@
       .weather-bar{padding:14px 18px}
     }
   </style>
+
+  
+  <script src="/assets/theme-toggle.js" defer></script>
+  <script src="/assets/components.js" defer></script>
 </head>
 <body>
-<script src="/assets/msm-loader.js"></script>
-<header>
-  <nav class="navbar">
-    <div class="navbar-content">
-      <a href="index.html" class="navbar-brand">
-        <img src="/assets/logo white.png" alt="MSM" class="msm-logo" onerror="this.style.display='none'">
-        MSM</span>
-      </a>
-      <ul class="navbar-nav">
-        <li><a href="/home/index.html" class="navbar-link">Home</a></li>
-        <li><a href="index.html" class="navbar-link">Track</a></li>
-        <li><a href="meets.html" class="navbar-link active">Meets</a></li>
-        <li><a href="events.html" class="navbar-link">Events</a></li>
-        <li><a href="rankings.html" class="navbar-link">Rankings</a></li>
-        <li><a href="analytics.html" class="navbar-link">Analytics</a></li>
-      </ul>
-    </div>
-  </nav>
-</header>
 
-<main class="page-wrap">
+  <div id="global-header"></div>
+
+<script src="/assets/msm-loader.js"></script>
+<main class="content-section page-wrap">
   <a href="meets.html" class="back-link"><i class="fas fa-arrow-left"></i> Back to Meets</a>
   <div id="error-box" class="error-msg"></div>
 
@@ -829,5 +817,8 @@
 </script>
 <script src="track-coach-auth.js"></script>
 <script src="track-coach-toolbar.js"></script>
+
+  <div id="global-footer"></div>
+
 </body>
 </html>

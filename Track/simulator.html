@@ -272,32 +272,17 @@
       @media(max-width:860px){.sim-layout{grid-template-columns:1fr}.sidebar{position:static;max-height:none}.podium-row{flex-wrap:wrap}.podium-item{min-width:calc(50% - 6px)}}
       @media(max-width:500px){.page-title{font-size:2rem}.podium-item{min-width:100%}.event-table thead th:nth-child(3),.event-table td:nth-child(3){display:none}}
     </style>
-  </head>
+  
+  <link rel="stylesheet" href="/assets/main.css" />
+  
+  <script src="/assets/theme-toggle.js" defer></script>
+  <script src="/assets/components.js" defer></script>
+</head>
   <body>
-    <header>
-      <nav class="navbar">
-        <div class="navbar-content">
-          <a href="index.html" class="navbar-brand">
-            <img src="../assets/msm-logo.png" alt="MSM" class="msm-logo" onerror="this.style.display='none'">
-            Mountain <span class="accent">State Miles</span>
-          </a>
-          <ul class="navbar-nav">
-            <li><a href="rankings.html" class="navbar-link">Rankings</a></li>
-            <li><a href="simulator.html" class="navbar-link active">Simulator</a></li>
-          </ul>
-          <div class="view-only-toggle">
-            <span class="toggle-label"><i class="fas fa-eye" style="font-size:.75rem;margin-right:4px"></i>View Only</span>
-            <label class="toggle-switch">
-              <input type="checkbox" id="view-only-toggle">
-              <span class="toggle-slider"></span>
-            </label>
-          </div>
-        </div>
-      </nav>
-      <div class="view-only-banner"><i class="fas fa-eye"></i> View-Only Mode — Configuration is locked</div>
-    </header>
 
-    <main class="page-wrap">
+  <div id="global-header"></div>
+
+<main class="content-section page-wrap">
       <div class="page-header">
         <h1 class="page-title">Virtual Meet <span class="dim">Simulator</span></h1>
         <p class="page-subtitle">Simulate qualifying meets to determine who advances, then run the championship meet.</p>
@@ -1388,5 +1373,8 @@
       document.getElementById("run-sim").addEventListener("click", runSimulation);
     });
     </script>
-  </body>
+  
+  <div id="global-footer"></div>
+
+</body>
 </html>

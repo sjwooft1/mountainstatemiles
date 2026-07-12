@@ -106,7 +106,7 @@ async function getSchoolNameBySlug(slug) {
  * @param {number} limit - Maximum number of meets to return
  * @returns {Promise<Array>} Array of meet objects
  */
-async function getAllMeets(limit = 10) {
+async function getAllMeets(limit = 1000) {
   try {
     const db = await getDB();
     const snapshot = await db.ref(`${CC_PREFIX}/meets`).orderByChild('date').once('value');

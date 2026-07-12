@@ -292,30 +292,17 @@
     border-top:1px solid var(--card-border);
   }
 </style>
+
+  <link rel="stylesheet" href="/assets/main.css" />
+  
+  <script src="/assets/theme-toggle.js" defer></script>
+  <script src="/assets/components.js" defer></script>
 </head>
 <body>
 
-<header class="site-nav">
-  <div class="nav-inner">
-    <a class="brand" href="../../home/index">
-      <span class="brand-mark">MSM</span>
-      <span class="brand-name">Mountain State <span>Miles</span></span>
-    </a>
-    <nav class="primary-links">
-      <a href="../../home/index">Home</a>
-      <a href="../../home/about">About</a>
-      <a href="../../news">News</a>
-      <a href="../../Track/index">Track &amp; Field</a>
-      <a href="../xc" class="active">Cross Country</a>
-      <a href="../../weather">Weather</a>
-    </nav>
-    <div class="nav-actions">
-      <button class="icon-btn" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">🌙</button>
-      <button class="icon-btn hamburger" title="Menu" aria-label="Menu">☰</button>
-    </div>
-  </div>
-</header>
+  <div id="global-header"></div>
 
+  <main class="content-section">
 <div class="breadcrumb">
   <a href="../xc">Cross Country</a>
   <span class="sep">/</span>
@@ -327,37 +314,7 @@
 <div class="course-switcher" id="course-switcher"></div>
 
 <div id="page-content"></div>
-
-<footer>
-  <div class="footer-inner">
-    <div>
-      <h4>Mountain State Miles</h4>
-      <p style="font-size:13px;color:var(--text-dim);max-width:280px;line-height:1.6;margin:0;">
-        Course data, rankings, and results for West Virginia high school running.
-      </p>
-    </div>
-    <div>
-      <h4>Cross Country</h4>
-      <ul>
-        <li><a href="../xc">Home</a></li>
-        <li><a href="../meets">Meets</a></li>
-        <li><a href="../schools">Schools</a></li>
-        <li><a href="../rankings">Rankings</a></li>
-        <li><a href="../analytics">Analytics</a></li>
-      </ul>
-    </div>
-    <div>
-      <h4>General</h4>
-      <ul>
-        <li><a href="../../home/index">Home</a></li>
-        <li><a href="../../home/about">About</a></li>
-        <li><a href="../../news">News</a></li>
-        <li><a href="../../feedback">Feedback</a></li>
-      </ul>
-    </div>
-  </div>
-  <div class="footer-bottom">© 2026 Mountain State Miles — Built by runners, for runners.</div>
-</footer>
+  </main>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -588,7 +545,7 @@
         </div>
       </section>
 
-      <main>
+      <main class="content-section">
         <div class="grid-2">
           <div class="card">
             <div class="card-head">
@@ -1234,5 +1191,8 @@ function runPredictorCalculations(currentCourse, points) {
   // Bypassed the external fetch for courses.json and initialize directly using the default array
   window.addEventListener('DOMContentLoaded', boot);
 </script>
+
+  <div id="global-footer"></div>
+
 </body>
 </html>

@@ -785,8 +785,16 @@
       }
     }
   </style>
+
+  <link rel="stylesheet" href="/assets/main.css" />
+  
+  <script src="/assets/theme-toggle.js" defer></script>
+  <script src="/assets/components.js" defer></script>
 </head>
 <body>
+
+  <div id="global-header"></div>
+
 <script src="/assets/msm-loader.js"></script>
 <div class="app-wrapper">
   <aside class="sidebar">
@@ -828,7 +836,7 @@
     </div>
   </aside>
   
-  <main class="main">
+  <main class="content-section main">
     <div class="topbar">
       <h2 id="page-title">Dashboard</h2>
       <a href="/home" class="home-page">MSM Home</a>
@@ -4695,5 +4703,8 @@
   window.applyAdvancedFilters = applyAdvancedFilters;
   window.filterResultsByActiveFilters = filterResultsByActiveFilters;
 </script>
+
+  <div id="global-footer"></div>
+
 </body>
 </html>

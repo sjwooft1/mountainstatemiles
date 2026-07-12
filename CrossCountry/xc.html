@@ -1,173 +1,151 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Cross Country – Mountain State Miles</title>
-  <meta property="og:image" content="/assets/images/logo.png" />
-  <link rel="icon" type="image/png" href="assets/Favicon Generator/favicon-96x96.png" sizes="96x96" />
-  <link rel="icon" type="image/svg+xml" href="assets/Favicon Generator/favicon.svg" />
-  <link rel="shortcut icon" href="assets/Favicon Generator/favicon.ico" />
-  <link rel="apple-touch-icon" sizes="180x180" href="assets/Favicon Generator/apple-touch-icon.png" />
-  <meta name="apple-mobile-web-app-title" content="MSM" />
-  <link rel="manifest" href="assets/Favicon Generator/site.webmanifest" />
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link rel="stylesheet" href="/assets/main.css">
-<link rel="stylesheet" href="/assets/msm-loader.css" />
-  <meta name="description" content="Mountain State Miles — West Virginia's home for XC & Track results, rankings, rosters, records, schedules, and meet coverage." />
-  <meta name="keywords" content="West Virginia running, WVHSXC, WVXC, WV Track, WV high school running, WV cross country, WV track and field, WV runs, Mountain State Miles" />
-  <meta name="author" content="Mountain State Miles" />
-  <meta name="theme-color" content="#002855" />
-  <link rel="canonical" href="https://mountainstatemiles.com/" />
-  <meta property="og:title" content="Mountain State Miles — WV Cross Country & Track" />
-  <meta property="og:description" content="Official West Virginia running hub: results, rankings, rosters, athlete profiles, meet schedules, and team stats." />
-  <meta property="og:url" content="https://mountainstatemiles.com/" />
-  <meta property="og:type" content="website" />
-  <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="Mountain State Miles" />
-  <meta name="twitter:description" content="West Virginia's XC & Track results, rankings, and athlete profiles." />
-  <meta name="robots" content="index, follow" />
-</head>
-<body>
-<script src="/assets/msm-loader.js"></script>
-  <div class="hero-section">
-    <div class="hero-content">
-      <img src="/assets/images/logob.png" alt="Mountain State Miles Logo" class="hero-logo" />
-      <h1 class="hero-title">Cross Country</h1>
-      <p class="hero-subtitle">Meet records, rankings, and results for West Virginia high school cross country.</p>
-    </div>
-  </div>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Cross Country – Mountain State Miles</title>
+        <meta property="og:image" content="/assets/images/logo.png" />
+        <link
+            rel="icon"
+            type="image/png"
+            href="assets/Favicon Generator/favicon-96x96.png"
+            sizes="96x96"
+        />
+        <link
+            rel="icon"
+            type="image/svg+xml"
+            href="assets/Favicon Generator/favicon.svg"
+        />
+        <link rel="shortcut icon" href="assets/Favicon Generator/favicon.ico" />
+        <link
+            rel="apple-touch-icon"
+            sizes="180x180"
+            href="assets/Favicon Generator/apple-touch-icon.png"
+        />
+        <meta name="apple-mobile-web-app-title" content="MSM" />
+        <link rel="manifest" href="assets/Favicon Generator/site.webmanifest" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+            rel="stylesheet"
+        />
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+        />
+        <link rel="stylesheet" href="/assets/main.css" />
+        <link rel="stylesheet" href="/assets/msm-loader.css" />
+        <meta
+            name="description"
+            content="Mountain State Miles — West Virginia's home for XC & Track results, rankings, rosters, records, schedules, and meet coverage."
+        />
+        <meta
+            name="keywords"
+            content="West Virginia running, WVHSXC, WVXC, WV Track, WV high school running, WV cross country, WV track and field, WV runs, Mountain State Miles"
+        />
+        <meta name="author" content="Mountain State Miles" />
+        <meta name="theme-color" content="#002855" />
+        <link rel="canonical" href="https://mountainstatemiles.com/" />
+        <meta
+            property="og:title"
+            content="Mountain State Miles — WV Cross Country & Track"
+        />
+        <meta
+            property="og:description"
+            content="Official West Virginia running hub: results, rankings, rosters, athlete profiles, meet schedules, and team stats."
+        />
+        <meta property="og:url" content="https://mountainstatemiles.com/" />
+        <meta property="og:type" content="website" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Mountain State Miles" />
+        <meta
+            name="twitter:description"
+            content="West Virginia's XC & Track results, rankings, and athlete profiles."
+        />
+        <meta name="robots" content="index, follow" />
 
-  <header>
-    <nav class="navbar">
-      <div class="navbar-content">
-        <a href="xc.html" class="navbar-brand">XC</a>
-        <button class="mobile-menu-toggle" aria-label="Toggle menu">☰</button>
-        <ul class="navbar-nav" id="main-nav">
-          <li><a href="/home/" class="navbar-link">Home</a></li>
-          <li><a href="xc.html" class="navbar-link active">Cross Country</a></li>
-          <li><a href="schools.html" class="navbar-link">Schools</a></li>
-          <li><a href="meets.html" class="navbar-link">Meets</a></li>
-          <li><a href="rankings.html" class="navbar-link">Rankings</a></li>
-          <li><a href="/CrossCountry/courses/course viewer.html">Courses</a></li>
-        </ul>
-        <button class="theme-toggle" aria-label="Switch theme">🌙</button>
-      </div>
-    </nav>
-  </header>
+        <script src="/assets/theme-toggle.js" defer></script>
+        <script src="/assets/components.js" defer></script>
+    </head>
+    <body>
+        <div id="global-header"></div>
 
-  <main class="content-section">
-    <h2 class="section-title">Recent Meets</h2>
-    <div id="meet-list" class="meet-grid">Loading recent meets...</div>
-  </main>
+        <script src="/assets/msm-loader.js"></script>
 
-  <footer>
-    <div class="row">
-      <div class="footer-col">
-        <h4>General</h4>
-        <ul>
-          <li><a href="/home/index.html">Home</a></li>
-          <li><a href="/home/admin.html">Admin</a></li>
-          <li><a href="/news.html">News</a></li>
-        </ul>
-      </div>
+        <main class="content-section">
+            <div class="hero-section">
+                <div class="hero-content">
+                    <img
+                        src="/assets/images/logo.png"
+                        alt="Mountain State Miles Logo"
+                        class="hero-logo"
+                        data-theme-light-src="/assets/images/logo.png"
+                        data-theme-dark-src="/assets/images/logob.png"
+                    />
+                    <h1 class="hero-title">Cross Country</h1>
+                    <p class="hero-subtitle">
+                        Meet records, rankings, and results for West Virginia
+                        high school cross country.
+                    </p>
+                </div>
+            </div>
 
-      <div class="footer-col">
-        <h4>Cross Country</h4>
-        <ul>
-          <li><a href="/CrossCountry/xc.html">Home</a></li>
-          <li><a href="/CrossCountry/meets.html">Meets</a></li>
-          <li><a href="/CrossCountry/schools.html">Schools</a></li>
-          <li><a href="/CrossCountry/rankings.html">Rankings</a></li>
-          <li><a href="/CrossCountry/analytics.html">Analytics</a></li>
-        </ul>
-      </div>
+            <h2 class="section-title">Recent Meets</h2>
+            <div id="meet-list" class="meet-grid">Loading recent meets...</div>
+        </main>
 
-      <div class="footer-col">
-        <h4>Track</h4>
-        <ul>
-          <li><a href="/Track/index.html">Home</a></li>
-          <li><a href="/Track/meets.html">Meets</a></li>
-          <li><a href="/Track/teams.html">Teams</a></li>
-          <li><a href="/Track/rankings.html">Rankings</a></li>
-          <li><a href="/Track/analytics.html">Analytics</a></li>
-        </ul>
-      </div>
-    </div>
-    <hr>
-    <div class="row">
-      <div class="footer-bottom">
-        <p>&#169; 2026 Mountain State Miles — Built by runners, for runners.</p>
-      </div>
-    </div>
-  </footer>
+        <div id="global-footer"></div>
 
-  <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-  <script src="/assets/theme-toggle.js"></script>
-  <script src="firebase-config.js"></script>
-  <script src="firebase-helpers.js"></script>
-  <script>
-    async function loadRecentMeets() {
-      const container = document.getElementById('meet-list');
-      try {
-        const meets = await getAllMeets(10);
-        if (!meets.length) {
-          container.innerHTML = '<p>No recent meets found.</p>';
-          return;
-        }
-        function formatDate(dateString) {
-          if (!dateString) return 'Date TBD';
-          const parts = dateString.split('-');
-          if (parts.length === 3) {
-            const year = parseInt(parts[0], 10);
-            const month = parseInt(parts[1], 10) - 1;
-            const day = parseInt(parts[2], 10);
-            const date = new Date(year, month, day);
-            return date.toLocaleDateString();
-          }
-          return new Date(dateString).toLocaleDateString();
-        }
-        container.innerHTML = meets.map(meet => {
-          const date = formatDate(meet.date);
-          const location = meet.location || '';
-          return `
+        <!-- Firebase SDK -->
+        <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+        <script src="firebase-config.js"></script>
+        <script src="firebase-helpers.js"></script>
+        <script>
+            async function loadRecentMeets() {
+                const container = document.getElementById("meet-list");
+                try {
+                    const meets = await getAllMeets(10);
+                    if (!meets.length) {
+                        container.innerHTML = "<p>No recent meets found.</p>";
+                        return;
+                    }
+                    function formatDate(dateString) {
+                        if (!dateString) return "Date TBD";
+                        const parts = dateString.split("-");
+                        if (parts.length === 3) {
+                            const year = parseInt(parts[0], 10);
+                            const month = parseInt(parts[1], 10) - 1;
+                            const day = parseInt(parts[2], 10);
+                            const date = new Date(year, month, day);
+                            return date.toLocaleDateString();
+                        }
+                        return new Date(dateString).toLocaleDateString();
+                    }
+                    container.innerHTML = meets
+                        .map((meet) => {
+                            const date = formatDate(meet.date);
+                            const location = meet.location || "";
+                            return `
             <a href="meet.html?slug=${meet.slug}" class="meet-card">
               <h5 class="meet-card-title">${meet.name}</h5>
               <h6 class="meet-card-date">📅 ${date}</h6>
-              ${location ? `<h6 class="meet-card-location">📍 ${location}</h6>` : ''}
+              ${location ? `<h6 class="meet-card-location">📍 ${location}</h6>` : ""}
             </a>
           `;
-        }).join('');
-      } catch (e) {
-        console.error('Error loading meets:', e);
-        container.innerHTML = '<p>Error loading recent meets.</p>';
-      } finally {
-        document.dispatchEvent(new Event("MSMDataLoaded"));
-      }
-    }
-    document.addEventListener('DOMContentLoaded', () => {
-      loadRecentMeets();
-      
-      const menuToggle = document.querySelector('.mobile-menu-toggle');
-      const navMenu = document.getElementById('main-nav');
-      
-      if (menuToggle && navMenu) {
-        menuToggle.addEventListener('click', () => {
-          navMenu.classList.toggle('mobile-open');
-        });
-        
-        document.addEventListener('click', (e) => {
-          if (!navMenu.contains(e.target) && !menuToggle.contains(e.target)) {
-            navMenu.classList.remove('mobile-open');
-          }
-        });
-      }
-    });
-  </script>
-</body>
+                        })
+                        .join("");
+                } catch (e) {
+                    console.error("Error loading meets:", e);
+                    container.innerHTML = "<p>Error loading recent meets.</p>";
+                } finally {
+                    document.dispatchEvent(new Event("MSMDataLoaded"));
+                }
+            }
+            document.addEventListener("DOMContentLoaded", () => {
+                loadRecentMeets();
+            });
+        </script>
+    </body>
 </html>

@@ -14,28 +14,17 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/assets/main.css">
+  <link rel="stylesheet" href="/assets/main.css" />
+
+  
+  <script src="/assets/theme-toggle.js" defer></script>
+  <script src="/assets/components.js" defer></script>
 </head>
 <body>
-    <header>
-        <nav class="navbar">
-            <div class="navbar-content">
-                <a href="/home/index" class="navbar-brand">MSM</a>
-                <button class="mobile-menu-toggle" aria-label="Toggle menu">☰</button>
-                <ul class="navbar-nav" id="main-nav">
-                    <li><a href="/home/index" class="navbar-link">Home</a></li>
-                    <li><a href="/home/about" class="navbar-link">About</a></li>
-                    <li><a href="/home/admin" class="navbar-link active">Admin</a></li>
-                    <li><a href="/Track/index" class="navbar-link">Track & Field</a></li>
-                    <li><a href="/CrossCountry/xc" class="navbar-link">Cross Country</a></li>
-                    <li><a href="/weather" class="navbar-link">Weather</a></li>
-                </ul>
-                <button class="theme-toggle" aria-label="Switch theme">🌙</button>
-            </div>
-        </nav>
-    </header>
 
-    <main class="content-section">
+  <div id="global-header"></div>
+
+<main class="content-section">
         <div class="hero">
             <img src="/assets/logo white.png" alt="Mountain State Miles" class="hero-logo">
             <h1>Mountain State Miles Admin</h1>
@@ -60,57 +49,10 @@
             </a>
         </div>
     </main>
-
-    <footer>
-        <div class="row">
-            <div class="footer-col">
-                <h4>General</h4>
-                <ul>
-                    <li><a href="/home/index">Home</a></li>
-                    <li><a href="/feedback">Feedback</a></li>
-                    <li><a href="/home/admin">Admin</a></li>
-                    <li><a href="/news">News</a></li>
-                </ul>
-            </div>
-            <div class="footer-col">
-                <h4>Cross Country</h4>
-                <ul>
-                    <li><a href="/CrossCountry/xc">Home</a></li>
-                    <li><a href="/CrossCountry/meets">Meets</a></li>
-                    <li><a href="/CrossCountry/schools">Schools</a></li>
-                    <li><a href="/CrossCountry/rankings">Rankings</a></li>
-                    <li><a href="/CrossCountry/analytics">Analytics</a></li>
-                </ul>
-            </div>
-            <div class="footer-col">
-                <h4>Track</h4>
-                <ul>
-                    <li><a href="/Track/index">Home</a></li>
-                    <li><a href="/Track/meets">Meets</a></li>
-                    <li><a href="/Track/teams">Teams</a></li>
-                    <li><a href="/Track/rankings">Rankings</a></li>
-                    <li><a href="/Track/analytics">Analytics</a></li>
-                </ul>
-            </div>
-        </div>
-        <hr>
-        <div class="row">
-            <div class="footer-bottom">
-                <p>&#169; 2026 Mountain State Miles — Built by runners, for runners.</p>
-            </div>
-        </div>
-    </footer>
-
-    <script src="/assets/theme-toggle.js"></script>
-    <script>
+<script>
         document.addEventListener('DOMContentLoaded', () => {
-            const menuToggle = document.querySelector('.mobile-menu-toggle');
-            const navMenu = document.getElementById('main-nav');
-            
-            if (menuToggle && navMenu) {
-                menuToggle.addEventListener('click', () => {
-                    navMenu.classList.toggle('mobile-open');
-                });
+
+);
                 
                 document.addEventListener('click', (e) => {
                     if (!navMenu.contains(e.target) && !menuToggle.contains(e.target)) {
@@ -120,5 +62,8 @@
             }
         });
     </script>
+
+  <div id="global-footer"></div>
+
 </body>
 </html>

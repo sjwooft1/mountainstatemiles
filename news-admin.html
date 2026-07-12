@@ -5,29 +5,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>News Admin — Mountain State Miles</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="stylesheet" href="/assets/main.css" />
 <link rel="stylesheet" href="/assets/msm-loader.css" />
+
+  
+  <script src="/assets/theme-toggle.js" defer></script>
+  <script src="/assets/components.js" defer></script>
 </head>
 <body>
+
+  <div id="global-header"></div>
+
 <script src="/assets/msm-loader.js"></script>
-  <header>
-    <nav class="navbar">
-      <div class="navbar-content">
-        <a href="/home/index" class="navbar-brand">MSM</a>
-        <button class="mobile-menu-toggle" aria-label="Toggle menu">☰</button>
-        <ul class="navbar-nav" id="main-nav">
-          <li><a href="/home/index" class="navbar-link">Home</a></li>
-          <li><a href="/home/admin" class="navbar-link active">Admin</a></li>
-          <li><a href="/news" class="navbar-link">News</a></li>
-          <li><a href="/Track/index" class="navbar-link">Track</a></li>
-          <li><a href="/CrossCountry/xc" class="navbar-link">Cross Country</a></li>
-        </ul>
-        <button class="theme-toggle" aria-label="Switch theme">🌙</button>
-      </div>
-    </nav>
-  </header>
-  
-  <main>
+<main class="content-section">
     <div class="admin-header">
       <h1 class="admin-title">📰 News & Announcements</h1>
       <p class="admin-subtitle">Publish site updates and announcements</p>
@@ -102,19 +92,7 @@
     </div>
 
   </main>
-  
-  <footer>
-    <div class="row">
-      <div class="footer-col"><h4>General</h4><ul><li><a href="/home/index">Home</a></li><li><a href="/home/admin">Admin</a></li><li><a href="/news">News</a></li></ul></div>
-      <div class="footer-col"><h4>Cross Country</h4><ul><li><a href="/CrossCountry/xc">Home</a></li><li><a href="/CrossCountry/meets">Meets</a></li><li><a href="/CrossCountry/schools">Schools</a></li><li><a href="/CrossCountry/rankings">Rankings</a></li><li><a href="/CrossCountry/analytics">Analytics</a></li></ul></div>
-      <div class="footer-col"><h4>Track</h4><ul><li><a href="/Track/index">Home</a></li><li><a href="/Track/meets">Meets</a></li><li><a href="/Track/teams">Teams</a></li><li><a href="/Track/rankings">Rankings</a></li><li><a href="/Track/analytics">Analytics</a></li></ul></div>
-    </div>
-    <hr>
-    <div class="row"><div class="footer-bottom"><p>&#169; 2026 Mountain State Miles — Built by runners, for runners.</p></div></div>
-  </footer>
-
-  <script src="/assets/theme-toggle.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   
@@ -299,5 +277,8 @@
       document.dispatchEvent(new Event("MSMDataLoaded"));
     });
   </script>
+
+  <div id="global-footer"></div>
+
 </body>
 </html>

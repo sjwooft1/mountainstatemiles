@@ -17,7 +17,7 @@
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.7.1/jspdf.plugin.autotable.min.js"></script>
 
-<link rel="stylesheet" href="/assets/main.css">
+  <link rel="stylesheet" href="/assets/main.css" />
 
 <style>
 /* ================================================
@@ -536,40 +536,15 @@ table.rt a:hover { border-bottom-color: var(--text-primary); }
   .athlete-hero-inner { flex-direction: column; align-items: flex-start; }
 }
 </style>
+
+  
+  <script src="/assets/theme-toggle.js" defer></script>
+  <script src="/assets/components.js" defer></script>
 </head>
 
 <body>
 
-<header>
-  <nav class="navbar">
-    <div class="navbar-content">
-      <a href="/CrossCountry/xc.html" class="navbar-brand" style="border:none; text-decoration:none;">
-        <img src="/assets/images/logob.png" alt="Mountain State Miles" class="logo-light">
-        <img src="/assets/images/logo.png"  alt="Mountain State Miles" class="logo-dark">
-      </a>
-
-      <div class="nav-search-wrap" id="searchWrap">
-        <i class="fas fa-search search-icon"></i>
-        <input type="text" class="nav-search-input" id="searchInput"
-               aria-label="Search athletes" placeholder="Search athletes…" autocomplete="off" spellcheck="false">
-        <div class="search-dropdown" id="searchDropdown"></div>
-      </div>
-
-      <ul class="navbar-links">
-        <li><a href="/index.html"          class="navbar-link">Home</a></li>
-        <li><a href="/CrossCountry/xc.html"    class="navbar-link">XC</a></li>
-        <li><a href="/CrossCountry/meets.html"    class="navbar-link">Meets</a></li>
-        <li><a href="/CrossCountry/athlete.html"   class="navbar-link">Athlete</a></li>
-        <li><a href="/Track/rankings.html" class="navbar-link">Rankings</a></li>
-        <li><a href="/Track/analytics.html" class="navbar-link">Analytics</a></li>
-      </ul>
-
-      <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
-        <i class="fas fa-moon" id="themeIcon"></i>
-      </button>
-    </div>
-  </nav>
-</header>
+  <div id="global-header"></div>
 
 <div class="athlete-hero">
   <div class="athlete-hero-inner">
@@ -583,7 +558,7 @@ table.rt a:hover { border-bottom-color: var(--text-primary); }
   </div>
 </div>
 
-<main class="page-main">
+<main class="content-section page-main">
   <section class="section-block">
     <div class="section-head">
       <h2 class="section-heading">Personal Bests</h2>
@@ -703,59 +678,11 @@ table.rt a:hover { border-bottom-color: var(--text-primary); }
   </section>
 
 </main>
-
-<footer>
-  <div class="row">
-    <div class="footer-col">
-      <h4>General</h4>
-      <ul>
-        <li><a href="/home/index.html">Home</a></li>
-        <li><a href="/home/about.html">About</a></li>
-        <li><a href="/home/admin.html">Admin</a></li>
-      </ul>
-    </div>
-    <div class="footer-col">
-      <h4>Cross Country</h4>
-      <ul>
-        <li><a href="/CrossCountry/xc.html">Home</a></li>
-        <li><a href="/CrossCountry/meets.html">Meets</a></li>
-        <li><a href="/CrossCountry/schools.html">Schools</a></li>
-        <li><a href="/CrossCountry/rankings.html">Rankings</a></li>
-        <li><a href="/CrossCountry/analytics.html">Analytics</a></li>
-        <li><a href="/CrossCountry/courses/course viewer.html">Courses</a></li>
-      </ul>
-    </div>
-    <div class="footer-col">
-      <h4>Track</h4>
-      <ul>
-        <li><a href="/Track/index.html">Home</a></li>
-        <li><a href="/Track/meets.html">Meets</a></li>
-        <li><a href="/Track/teams.html">Teams</a></li>
-        <li><a href="/Track/rankings.html">Rankings</a></li>
-        <li><a href="/Track/analytics.html">Analytics</a></li>
-      </ul>
-    </div>
-  </div>
-  <hr>
-  <div class="row">
-    <div class="footer-bottom">
-      <div style="margin-bottom:0.75rem;">
-        <a href="https://github.com/sjwooft1/mountainstatemiles" target="_blank" rel="noopener noreferrer" style="border:none;">
-          <i class="fab fa-github" style="font-size:1.2rem;"></i>
-          <span style="margin-left:6px;">GitHub Repository</span>
-        </a>
-      </div>
-      <p>© 2026 Mountain State Miles — Built by runners, for runners.</p>
-    </div>
-  </div>
-</footer>
-
 <div class="toast-tray" id="toastTray"></div>
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-analytics-compat.js"></script>
-<script src="/assets/theme-toggle.js"></script>
 <script src="/Track/firebase-config.js"></script>
 
 <script>
@@ -1514,6 +1441,8 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 
+
+  <div id="global-footer"></div>
 
 </body>
 </html>

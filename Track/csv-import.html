@@ -319,8 +319,17 @@
         .evt-status.in-db { background: rgba(16, 185, 129, 0.15); color: var(--success); }
         .evt-status.new { background: rgba(249, 115, 22, 0.15); color: var(--primary); }
     </style>
+
+  <link rel="stylesheet" href="/assets/main.css" />
+  
+  <script src="/assets/theme-toggle.js" defer></script>
+  <script src="/assets/components.js" defer></script>
 </head>
 <body>
+
+  <div id="global-header"></div>
+
+  <main class="content-section">
     <div class="container">
         <h1>Meet Import Engine v4</h1>
 
@@ -951,5 +960,11 @@
         const importer = new MeetImporter();
         importer.init();
     </script>
+
+  
+  </main>
+
+<div id="global-footer"></div>
+
 </body>
 </html>

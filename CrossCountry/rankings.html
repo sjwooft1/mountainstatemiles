@@ -9,30 +9,20 @@
   <link rel="shortcut icon" href="assets/Favicon Generator/favicon.ico" />
   <link rel="apple-touch-icon" sizes="180x180" href="assets/Favicon Generator/apple-touch-icon.png" />
   <link rel="manifest" href="assets/Favicon Generator/site.webmanifest" />
-  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="stylesheet" href="/assets/main.css" />
 <link rel="stylesheet" href="/assets/msm-loader.css" />
+
+  
+  <script src="/assets/theme-toggle.js" defer></script>
+  <script src="/assets/components.js" defer></script>
 </head>
 <body>
-<script src="/assets/msm-loader.js"></script>
-  <header>
-    <nav class="navbar">
-      <div class="navbar-content">
-        <a href="xc.html" class="navbar-brand">XC</a>
-        <button class="mobile-menu-toggle" aria-label="Toggle menu">☰</button>
-        <ul class="navbar-nav" id="main-nav">
-          <li><a href="/home/index" class="navbar-link">Home</a></li>
-          <li><a href="xc.html" class="navbar-link">Cross Country</a></li>
-          <li><a href="schools.html" class="navbar-link">Schools</a></li>
-          <li><a href="meets.html" class="navbar-link">Meets</a></li>
-          <li><a href="rankings.html" class="navbar-link active">Rankings</a></li>
-          <li><a href="analytics.html" class="navbar-link">Analytics</a></li>
-        </ul>
-        <button class="theme-toggle" aria-label="Switch theme">🌙</button>
-      </div>
-    </nav>
-  </header>
 
-  <div class="hero-section">
+  <div id="global-header"></div>
+
+  <main class="content-section">
+<script src="/assets/msm-loader.js"></script>
+<div class="hero-section">
     <div class="hero-content">
       <img src="/assets/images/logo.png" alt="Mountain State Miles Logo" class="hero-logo" />
       <h1 class="hero-title">State Rankings</h1>
@@ -104,53 +94,7 @@
     </section>
 
   </main>
-
-  <footer>
-      <div class="row">
-          <!-- 1st Column -->
-          <div class="footer-col">
-                <h4>General</h4>
-                <ul>
-                    <li><a href="/home/index.html">Home</a></li>
-                    <li><a href="/home/admin.html">Admin</a></li>
-                    <li><a href="/news.html">News</a></li>
-                </ul>
-            </div>
-
-          <!-- 2nd Column -->
-          <div class="footer-col">
-              <h4>Cross Country</h4>
-              <ul>
-                  <li><a href="/CrossCountry/xc.html">Home</a></li>
-                  <li><a href="/CrossCountry/meets.html">Meets</a></li>
-                  <li><a href="/CrossCountry/schools.html">Schools</a></li>
-                  <li><a href="/CrossCountry/rankings.html">Rankings</a></li>
-                  <li><a href="/CrossCountry/analytics.html">Analytics</a></li>
-              </ul>
-          </div>
-
-          <!-- 3rd Column -->
-          <div class="footer-col">
-              <h4>Track</h4>
-              <ul>
-                  <li><a href="/Track/index.html">Home</a></li>
-                  <li><a href="/Track/meets.html">Meets</a></li>
-                  <li><a href="/Track/teams.html">Teams</a></li>
-                  <li><a href="/Track/rankings.html">Rankings</a></li>
-                  <li><a href="/Track/analytics.html">Analytics</a></li>
-              </ul>
-          </div>
-      </div>
-      <hr>
-      <div class="row">
-          <div class="footer-bottom">
-              <p>&#169; 2026 Mountain State Miles — Built by runners, for runners.</p>
-          </div>
-      </div>
-  </footer>
-
-  <script src="/assets/theme-toggle.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
   <script src="firebase-config.js"></script>
   <script src="firebase-helpers.js"></script>
@@ -563,5 +507,11 @@
     // Initialize on page load
     window.onload = loadInitialData; 
   </script>
+
+  
+  </main>
+
+<div id="global-footer"></div>
+
 </body>
 </html>
