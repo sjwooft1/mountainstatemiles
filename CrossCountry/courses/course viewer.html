@@ -430,20 +430,20 @@
   // THREE.JS Global Object References
   let renderer3d = null, scene3d = null, camera3d = null, trackGroup3d = null;
 
-  // ---------- theme toggle ----------
+  // ---------- theme-aware updates ----------
+  // Theme toggling itself is handled globally by /assets/theme-toggle.js
+  // (the shared header injects buttons with class "theme-toggle", not an
+  // id, so we hook into theme changes via the data-theme attribute instead
+  // of assuming a page-local button with id="theme-toggle" exists).
   const root = document.documentElement;
-  const themeToggle = document.getElementById('theme-toggle');
-  themeToggle.addEventListener('click', () => {
+
+  function applyThemeSideEffects() {
     const isLight = root.getAttribute('data-theme') === 'light';
-    const targetTheme = isLight ? 'dark' : 'light';
-    root.setAttribute('data-theme', targetTheme);
-    themeToggle.textContent = isLight ? '🌙' : '☀️';
-    
+
     if (activeElevationChart) {
-      const currentLight = !isLight;
-      const gColor = currentLight ? '#eae5da' : '#232b36';
-      const tColor = currentLight ? '#1c2128' : '#9aa5b3';
-      
+      const gColor = isLight ? '#eae5da' : '#232b36';
+      const tColor = isLight ? '#1c2128' : '#9aa5b3';
+
       activeElevationChart.options.scales.x.grid.color = gColor;
       activeElevationChart.options.scales.x.ticks.color = tColor;
       activeElevationChart.options.scales.y.grid.color = gColor;
@@ -456,6 +456,11 @@
       const cardColor = getComputedStyle(document.documentElement).getPropertyValue('--card').trim();
       scene3d.background.set(cardColor);
     }
+  }
+
+  new MutationObserver(applyThemeSideEffects).observe(root, {
+    attributes: true,
+    attributeFilter: ['data-theme']
   });
 
   // ---------- utils ----------

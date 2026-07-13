@@ -1,103 +1,513 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Meets – Mountain State Miles</title>
-  
-  <link rel="icon" type="image/png" href="assets/Favicon Generator/favicon-96x96.png" sizes="96x96" />
-  <link rel="icon" type="image/svg+xml" href="assets/Favicon Generator/favicon.svg" />
-  <link rel="shortcut icon" href="assets/Favicon Generator/favicon.ico" />
-  <link rel="apple-touch-icon" sizes="180x180" href="assets/Favicon Generator/apple-touch-icon.png" />
-  <link rel="manifest" href="assets/Favicon Generator/site.webmanifest" />
-  
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cross Country Meets — Mountain State Miles</title>
+  <link rel="icon" type="image/png" href="../assets/Favicon Generator/favicon-96x96.png" sizes="96x96" />
+  <link rel="icon" type="image/svg+xml" href="../assets/Favicon Generator/favicon.svg" />
+  <link rel="shortcut icon" href="../assets/Favicon Generator/favicon.ico" />
+  <link rel="apple-touch-icon" sizes="180x180" href="../assets/Favicon Generator/apple-touch-icon.png" />
+  <link rel="manifest" href="../assets/Favicon Generator/site.webmanifest" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/assets/main.css" />
-  <link rel="stylesheet" href="/assets/msm-loader.css" />
+<link rel="stylesheet" href="/assets/msm-loader.css" />
+  
+  <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
+
   <style>
-    .content-section{
-      padding-top: 100px;
+    @font-face {
+      font-family: 'Aqeon Demo';
+      src: url('../assets/Aqeon Demo Font.ttf') format('truetype');
     }
-    .course-badge {
-      display: inline-flex;
+
+    * { box-sizing: border-box; }
+    
+    :root {
+  /* Light Mode (Default) */
+  --primary: #000000;
+  --primary-light: #1a1a1a;
+  --primary-lighter: #333333;
+  --accent: #ffffff;
+  --accent-dark: #f5f5f5;
+  --border: #403e3e;
+  --border-light: #f0f0f0;
+  --text-primary: #000000;
+  --text-secondary: #252424;
+  --text-tertiary: #999999;
+  --bg-primary: #ffffff;
+  --bg-secondary: #f9f9f9;
+  --bg-dark: #000000;
+  --shadow-light: rgba(0, 0, 0, 0.08);
+  --shadow-medium: rgba(0, 0, 0, 0.1);
+  
+  /* Semantics */
+  --success: #10b981;
+  --danger: #ef4444;
+  --warning: #f59e0b;
+  
+  /* Typography */
+  --font-display: 'Aqeon Demo', sans-serif;
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  
+  /* Spacing Scale */
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  --spacing-2xl: 3rem;
+  --spacing-3xl: 4rem;
+  
+  /* Transitions */
+  --transition: 200ms ease-in-out;
+  
+  /* Border Radius */
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 6px;
+  --radius-xl: 8px;
+}
+
+/* Dark Mode */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --primary: #ffffff;
+    --primary-light: #f0f0f0;
+    --primary-lighter: #e0e0e0;
+    --accent: #1a1a1a;
+    --accent-dark: #2a2a2a;
+    --border: #404040;
+    --border-light: #303030;
+    --text-primary: #ffffff;
+    --text-secondary: #b0b0b0;
+    --text-tertiary: #808080;
+    --bg-primary: #1a1a1a;
+    --bg-secondary: #252525;
+    --bg-dark: #0a0a0a;
+    --shadow-light: rgba(0, 0, 0, 0.3);
+    --shadow-medium: rgba(0, 0, 0, 0.5);
+  }
+}
+
+/* Explicit Dark Mode Class */
+html[data-theme="dark"] {
+  --primary: #ffffff;
+  --primary-light: #f0f0f0;
+  --primary-lighter: #e0e0e0;
+  --accent: #1a1a1a;
+  --accent-dark: #2a2a2a;
+  --border: #404040;
+  --border-light: #303030;
+  --text-primary: #ffffff;
+  --text-secondary: #b0b0b0;
+  --text-tertiary: #808080;
+  --bg-primary: #1a1a1a;
+  --bg-secondary: #252525;
+  --bg-dark: #0a0a0a;
+  --shadow-light: rgba(0, 0, 0, 0.3);
+  --shadow-medium: rgba(0, 0, 0, 0.5);
+}
+
+/* Explicit Light Mode Class */
+html[data-theme="light"] {
+  --primary: #000000;
+  --primary-light: #1a1a1a;
+  --primary-lighter: #333333;
+  --accent: #ffffff;
+  --accent-dark: #f5f5f5;
+  --border: #e0e0e0;
+  --border-light: #f0f0f0;
+  --text-primary: #000000;
+  --text-secondary: #666666;
+  --text-tertiary: #999999;
+  --bg-primary: #ffffff;
+  --bg-secondary: #f9f9f9;
+  --bg-dark: #000000;
+  --shadow-light: rgba(0, 0, 0, 0.08);
+  --shadow-medium: rgba(0, 0, 0, 0.1);
+}
+    
+    html, body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--accent);
+      color: var(--text-primary);
+    }
+
+    /* Navbar styling matches your existing style.css */
+    .navbar {
+      background: var(--bg-secondary);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      padding: 15px 20px;
+      display: flex;
+      justify-content: center;
+    }
+    .navbar-content {
+      width: 100%;
+      max-width: 1200px;
+      display: flex;
+      justify-content: space-between;
       align-items: center;
-      gap: 5px;
-      margin-top: 8px;
-      font-size: 12px;
-      font-weight: 600;
-      color: #0b0e13;
-      background: var(--trail, #2fd0a3);
-      padding: 4px 10px;
-      border-radius: 6px;
-      text-decoration: none;
-      transition: filter 0.15s ease;
     }
-    .course-badge:hover {
-      filter: brightness(1.1);
-      color: #0b0e13;
+    .navbar-brand { font-weight: 800; font-size: 1.25rem; color: var(--primary); text-decoration: none; }
+    .navbar-nav { display: flex; list-style: none; gap: 20px; padding: 0; }
+    .navbar-link { text-decoration: none; color: rgb(121, 116, 116); font-weight: 600; }
+    .navbar-link.active { color: var(--primary); }
+
+    main {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 40px 20px;
+      background: var(--accent);
     }
-    .meets-controls {
-      margin-bottom: 24px;
+    
+    .section-header {
       display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-    .search-filter-row {
-      display: flex;
-      gap: 12px;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
       flex-wrap: wrap;
+      gap: 20px;
     }
-    .search-filter-row input, .search-filter-row select {
-      padding: 10px 14px;
-      border-radius: 8px;
-      border: 1px solid var(--border, #ccc);
-      background: var(--card, #fff);
-      color: var(--text, #333);
-      font-size: 14px;
-      flex: 1;
-      min-width: 200px;
+
+    .section-title {
+      font-family: 'Aqeon Demo', sans-serif;
+      font-size: 2.5rem;
+      font-weight: 800;
+      color: var(--text-primary);
+      margin: 0;
+      position: relative;
+      letter-spacing: -0.02em;
     }
+    
+    /* View Toggles */
     .view-toggles {
       display: flex;
-      gap: 8px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 4px;
     }
+    
     .view-btn {
-      padding: 6px 16px;
-      border-radius: 6px;
-      border: 1px solid var(--border, #ccc);
+      padding: 8px 16px;
+      border: none;
       background: transparent;
-      color: var(--text, #333);
+      border-radius: 3px;
       cursor: pointer;
       font-weight: 600;
-      transition: all 0.2s;
+      color: var(--text-secondary);
+      transition: 0.2s;
     }
+    
     .view-btn.active {
-      background: var(--trail, #2fd0a3);
-      color: #0b0e13;
-      border-color: var(--trail, #2fd0a3);
+      background: var(--primary);
+      color: var(--accent-dark);
     }
-    /* Calendar View Styles */
-    .month-header {
-      margin-top: 24px;
-      padding-bottom: 8px;
-      border-bottom: 2px solid var(--border, #eee);
-      color: var(--text, #333);
+
+   /* Change this section */
+#calendar-wrapper {
+  display: none;
+  margin-top: 24px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  min-height: 600px;
+}
+
+/* Add !important here to override the ID-based display: none */
+#calendar-wrapper.visible {
+  display:flex;
+}
+
+    #calendar {
+      min-height: 560px;
     }
-    .calendar-grid {
+
+    /* FullCalendar 6 theme overrides */
+    .fc {
+      --fc-border-color: var(--border);
+      --fc-button-bg-color: var(--primary);
+      --fc-button-border-color: var(--primary);
+      --fc-button-hover-bg-color: var(--primary-light);
+      --fc-button-hover-border-color: var(--primary-light);
+      --fc-button-active-bg-color: var(--primary-lighter);
+      --fc-today-bg-color: rgba(0, 40, 85, 0.08);
+      --fc-page-bg-color: var(--bg-primary);
+      --fc-neutral-bg-color: var(--bg-primary);
+      --fc-list-event-hover-bg-color: var(--bg-secondary);
+    }
+
+    .fc .fc-toolbar-title { font-size: 1.25rem; color: var(--text-primary); }
+    .fc .fc-button { color: var(--accent); font-weight: 600; }
+    .fc .fc-col-header-cell-cushion { color: var(--text-secondary); font-weight: 600; }
+    .fc .fc-daygrid-day-number { color: var(--text-secondary); }
+    .fc .fc-event { cursor: pointer; border: none; border-radius: 4px; }
+    .fc .fc-event-title { font-weight: 600; }
+    .fc .fc-day-today .fc-daygrid-day-number { background: var(--primary); color: var(--accent); border-radius: 50%; padding: 2px 6px; }
+
+    /* List Grid Styling */
+    .meets-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-      gap: 16px;
-      padding: 0;
-      list-style: none;
-      margin-top: 16px;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 24px;
     }
-    .calendar-grid li {
-      background: var(--card, #f9f9f9);
-      border: 1px solid var(--border, #eee);
-      border-radius: 8px;
-      padding: 16px;
+    
+    .meet-card {
+      background: var(--accent);
+      border-radius: 6px;
+      padding: 24px;
+      text-decoration: none;
+      color: var(--text-primary);
+      border: 1px solid var(--text-primary);
+      transition: all 0.2s;
       display: flex;
       flex-direction: column;
+      gap: 8px;
     }
+    
+    .meet-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
+      border-color: var(--primary-light);
+    }
+
+    .meet-card-title { 
+      font-family: 'Aqeon Demo', sans-serif;
+      font-size: 1.25rem; 
+      font-weight: 700; 
+      color: var(--primary); 
+      margin: 0; 
+    }
+    .meet-card-date { 
+      color: var(--text-secondary); 
+      font-weight: 600; 
+      margin: 0; 
+    }
+    .meet-card-location { 
+      color: var(--text-secondary); 
+      font-size: 0.9rem; 
+      margin: 0; 
+    }
+    
+    .filter-bar { 
+      margin-bottom: 20px; 
+      display: flex; 
+      gap: 10px; 
+    }
+    .filter-chip {
+      padding: 6px 12px;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      background: var(--bg-secondary);
+      cursor: pointer;
+      font-size: 0.9rem;
+      color: var(--text-primary);
+      transition: all 0.2s;
+    }
+    .filter-chip.active { 
+      background: var(--primary); 
+      color: white; 
+      border-color: var(--primary); 
+    }
+
+    /* Footer */
+    footer {
+      background: var(--bg-secondary);
+      border-top: 1px solid var(--border);
+      padding: 60px 20px;
+      color: var(--text-secondary);
+      text-align: center;
+      margin-top: 60px;
+      position: relative;
+    }
+
+    footer a {
+      color: var(--primary);
+      border-bottom: 1px solid var(--border);
+      transition: border-color 0.2s;
+    }
+
+    footer a:hover {
+      border-bottom-color: var(--primary);
+    }
+    
+    .footer-bg-img {
+      display: none;
+    }
+
+    .export-container { 
+      position: relative; 
+      display: inline-block; 
+    }
+
+    .export-main-btn { 
+      background: var(--primary); 
+      color: white; 
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .export-main-btn:hover {
+      background: var(--secondary);
+    }
+
+    .export-dropdown {
+      display: none;
+      position: absolute;
+      right: 0;
+      background: var(--bg-secondary);
+      min-width: 200px;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.12);
+      z-index: 1000;
+      border-radius: 6px;
+      overflow: hidden;
+      margin-top: 5px;
+      border: 1px solid var(--border);
+    }
+
+    .export-dropdown button {
+      width: 100%;
+      padding: 12px 16px;
+      border: none;
+      background: none;
+      text-align: left;
+      cursor: pointer;
+      font-size: 0.9rem;
+      color: var(--text-primary);
+      transition: background 0.2s;
+    }
+
+    .export-dropdown button:hover { 
+      background: var(--bg-secondary);
+      color: var(--primary); 
+    }
+
+    .show { 
+      display: block; 
+    }
+
+    .dropdown-label {
+      padding: 8px 16px 4px;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+      font-weight: 800;
+      background: #f5f5f5;
+      margin: 0;
+    }
+
+    /* Popup / Modal Styles */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.6);
+      z-index: 2000;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .modal-content {
+      background: var(--bg-primary);
+      padding: 30px;
+      border-radius: 6px;
+      max-width: 450px;
+      width: 90%;
+      color: var(--text-primary);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    }
+
+    .search-bar {
+      display: flex;
+      justify-content: center;
+      margin-top: 10px;
+    }
+
+    .search-bar input {
+      width: 300px;
+      padding: 12px 16px;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      font-size: 1em;
+      transition: all 0.2s ease;
+      color: var(--text-primary);
+    }
+
+    .search-bar input:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.05);
+    }
+
+    .modal-content h3 { 
+      margin-top: 0; 
+      color: var(--primary);
+      font-family: 'Aqeon Demo', sans-serif;
+    }
+
+    .modal-content ol { 
+      padding-left: 20px; 
+      margin: 20px 0; 
+    }
+
+    .modal-content li { 
+      margin-bottom: 10px; 
+    }
+
+    .modal-actions { 
+      display: flex; 
+      gap: 10px; 
+    }
+
+    .btn-download { 
+      background: var(--primary); 
+      color: white; 
+      border: none; 
+      padding: 10px 20px; 
+      border-radius: 4px; 
+      cursor: pointer; 
+      flex: 2; 
+      font-weight: bold;
+      transition: background 0.2s;
+    }
+
+    .btn-download:hover {
+      background: var(--secondary);
+    }
+
+    .btn-close { 
+      background: var(--border); 
+      color: var(--text-primary); 
+      border: none; 
+      padding: 10px 20px; 
+      border-radius: 4px; 
+      cursor: pointer; 
+      flex: 1;
+      transition: background 0.2s;
+    }
+
+    .btn-close:hover {
+      background: #d0d0d0;
+    }
+
+    /* Find this section around line 170 */
+@media (min-width: 768px) {
+  .view-controls {
+    /* REMOVE OR COMMENT OUT THIS LINE BELOW */
+    /* display: none; */ 
+    
+    /* ADD THIS INSTEAD to make it visible */
+    display: flex; 
+    margin-bottom: 0;
+  }
+}
   </style>
 
   
@@ -110,195 +520,329 @@
 
 <script src="/assets/msm-loader.js"></script>
 <main class="content-section">
-    <h1>Meets</h1>
-    <p>Browse all cross country and track meets in West Virginia.</p>
-    
-    <div class="meets-controls">
-      <div class="search-filter-row">
-        <input type="text" id="search-input" placeholder="Search meets by name or location..." />
-        <select id="course-filter">
-          <option value="all">All Courses</option>
-          <option value="cabell-midland">Cabell Midland</option>
-          <option value="chick-fil-a">Mineral Wells</option>
-          <option value="meadowood-park">Meadowood</option>
-          <option value="beckley-invitational">Beckley</option>
-          <option value="south-harrison">South Harrison</option>
-          <option value="glen-oak">Glen Oak</option>
-        </select>
-      </div>
+    <div class="section-header">
+      <h2 class="section-title">Cross Country Meets</h2>
       <div class="view-toggles">
-        <button id="btn-list-view" class="view-btn active">List View</button>
-        <button id="btn-cal-view" class="view-btn">Calendar View</button>
+        <button class="view-btn active" onclick="switchView('list')">List View</button>
+        <button class="view-btn" onclick="switchView('calendar')">Calendar View</button>
+      </div>
+    </div>
+    <div id="list-controls" class="section-header" style="display: flex; flex-wrap: wrap; align-items: center; gap: 16px;">
+      <div class="filter-bar" style="margin-bottom: 0;">
+        <button type="button" class="filter-chip active" onclick="filterList('all', this)">All</button>
+        <button type="button" class="filter-chip" onclick="filterList('upcoming', this)">Upcoming</button>
+        <button type="button" class="filter-chip" onclick="filterList('past', this)">Past</button>
+      </div>
+      <div class="search-bar" style="margin-top: 0; flex: 1; min-width: 200px;">
+        <input type="text" id="search" placeholder="Search meets by name or location...">
+      </div>
+      <div class="export-container">
+        <button class="view-btn export-main-btn" onclick="toggleExportMenu()">
+          📥 Export / Print
+        </button>
+        <div id="export-menu" class="export-dropdown">
+          <p class="dropdown-label">Digital Calendars</p>
+          <button onclick="showCalendarPopup()">Apple / Outlook / Google (.ics)</button>
+          
+          <p class="dropdown-label">Documents for Printing</p>
+          <button onclick="exportTable('pdf')">Download as PDF</button>
+          <button onclick="exportTable('png')">Save as Image (PNG)</button>
+          <button onclick="exportTable('csv')">Excel / Spreadsheet (CSV)</button>
+        </div>
+      </div>
+    </div>
+    
+    <div id="calendarModal" class="modal-overlay">
+      <div class="modal-content">
+        <h3>Add Schedule to Calendar</h3>
+        <p>Follow these steps to sync the full season to your device:</p>
+        <ol>
+          <li>Click <strong>"Download .ics File"</strong> below.</li>
+          <li><strong>iPhone/Mac:</strong> Open the file and tap "Add All".</li>
+          <li><strong>Google Calendar:</strong> Go to <em>Settings > Import</em> and upload this file.</li>
+          <li><strong>Outlook:</strong> Drag the file into your Outlook calendar window.</li>
+        </ol>
+        <div class="modal-actions">
+          <button class="btn-download" onclick="generateICSFile()">Download .ics File</button>
+          <button class="btn-close" onclick="closeCalendarPopup()">Close</button>
+        </div>
       </div>
     </div>
 
-  <div class="meets-container">
-    <ul id="meets-list">Loading meets...</ul>
-  </div>
-</main>
+    
+
+    <div id="meets-list" class="meets-grid">
+      <div style="grid-column: 1/-1; text-align: center;">Loading meets...</div>
+    </div>
+
+    <div id="calendar-wrapper">
+      <div id="calendar"></div>
+    </div>
+
+  </main>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-<script src="firebase-config.js"></script>
-  <script src="firebase-helpers.js"></script>
-
+  <script src="firebase-config.js"></script>
+  
   <script>
-    const courseMap = {
-      'cabell midland': 'cabell-midland',
-      'mineral wells': 'chick-fil-a',
-      'meadowood': 'meadowood-park',
-      'beckley': 'beckley-invitational',
-      'south harrison': 'south-harrison',
-      'glen oak': 'glen-oak'
-    };
+    let calendar = null;
+    let allMeets = [];
 
-    // State Variables
-    let allMeetsData = [];
-    let currentView = 'list'; // can be 'list' or 'calendar'
-
-    async function initMeets() {
-      const container = document.getElementById('meets-list');
+    // 1. Initialize Firebase
+    async function init() {
+      if (typeof window.firebaseDatabase === 'undefined') {
+        console.warn("Waiting for Firebase...");
+        setTimeout(init, 500);
+        return;
+      }
       try {
-        if (typeof getAllMeets !== 'function') throw new Error("Firebase scripts not loaded");
-        
-        allMeetsData = await getAllMeets();
-        renderMeets(); // Draw initial state
+        const snapshot = await window.firebaseDatabase.ref('crosscountry/meets').once('value');
+        allMeets = [];
+        snapshot.forEach(child => {
+          allMeets.push({ id: child.key, ...child.val() });
+        });
 
-      } catch (e) {
-          console.error("Failed to load meets:", e);
-          container.innerHTML = '<li class="empty-state"><p>Failed to load meets. Please check your connection.</p></li>';
+        renderList('all');
+        initCalendar();
       } finally {
         document.dispatchEvent(new Event("MSMDataLoaded"));
       }
     }
 
-    function formatDate(dateString) {
-      if (!dateString) return 'Date TBD';
-      const parts = dateString.split('-');
-      if (parts.length === 3) {
-        const date = new Date(parts[0], parts[1] - 1, parts[2]);
-        return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+    // 2. View Switcher
+    function switchView(view) {
+      document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+      const buttons = document.querySelectorAll('.view-btn');
+      const listBtn = buttons[0];
+      const calBtn = buttons[1];
+      if (view === 'list' && listBtn) listBtn.classList.add('active');
+      else if (view === 'calendar' && calBtn) calBtn.classList.add('active');
+
+      const listEl = document.getElementById('meets-list');
+      const wrapperEl = document.getElementById('calendar-wrapper');
+      const controlsEl = document.getElementById('list-controls');
+
+      if (view === 'list') {
+        if (listEl) listEl.style.display = 'grid';
+        if (controlsEl) controlsEl.style.display = 'flex';
+        if (wrapperEl) wrapperEl.classList.remove('visible');
+      } else {
+        if (listEl) listEl.style.display = 'none';
+        if (controlsEl) controlsEl.style.display = 'none';
+        if (wrapperEl) {
+          wrapperEl.classList.add('visible');
+          // FullCalendar needs updateSize when container was hidden
+          if (calendar) {
+            requestAnimationFrame(() => {
+              calendar.updateSize();
+            });
+          }
+        }
       }
-      return new Date(dateString).toLocaleDateString();
     }
 
-    function getMonthName(dateString) {
-        if (!dateString) return 'TBD';
-        const parts = dateString.split('-');
-        if (parts.length === 3) {
-            const date = new Date(parts[0], parts[1] - 1, parts[2]);
-            return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-        }
-        return 'Other';
-    }
-
-    function getCourseSlug(location) {
-        if (!location) return null;
-        const locLower = location.toLowerCase();
-        for (const [key, slug] of Object.entries(courseMap)) {
-            if (locLower.includes(key)) return slug;
-        }
-        return null;
-    }
-
-    function renderMeets() {
+    // 3. Render List
+    function renderList(filter) {
       const container = document.getElementById('meets-list');
-      const searchTerm = document.getElementById('search-input').value.toLowerCase();
-      const courseFilter = document.getElementById('course-filter').value;
+      if (!container) return;
 
-      // 1. Filter Data
-      let filteredMeets = allMeetsData.filter(meet => {
-        const nameMatch = (meet.name || '').toLowerCase().includes(searchTerm);
-        const locMatch = (meet.location || '').toLowerCase().includes(searchTerm);
-        const matchesSearch = nameMatch || locMatch;
-        
-        const meetCourseSlug = getCourseSlug(meet.location);
-        const matchesCourse = (courseFilter === 'all') || (meetCourseSlug === courseFilter);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
 
-        return matchesSearch && matchesCourse;
-      });
+      const filtered = filter === 'all'
+        ? allMeets
+        : filter === 'upcoming'
+          ? allMeets.filter(m => m.date && new Date(m.date) >= today)
+          : allMeets.filter(m => m.date && new Date(m.date) < today);
 
-      if (!filteredMeets.length) {
-        container.innerHTML = '<li class="empty-state"><p>No meets match your search.</p></li>';
-        container.className = '';
+      const searchEl = document.getElementById('search');
+      const searchValue = (searchEl && searchEl.value) ? searchEl.value.toLowerCase() : '';
+      const filtered2 = searchValue
+        ? filtered.filter(m => (m.name || '').toLowerCase().includes(searchValue) || (m.location || '').toLowerCase().includes(searchValue))
+        : filtered;
+
+      // Soonest-first for upcoming meets, most-recent-first otherwise
+      filtered2.sort((a, b) => filter === 'upcoming'
+        ? new Date(a.date) - new Date(b.date)
+        : new Date(b.date) - new Date(a.date));
+
+      if (filtered2.length === 0) {
+        container.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--text-secondary);">No meets match your filters.</div>';
         return;
       }
-
-      // 2. Render based on View Type
-      if (currentView === 'list') {
-          container.className = ''; // standard vertical list
-          container.innerHTML = filteredMeets.map(meet => createMeetCard(meet)).join('');
-      } else {
-          // Calendar View (Group by Month)
-          container.className = ''; // Reset class, we will use internal grids
-          container.innerHTML = '';
-          
-          const groupedByMonth = {};
-          filteredMeets.forEach(meet => {
-              const month = getMonthName(meet.date);
-              if (!groupedByMonth[month]) groupedByMonth[month] = [];
-              groupedByMonth[month].push(meet);
-          });
-
-          for (const [month, meets] of Object.entries(groupedByMonth)) {
-              container.innerHTML += `<h2 class="month-header">${month}</h2>`;
-              const gridHtml = `<ul class="calendar-grid">
-                  ${meets.map(meet => createMeetCard(meet)).join('')}
-              </ul>`;
-              container.innerHTML += gridHtml;
-          }
-      }
-    }
-
-    function createMeetCard(meet) {
-        const date = formatDate(meet.date);
-        const location = meet.location || 'Location TBD';
-        const courseSlug = getCourseSlug(location);
-        
-        const courseBadge = courseSlug 
-          ? `<div><a href="courses/course viewer.html?course=${courseSlug}" class="course-badge">📍 View 3D Course</a></div>` 
-          : '';
-
+      container.innerHTML = filtered2.map(meet => {
+        const isUpcoming = meet.date ? new Date(meet.date) >= today : false;
         return `
-          <li>
-            <a href="meet.html?slug=${meet.slug}" style="font-weight:bold; font-size: 1.1rem; text-decoration:none;">${meet.name}</a>
-            <div style="color: var(--text-dim); margin-top: 4px;">📅 ${date}</div>
-            <div style="color: var(--text-dim);">🗺️ ${location}</div>
-            ${courseBadge}
-            ${meet.description ? `<div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border, #eee); font-size: 0.9rem;">
-              ${meet.description}
-            </div>` : ''}
-          </li>
-        `;
+        <a href="meet.html?slug=${encodeURIComponent(meet.slug || meet.id)}" class="meet-card">
+          <h3 class="meet-card-title">${(meet.name || 'Unnamed Meet').replace(/</g, '&lt;')}</h3>
+          <p class="meet-card-date">📅 ${new Date(meet.date).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}</p>
+          ${meet.location ? `<p class="meet-card-location">📍 ${String(meet.location).replace(/</g, '&lt;')}</p>` : '<p class="meet-card-location">📍 TBD</p>'}
+          ${meet.date ? `<span style="font-size:0.75rem; color:var(--text-tertiary); text-transform:uppercase;">${isUpcoming ? 'Upcoming' : 'Past'}</span>` : ''}
+        </a>
+      `;
+      }).join('');
     }
 
-    // Event Listeners for Filters & Views
-    document.addEventListener('DOMContentLoaded', () => {
-      // Init data
-      initMeets();
+    function filterList(filter, btn) {
+      document.querySelectorAll('.filter-chip').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderList(filter);
+    }
 
-      // Hook up search and filter inputs
-      document.getElementById('search-input').addEventListener('input', renderMeets);
-      document.getElementById('course-filter').addEventListener('change', renderMeets);
+    // 4. Initialize Calendar (FullCalendar 6)
+    function initCalendar() {
+      const calendarEl = document.getElementById('calendar');
+      if (!calendarEl || typeof FullCalendar === 'undefined') return;
 
-      // Hook up view toggles
-      const btnList = document.getElementById('btn-list-view');
-      const btnCal = document.getElementById('btn-cal-view');
+      const eventColor = (meet) => {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        if (meet.date && new Date(meet.date) < today) return '#5a6472'; // past meets - muted
+        return '#1a5f2a'; // upcoming meets
+      };
 
-      btnList.addEventListener('click', () => {
-          currentView = 'list';
-          btnList.classList.add('active');
-          btnCal.classList.remove('active');
-          renderMeets();
+      calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        height: 'auto',
+        headerToolbar: {
+          left: 'prev,next today',
+          center: 'title',
+          right: 'dayGridMonth,timeGridWeek,listMonth'
+        },
+        events: allMeets.map(meet => ({
+          id: meet.id,
+          title: meet.name || 'Meet',
+          start: meet.date,
+          allDay: true,
+          url: `meet.html?slug=${encodeURIComponent(meet.slug || meet.id)}`,
+          backgroundColor: eventColor(meet),
+          borderColor: eventColor(meet),
+          extendedProps: { location: meet.location }
+        })),
+        eventClick: function(info) {
+          info.jsEvent.preventDefault();
+          if (info.event.url) window.location.href = info.event.url;
+        },
+        eventDidMount: function(info) {
+          info.el.setAttribute('title', [info.event.title, info.event.extendedProps.location].filter(Boolean).join(' · ') || info.event.title);
+        }
       });
+      calendar.render();
+    }
 
-      btnCal.addEventListener('click', () => {
-          currentView = 'calendar';
-          btnCal.classList.add('active');
-          btnList.classList.remove('active');
-          renderMeets();
-      });
+    document.addEventListener('DOMContentLoaded', init);
+    
+    // Add search input listener
+    document.getElementById('search').addEventListener('input', () => {
+      const activeFilterChip = document.querySelector('.filter-chip.active');
+      const activeLabel = activeFilterChip ? activeFilterChip.textContent : 'all';
+      
+      // Map button text to filter value
+      let filterValue = 'all';
+      if (activeLabel.includes('Upcoming')) filterValue = 'upcoming';
+      else if (activeLabel.includes('Past')) filterValue = 'past';
+      
+      renderList(filterValue);
     });
+    
+    function toggleExportMenu() {
+    document.getElementById("export-menu").classList.toggle("show");
+}
+
+// Close dropdown if user clicks elsewhere
+window.onclick = function(event) {
+    if (!event.target.matches('.export-main-btn')) {
+        const dropdowns = document.getElementsByClassName("export-dropdown");
+        for (let i = 0; i < dropdowns.length; i++) {
+            dropdowns[i].classList.remove('show');
+        }
+    }
+}
+
+function exportFullSeason(format) {
+    if (format === 'ics') {
+        generateICSFile();
+    } else {
+        // For Google/Outlook Web, we typically export the NEXT upcoming meet 
+        // because web URLs don't support bulk importing 50+ events at once easily.
+        const nextMeet = allMeets.sort((a,b) => new Date(a.date) - new Date(b.date))
+                                 .find(m => new Date(m.date) >= new Date());
+        
+        if (!nextMeet) return alert("No upcoming meets found to export.");
+        
+        const startTime = new Date(nextMeet.date).toISOString().replace(/-|:|\.\d+/g, "");
+        const endTime = new Date(new Date(nextMeet.date).getTime() + 3600000).toISOString().replace(/-|:|\.\d+/g, "");
+        const details = `Results at: https://mountainstatemiles.com/CrossCountry/meet.html?slug=${nextMeet.slug}`;
+
+        if (format === 'google') {
+            const url = `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(nextMeet.name)}&dates=${startTime}/${endTime}&details=${encodeURIComponent(details)}&location=${encodeURIComponent(nextMeet.location || 'TBD')}`;
+            window.open(url, '_blank');
+        } else if (format === 'outlook') {
+            const url = `https://outlook.live.com/calendar/0/deeplink/compose?path=/calendar/action/compose&rru=addevent&subject=${encodeURIComponent(nextMeet.name)}&startdt=${startTime}&enddt=${endTime}&body=${encodeURIComponent(details)}&location=${encodeURIComponent(nextMeet.location || 'TBD')}`;
+            window.open(url, '_blank');
+        }
+    }
+}
+
+function generateICSFile() {
+    const lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Mountain State Miles//Cross Country Meets//EN", "CALSCALE:GREGORIAN"];
+    allMeets.forEach(meet => {
+      const dateStr = (meet.date || '').toString().replace(/-/g, '').slice(0, 8);
+      if (!dateStr) return;
+      const summary = (meet.name || 'Cross Country Meet').replace(/[,;\\]/g, (match) => '\\' + match);
+      const location = (meet.location || 'TBD').replace(/[,;\\]/g, (match) => '\\' + match);
+      const url = `https://mountainstatemiles.com/CrossCountry/meet.html?slug=${encodeURIComponent(meet.slug || meet.id)}`;
+      lines.push("BEGIN:VEVENT");
+      lines.push("DTSTART;VALUE=DATE:" + dateStr);
+      lines.push("DTEND;VALUE=DATE:" + dateStr);
+      lines.push("SUMMARY:" + summary);
+      lines.push("LOCATION:" + location);
+      lines.push("URL:" + url);
+      lines.push("END:VEVENT");
+    });
+    lines.push("END:VCALENDAR");
+    const blob = new Blob([lines.join("\r\n")], { type: "text/calendar;charset=utf-8" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "CrossCountry_Meets.ics";
+    a.click();
+    URL.revokeObjectURL(a.href);
+    closeCalendarPopup();
+  }
+// --- POPUP CONTROLS ---
+function showCalendarPopup() {
+    document.getElementById('calendarModal').style.display = 'flex';
+    toggleExportMenu(); // close dropdown
+}
+function closeCalendarPopup() {
+    document.getElementById('calendarModal').style.display = 'none';
+}
+
+// --- PRINT & DOCUMENT EXPORTS ---
+function exportTable(type) {
+    if (type === 'csv') {
+        let csv = "Meet Name,Date,Location\n";
+        allMeets.forEach(m => {
+            csv += `"${m.name}","${m.date}","${m.location || 'TBD'}"\n`;
+        });
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "Meet_Schedule.csv";
+        a.click();
+    } 
+    else if (type === 'pdf' || type === 'png') {
+        // The most reliable way for mobile/desktop to "Save as PDF" 
+        // without heavy libraries is to trigger the Print View.
+        // Modern Print dialogs allow "Save as PDF" or "Save as Image"
+        window.print();
+    }
+    toggleExportMenu();
+}
+
   </script>
+
 
   <div id="global-footer"></div>
 
