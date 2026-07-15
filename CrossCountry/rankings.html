@@ -10,7 +10,7 @@
   <link rel="apple-touch-icon" sizes="180x180" href="assets/Favicon Generator/apple-touch-icon.png" />
   <link rel="manifest" href="assets/Favicon Generator/site.webmanifest" />
   <link rel="stylesheet" href="/assets/main.css" />
-<link rel="stylesheet" href="/assets/msm-loader.css" />
+
 
   
   <script src="/assets/theme-toggle.js" defer></script>
@@ -268,8 +268,8 @@
                             <tr>
                                 <td data-label="Rank">${index + 1}</td>
                                 <td data-label="Athlete">
-                                    <!-- Link uses athlete_name, URL encoded for safety -->
-                                    <a href="athlete.html?name=${encodeURIComponent(runner.athlete_name || runner.id)}" style="color: var(--xc-primary); text-decoration: none; font-weight: 600;">${runner.athlete_name || ''}</a>
+                                    <!-- Link uses athlete_name + school_slug (results have no athlete_id foreign key) -->
+                                    <a href="athlete.html?name=${encodeURIComponent(runner.athlete_name || '')}&school=${encodeURIComponent(runner.school_slug || '')}" style="color: var(--xc-primary); text-decoration: none; font-weight: 600;">${runner.athlete_name || ''}</a>
                                 </td>
                                 <td data-label="Grade">${formatGrade(runner.grad_year) || ''}</td>
                                 <td data-label="School">${runner.school_name || runner.school_slug || ''}</td>

@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Course Admin — Cross Country Admin</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+
+    :root {
+      --bg: #0a0e1a;
+      --panel: #0f1626;
+      --card: #151f2e;
+      --accent: #ff7b2d;
+      --accent-hover: #ff8c42;
+      --muted: #9fb4c8;
+      --border: rgba(255,255,255,0.08);
+      --hover: rgba(255,255,255,0.05);
+      --success: #28a745;
+      --danger: #dc3545;
+      --warning: #ffc107;
+      --info: #007bff;
+    }
+
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: #e6f0f7;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 40px 20px 80px;
+    }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      text-decoration: none;
+      margin-bottom: 20px;
+      transition: color 0.2s;
+    }
+    .back-link:hover { color: #fff; }
+
+    .header {
+      margin-bottom: 32px;
+      text-align: center;
+    }
+    .header h1 {
+      font-size: 2.3rem;
+      font-weight: 800;
+      margin: 0 0 10px;
+      background: linear-gradient(90deg, var(--accent), var(--accent-hover));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .header p { color: var(--muted); font-size: 1.05rem; margin: 0; }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 30px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    }
+
+    .card-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin: 0 0 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 18px;
+    }
+    @media (max-width: 720px) {
+      .form-grid { grid-template-columns: 1fr; }
+    }
+    .form-grid .full { grid-column: 1 / -1; }
+
+    .form-group { margin-bottom: 0; }
+    .form-label {
+      display: block;
+      font-weight: 600;
+      color: var(--muted);
+      font-size: 0.85rem;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+    .form-input, .form-select, .form-textarea {
+      width: 100%;
+      padding: 12px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: #e6f0f7;
+      font-size: 0.95rem;
+      font-family: inherit;
+    }
+    .form-textarea { resize: vertical; min-height: 70px; }
+    .form-input:focus, .form-select:focus, .form-textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(255, 123, 45, 0.1);
+    }
+    .form-hint { color: var(--muted); font-size: 0.78rem; margin-top: 6px; }
+
+    .btn {
+      padding: 12px 22px;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 0.95rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover { background: var(--accent-hover); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(255,123,45,0.3); }
+    .btn-secondary { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+    .btn-secondary:hover { background: var(--hover); color: #fff; }
+    .btn-danger { background: rgba(220,53,69,0.12); color: #ff8a94; border: 1px solid rgba(220,53,69,0.35); }
+    .btn-danger:hover { background: rgba(220,53,69,0.22); }
+    .btn-sm { padding: 7px 12px; font-size: 0.82rem; }
+
+    .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 22px; }
+
+    .surfaces-editor { display: flex; flex-direction: column; gap: 10px; }
+    .surface-row { display: grid; grid-template-columns: 1.4fr 0.8fr auto; gap: 10px; align-items: center; }
+    @media (max-width: 560px) { .surface-row { grid-template-columns: 1fr; } }
+
+    table.admin-table { width: 100%; border-collapse: collapse; margin-top: 6px; }
+    table.admin-table thead { background: rgba(255,255,255,0.03); }
+    table.admin-table th {
+      padding: 12px 14px; text-align: left; font-weight: 600; color: var(--muted);
+      font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.5px;
+      border-bottom: 2px solid var(--border);
+    }
+    table.admin-table td {
+      padding: 12px 14px; border-bottom: 1px solid var(--border); font-size: 0.92rem; vertical-align: top;
+    }
+    table.admin-table tbody tr:hover { background: var(--hover); }
+    .actions-cell { display: flex; gap: 8px; white-space: nowrap; }
+
+    .pill {
+      display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 0.75rem; font-weight: 600;
+    }
+    .pill.easy { background: rgba(40,167,69,0.12); color: #4fd97a; }
+    .pill.medium { background: rgba(255,193,7,0.14); color: #ffcf4d; }
+    .pill.hard { background: rgba(220,53,69,0.14); color: #ff8a94; }
+    .pill.none { background: rgba(255,255,255,0.06); color: var(--muted); }
+
+    .muted-text { color: var(--muted); font-size: 0.85rem; }
+
+    .alert {
+      padding: 14px 18px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 0.92rem;
+    }
+    .alert-success { background: rgba(40,167,69,0.1); border: 1px solid rgba(40,167,69,0.3); color: #28a745; }
+    .alert-error { background: rgba(220,53,69,0.1); border: 1px solid rgba(220,53,69,0.3); color: #dc3545; }
+
+    .empty-row { text-align: center; padding: 30px 0; color: var(--muted); }
+
+    .badge-count {
+      font-size: 0.8rem; color: var(--muted); font-weight: 500;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <a href="../admin.html" class="back-link">← Back to Admin</a>
+
+    <div class="header">
+      <h1>🏞️ Course Admin</h1>
+      <p>Manage cross country course records (crosscountry/courses)</p>
+    </div>
+
+    <div id="alert-box"></div>
+
+    <div class="card">
+      <div class="card-title">
+        <span id="form-title">➕ Add New Course</span>
+      </div>
+
+      <form id="course-form">
+        <input type="hidden" id="course-id" value="" />
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label" for="f-name">Name</label>
+            <input class="form-input" id="f-name" type="text" placeholder="Cabell Midland" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="f-slug">Slug</label>
+            <input class="form-input" id="f-slug" type="text" placeholder="cabell-midland" required />
+            <div class="form-hint">Lowercase, hyphenated, used to link meets/results to this course.</div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="f-location">Location</label>
+            <input class="form-input" id="f-location" type="text" placeholder="Cabell Midland High School, Ona, WV" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="f-distance">Distance (meters)</label>
+            <input class="form-input" id="f-distance" type="number" min="0" step="1" placeholder="5000" />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="f-difficulty">Difficulty</label>
+            <select class="form-select" id="f-difficulty">
+              <option value="">— Unspecified —</option>
+              <option value="Easy">Easy</option>
+              <option value="Medium">Medium</option>
+              <option value="Hard">Hard</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="f-video">Video URL</label>
+            <input class="form-input" id="f-video" type="text" placeholder="/CrossCountry/courses/assets/Cabell Midland.mp4" />
+          </div>
+
+          <div class="form-group full">
+            <label class="form-label" for="f-description">Description</label>
+            <textarea class="form-textarea" id="f-description" placeholder="Short public-facing description of the course."></textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="f-gpx">GPX URL</label>
+            <input class="form-input" id="f-gpx" type="text" placeholder="/CrossCountry/courses/Cabell Midland.gpx" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">&nbsp;</label>
+            <div class="form-hint">Path to the .gpx track file used by the 3D course viewer.</div>
+          </div>
+
+          <div class="form-group full">
+            <label class="form-label" for="f-notes">Notes</label>
+            <textarea class="form-textarea" id="f-notes" placeholder="Terrain notes shown on the course viewer page (hills, footing, weather sensitivity, etc)."></textarea>
+          </div>
+
+          <div class="form-group full">
+            <label class="form-label">Surface Breakdown</label>
+            <div id="surfaces-editor" class="surfaces-editor"></div>
+            <div class="btn-row" style="margin-top:10px;">
+              <button type="button" class="btn btn-secondary btn-sm" id="add-surface-row">+ Add Surface Row</button>
+            </div>
+            <div class="form-hint">e.g. Grass 80%, Gravel 20%. Percentages don't need to be validated here, just reflect the real course.</div>
+          </div>
+        </div>
+
+        <div class="btn-row">
+          <button type="submit" class="btn btn-primary" id="save-btn">💾 Save Course</button>
+          <button type="button" class="btn btn-secondary" id="cancel-edit-btn" style="display:none;">Cancel Edit</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="card">
+      <div class="card-title">
+        <span>📋 All Courses</span>
+        <span class="badge-count" id="course-count"></span>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Slug</th>
+              <th>Location</th>
+              <th>Distance</th>
+              <th>Difficulty</th>
+              <th>Media</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="courses-tbody">
+            <tr><td colspan="7" class="empty-row">Loading courses…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <script src="../firebase-config.js"></script>
+  <script src="../firebase-helpers.js"></script>
+  <script>
+    // Gate this page behind the same "logged in" flag login.html uses.
+    if (localStorage.getItem("&#120; &#99; &#97; &#100; &#109; &#105; &#110;") !== "&#116; &#114; &#117; &#101;") {
+      window.location.replace("../login.html");
+    }
+
+    const SURFACE_TYPES = ['Grass', 'Dirt Trail', 'Gravel', 'Asphalt', 'Track'];
+
+    let allCourses = [];
+    let editingId = null;
+
+    async function waitForFirebase() {
+      let attempts = 0;
+      while (typeof window.firebaseDatabase === 'undefined' && attempts < 50) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        attempts++;
+      }
+    }
+
+    function showAlert(message, type) {
+      const box = document.getElementById('alert-box');
+      box.innerHTML = `<div class="alert alert-${type === 'error' ? 'error' : 'success'}">${type === 'error' ? '⚠️' : '✅'} ${message}</div>`;
+      setTimeout(() => { box.innerHTML = ''; }, 4000);
+    }
+
+    function slugify(str) {
+      return (str || '').toString().trim().toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, '')
+        .replace(/\s+/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '');
+    }
+
+    function difficultyPillClass(difficulty) {
+      const d = (difficulty || '').toLowerCase();
+      if (d === 'easy') return 'easy';
+      if (d === 'medium') return 'medium';
+      if (d === 'hard') return 'hard';
+      return 'none';
+    }
+
+    // ---------- Surfaces mini-editor ----------
+    function addSurfaceRow(type, pct) {
+      const container = document.getElementById('surfaces-editor');
+      const row = document.createElement('div');
+      row.className = 'surface-row';
+
+      const select = document.createElement('select');
+      select.className = 'form-select surface-type';
+      SURFACE_TYPES.forEach(t => {
+        const opt = document.createElement('option');
+        opt.value = t;
+        opt.textContent = t;
+        if (t === type) opt.selected = true;
+        select.appendChild(opt);
+      });
+
+      const pctInput = document.createElement('input');
+      pctInput.type = 'number';
+      pctInput.min = '0';
+      pctInput.max = '100';
+      pctInput.className = 'form-input surface-pct';
+      pctInput.placeholder = 'Pct %';
+      pctInput.value = (pct === undefined || pct === null) ? '' : pct;
+
+      const removeBtn = document.createElement('button');
+      removeBtn.type = 'button';
+      removeBtn.className = 'btn btn-danger btn-sm';
+      removeBtn.textContent = 'Remove';
+      removeBtn.addEventListener('click', () => row.remove());
+
+      row.appendChild(select);
+      row.appendChild(pctInput);
+      row.appendChild(removeBtn);
+      container.appendChild(row);
+    }
+
+    function clearSurfaceRows() {
+      document.getElementById('surfaces-editor').innerHTML = '';
+    }
+
+    function collectSurfaces() {
+      const rows = document.querySelectorAll('#surfaces-editor .surface-row');
+      const surfaces = [];
+      rows.forEach(row => {
+        const type = row.querySelector('.surface-type').value;
+        const pctRaw = row.querySelector('.surface-pct').value;
+        if (pctRaw === '' || pctRaw === null) return;
+        const pct = parseFloat(pctRaw);
+        if (isNaN(pct)) return;
+        surfaces.push({ type, pct });
+      });
+      return surfaces;
+    }
+
+    document.getElementById('add-surface-row').addEventListener('click', () => addSurfaceRow('Grass', ''));
+
+    // ---------- Form <-> course record ----------
+    function resetForm() {
+      editingId = null;
+      document.getElementById('course-id').value = '';
+      document.getElementById('course-form').reset();
+      clearSurfaceRows();
+      addSurfaceRow('Grass', '');
+      document.getElementById('form-title').textContent = '➕ Add New Course';
+      document.getElementById('save-btn').textContent = '💾 Save Course';
+      document.getElementById('cancel-edit-btn').style.display = 'none';
+    }
+
+    function loadCourseIntoForm(course) {
+      editingId = course.id;
+      document.getElementById('course-id').value = course.id || '';
+      document.getElementById('f-name').value = course.name || '';
+      document.getElementById('f-slug').value = course.slug || '';
+      document.getElementById('f-location').value = course.location || '';
+      document.getElementById('f-distance').value = course.distance || '';
+      document.getElementById('f-difficulty').value = course.difficulty || '';
+      document.getElementById('f-description').value = course.description || '';
+      document.getElementById('f-video').value = course.video_url || '';
+      document.getElementById('f-gpx').value = course.gpx_url || '';
+      document.getElementById('f-notes').value = course.notes || '';
+
+      clearSurfaceRows();
+      if (Array.isArray(course.surfaces) && course.surfaces.length) {
+        course.surfaces.forEach(s => addSurfaceRow(s.type, s.pct));
+      } else {
+        addSurfaceRow('Grass', '');
+      }
+
+      document.getElementById('form-title').textContent = `✏️ Editing: ${course.name || course.slug}`;
+      document.getElementById('save-btn').textContent = '💾 Update Course';
+      document.getElementById('cancel-edit-btn').style.display = 'inline-flex';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    document.getElementById('cancel-edit-btn').addEventListener('click', resetForm);
+
+    document.getElementById('f-name').addEventListener('input', (e) => {
+      // Only auto-fill the slug while creating a new course (don't clobber an
+      // intentionally-edited slug on an existing record).
+      if (!editingId) {
+        document.getElementById('f-slug').value = slugify(e.target.value);
+      }
+    });
+
+    document.getElementById('course-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const courseData = {
+        name: document.getElementById('f-name').value.trim(),
+        slug: slugify(document.getElementById('f-slug').value),
+        location: document.getElementById('f-location').value.trim(),
+        distance: document.getElementById('f-distance').value ? parseFloat(document.getElementById('f-distance').value) : '',
+        difficulty: document.getElementById('f-difficulty').value,
+        description: document.getElementById('f-description').value.trim(),
+        video_url: document.getElementById('f-video').value.trim(),
+        gpx_url: document.getElementById('f-gpx').value.trim(),
+        notes: document.getElementById('f-notes').value.trim(),
+        surfaces: collectSurfaces()
+      };
+
+      if (!courseData.name || !courseData.slug) {
+        showAlert('Name and slug are required.', 'error');
+        return;
+      }
+
+      if (editingId) courseData.id = editingId;
+
+      const saveBtn = document.getElementById('save-btn');
+      saveBtn.disabled = true;
+      try {
+        await waitForFirebase();
+        const result = await window.saveCourse(courseData);
+        if (result && result.error) {
+          showAlert(`Failed to save course: ${result.error}`, 'error');
+        } else {
+          showAlert(`Course "${courseData.name}" saved successfully.`, 'success');
+          resetForm();
+          await loadCourses();
+        }
+      } catch (err) {
+        console.error(err);
+        showAlert('Failed to save course.', 'error');
+      } finally {
+        saveBtn.disabled = false;
+      }
+    });
+
+    async function deleteCourseById(id, name) {
+      if (!confirm(`Delete course "${name}"? This cannot be undone.`)) return;
+      try {
+        await waitForFirebase();
+        const ok = await window.deleteCourse(id);
+        if (ok) {
+          showAlert(`Course "${name}" deleted.`, 'success');
+          if (editingId === id) resetForm();
+          await loadCourses();
+        } else {
+          showAlert('Failed to delete course.', 'error');
+        }
+      } catch (err) {
+        console.error(err);
+        showAlert('Failed to delete course.', 'error');
+      }
+    }
+
+    function renderMediaBadges(course) {
+      const badges = [];
+      if (course.video_url) badges.push('🎥 Video');
+      if (course.gpx_url) badges.push('🗺️ GPX');
+      if (Array.isArray(course.surfaces) && course.surfaces.length) badges.push('📊 Surfaces');
+      return badges.length ? badges.join(' &nbsp; ') : '<span class="muted-text">— none —</span>';
+    }
+
+    function renderCoursesTable() {
+      const tbody = document.getElementById('courses-tbody');
+      document.getElementById('course-count').textContent = allCourses.length ? `${allCourses.length} course${allCourses.length === 1 ? '' : 's'}` : '';
+
+      if (!allCourses.length) {
+        tbody.innerHTML = '<tr><td colspan="7" class="empty-row">No courses yet. Add one above to get started.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = allCourses.map(course => `
+        <tr>
+          <td><strong>${course.name || '—'}</strong></td>
+          <td><code>${course.slug || '—'}</code></td>
+          <td class="muted-text">${course.location || '—'}</td>
+          <td class="muted-text">${course.distance ? `${course.distance}m` : '—'}</td>
+          <td><span class="pill ${difficultyPillClass(course.difficulty)}">${course.difficulty || 'Unspecified'}</span></td>
+          <td class="muted-text">${renderMediaBadges(course)}</td>
+          <td>
+            <div class="actions-cell">
+              <button type="button" class="btn btn-secondary btn-sm" data-edit="${course.id}">Edit</button>
+              <button type="button" class="btn btn-danger btn-sm" data-delete="${course.id}">Delete</button>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+
+      tbody.querySelectorAll('[data-edit]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const course = allCourses.find(c => c.id === btn.dataset.edit);
+          if (course) loadCourseIntoForm(course);
+        });
+      });
+      tbody.querySelectorAll('[data-delete]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const course = allCourses.find(c => c.id === btn.dataset.delete);
+          deleteCourseById(btn.dataset.delete, course ? course.name : btn.dataset.delete);
+        });
+      });
+    }
+
+    async function loadCourses() {
+      try {
+        await waitForFirebase();
+        allCourses = await window.getAllCourses();
+        renderCoursesTable();
+      } catch (err) {
+        console.error(err);
+        document.getElementById('courses-tbody').innerHTML = '<tr><td colspan="7" class="empty-row">Failed to load courses.</td></tr>';
+      }
+    }
+
+    resetForm();
+    loadCourses();
+  </script>
+</body>
+</html>

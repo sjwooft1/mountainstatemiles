@@ -10,7 +10,7 @@
   <link rel="apple-touch-icon" sizes="180x180" href="assets/Favicon Generator/apple-touch-icon.png" />
   <link rel="manifest" href="assets/Favicon Generator/site.webmanifest" />
   <link rel="stylesheet" href="/assets/main.css" />
-<link rel="stylesheet" href="/assets/msm-loader.css" />
+
   
   <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
@@ -212,12 +212,13 @@
                   // ===============================================
 
                   const gender = athlete.gender === 'M' ? 'Male' : (athlete.gender === 'F' ? 'Female' : 'N/A');
-                  const slug = athlete.athlete_slug;
-                  
-                  // Link to athlete page
-                  const link = slug 
-                      ? `<a href="athlete.html?slug=${slug}" style="color: var(--xc-primary); font-weight: 600;">${name}</a>`
-                      : name;
+
+                  // Link to athlete page. Athlete records don't have a stable slug in this
+                  // database, so we resolve profiles by name + school (athlete.html supports
+                  // this as a robust fallback - see its `id` > `slug` > `name`+`school` lookup order).
+                  const link = athlete.id
+                      ? `<a href="athlete.html?id=${athlete.id}" style="color: var(--xc-primary); font-weight: 600;">${name}</a>`
+                      : `<a href="athlete.html?name=${encodeURIComponent(name)}&school=${encodeURIComponent(schoolSlug)}" style="color: var(--xc-primary); font-weight: 600;">${name}</a>`;
 
                   return `
                     <tr>

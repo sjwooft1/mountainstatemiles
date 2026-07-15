@@ -1,373 +1,177 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-<link rel="stylesheet" href="/assets/msm-loader.css" />
-  <title>CSV Import — Cross Country Admin</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <style>
-    * { box-sizing: border-box; }
-    
-    :root {
-      --bg: #0a0e1a;
-      --panel: #0f1626;
-      --card: #151f2e;
-      --accent: #ff7b2d;
-      --accent-hover: #ff8c42;
-      --muted: #9fb4c8;
-      --border: rgba(255,255,255,0.08);
-      --hover: rgba(255,255,255,0.05);
-      --success: #28a745;
-      --danger: #dc3545;
-      --warning: #ffc107;
-      --info: #007bff;
-    }
-    
-    html, body {
-      height: 100%;
-      margin: 0;
-      padding: 0;
-      font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
-      background: var(--bg);
-      color: #e6f0f7;
-    }
-    
-    .container {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 40px 20px;
-    }
-    
-    .header {
-      margin-bottom: 40px;
-      text-align: center;
-    }
-    
-    .header h1 {
-      font-size: 2.5rem;
-      font-weight: 800;
-      margin: 0 0 10px;
-      background: linear-gradient(90deg, var(--accent), var(--accent-hover));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-    
-    .header p {
-      color: var(--muted);
-      font-size: 1.1rem;
-    }
-    
-    .card {
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 30px;
-      margin-bottom: 24px;
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
-    }
-    
-    .card-title {
-      font-size: 1.3rem;
-      font-weight: 700;
-      margin: 0 0 20px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    
-    .upload-zone {
-      border: 2px dashed var(--border);
-      border-radius: 12px;
-      padding: 60px 20px;
-      text-align: center;
-      transition: all 0.3s;
-      cursor: pointer;
-      background: var(--card);
-    }
-    
-    .upload-zone:hover {
-      border-color: var(--accent);
-      background: rgba(255, 123, 45, 0.05);
-    }
-    
-    .upload-zone.dragover {
-      border-color: var(--accent);
-      background: rgba(255, 123, 45, 0.1);
-      transform: scale(1.02);
-    }
-    
-    .upload-icon {
-      font-size: 4rem;
-      margin-bottom: 20px;
-    }
-    
-    .upload-text {
-      font-size: 1.2rem;
-      font-weight: 600;
-      margin-bottom: 10px;
-    }
-    
-    .upload-hint {
-      color: var(--muted);
-      font-size: 0.9rem;
-    }
-    
-    .file-input {
-      display: none;
-    }
-    
-    .btn {
-      padding: 12px 24px;
-      border: none;
-      border-radius: 8px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s;
-      font-size: 1rem;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-    }
-    
-    .btn-primary {
-      background: var(--accent);
-      color: #fff;
-    }
-    
-    .btn-primary:hover {
-      background: var(--accent-hover);
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(255, 123, 45, 0.3);
-    }
-    
-    .btn-secondary {
-      background: transparent;
-      color: var(--muted);
-      border: 1px solid var(--border);
-    }
-    
-    .btn-secondary:hover {
-      background: var(--hover);
-      color: #fff;
-    }
-    
-    .btn-success {
-      background: var(--success);
-      color: #fff;
-    }
-    
-    .btn-success:hover {
-      background: #218838;
-    }
-    
-    .file-info {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 16px;
-      background: var(--card);
-      border-radius: 8px;
-      margin-top: 20px;
-    }
-    
-    .file-info-name {
-      font-weight: 600;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    
-    .file-info-size {
-      color: var(--muted);
-      font-size: 0.9rem;
-    }
-    
-    .preview-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
-      background: var(--card);
-      border-radius: 8px;
-      overflow: hidden;
-    }
-    
-    .preview-table thead {
-      background: var(--panel);
-    }
-    
-    .preview-table th {
-      padding: 12px 16px;
-      text-align: left;
-      font-weight: 600;
-      color: var(--muted);
-      font-size: 0.85rem;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      border-bottom: 2px solid var(--border);
-    }
-    
-    .preview-table td {
-      padding: 12px 16px;
-      border-bottom: 1px solid var(--border);
-    }
-    
-    .preview-table tbody tr:hover {
-      background: var(--hover);
-    }
-    
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 16px;
-      margin-top: 20px;
-    }
-    
-    .stat-item {
-      background: var(--card);
-      padding: 20px;
-      border-radius: 8px;
-      text-align: center;
-      border: 1px solid var(--border);
-    }
-    
-    .stat-number {
-      font-size: 2rem;
-      font-weight: 700;
-      color: var(--accent);
-      margin: 0;
-    }
-    
-    .stat-label {
-      color: var(--muted);
-      font-size: 0.9rem;
-      margin-top: 8px;
-    }
-    
-    .alert {
-      padding: 16px 20px;
-      border-radius: 8px;
-      margin-bottom: 20px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-    
-    .alert-success {
-      background: rgba(40, 167, 69, 0.1);
-      border: 1px solid rgba(40, 167, 69, 0.3);
-      color: #28a745;
-    }
-    
-    .alert-error {
-      background: rgba(220, 53, 69, 0.1);
-      border: 1px solid rgba(220, 53, 69, 0.3);
-      color: #dc3545;
-    }
-    
-    .alert-warning {
-      background: rgba(255, 193, 7, 0.1);
-      border: 1px solid rgba(255, 193, 7, 0.3);
-      color: #ffc107;
-    }
-    
-    .error-list {
-      background: var(--card);
-      border-radius: 8px;
-      padding: 20px;
-      margin-top: 20px;
-      max-height: 300px;
-      overflow-y: auto;
-    }
-    
-    .error-item {
-      padding: 8px 12px;
-      margin-bottom: 8px;
-      background: rgba(220, 53, 69, 0.1);
-      border-left: 3px solid var(--danger);
-      border-radius: 4px;
-      font-size: 0.9rem;
-    }
-    
-    .loading {
-      display: inline-block;
-      width: 20px;
-      height: 20px;
-      border: 3px solid var(--border);
-      border-top-color: var(--accent);
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-    }
-    
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-    
-    .back-link {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      color: var(--muted);
-      text-decoration: none;
-      margin-bottom: 20px;
-      transition: color 0.2s;
-    }
-    
-    .back-link:hover {
-      color: #fff;
-    }
-    
-    .meet-select {
-      width: 100%;
-      padding: 12px;
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      color: #e6f0f7;
-      font-size: 1rem;
-      margin-bottom: 20px;
-    }
-    
-    .meet-select:focus {
-      outline: none;
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(255, 123, 45, 0.1);
-    }
-    
-    .form-group {
-      margin-bottom: 16px;
-    }
-    
-    .form-label {
-      display: block;
-      font-weight: 600;
-      color: var(--muted);
-      font-size: 0.9rem;
-      margin-bottom: 8px;
-    }
-    
-    .form-input {
-      width: 100%;
-      padding: 12px;
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      color: #e6f0f7;
-      font-size: 1rem;
-    }
-    
-    .form-input:focus {
-      outline: none;
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(255, 123, 45, 0.1);
-    }
-  </style>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="/assets/msm-loader.css" />
+    <title>Cross Country Meet Import Engine</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <style>
+        :root {
+            --bg-color: #0b1120;
+            --panel-bg: #111827;
+            --card-bg: #1f2937;
+            --primary: #ff7b2d;
+            --primary-hover: #ff9a4f;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --border: rgba(255, 255, 255, 0.1);
+            --radius: 12px;
+        }
 
-  <link rel="stylesheet" href="/assets/main.css" />
-  
-  <script src="/assets/theme-toggle.js" defer></script>
-  <script src="/assets/components.js" defer></script>
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: 'Inter', system-ui, sans-serif;
+            background: var(--bg-color);
+            color: var(--text-main);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        h1 {
+            font-size: 1.9rem;
+            font-weight: 800;
+            margin: 0 0 6px;
+            background: linear-gradient(90deg, var(--primary), var(--primary-hover));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        h3 {
+            font-size: 1.05rem;
+            font-weight: 700;
+            margin: 0 0 10px;
+        }
+
+        .subtitle { color: var(--text-muted); margin: 0 0 28px; font-size: 0.95rem; }
+
+        .card {
+            background: var(--panel-bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        select, input, textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--card-bg);
+            color: var(--text-main);
+            font-family: inherit;
+            font-size: 0.95rem;
+            outline: none;
+        }
+
+        select:focus, input:focus, textarea:focus { border-color: var(--primary); }
+
+        textarea { min-height: 220px; font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 0.85rem; resize: vertical; white-space: pre; }
+
+        .btn-group { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+
+        button {
+            padding: 10px 18px;
+            border-radius: 8px;
+            border: none;
+            font-weight: 700;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .btn-primary { background: var(--primary); color: #1a0d02; }
+        .btn-primary:hover:not(:disabled) { background: var(--primary-hover); }
+        .btn-secondary { background: var(--card-bg); color: var(--text-main); border: 1px solid var(--border); }
+        .btn-secondary:hover:not(:disabled) { border-color: var(--primary); }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .toolbar { display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; margin-bottom: 14px; }
+        @media (max-width: 720px) { .toolbar { grid-template-columns: 1fr; } }
+
+        .defaults-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px; }
+        @media (max-width: 720px) { .defaults-row { grid-template-columns: 1fr; } }
+        .defaults-row label { display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.03em; }
+
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; margin-bottom: 20px; }
+        .stat-box { background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px; padding: 16px; text-align: center; }
+        .stat-val { font-size: 1.9rem; font-weight: 800; }
+        .stat-label { color: var(--text-muted); font-size: 0.8rem; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.03em; }
+        .text-success { color: var(--success); }
+        .text-danger { color: var(--danger); }
+        .text-warning { color: var(--warning); }
+
+        .event-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
+        .event-checkbox {
+            display: flex; align-items: center; gap: 8px;
+            background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px;
+            padding: 10px 12px; font-size: 0.85rem; cursor: pointer;
+        }
+        .event-checkbox:hover { border-color: var(--primary); }
+
+        .table-container { overflow-x: auto; border: 1px solid var(--border); border-radius: 10px; max-height: 520px; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+        th {
+            text-align: left; padding: 10px 12px; background: var(--card-bg);
+            color: var(--text-muted); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em;
+            position: sticky; top: 0; border-bottom: 1px solid var(--border);
+        }
+        td { padding: 9px 12px; border-bottom: 1px solid var(--border); }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: rgba(255,255,255,0.03); }
+
+        .badge { display: inline-block; padding: 3px 9px; border-radius: 20px; font-size: 0.7rem; font-weight: 700; }
+        .badge-success { background: rgba(16,185,129,0.15); color: var(--success); border: 1px solid rgba(16,185,129,0.4); }
+        .badge-danger { background: rgba(239,68,68,0.15); color: var(--danger); border: 1px solid rgba(239,68,68,0.4); }
+        .badge-warning { background: rgba(245,158,11,0.15); color: var(--warning); border: 1px solid rgba(245,158,11,0.4); }
+
+        .progress-container { display: none; height: 10px; background: var(--card-bg); border-radius: 20px; overflow: hidden; margin-top: 18px; }
+        .progress-fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--primary), var(--primary-hover)); transition: width 0.15s; }
+
+        .card-header-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 6px; flex-wrap: wrap; }
+        .card-hint { color: var(--text-muted); font-size: 0.85rem; margin: 0 0 16px; }
+
+        .imported-toolbar { display: grid; grid-template-columns: 1fr 180px; gap: 10px; margin-bottom: 14px; }
+        @media (max-width: 600px) { .imported-toolbar { grid-template-columns: 1fr; } }
+
+        .imported-summary { display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+        .imported-summary .pill {
+            background: var(--card-bg); border: 1px solid var(--border); border-radius: 20px;
+            padding: 6px 14px; font-size: 0.8rem; color: var(--text-muted);
+        }
+        .imported-summary .pill strong { color: var(--text-main); }
+
+        .imported-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; max-height: 280px; overflow-y: auto; padding-right: 4px; }
+        .imported-chip { background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px; padding: 12px; }
+        .imported-chip.done { border-color: rgba(16,185,129,0.4); }
+        .imported-chip-title { font-weight: 700; font-size: 0.9rem; }
+        .imported-chip-meta { color: var(--text-muted); font-size: 0.78rem; margin-top: 3px; }
+        .imported-chip-count { color: var(--success); font-size: 0.78rem; margin-top: 6px; font-weight: 700; }
+
+        .imported-empty, .imported-loading { color: var(--text-muted); padding: 20px; text-align: center; font-size: 0.9rem; }
+
+        .evt-status { margin-left: auto; font-size: 0.68rem; padding: 2px 8px; border-radius: 20px; font-weight: 700; }
+        .evt-status.in-db { background: rgba(16,185,129,0.15); color: var(--success); border: 1px solid rgba(16,185,129,0.4); }
+        .evt-status.new { background: rgba(255,123,45,0.15); color: var(--primary); border: 1px solid rgba(255,123,45,0.4); }
+
+        .new-meet-link { font-size: 0.82rem; color: var(--primary); text-decoration: none; cursor: pointer; }
+        .new-meet-link:hover { color: var(--primary-hover); text-decoration: underline; }
+    </style>
+    <link rel="stylesheet" href="/assets/main.css" />
+    <script src="/assets/theme-toggle.js" defer></script>
+    <script src="/assets/components.js" defer></script>
 </head>
 <body>
 
@@ -375,564 +179,704 @@
 
   <main class="content-section">
 <script src="/assets/msm-loader.js"></script>
-  <div class="container">
-    <a href="admin.html" class="back-link">← Back to Admin</a>
-    
-    <div class="header">
-      <h1>📊 CSV Import</h1>
-      <p>Import cross country results from CSV files</p>
-    </div>
-    
-    <div class="card">
-      <h2 class="card-title">Step 1: Select Meet</h2>
-      <select id="meet-select" class="meet-select">
-        <option value="">Loading meets...</option>
-      </select>
-      <button class="btn btn-secondary" onclick="createNewMeet()">+ Create New Meet</button>
-    </div>
-    
-    <div class="card">
-      <h2 class="card-title">Step 2: Upload CSV File</h2>
-      <div class="upload-zone" id="upload-zone">
-        <div class="upload-icon">📁</div>
-        <div class="upload-text">Drag & drop your CSV file here</div>
-        <div class="upload-hint">or click to browse</div>
-        <input type="file" id="file-input" class="file-input" accept=".csv" />
-      </div>
-      <div id="file-info" style="display: none;"></div>
-    </div>
-    
-    <div class="card">
-      <h2 class="card-title">Step 3: Import Options</h2>
-      <div class="form-group">
-        <label class="form-label">Default Gender (if not in CSV)</label>
-        <select id="default-gender" class="form-input">
-          <option value="">Auto-detect from CSV</option>
-          <option value="M">Male (M)</option>
-          <option value="F">Female (F)</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Default Distance (meters, if not in CSV)</label>
-        <input type="number" id="default-distance" class="form-input" placeholder="5000" value="5000">
-      </div>
-    </div>
-    
-    <div class="card" id="preview-card" style="display: none;">
-      <h2 class="card-title">Step 4: Preview Data</h2>
-      <div id="preview-content"></div>
-    </div>
-    
-    <div class="card" id="import-card" style="display: none;">
-      <h2 class="card-title">Step 5: Import</h2>
-      <div id="import-content"></div>
-    </div>
-    
-    <div id="alerts"></div>
-  </div>
-  
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-  <script src="firebase-config.js"></script>
-  <script src="firebase-helpers.js"></script>
-  <script>
-    let selectedFile = null;
-    let parsedData = null;
-    let selectedMeetSlug = null;
-    
-    async function waitForFirebase() {
-      let attempts = 0;
-      while (typeof window.firebaseDatabase === 'undefined' && attempts < 50) {
-        await new Promise(resolve => setTimeout(resolve, 100));
-        attempts++;
-      }
-    }
-    
-    async function loadMeets() {
-      const select = document.getElementById('meet-select');
-      try {
-        await waitForFirebase();
-        const snapshot = await window.firebaseDatabase.ref('crosscountry/meets').once('value');
-        const meets = [];
-        snapshot.forEach(child => {
-          meets.push({ slug: child.val().slug || child.key, name: child.val().name || 'Unnamed Meet', ...child.val() });
-        });
-        
-        meets.sort((a, b) => {
-          const dateA = a.date || '';
-          const dateB = b.date || '';
-          return dateB.localeCompare(dateA);
-        });
-        
-        select.innerHTML = '<option value="">-- Select a meet --</option>' + 
-          meets.map(m => `<option value="${m.slug}">${m.name || 'Unnamed Meet'} (${m.date || 'No date'})</option>`).join('');
-      } catch (error) {
-        console.error('Error loading meets:', error);
-        select.innerHTML = '<option value="">Error loading meets</option>';
-      } finally {
-        document.dispatchEvent(new Event("MSMDataLoaded"));
-      }
-    }
-    
-    document.getElementById('meet-select').addEventListener('change', (e) => {
-      selectedMeetSlug = e.target.value;
-      if (selectedMeetSlug && selectedFile) {
-        parseAndPreview();
-      }
-    });
-    
-    const uploadZone = document.getElementById('upload-zone');
-    const fileInput = document.getElementById('file-input');
-    
-    uploadZone.addEventListener('click', () => fileInput.click());
-    
-    uploadZone.addEventListener('dragover', (e) => {
-      e.preventDefault();
-      uploadZone.classList.add('dragover');
-    });
-    
-    uploadZone.addEventListener('dragleave', () => {
-      uploadZone.classList.remove('dragover');
-    });
-    
-    uploadZone.addEventListener('drop', (e) => {
-      e.preventDefault();
-      uploadZone.classList.remove('dragover');
-      const file = e.dataTransfer.files[0];
-      if (file && file.name.endsWith('.csv')) {
-        handleFile(file);
-      } else {
-        showAlert('Please upload a CSV file', 'error');
-      }
-    });
-    
-    fileInput.addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (file) {
-        handleFile(file);
-      }
-    });
-    
-    function handleFile(file) {
-      selectedFile = file;
-      const fileInfo = document.getElementById('file-info');
-      fileInfo.style.display = 'block';
-      fileInfo.innerHTML = `
-        <div class="file-info">
-          <div class="file-info-name">
-            <span>📄</span>
-            <span>${file.name}</span>
-          </div>
-          <div class="file-info-size">${(file.size / 1024).toFixed(2)} KB</div>
-        </div>
-      `;
-      
-      if (selectedMeetSlug) {
-        parseAndPreview();
-      } else {
-        showAlert('Please select a meet first', 'warning');
-      }
-    }
-    
-    async function parseAndPreview() {
-      if (!selectedFile || !selectedMeetSlug) return;
-      
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-        try {
-          const csvText = e.target.result;
-          // Parse CSV - detect headers from first line
-          const lines = csvText.trim().split('\n');
-          if (lines.length < 2) {
-            throw new Error('CSV file must have at least a header row and one data row');
-          }
-          
-          // Parse first line as headers
-          const firstLine = lines[0];
-          const detectedHeaders = firstLine.split(',').map(h => h.trim().toLowerCase().replace(/"/g, ''));
-          
-          // Map common header variations to standard names
-          const headerMap = {
-            'athlete': 'athlete_name',
-            'athlete name': 'athlete_name',
-            'name': 'athlete_name',
-            'runner': 'athlete_name',
-            'school': 'school_slug',
-            'school slug': 'school_slug',
-            'team': 'school_slug',
-            'time': 'time',
-            'finish time': 'time',
-            'result': 'time',
-            'distance': 'distance',
-            'place': 'place',
-            'position': 'place',
-            'gender': 'gender',
-            'sex': 'gender'
-          };
-          
-          const headers = detectedHeaders.map(h => headerMap[h] || h);
-          
-          // Use the helper function from firebase-helpers.js
-          if (window.parseCSV) {
-            // The helper function expects headers and will skip first line
-            parsedData = window.parseCSV(csvText, headers);
-          } else {
-            // Fallback parsing
-            parsedData = parseCSVFallback(csvText, headers);
-          }
-          
-          if (parsedData.length === 0) {
-            showAlert('No data found in CSV file', 'error');
-            return;
-          }
-          
-          displayPreview(parsedData);
-        } catch (error) {
-          console.error('Error parsing CSV:', error);
-          showAlert('Error parsing CSV: ' + error.message, 'error');
-        }
-      };
-      reader.readAsText(selectedFile);
-    }
-    
-    function displayPreview(data) {
-      const previewCard = document.getElementById('preview-card');
-      const previewContent = document.getElementById('preview-content');
-      const importCard = document.getElementById('import-card');
-      const importContent = document.getElementById('import-content');
-      
-      const defaultGender = document.getElementById('default-gender').value;
-      const defaultDistanceInput = document.getElementById('default-distance');
-      const defaultDistance = parseFloat(defaultDistanceInput ? defaultDistanceInput.value : 5000) || 5000;
-      
-      // Validate and process data
-      const processed = data.map((row, idx) => {
-        const processedRow = { ...row };
-        
-        // Apply defaults
-        if (!processedRow.gender && defaultGender) {
-          processedRow.gender = defaultGender;
-        }
-        if (!processedRow.distance) {
-          processedRow.distance = defaultDistance;
-        }
-        if (!processedRow.meet_slug) {
-          processedRow.meet_slug = selectedMeetSlug;
-        }
-        
-        // Validate
-        processedRow.valid = !!processedRow.athlete_name;
-        processedRow.errors = [];
-        
-        if (!processedRow.athlete_name) {
-          processedRow.errors.push('Missing athlete name');
-        }
-        if (processedRow.time) {
-            const parsedTime = window.parseTimeToSeconds ? window.parseTimeToSeconds(processedRow.time) : parseTimeToSeconds(processedRow.time);
-          if (isNaN(parsedTime)) {
-            processedRow.errors.push('Invalid time format');
-            processedRow.valid = false;
-          } else {
-            processedRow.time = parsedTime;
-          }
-        }
-        if (processedRow.gender && !['M', 'F'].includes(processedRow.gender.toUpperCase())) {
-          processedRow.errors.push('Invalid gender');
-          processedRow.valid = false;
-        }
-        
-        return processedRow;
-      });
-      
-      const stats = {
-        total: processed.length,
-        valid: processed.filter(r => r.valid).length,
-        errors: processed.filter(r => !r.valid).length
-      };
-      
-      previewContent.innerHTML = `
-        <div class="stats-grid">
-          <div class="stat-item">
-            <div class="stat-number">${stats.total}</div>
-            <div class="stat-label">Total Rows</div>
-          </div>
-          <div class="stat-item">
-            <div class="stat-number" style="color: var(--success);">${stats.valid}</div>
-            <div class="stat-label">Valid Rows</div>
-          </div>
-          <div class="stat-item">
-            <div class="stat-number" style="color: ${stats.errors > 0 ? 'var(--danger)' : 'var(--success)'};">${stats.errors}</div>
-            <div class="stat-label">Errors</div>
-          </div>
-        </div>
-        
-        <table class="preview-table">
-          <thead>
-            <tr>
-              <th>Row</th>
-              <th>Athlete</th>
-              <th>School</th>
-              <th>Gender</th>
-              <th>Time</th>
-              <th>Distance (m)</th>
-              <th>Place</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${processed.slice(0, 10).map((row, idx) => `
-              <tr style="${!row.valid ? 'opacity: 0.5;' : ''}">
-                <td>${idx + 1}</td>
-                <td>${row.athlete_name || '<span style="color: var(--danger);">Missing</span>'}</td>
-                <td>${row.school_slug || '—'}</td>
-                <td>${row.gender || '—'}</td>
-                <td>${row.time ? formatTime(row.time) : (row.time === null ? '—' : '<span style="color: var(--danger);">Invalid</span>')}</td>
-                <td>${row.distance || defaultDistance}</td>
-                <td>${row.place || '—'}</td>
-                <td>${row.valid ? '<span style="color: var(--success);">✓ Valid</span>' : '<span style="color: var(--danger);">✗ ' + (row.errors[0] || 'Invalid') + '</span>'}</td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-        ${processed.length > 10 ? `<p style="text-align: center; color: var(--muted); margin-top: 16px;">Showing first 10 of ${processed.length} rows</p>` : ''}
-      `;
-      
-      previewCard.style.display = 'block';
-      
-      const errorRows = processed.filter(r => !r.valid);
-      const errorList = errorRows.length > 0 ? `
-        <div class="error-list">
-          <h3 style="margin-top: 0;">Validation Errors:</h3>
-          ${errorRows.slice(0, 20).map((row, idx) => 
-            `<div class="error-item">Row ${processed.indexOf(row) + 1}: ${row.errors.join(', ')}</div>`
-          ).join('')}
-          ${errorRows.length > 20 ? `<div class="error-item">... and ${errorRows.length - 20} more errors</div>` : ''}
-        </div>
-      ` : '';
-      
-      importContent.innerHTML = `
-        <p style="margin-bottom: 20px; color: var(--muted);">
-          Ready to import ${stats.valid} valid results. ${stats.errors > 0 ? `${stats.errors} rows will be skipped due to errors.` : ''}
-        </p>
-        ${errorList}
-        <button class="btn btn-primary" onclick="importData()" style="width: 100%; justify-content: center; padding: 16px;">
-          📥 Import ${stats.valid} Results
-        </button>
-      `;
-      
-      importCard.style.display = 'block';
-    }
-    
-    function formatTime(seconds) {
-      if (!seconds && seconds !== 0) return '—';
-      const mins = Math.floor(seconds / 60);
-      const secs = (seconds % 60).toFixed(2).padStart(5, '0');
-      return `${mins}:${secs}`;
-    }
-    
-    function parseCSVFallback(csvText, headers) {
-      const lines = csvText.trim().split('\n');
-      const results = [];
-      
-      // Skip the first line (header row)
-      for (let i = 1; i < lines.length; i++) {
-        const line = lines[i].trim();
-        if (!line) continue;
-        
-        // Better CSV parsing that handles quoted values with commas
-        let values = [];
-        let current = '';
-        let inQuotes = false;
-        
-        for (let j = 0; j < line.length; j++) {
-          const char = line[j];
-          if (char === '"') {
-            inQuotes = !inQuotes;
-          } else if (char === ',' && !inQuotes) {
-            values.push(current.trim());
-            current = '';
-          } else {
-            current += char;
-          }
-        }
-        values.push(current.trim()); // Add last value
-        
-        // Pad or truncate to match header count
-        while (values.length < headers.length) {
-          values.push('');
-        }
-        values = values.slice(0, headers.length);
-        
-        const row = {};
-        headers.forEach((header, index) => {
-          const val = values[index] || '';
-          row[header] = val.replace(/^"|"$/g, '') || null;
-        });
-        
-        results.push(row);
-      }
-      
-      return results;
-    }
-    
-    async function importData() {
-      if (!parsedData || !selectedMeetSlug) return;
-      
-      const importContent = document.getElementById('import-content');
-      importContent.innerHTML = '<div class="loading"></div> <span>Importing data...</span>';
-      
-      try {
-        await waitForFirebase();
-        
-        const defaultGender = document.getElementById('default-gender').value;
-        const defaultDistance = parseFloat(document.getElementById('default-distance').value) || 5000;
-        
-        // Process data
-        const resultsRef = window.firebaseDatabase.ref('crosscountry/results');
-        let imported = 0;
-        let errors = [];
-        
-        for (const row of parsedData) {
-          if (!row.athlete_name) {
-            errors.push(`Row ${parsedData.indexOf(row) + 1}: Missing athlete name`);
-            continue;
-          }
-          
-          // Process time
-          let timeValue = null;
-          if (row.time) {
-            const parsedTime = window.parseTimeToSeconds ? window.parseTimeToSeconds(row.time) : parseTimeToSeconds(row.time);
-            if (isNaN(parsedTime)) {
-              errors.push(`Row ${parsedData.indexOf(row) + 1}: Invalid time format: "${row.time}"`);
-              continue;
-            }
-            timeValue = parsedTime;
-            
-            // Validate reasonable time (between 5 minutes and 2 hours for XC)
-            if (timeValue < 300 || timeValue > 7200) {
-              errors.push(`Row ${parsedData.indexOf(row) + 1}: Time seems unusual: ${formatTime(timeValue)}`);
-              // Don't skip, just warn
-            }
-          }
-          
-          // Process gender
-          let genderValue = row.gender || defaultGender || '';
-          if (genderValue) {
-            genderValue = genderValue.toUpperCase();
-            if (!['M', 'F'].includes(genderValue)) {
-              errors.push(`Row ${parsedData.indexOf(row) + 1}: Invalid gender`);
-              continue;
-            }
-          }
-          
-          // Process distance
-          const distanceValue = parseFloat(row.distance) || defaultDistance;
-          
-          // Process place
-          const placeValue = row.place ? parseInt(row.place) : null;
-          
-          // Get meet date if available
-          let meetDate = null;
-          try {
-            const meetSnapshot = await window.firebaseDatabase.ref('crosscountry/meets')
-              .orderByChild('slug')
-              .equalTo(selectedMeetSlug)
-              .limitToFirst(1)
-              .once('value');
-            meetSnapshot.forEach(child => {
-              meetDate = child.val().date || null;
-            });
-          } catch (e) {
-            console.warn('Could not fetch meet date:', e);
-          }
-          
-          // Create result
-          const resultData = {
-            athlete_name: row.athlete_name,
-            school_slug: row.school_slug || '',
-            meet_slug: selectedMeetSlug,
-            gender: genderValue,
-            time: timeValue,
-            distance: distanceValue,
-            place: placeValue,
-            date: row.date || meetDate || new Date().toISOString().split('T')[0]
-          };
-          
-          await resultsRef.push(resultData);
-          imported++;
-        }
-        
-        showAlert(`✅ Successfully imported ${imported} results!`, 'success');
-        
-        importContent.innerHTML = `
-          <div class="alert alert-success">
-            <span>✅</span>
-            <div>
-              <strong>Import Complete!</strong><br>
-              ${imported} results imported successfully.
-              ${errors.length > 0 ? `${errors.length} rows had errors.` : ''}
-            </div>
-          </div>
-          <button class="btn btn-secondary" onclick="location.reload()" style="width: 100%; margin-top: 20px;">
-            Import Another File
-          </button>
-        `;
-      } catch (error) {
-        console.error('Import error:', error);
-        showAlert('Error importing data: ' + error.message, 'error');
-        importContent.innerHTML = '<button class="btn btn-secondary" onclick="location.reload()">Try Again</button>';
-      }
-    }
-    
-    function showAlert(message, type) {
-      const alerts = document.getElementById('alerts');
-      const alert = document.createElement('div');
-      alert.className = `alert alert-${type}`;
-      alert.innerHTML = `<span>${type === 'success' ? '✅' : type === 'error' ? '❌' : '⚠️'}</span><span>${message}</span>`;
-      alerts.appendChild(alert);
-      
-      setTimeout(() => {
-        alert.remove();
-      }, 5000);
-    }
-    
-    function createNewMeet() {
-      const name = prompt('Enter meet name:');
-      if (!name) return;
-      
-      const date = prompt('Enter meet date (YYYY-MM-DD):');
-      if (!date) return;
-      
-      const location = prompt('Enter location (optional):') || '';
-      
-      const slug = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-      
-      waitForFirebase().then(() => {
-        const meetRef = window.firebaseDatabase.ref('crosscountry/meets').push();
-        meetRef.set({
-          name: name,
-          slug: slug,
-          date: date,
-          location: location
-        }).then(() => {
-          showAlert('Meet created successfully!', 'success');
-          loadMeets();
-          document.getElementById('meet-select').value = slug;
-          selectedMeetSlug = slug;
-        });
-      });
-    }
-    
-    // Initialize
-    document.addEventListener('DOMContentLoaded', () => {
-      if (localStorage.getItem('xcAdmin') !== 'true') {
-        window.location.replace('login.html');
-      }
-      loadMeets();
-    });
-  </script>
+    <div class="container">
+        <h1>Cross Country Meet Import Engine</h1>
+        <p class="subtitle">Run the <code>anet.js</code> bookmarklet on an Athletic.net results page, copy the CSV it generates, then paste it below to import straight into a meet. Expected columns: <code>event_name,place,grade,athlete_name,mark,school,heat,gender</code>.</p>
 
-  
+        <div class="card">
+            <div class="card-header-row">
+                <h3><span style="color:var(--primary)">1.</span> Select Target Meet</h3>
+                <span class="new-meet-link" onclick="importer.createNewMeet()">+ Create New Meet</span>
+            </div>
+            <select id="meetSelect">
+                <option value="">Loading meets data...</option>
+            </select>
+        </div>
+
+        <div class="card" id="importedEventsCard" style="display: none;">
+            <div class="card-header-row">
+                <h3><span style="color:var(--primary)">1b.</span> Already Imported</h3>
+                <button type="button" class="btn-secondary" id="refreshImportedBtn" onclick="importer.refreshImportedEvents()">↻ Refresh</button>
+            </div>
+            <p class="card-hint">Race divisions with results already saved for this meet. Use this while the meet is live so you only paste what is still missing.</p>
+            <div class="imported-toolbar">
+                <input type="text" id="importedSearch" placeholder="Search imported divisions…" oninput="importer.filterImportedEvents()" />
+                <select id="importedGenderFilter" onchange="importer.filterImportedEvents()">
+                    <option value="">All genders</option>
+                    <option value="M">Boys</option>
+                    <option value="F">Girls</option>
+                </select>
+            </div>
+            <div class="imported-summary" id="importedSummary"></div>
+            <div id="importedEventsList" class="imported-loading">Select a meet to load imported results.</div>
+        </div>
+
+        <div class="card">
+            <h3><span style="color:var(--primary)">2.</span> Ingest Data</h3>
+
+            <div class="toolbar">
+                <input type="text" id="findText" placeholder="Find text (e.g., a school name typo)" />
+                <input type="text" id="replaceText" placeholder="Replace with..." />
+                <button class="btn-secondary" onclick="importer.executeReplace()">Replace All</button>
+            </div>
+
+            <div class="defaults-row">
+                <div>
+                    <label for="defaultGender">Default Gender (used if a row's gender is blank)</label>
+                    <select id="defaultGender">
+                        <option value="M">Boys</option>
+                        <option value="F">Girls</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="defaultDistance">Default Distance in Meters (used if not detected from event name)</label>
+                    <input type="number" id="defaultDistance" value="5000" min="0" step="1" />
+                </div>
+            </div>
+
+            <textarea id="pasteArea" placeholder="Paste your Athletic.net scraper CSV output here...&#10;event_name,place,grade,athlete_name,mark,school,heat,gender"></textarea>
+
+            <div class="btn-group">
+                <button class="btn-primary" onclick="importer.parseData()">Parse &amp; Analyze</button>
+                <button class="btn-secondary" onclick="document.getElementById('pasteArea').value=''">Clear</button>
+            </div>
+        </div>
+
+        <div id="resultsArea" style="display: none;">
+
+            <div class="card">
+                <h3><span style="color:var(--primary)">3.</span> Filter Race Divisions</h3>
+                <div id="eventList" class="event-grid"></div>
+            </div>
+
+            <div class="card">
+                <h3><span style="color:var(--primary)">4.</span> Validation &amp; Import</h3>
+
+                <div class="stats-grid" id="statsGrid"></div>
+
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Status</th>
+                                <th>Race Division</th>
+                                <th>CSV Original Event</th>
+                                <th>Athlete</th>
+                                <th>School</th>
+                                <th>Grade</th>
+                                <th>Place</th>
+                                <th>Time</th>
+                            </tr>
+                        </thead>
+                        <tbody id="previewBody"></tbody>
+                    </table>
+                </div>
+
+                <div class="progress-container" id="progressContainer">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+
+                <div style="margin-top: 24px;">
+                    <button class="btn-primary" id="importBtn" style="width: 100%; padding: 16px; font-size: 1.1rem;" onclick="importer.executeImport()">
+                        Commit Results to Database
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <script src="firebase-helpers.js"></script>
+
+    <script>
+        const CC_PREFIX = 'crosscountry';
+
+        // Recognized race-division keywords, checked in this order. Anything left over after
+        // stripping gender/distance tokens from the event name falls back to this list too,
+        // so odd/unexpected event titles from Athletic.net still degrade gracefully instead of
+        // producing an empty race_type.
+        const RACE_TYPE_PATTERNS = [
+            { re: /\bemerging\s*elite\b/i, label: 'Emerging Elite' },
+            { re: /\bjunior\s*varsity\b|\bjv\b/i, label: 'JV' },
+            { re: /\bvarsity\b/i, label: 'Varsity' },
+            { re: /\bfreshm[ae]n\b|\bfrosh\b/i, label: 'Freshman' },
+            { re: /\bmiddle\s*school\b|\bms\b/i, label: 'Middle School' },
+            { re: /\belementary\b/i, label: 'Elementary' },
+            { re: /\bopen\b/i, label: 'Open' },
+            { re: /\byouth\b|\bkids?\b|\bfun\s*run\b/i, label: 'Youth' },
+            { re: /\balumni\b/i, label: 'Alumni' },
+        ];
+
+        class XCMeetImporter {
+            constructor() {
+                this.parsedRows = [];
+                this.schoolKeyToSlug = {};
+                this.schoolSlugToName = {};
+                this.athletesCache = {};
+                this.meets = [];
+                this.meetImportedGroups = [];
+                this.meetImportedKeySet = new Set();
+                this.currentMeetSlug = "";
+            }
+
+            async init() {
+                try {
+                    await this.waitForFirebase();
+
+                    // Fetch meets
+                    this.meets = (await window.getAllMeets()) || [];
+                    const sel = document.getElementById("meetSelect");
+                    sel.innerHTML = '<option value="">-- Select a Meet --</option>' +
+                        this.meets.map(m => `<option value="${m.slug}">${m.name}${m.date ? ` (${m.date})` : ''}</option>`).join('');
+                    sel.addEventListener("change", () => this.onMeetSelected());
+
+                    // Fetch schools & build a fuzzy name -> slug lookup
+                    const schools = (await window.getAllSchools()) || [];
+                    schools.forEach(s => {
+                        this.schoolSlugToName[s.slug] = s.name;
+                        this.schoolKeyToSlug[this.normalizeSchoolKey(s.name)] = s.slug;
+                        this.schoolKeyToSlug[this.normalizeSchoolKey((s.slug || '').replace(/-/g, ' '))] = s.slug;
+                    });
+
+                    // Cache existing athletes so we don't create duplicates on import
+                    const athletesSnap = await window.firebaseDatabase.ref(`${CC_PREFIX}/athletes`).once('value');
+                    athletesSnap.forEach((s) => {
+                        const a = s.val();
+                        const key = `${(a.school_slug || '').toLowerCase()}|${(a.name || '').trim().toLowerCase()}`;
+                        this.athletesCache[key] = s.key;
+                    });
+
+                    console.log("XC Import Engine initialized.");
+                } catch (err) {
+                    console.error("Error initializing Firebase:", err);
+                    alert("Failed to load data from Firebase. Check console.");
+                }
+            }
+
+            async waitForFirebase() {
+                let attempts = 0;
+                while (typeof window.firebaseDatabase === 'undefined' && attempts < 50) {
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    attempts++;
+                }
+            }
+
+            async createNewMeet() {
+                const name = prompt("Meet name:");
+                if (!name) return;
+                const date = prompt("Meet date (YYYY-MM-DD):", new Date().toISOString().split('T')[0]);
+                if (!date) return;
+                const location = prompt("Location (optional):", "") || "";
+
+                const slug = this.slugify(name);
+                const meetData = {
+                    name, date, location,
+                    slug,
+                    description: "",
+                    course_slug: "",
+                    created_at: new Date().toISOString()
+                };
+
+                try {
+                    await window.firebaseDatabase.ref(`${CC_PREFIX}/meets`).push(meetData);
+                    this.meets = (await window.getAllMeets()) || [];
+                    const sel = document.getElementById("meetSelect");
+                    sel.innerHTML = '<option value="">-- Select a Meet --</option>' +
+                        this.meets.map(m => `<option value="${m.slug}">${m.name}${m.date ? ` (${m.date})` : ''}</option>`).join('');
+                    sel.value = slug;
+                    this.onMeetSelected();
+                } catch (err) {
+                    console.error(err);
+                    alert("Could not create meet: " + err.message);
+                }
+            }
+
+            slugify(str) {
+                return String(str || '')
+                    .toLowerCase()
+                    .trim()
+                    .replace(/[^a-z0-9\s-]/g, '')
+                    .replace(/\s+/g, '-')
+                    .replace(/-+/g, '-');
+            }
+
+            importGroupKey(raceType, gender) {
+                return `${(raceType || '').toLowerCase()}|${(gender || '').toUpperCase()}`;
+            }
+
+            genderLabel(g) {
+                const t = String(g || "").toUpperCase();
+                if (t === "F" || t === "W") return "Girls";
+                if (t === "M") return "Boys";
+                return "Mixed";
+            }
+
+            onMeetSelected() {
+                const meetSlug = document.getElementById("meetSelect").value;
+                this.currentMeetSlug = meetSlug;
+                const card = document.getElementById("importedEventsCard");
+                if (!meetSlug) {
+                    card.style.display = "none";
+                    this.meetImportedGroups = [];
+                    this.meetImportedKeySet = new Set();
+                    return;
+                }
+                card.style.display = "block";
+                this.loadImportedEventsForMeet(meetSlug);
+            }
+
+            refreshImportedEvents() {
+                if (!this.currentMeetSlug) return;
+                this.loadImportedEventsForMeet(this.currentMeetSlug);
+            }
+
+            async loadImportedEventsForMeet(meetSlug) {
+                const listEl = document.getElementById("importedEventsList");
+                const summaryEl = document.getElementById("importedSummary");
+                listEl.className = "imported-loading";
+                listEl.textContent = "Loading imported results…";
+                summaryEl.innerHTML = "";
+
+                try {
+                    const existingResults = (await window.getResultsByMeet(meetSlug)) || [];
+
+                    const buckets = {};
+                    existingResults.forEach((r) => {
+                        const gender = (r.gender || "M").toString().toUpperCase();
+                        const raceType = r.race_type || "Varsity";
+                        const key = this.importGroupKey(raceType, gender);
+                        if (!buckets[key]) {
+                            buckets[key] = { key, raceType, gender, count: 0 };
+                        }
+                        buckets[key].count += 1;
+                    });
+
+                    this.meetImportedGroups = Object.values(buckets).sort((a, b) => {
+                        const nameCmp = a.raceType.localeCompare(b.raceType);
+                        if (nameCmp !== 0) return nameCmp;
+                        return a.gender.localeCompare(b.gender);
+                    });
+
+                    this.meetImportedKeySet = new Set(this.meetImportedGroups.map((g) => g.key));
+                    this.filterImportedEvents();
+                    if (this.parsedRows.length) this.renderEventCheckboxes(this.getUniqueRawEvents());
+                } catch (err) {
+                    console.error(err);
+                    listEl.className = "imported-empty";
+                    listEl.textContent = "Could not load imported results. Check console.";
+                }
+            }
+
+            filterImportedEvents() {
+                const listEl = document.getElementById("importedEventsList");
+                const summaryEl = document.getElementById("importedSummary");
+                const q = (document.getElementById("importedSearch")?.value || "").toLowerCase().trim();
+                const genderFilter = document.getElementById("importedGenderFilter")?.value || "";
+
+                let groups = this.meetImportedGroups.slice();
+                if (genderFilter) groups = groups.filter((g) => g.gender === genderFilter);
+                if (q) {
+                    groups = groups.filter((g) => {
+                        const hay = `${g.raceType} ${this.genderLabel(g.gender)}`.toLowerCase();
+                        return hay.includes(q);
+                    });
+                }
+
+                const totalResults = groups.reduce((sum, g) => sum + g.count, 0);
+                summaryEl.innerHTML = `
+                    <span class="pill"><strong>${groups.length}</strong> division groups</span>
+                    <span class="pill"><strong>${totalResults}</strong> results in DB</span>
+                    <span class="pill">Meet: <strong>${this.currentMeetSlug}</strong></span>
+                `;
+
+                if (!this.meetImportedGroups.length) {
+                    listEl.className = "imported-empty";
+                    listEl.textContent = "Nothing imported for this meet yet. Paste results below to get started.";
+                    return;
+                }
+                if (!groups.length) {
+                    listEl.className = "imported-empty";
+                    listEl.textContent = "No imported divisions match your search.";
+                    return;
+                }
+
+                listEl.className = "imported-grid";
+                listEl.innerHTML = groups.map((g) => `
+                    <div class="imported-chip done">
+                        <div class="imported-chip-title">${g.raceType}</div>
+                        <div class="imported-chip-meta">${this.genderLabel(g.gender)}</div>
+                        <div class="imported-chip-count">${g.count} result${g.count !== 1 ? "s" : ""} saved</div>
+                    </div>`).join("");
+            }
+
+            getUniqueRawEvents() {
+                return [...new Set(this.parsedRows.map((r) => r.raw_event))].sort();
+            }
+
+            isRawEventAlreadyImported(rawEvent) {
+                const row = this.parsedRows.find((r) => r.raw_event === rawEvent);
+                if (!row) return false;
+                const key = this.importGroupKey(row.race_type, row.gender);
+                return this.meetImportedKeySet.has(key);
+            }
+
+            // Extract gender / distance / race-division from an Athletic.net-style XC event title,
+            // e.g. "Boys Varsity 5000 Meter Run", "Girls JV 5K", "Boys Emerging Elite".
+            parseEventField(rawEvent, csvGenderColumn) {
+                const name = String(rawEvent || "").trim();
+                const lower = name.toLowerCase();
+
+                // Gender: prefer the scraper's own gender column, fall back to text in the title.
+                let gender = null;
+                const g = (csvGenderColumn || "").toLowerCase();
+                if (g.startsWith("g") || g.includes("girl") || g.includes("wom") || g.includes("female")) gender = "F";
+                else if (g.startsWith("b") || g.includes("boy") || g.includes("men") || g.includes("male")) gender = "M";
+                if (!gender) {
+                    if (/\b(girls?|women|female)\b/.test(lower)) gender = "F";
+                    else if (/\b(boys?|men|male)\b/.test(lower)) gender = "M";
+                }
+                if (!gender) gender = "M";
+
+                // Distance, if encoded in the title (5K, 5000 Meter, 5,000 Meter, 8000m, 3 Mile, etc.)
+                // Commas are stripped first so "5,000" isn't misread as just "000".
+                const lowerNoCommas = lower.replace(/,/g, '');
+                let distance = null;
+                let m;
+                if ((m = lowerNoCommas.match(/(\d+(?:\.\d+)?)\s*k\b/))) {
+                    distance = Math.round(parseFloat(m[1]) * 1000);
+                } else if ((m = lowerNoCommas.match(/(\d{3,6})\s*(?:meters?|metres?|m)\b/))) {
+                    distance = parseInt(m[1], 10);
+                } else if ((m = lowerNoCommas.match(/(\d+(?:\.\d+)?)\s*miles?\b/))) {
+                    distance = Math.round(parseFloat(m[1]) * 1609.34);
+                }
+
+                // Race division: match known keywords first, else use whatever text is left
+                // after stripping gender/distance tokens (keeps odd titles from Athletic.net usable).
+                let raceType = null;
+                for (const pattern of RACE_TYPE_PATTERNS) {
+                    if (pattern.re.test(name)) { raceType = pattern.label; break; }
+                }
+                if (!raceType) {
+                    let remainder = name
+                        .replace(/\b(boys?|girls?|women|men|female|male)\b/gi, "")
+                        .replace(/\d+(?:\.\d+)?\s*(?:k|km|meters?|metres?|m|miles?)\b/gi, "")
+                        .replace(/\bmeter\s*run\b/gi, "")
+                        .replace(/\brun\b/gi, "")
+                        .replace(/\s+/g, " ")
+                        .trim();
+                    raceType = remainder || "Varsity";
+                }
+
+                return { gender, distance, raceType };
+            }
+
+            // Normalizes a free-text school name (e.g. from Athletic.net) for fuzzy matching
+            // against known crosscountry/schools records.
+            normalizeSchoolKey(str) {
+                return String(str || "")
+                    .toLowerCase()
+                    .replace(/[.''\u2019]/g, "")
+                    .replace(/\bhigh\s*school\b/g, "")
+                    .replace(/\bmiddle\s*school\b/g, "")
+                    .replace(/\bsenior\s*high\b/g, "")
+                    .replace(/\bjr\/sr\b/g, "")
+                    .replace(/\bh\.?s\.?\b/g, "")
+                    .replace(/[^a-z0-9]+/g, " ")
+                    .trim()
+                    .replace(/\s+/g, " ");
+            }
+
+            resolveSchoolSlug(rawSchoolName) {
+                if (!rawSchoolName || /^unattached$/i.test(rawSchoolName.trim())) {
+                    return { slug: "unattached", matched: true };
+                }
+                const norm = this.normalizeSchoolKey(rawSchoolName);
+                if (this.schoolKeyToSlug[norm]) return { slug: this.schoolKeyToSlug[norm], matched: true };
+
+                for (const [key, slug] of Object.entries(this.schoolKeyToSlug)) {
+                    if (key && norm && (key.includes(norm) || norm.includes(key))) {
+                        return { slug, matched: true };
+                    }
+                }
+                // No confident match - use a best-effort slug but flag it so the importer can warn.
+                return { slug: this.slugify(rawSchoolName), matched: false };
+            }
+
+            // Best-effort graduation year estimate from a literal grade level (e.g. "11", "SR"),
+            // used only when creating a brand-new athlete record during import.
+            estimateGradYear(literalGrade) {
+                if (!literalGrade) return null;
+                const t = String(literalGrade).trim().toUpperCase().replace(/(ST|ND|RD|TH)$/, "");
+                const currentYear = new Date().getFullYear();
+                const currentMonth = new Date().getMonth();
+                const academicYear = currentMonth >= 7 ? currentYear + 1 : currentYear;
+
+                const map = { "9": 3, "FR": 3, "FROSH": 3, "10": 2, "SO": 2, "11": 1, "JR": 1, "12": 0, "SR": 0 };
+                if (map[t] !== undefined) return academicYear + map[t];
+                return null;
+            }
+
+            // CSV Parser (handles quoted fields with embedded commas, matches anet.js output)
+            parseCSVLine(text) {
+                let ret = [], inQuote = false, val = "";
+                for (let i = 0; i < text.length; i++) {
+                    let c = text[i];
+                    if (inQuote) {
+                        if (c === '"') {
+                            if (i + 1 < text.length && text[i + 1] === '"') { val += '"'; i++; }
+                            else { inQuote = false; }
+                        } else val += c;
+                    } else {
+                        if (c === '"') inQuote = true;
+                        else if (c === ",") { ret.push(val.trim()); val = ""; }
+                        else val += c;
+                    }
+                }
+                ret.push(val.trim());
+                return ret;
+            }
+
+            executeReplace() {
+                const find = document.getElementById('findText').value;
+                const replace = document.getElementById('replaceText').value;
+                const area = document.getElementById('pasteArea');
+
+                if (!find) return alert("Please enter text to find.");
+
+                const originalText = area.value;
+                const escapedFind = find.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                const regex = new RegExp(escapedFind, 'g');
+                const count = (originalText.match(regex) || []).length;
+
+                area.value = originalText.replace(regex, replace);
+                alert(`Replaced ${count} occurrences of "${find}".`);
+            }
+
+            parseData() {
+                const text = document.getElementById("pasteArea").value.trim();
+                const meetSlug = document.getElementById("meetSelect").value;
+
+                if (!meetSlug) return alert("Please select a target meet first.");
+                if (!text) return alert("Please paste CSV data.");
+
+                const defaultGender = document.getElementById("defaultGender").value || "M";
+                const defaultDistance = parseFloat(document.getElementById("defaultDistance").value) || 5000;
+
+                this.parsedRows = [];
+                const lines = text.split("\n");
+                const uniqueEvents = new Set();
+
+                lines.forEach((line) => {
+                    if (line.trim() === "") return;
+                    if (line.toLowerCase().includes("event_name") && line.toLowerCase().includes("athlete_name")) return; // header row
+
+                    const p = this.parseCSVLine(line);
+                    if (p.length < 5) return;
+
+                    // anet.js column order: event_name, place, grade, athlete_name, mark, school, heat, gender
+                    const rawEvent = p[0];
+                    const place = p[1];
+                    const grade = p[2];
+                    const athleteName = p[3];
+                    const mark = p[4];
+                    const rawSchool = p[5] || "Unattached";
+                    const heat = p[6] || "1";
+                    const csvGender = p[7] || "";
+
+                    if (!athleteName) return;
+
+                    const parsedEvent = this.parseEventField(rawEvent, csvGender || defaultGender);
+                    const gender = parsedEvent.gender || defaultGender;
+                    const distance = parsedEvent.distance || defaultDistance;
+                    const schoolMatch = this.resolveSchoolSlug(rawSchool);
+                    const timeSeconds = window.parseTimeToSeconds ? window.parseTimeToSeconds(mark) : NaN;
+
+                    this.parsedRows.push({
+                        raw_event: rawEvent,
+                        race_type: parsedEvent.raceType,
+                        gender,
+                        distance,
+                        place,
+                        grade,
+                        athlete_name: athleteName,
+                        mark,
+                        time_seconds: timeSeconds,
+                        school_raw: rawSchool,
+                        school_slug: schoolMatch.slug,
+                        school_matched: schoolMatch.matched,
+                        heat,
+                        meet_slug: meetSlug,
+                    });
+                    uniqueEvents.add(rawEvent);
+                });
+
+                this.renderEventCheckboxes(Array.from(uniqueEvents));
+                if (this.currentMeetSlug !== meetSlug) {
+                    this.currentMeetSlug = meetSlug;
+                    document.getElementById("importedEventsCard").style.display = "block";
+                    this.loadImportedEventsForMeet(meetSlug);
+                }
+                document.getElementById("resultsArea").style.display = "block";
+                document.getElementById("resultsArea").scrollIntoView({ behavior: "smooth" });
+
+                this.updateUI();
+            }
+
+            renderEventCheckboxes(events) {
+                const container = document.getElementById("eventList");
+                container.innerHTML = "";
+                events.sort().forEach((evt) => {
+                    const safe = evt.replace(/"/g, "&quot;");
+                    const inDb = this.isRawEventAlreadyImported(evt);
+                    const status = inDb
+                        ? '<span class="evt-status in-db">In DB</span>'
+                        : '<span class="evt-status new">New</span>';
+                    container.innerHTML += `
+                        <label class="event-checkbox">
+                            <input type="checkbox" class="evt-cb" value="${safe}" ${inDb ? "" : "checked"} onchange="importer.updateUI()">
+                            ${evt}${status}
+                        </label>`;
+                });
+            }
+
+            updateUI() {
+                const checkedEvents = [...document.querySelectorAll(".evt-cb:checked")].map(cb => cb.value);
+                const filtered = this.parsedRows.filter(r => checkedEvents.includes(r.raw_event));
+                const valid = filtered.filter(r => r.athlete_name && !isNaN(r.time_seconds) && r.time_seconds > 0);
+                const unmatchedSchools = filtered.filter(r => !r.school_matched).length;
+                const invalid = filtered.length - valid.length;
+
+                document.getElementById("statsGrid").innerHTML = `
+                    <div class="stat-box">
+                        <div class="stat-val">${filtered.length}</div>
+                        <div class="stat-label">Total Rows</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-val text-success">${valid.length}</div>
+                        <div class="stat-label">Ready to Import</div>
+                    </div>
+                    <div class="stat-box" style="border-color: ${invalid > 0 ? 'var(--danger)' : 'var(--border)'}">
+                        <div class="stat-val ${invalid > 0 ? 'text-danger' : ''}">${invalid}</div>
+                        <div class="stat-label">Invalid Time</div>
+                    </div>
+                    <div class="stat-box" style="border-color: ${unmatchedSchools > 0 ? 'var(--warning)' : 'var(--border)'}">
+                        <div class="stat-val ${unmatchedSchools > 0 ? 'text-warning' : ''}">${unmatchedSchools}</div>
+                        <div class="stat-label">Unmatched Schools</div>
+                    </div>
+                `;
+
+                const tbody = document.getElementById("previewBody");
+                tbody.innerHTML = filtered.map(r => {
+                    const timeOk = !isNaN(r.time_seconds) && r.time_seconds > 0;
+                    let statusBadge;
+                    if (!timeOk) statusBadge = `<span class="badge badge-danger">✗ Bad Time</span>`;
+                    else if (!r.school_matched) statusBadge = `<span class="badge badge-warning">⚠ New School</span>`;
+                    else statusBadge = `<span class="badge badge-success">✓ Ready</span>`;
+
+                    return `
+                    <tr>
+                        <td>${statusBadge}</td>
+                        <td><strong>${r.race_type}</strong><br><span style="font-size:0.7rem;color:var(--text-muted)">${this.genderLabel(r.gender)} · ${r.distance}m</span></td>
+                        <td style="color: var(--text-muted); font-size: 0.75rem;">${r.raw_event}</td>
+                        <td>${r.athlete_name}</td>
+                        <td>${r.school_raw}${!r.school_matched ? ` <span style="color:var(--warning);font-size:0.7rem;">(${r.school_slug})</span>` : ''}</td>
+                        <td>${r.grade || '—'}</td>
+                        <td>${r.place || '—'}</td>
+                        <td><strong>${r.mark}</strong></td>
+                    </tr>
+                `;
+                }).join("");
+            }
+
+            async executeImport() {
+                const checkedEvents = [...document.querySelectorAll(".evt-cb:checked")].map(cb => cb.value);
+                const toImport = this.parsedRows.filter(r =>
+                    checkedEvents.includes(r.raw_event) && r.athlete_name && !isNaN(r.time_seconds) && r.time_seconds > 0
+                );
+
+                if (toImport.length === 0) return alert("No valid rows to import!");
+                if (!confirm(`You are about to import ${toImport.length} results to the live database. Proceed?`)) return;
+
+                const btn = document.getElementById("importBtn");
+                const progressContainer = document.getElementById("progressContainer");
+                const progressFill = document.getElementById("progressFill");
+
+                btn.disabled = true;
+                btn.innerText = "Importing Data... Please Wait.";
+                progressContainer.style.display = "block";
+
+                const nowIso = new Date().toISOString();
+                let newAthletesCreated = 0;
+
+                for (let i = 0; i < toImport.length; i++) {
+                    const row = toImport[i];
+                    const safeName = (row.athlete_name || "Unknown").trim().toLowerCase();
+                    const cacheKey = `${row.school_slug}|${safeName}`;
+
+                    let athleteId = this.athletesCache[cacheKey];
+                    if (!athleteId) {
+                        const gradYear = this.estimateGradYear(row.grade);
+                        const newAthlete = {
+                            name: row.athlete_name,
+                            school_slug: row.school_slug,
+                            gender: row.gender,
+                            created_at: nowIso,
+                            source: 'anet_import',
+                        };
+                        if (gradYear) newAthlete.grade = gradYear;
+
+                        try {
+                            const newAth = await window.firebaseDatabase.ref(`${CC_PREFIX}/athletes`).push(newAthlete);
+                            athleteId = newAth.key;
+                            this.athletesCache[cacheKey] = athleteId;
+                            newAthletesCreated++;
+                        } catch (e) {
+                            console.error("Athlete creation failed:", e);
+                        }
+                    }
+
+                    const resultData = {
+                        athlete_name: row.athlete_name,
+                        school_slug: row.school_slug,
+                        gender: row.gender,
+                        time: row.time_seconds,
+                        distance: row.distance,
+                        place: parseInt(row.place) || null,
+                        race_type: row.race_type,
+                        meet_slug: row.meet_slug,
+                        created_at: nowIso,
+                    };
+
+                    await window.firebaseDatabase.ref(`${CC_PREFIX}/results`).push(resultData);
+
+                    if (i % 5 === 0 || i === toImport.length - 1) {
+                        progressFill.style.width = `${((i + 1) / toImport.length) * 100}%`;
+                        await new Promise(resolve => setTimeout(resolve, 0));
+                    }
+                }
+
+                btn.innerText = "Import Complete ✓";
+                btn.classList.replace("btn-primary", "btn-secondary");
+                alert(`Successfully imported ${toImport.length} results!` +
+                    (newAthletesCreated > 0 ? ` (${newAthletesCreated} new athlete${newAthletesCreated === 1 ? '' : 's'} added to the roster.)` : ''));
+
+                await this.loadImportedEventsForMeet(this.currentMeetSlug);
+                document.getElementById("pasteArea").value = "";
+                btn.disabled = false;
+                btn.innerText = "Commit Results to Database";
+                btn.classList.replace("btn-secondary", "btn-primary");
+                progressContainer.style.display = "none";
+                progressFill.style.width = "0%";
+            }
+        }
+
+        const importer = new XCMeetImporter();
+        importer.init();
+    </script>
+
+
   </main>
 
 <div id="global-footer"></div>

@@ -14,7 +14,7 @@
   <meta name="description" content="WV running results, rankings, times, rosters, and meet data — Mountain State Miles." />
   <meta name="keywords" content="WVXC, WV Track, West Virginia Running, Cross Country Results, WV HS Running, Mountain State Miles" />
   <link rel="stylesheet" href="/assets/main.css" />
-  <link rel="stylesheet" href="/assets/msm-loader.css" />
+  
   
   <script>
     window.addEventListener("DOMContentLoaded", () => {
@@ -138,9 +138,10 @@
             'cabell midland': 'cabell-midland',
             'mineral wells': 'chick-fil-a',
             'meadowood': 'meadowood-park',
-            'beckley': 'beckley-invitational',
+            'pipestem': 'pipestem-state-park',
             'south harrison': 'south-harrison',
-            'glen oak': 'glen-oak'
+            'glen oak': 'glen-oak',
+            'holmdel': 'holmdel-park'
         };
 
         let courseSlug = null;
@@ -166,6 +167,15 @@
           loadWeatherForMeet(currentMeetData.location, currentMeetData.date);
         }
 
+        // Fetch schools once - used both for "teams coming" chips and to resolve result school names below.
+        const schools = await window.getAllSchools();
+        const schoolSlugToName = {};
+        if (schools && schools.length) {
+          schools.forEach(s => { schoolSlugToName[s.slug || ''] = s.name || s.slug; });
+        }
+
+        renderExpectedTeams(currentMeetData, schoolSlugToName);
+
         allResults = await window.getResultsByMeet(slug);
         
         if (!allResults || allResults.length === 0) {
@@ -174,11 +184,6 @@
             return;
         }
 
-        const schools = await window.getAllSchools();
-        const schoolSlugToName = {};
-        if (schools && schools.length) {
-          schools.forEach(s => { schoolSlugToName[s.slug || ''] = s.name || s.slug; });
-        }
         allResults.forEach(r => {
           if ((!r.school_name && !r.school) && r.school_slug) {
             r.school_name = schoolSlugToName[r.school_slug] || r.school_slug;
@@ -197,6 +202,35 @@
         document.dispatchEvent(new Event("MSMDataLoaded"));
       }
     });
+
+    // ==========================================
+    // 3.4 TEAMS COMING TO THIS MEET
+    // ==========================================
+
+    function renderExpectedTeams(meet, schoolSlugToName) {
+      const teams = Array.isArray(meet.expected_teams) ? meet.expected_teams.filter(Boolean) : [];
+      if (teams.length === 0) return;
+
+      const metaDiv = document.getElementById("meet-meta");
+      const chipStyle = "display:inline-flex;align-items:center;gap:6px;padding:5px 10px 5px 6px;margin:4px 4px 0 0;border-radius:20px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);text-decoration:none;color:inherit;font-size:0.85rem;font-weight:600;";
+      const imgStyle = "width:20px;height:20px;border-radius:50%;object-fit:cover;background:#fff;";
+
+      const chipsHtml = teams.map(function (slug) {
+        const name = schoolSlugToName[slug] || slug.replace(/-/g, ' ');
+        const logoUrl = "/assets/team logos/" + slug + ".png";
+        return '<a href="school.html?slug=' + slug + '" class="team-chip" style="' + chipStyle + '">' +
+          '<img src="' + logoUrl + '" alt="" style="' + imgStyle + '" onerror="this.style.display=\'none\';">' +
+          name +
+          '</a>';
+      }).join('');
+
+      const wrapper = document.createElement('div');
+      wrapper.style.marginTop = '14px';
+      wrapper.innerHTML =
+        '<div style="font-size:0.8rem;text-transform:uppercase;letter-spacing:0.04em;color:var(--text-dim,#9fb4c8);margin-bottom:6px;">Teams Expected</div>' +
+        '<div style="display:flex;flex-wrap:wrap;">' + chipsHtml + '</div>';
+      metaDiv.appendChild(wrapper);
+    }
 
     // ==========================================
     // 3.5 HISTORICAL WEATHER WIDGET FUNCTIONS
@@ -563,21 +597,22 @@
                     <tbody>
                         ${results.map(runner => {
                             const timeSeconds = runner.time ? parseFloat(runner.time) : 0; 
-                            const athleteSlug = slugify(runner.athlete_name || runner.name);
+                            const athleteName = runner.athlete_name || runner.name || 'Unknown';
                             const rawSchool = runner.school_name || runner.school || runner.school_slug || 'Unknown';
                             const schoolSlug = runner.school_slug || slugify(normalizeSchoolName(rawSchool));
+                            const athleteHref = `athlete.html?name=${encodeURIComponent(athleteName)}&school=${encodeURIComponent(schoolSlug)}`;
 
                             return `
                             <tr>
                                 <td data-label="Place">${runner.place || '-'}</td>
                                 <td data-label="Name">
-                                    <a href="athlete.html?slug=${athleteSlug}" style="font-weight:bold; color:var(--text);">
-                                        ${runner.athlete_name || runner.name || 'Unknown'}
+                                    <a href="${athleteHref}" style="font-weight:bold; color:var(--text);">
+                                        ${athleteName}
                                     </a>
                                 </td>
                                 <td data-label="Grade">${formatGrade(runner.gradYear)}</td>
                                 <td data-label="School">
-                                    <a href="schools.html?slug=${schoolSlug}" style="color:var(--text-dim);">
+                                    <a href="school.html?slug=${schoolSlug}" style="color:var(--text-dim);">
                                         ${rawSchool}
                                     </a>
                                 </td>

@@ -1,226 +1,1535 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mountain State Miles | Admin</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <style>
-    body { background-color: #f8f9fa; }
-    .card { margin-bottom: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-  </style>
-
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Cross Country Admin Dashboard</title>
   <link rel="stylesheet" href="/assets/main.css" />
-  
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="/assets/theme-toggle.js" defer></script>
   <script src="/assets/components.js" defer></script>
+  <style>
+    * { box-sizing: border-box; }
+
+    :root {
+      --bg: radial-gradient(circle at top left, #101425 0%, #050712 35%, #020308 100%);
+      --panel: rgba(8, 12, 26, 0.96);
+      --card: rgba(18, 24, 44, 0.96);
+      --accent: #ff7b2d;
+      --accent-hover: #ff9a4f;
+      --muted: #9fb4c8;
+      --border: rgba(255,255,255,0.08);
+      --hover: rgba(255,255,255,0.06);
+      --success: #22c55e;
+      --danger: #f97373;
+      --warning: #eab308;
+      --info: #38bdf8;
+      --shadow-soft: 0 18px 45px rgba(0,0,0,0.55);
+      --radius-lg: 18px;
+    }
+
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #020308;
+      background-image: var(--bg);
+      color: #e6f0f7;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body { overflow: hidden; }
+
+    .app-wrapper {
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 280px;
+      background: linear-gradient(180deg, rgba(8,12,26,0.98) 0%, rgba(8,12,26,0.96) 40%, rgba(8,12,26,0.94) 100%);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      padding: 24px;
+      gap: 20px;
+      box-shadow: 0 0 40px rgba(0,0,0,0.6);
+    }
+
+    .sidebar-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .sidebar-brand img {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      object-fit: contain;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.55);
+    }
+
+    .sidebar-brand h1 {
+      font-size: 1.05rem;
+      margin: 0;
+      font-weight: 700;
+      line-height: 1.2;
+      letter-spacing: 0.03em;
+    }
+
+    .sidebar-brand .subtitle {
+      font-size: 0.72rem;
+      color: var(--accent);
+      margin-top: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      font-weight: 700;
+    }
+
+    .nav-section { display: flex; flex-direction: column; gap: 4px; }
+
+    .nav-section-title {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--muted);
+      padding: 8px 12px;
+      font-weight: 700;
+      margin-top: 6px;
+      margin-bottom: 2px;
+    }
+
+    .nav-btn {
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--muted);
+      padding: 10px 14px;
+      border-radius: 999px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.18s ease-out;
+      text-align: left;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.92rem;
+      text-decoration: none;
+    }
+
+    .nav-btn:hover {
+      background: var(--hover);
+      color: #fff;
+      border-color: var(--border);
+      transform: translateX(2px);
+    }
+
+    .nav-btn.active {
+      background: radial-gradient(circle at top left, var(--accent) 0%, var(--accent-hover) 45%, #ffd28c 140%);
+      color: #17100a;
+      box-shadow: 0 10px 26px rgba(255, 123, 45, 0.4);
+      font-weight: 700;
+    }
+
+    .sidebar-spacer { flex: 1; }
+
+    .logout-section { padding-top: 16px; border-top: 1px solid var(--border); }
+
+    .logout-btn {
+      width: 100%;
+      padding: 12px 16px;
+      border: none;
+      background: var(--danger);
+      color: white;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .logout-btn:hover { background: #d64545; transform: translateY(-2px); }
+
+    /* Main */
+    .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 24px;
+      background: linear-gradient(90deg, rgba(12,18,40,0.98), rgba(18,27,54,0.98));
+      border-bottom: 1px solid var(--border);
+      gap: 16px;
+      box-shadow: 0 16px 40px rgba(0,0,0,0.6);
+      position: relative;
+      z-index: 5;
+      flex-wrap: wrap;
+    }
+
+    .topbar h2 { margin: 0; font-size: 1.3rem; font-weight: 700; }
+
+    .topbar-links { display: flex; gap: 10px; flex-wrap: wrap; }
+    .topbar-links a {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.82rem;
+      padding: 6px 10px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+    }
+    .topbar-links a:hover { color: #fff; border-color: var(--accent); }
+
+    .topbar-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-left: auto;
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+
+    .topbar-pill {
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      background: rgba(15, 23, 42, 0.9);
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+
+    .content { flex: 1; overflow: auto; padding: 24px; }
+
+    /* Grid */
+    .grid-container {
+      background: radial-gradient(circle at top left, rgba(21, 32, 63, 0.95), rgba(11, 18, 34, 0.97));
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      box-shadow: var(--shadow-soft);
+    }
+
+    .grid-header {
+      padding: 16px 20px;
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .grid-header h3 { margin: 0; font-size: 1.1rem; font-weight: 600; }
+
+    .grid-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+
+    .btn {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 0.9rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      text-decoration: none;
+    }
+
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover { background: var(--accent-hover); transform: translateY(-1px); }
+    .btn-secondary { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+    .btn-secondary:hover { background: var(--hover); color: #fff; }
+    .btn-danger { background: var(--danger); color: #fff; }
+    .btn-danger:hover { background: #e05555; transform: translateY(-1px); }
+    .btn-success { background: var(--success); color: #fff; }
+    .btn-success:hover { background: #1ea855; }
+    .btn-small { padding: 4px 10px; font-size: 0.8rem; }
+
+    #grid-search, .form-input select, select.form-input {
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: #e6f0f7;
+      border-radius: 6px;
+      min-width: 190px;
+    }
+
+    .grid-scroll { flex: 1; overflow: auto; position: relative; }
+
+    .grid-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+
+    .grid-table thead { position: sticky; top: 0; z-index: 10; background: var(--card); }
+
+    .grid-table th {
+      padding: 12px 14px;
+      text-align: left;
+      font-weight: 700;
+      color: var(--muted);
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 2px solid var(--border);
+      white-space: nowrap;
+      user-select: none;
+      cursor: pointer;
+    }
+
+    .grid-table th:hover { background: var(--hover); color: #fff; }
+
+    .grid-table tbody tr { border-bottom: 1px solid var(--border); transition: all 0.15s; }
+    .grid-table tbody tr:hover { background: var(--hover); }
+    .grid-table td { padding: 10px 14px; border-right: 1px solid var(--border); vertical-align: top; }
+    .grid-table td:last-child { border-right: none; white-space: nowrap; }
+
+    .empty-state { padding: 50px 20px; text-align: center; color: var(--muted); }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 1000; animation: fadeIn 0.2s;
+    }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    .modal {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      max-width: 620px;
+      width: 92%;
+      max-height: 90vh;
+      overflow: auto;
+      animation: slideUp 0.25s;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    }
+    @keyframes slideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+
+    .modal-header {
+      padding: 20px 24px;
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .modal-header h2 { margin: 0; font-size: 1.25rem; }
+    .modal-close {
+      background: none; border: none; font-size: 1.4rem; color: var(--muted);
+      cursor: pointer; width: 32px; height: 32px; border-radius: 6px;
+    }
+    .modal-close:hover { background: var(--hover); color: #fff; }
+    .modal-body { padding: 22px 24px; }
+    .modal-footer { padding: 16px 24px; border-top: 1px solid var(--border); display: flex; gap: 12px; justify-content: flex-end; }
+
+    .form-group { margin-bottom: 15px; display: flex; flex-direction: column; gap: 6px; }
+    .form-label { font-weight: 600; color: var(--muted); font-size: 0.87rem; }
+    .form-input {
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: #e6f0f7;
+      border-radius: 6px;
+      font-size: 0.94rem;
+      width: 100%;
+      font-family: inherit;
+    }
+    .form-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(255, 123, 45, 0.15); }
+    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px,1fr)); gap: 16px; margin-bottom: 16px; }
+
+    .checkbox-grid {
+      display: flex; flex-wrap: wrap; gap: 10px; max-height: 220px; overflow: auto;
+      padding: 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--card);
+    }
+    .checkbox-grid .chk { display: flex; align-items: center; gap: 6px; font-size: 0.85rem; cursor: pointer; white-space: nowrap; }
+
+    /* Stats */
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    .stat-card { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 20px; text-align: center; }
+    .stat-number { font-size: 2.3rem; font-weight: 700; color: var(--accent); margin: 0; }
+    .stat-label { color: var(--muted); font-size: 0.88rem; margin: 8px 0 0; }
+
+    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 24px; }
+    .panel h3 { margin: 0 0 8px 0; }
+    .panel h4 { margin: 16px 0 8px 0; font-size: 0.95rem; }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
+    @media (max-width: 900px) { .two-col { grid-template-columns: 1fr; } }
+
+    .badge {
+      display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 999px;
+      font-size: 0.76rem; font-weight: 700; white-space: nowrap;
+    }
+    .badge-success { background: rgba(34,197,94,0.15); color: #22c55e; border: 1px solid rgba(34,197,94,0.4); }
+    .badge-warning { background: rgba(234,179,8,0.15); color: #eab308; border: 1px solid rgba(234,179,8,0.4); }
+    .badge-danger { background: rgba(249,115,115,0.15); color: #f97373; border: 1px solid rgba(249,115,115,0.4); }
+    .badge-info { background: rgba(56,189,248,0.15); color: #38bdf8; border: 1px solid rgba(56,189,248,0.4); }
+    .badge-muted { background: rgba(159,180,200,0.12); color: var(--muted); border: 1px solid var(--border); }
+
+    .alert { padding: 10px 14px; border-radius: 8px; font-size: 0.9rem; margin-top: 10px; }
+    .alert-success { background: rgba(34,197,94,0.12); color: #22c55e; border: 1px solid rgba(34,197,94,0.4); }
+    .alert-danger { background: rgba(249,115,115,0.12); color: #f97373; border: 1px solid rgba(249,115,115,0.4); }
+
+    .divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+    .muted { color: var(--muted); }
+
+    .mobile-menu-button {
+      display: none; width: 44px; height: 44px; padding: 10px;
+      background: transparent; border: none; color: #e6f0f7; font-size: 1.4rem; cursor: pointer;
+    }
+    .mobile-menu-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 998; }
+    .mobile-menu-overlay.active { display: block; }
+
+    @media (max-width: 900px) {
+      .app-wrapper { flex-direction: column; }
+      .sidebar {
+        position: fixed; left: 0; top: 0; width: 270px; height: 100vh; z-index: 999;
+        transform: translateX(-100%); transition: transform 0.3s ease;
+      }
+      .sidebar.mobile-open { transform: translateX(0); }
+      .mobile-menu-button { display: block; }
+      .content { padding: 14px; }
+      .topbar { padding: 12px 14px; }
+      .topbar-info { display: none; }
+      .form-grid { grid-template-columns: 1fr; }
+    }
+  </style>
 </head>
 <body>
 
   <div id="global-header"></div>
 
-  <main class="content-section">
-  <nav class="navbar navbar-dark bg-dark mb-4">
-    <div class="container">
-      <span class="navbar-brand mb-0 h1">🏔️ Mountain State Miles Admin</span>
-      <span id="db-status" class="badge bg-secondary">Checking DB Status...</span>
-    </div>
-  </nav>
+  <script src="/assets/msm-loader.js"></script>
 
-  <div class="container">
-    <div class="row">
-      
-      <div class="col-md-8">
-        
-        <div class="card">
-          <div class="card-header bg-primary text-white">Create New Meet</div>
-          <div class="card-body">
-            <form id="create-meet-form">
-              <div class="row g-3">
-                <div class="col-sm-6">
-                  <label class="form-label">Meet Name</label>
-                  <input type="text" id="meet-name" class="form-control" placeholder="e.g., WV State Championship" required>
-                </div>
-                <div class="col-sm-6">
-                  <label class="form-label">Meet Slug</label>
-                  <input type="text" id="meet-slug" class="form-control" placeholder="e.g., wv-state-champ-2026" required>
-                </div>
-                <div class="col-sm-6">
-                  <label class="form-label">Date</label>
-                  <input type="date" id="meet-date" class="form-control" required>
-                </div>
-                <div class="col-sm-6">
-                  <label class="form-label">Divisions (Optional)</label>
-                  <input type="text" id="meet-divisions" class="form-control" placeholder="e.g., AAA, AA, A">
-                </div>
-              </div>
-              <button type="submit" class="btn btn-primary mt-3">Create Meet</button>
-            </form>
-            <div id="create-meet-msg" class="mt-2 text-success" style="display:none;"></div>
-          </div>
+  <div class="app-wrapper">
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-brand">
+        <img src="/assets/images/logo.png" alt="logo">
+        <div>
+          <h1>Mountain State Miles</h1>
+          <div class="subtitle">XC Admin</div>
+        </div>
+      </div>
+
+      <nav>
+        <div class="nav-section-title">Main</div>
+        <div class="nav-section" id="main-nav">
+          <button class="nav-btn active" data-section="dashboard">📊 Dashboard</button>
+          <button class="nav-btn" data-section="meets">🏁 Meets</button>
+          <button class="nav-btn" data-section="schools">🏫 Schools</button>
+          <button class="nav-btn" data-section="athletes">🏃 Athletes</button>
+          <button class="nav-btn" data-section="results">🏆 Results</button>
         </div>
 
-        <div class="card">
-          <div class="card-header bg-white fw-bold">Recent Meets</div>
-          <div class="table-responsive">
-            <table class="table table-hover mb-0">
-              <thead class="table-light">
+        <div class="nav-section-title">Tools</div>
+        <div class="nav-section" id="tools-nav">
+          <button class="nav-btn" data-section="manual-entry">✏️ Manual Entry</button>
+          <button class="nav-btn" data-section="seasons">📅 Seasons</button>
+          <button class="nav-btn" data-section="email-tools">✉️ Email Tools</button>
+          <a href="csv-import.html" class="nav-btn">📥 CSV Import</a>
+          <a href="courses/course-admin.html" class="nav-btn">🗺️ Course Admin</a>
+        </div>
+
+        <div class="nav-section-title">Public Pages</div>
+        <div class="nav-section" id="external-nav">
+          <a href="meets-dashboard.html" class="nav-btn">📋 Meets Dashboard</a>
+          <a href="rankings.html" class="nav-btn">🥇 Rankings</a>
+          <a href="analytics.html" class="nav-btn">📈 Analytics</a>
+          <a href="/home" class="nav-btn">🏠 MSM Home</a>
+        </div>
+      </nav>
+
+      <div class="sidebar-spacer"></div>
+
+      <div class="logout-section">
+        <button class="logout-btn" id="logout-btn">Log Out</button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="topbar">
+        <button class="mobile-menu-button" id="mobile-menu-btn">☰</button>
+        <h2 id="page-title">Dashboard</h2>
+        <div class="topbar-info">
+          <span class="topbar-pill">🔗 Firebase Connected</span>
+          <span class="topbar-pill" id="record-count">0 records</span>
+        </div>
+      </div>
+      <div class="content" id="content">
+        <div class="empty-state">Loading…</div>
+      </div>
+    </main>
+  </div>
+
+  <div class="mobile-menu-overlay" id="mobile-menu-overlay"></div>
+
+  <!-- Modal Template -->
+  <template id="modal-template">
+    <div class="modal-overlay" onclick="if(event.target === this) closeModal()">
+      <div class="modal">
+        <div class="modal-header">
+          <h2 id="modal-title">Modal Title</h2>
+          <button class="modal-close" onclick="closeModal()">✕</button>
+        </div>
+        <div class="modal-body" id="modal-body"></div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+          <button class="btn btn-primary" id="modal-submit" onclick="handleGridModalSubmit()">Save</button>
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="firebase-helpers.js"></script>
+  <script>
+    // ==========================================
+    // Auth Gate (must match CrossCountry/login.html EXACTLY)
+    // ==========================================
+    if (localStorage.getItem("&#120; &#99; &#97; &#100; &#109; &#105; &#110;") !== "&#116; &#114; &#117; &#101;") {
+      window.location.replace('login.html');
+    }
+
+    document.getElementById('logout-btn').addEventListener('click', () => {
+      localStorage.removeItem("&#120; &#99; &#97; &#100; &#109; &#105; &#110;");
+      window.location.replace('login.html');
+    });
+
+    // ==========================================
+    // Utilities
+    // ==========================================
+    function escapeHtml(str) {
+      if (str === undefined || str === null) return '';
+      return String(str).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+    }
+    function escapeAttr(str) { return escapeHtml(str); }
+
+    function slugify(str) {
+      return String(str || '')
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9\s-]/g, '')
+        .replace(/\s+/g, '-')
+        .replace(/-+/g, '-');
+    }
+
+    function formatSecondsToTime(seconds) {
+      if (seconds === null || seconds === undefined || isNaN(seconds)) return '—';
+      const total = Number(seconds);
+      const mins = Math.floor(total / 60);
+      const secs = total - mins * 60;
+      return `${mins}:${secs.toFixed(2).padStart(5, '0')}`;
+    }
+
+    function formatCell(value) {
+      if (value === null || value === undefined || value === '') return '—';
+      if (Array.isArray(value)) return escapeHtml(value.join(', '));
+      return escapeHtml(String(value));
+    }
+
+    async function waitForFirebase() {
+      let attempts = 0;
+      while (typeof window.firebaseDatabase === 'undefined' && attempts < 50) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        attempts++;
+      }
+    }
+
+    function updateRecordCount(count) {
+      const el = document.getElementById('record-count');
+      if (el) el.textContent = `${count} records`;
+    }
+
+    async function fetchNodeAsArray(path) {
+      const snap = await window.firebaseDatabase.ref(path).once('value');
+      const val = snap.val() || {};
+      return Object.keys(val).map(id => ({ id, ...val[id] }));
+    }
+
+    // ==========================================
+    // Direct Firebase CRUD (no bulk-edit / logging layer)
+    // ==========================================
+    async function createRecord(path, data) {
+      const ref = window.firebaseDatabase.ref(path).push();
+      await ref.set(data);
+      return ref.key;
+    }
+    async function updateRecord(path, updates) {
+      await window.firebaseDatabase.ref(path).update(updates);
+    }
+    async function deleteRecord(path) {
+      await window.firebaseDatabase.ref(path).remove();
+    }
+
+    // ==========================================
+    // Athlete status (computed locally — see note at bottom of file
+    // about the grade/grad_year field mismatch in firebase-helpers.js)
+    // ==========================================
+    function computeAthleteStatus(row) {
+      const gradYear = parseInt(row.grade, 10);
+      if (isNaN(gradYear)) return { label: 'Unknown', cls: 'badge-muted' };
+      const now = new Date();
+      const academicYear = now.getMonth() >= 7 ? now.getFullYear() + 1 : now.getFullYear();
+      if (gradYear < academicYear) return { label: 'Graduated', cls: 'badge-muted' };
+      if (gradYear === academicYear) return { label: 'Senior', cls: 'badge-warning' };
+      const yearsOut = gradYear - academicYear;
+      const label = ['Senior', 'Junior', 'Sophomore', 'Freshman'][yearsOut - 1] || 'Active';
+      return { label, cls: 'badge-success' };
+    }
+    function renderAthleteStatusBadge(row) {
+      const s = computeAthleteStatus(row);
+      return `<span class="badge ${s.cls}">${s.label}</span>`;
+    }
+
+    // ==========================================
+    // Navigation
+    // ==========================================
+    let currentSection = 'dashboard';
+
+    function setActiveNav(section) {
+      document.querySelectorAll('.nav-btn[data-section]').forEach(b => {
+        b.classList.toggle('active', b.dataset.section === section);
+      });
+    }
+
+    ['main-nav', 'tools-nav'].forEach(id => {
+      document.getElementById(id).addEventListener('click', (e) => {
+        const btn = e.target.closest('button[data-section]');
+        if (!btn) return;
+        setActiveNav(btn.dataset.section);
+        loadSection(btn.dataset.section);
+        closeMobileMenu();
+      });
+    });
+
+    const mobileBtn = document.getElementById('mobile-menu-btn');
+    const mobileOverlay = document.getElementById('mobile-menu-overlay');
+    mobileBtn.addEventListener('click', () => {
+      document.getElementById('sidebar').classList.add('mobile-open');
+      mobileOverlay.classList.add('active');
+    });
+    mobileOverlay.addEventListener('click', closeMobileMenu);
+    function closeMobileMenu() {
+      document.getElementById('sidebar').classList.remove('mobile-open');
+      mobileOverlay.classList.remove('active');
+    }
+
+    const SECTION_TITLES = {
+      dashboard: 'Dashboard',
+      meets: 'Meets',
+      schools: 'Schools',
+      athletes: 'Athletes',
+      results: 'Results',
+      'manual-entry': 'Manual Result Entry',
+      seasons: 'Season Management',
+      'email-tools': 'Email Tools'
+    };
+
+    async function loadSection(section) {
+      currentSection = section;
+      document.getElementById('page-title').textContent = SECTION_TITLES[section] || section;
+      document.getElementById('content').innerHTML = `<div class="empty-state">Loading ${SECTION_TITLES[section] || section}…</div>`;
+      try {
+        switch (section) {
+          case 'dashboard': await renderDashboard(); break;
+          case 'meets': await renderMeets(); break;
+          case 'schools': await renderSchools(); break;
+          case 'athletes': await renderAthletes(); break;
+          case 'results': await renderResults(); break;
+          case 'manual-entry': await renderManualEntry(); break;
+          case 'seasons': await renderSeasons(); break;
+          case 'email-tools': await renderEmailTools(); break;
+          default: await renderDashboard();
+        }
+      } catch (err) {
+        console.error('Error loading section:', err);
+        document.getElementById('content').innerHTML =
+          `<div class="empty-state" style="color: var(--danger);">Error loading section: ${escapeHtml(err.message)}</div>`;
+      }
+    }
+
+    // ==========================================
+    // Generic Grid Engine (used by Meets / Schools / Athletes / Results)
+    // ==========================================
+    let grid = {};
+    let editingId = null;
+
+    function renderGridSection(cfg) {
+      grid = Object.assign({ idKey: 'id', sortCol: null, sortDir: 'asc', searchTerm: '' }, cfg);
+      grid.filtered = grid.data.slice();
+      paintGrid();
+    }
+
+    function paintGrid() {
+      const html = `
+        <div class="grid-container">
+          <div class="grid-header">
+            <h3 id="grid-title-count">${escapeHtml(grid.title)} (${grid.filtered.length})</h3>
+            <div class="grid-actions">
+              ${grid.extraFiltersHTML || ''}
+              <input type="text" id="grid-search" placeholder="🔍 Search..." value="${escapeAttr(grid.searchTerm || '')}">
+              <button class="btn btn-primary" onclick="openGridAddModal()">+ Add</button>
+              <button class="btn btn-secondary" onclick="exportGridCSV()">📥 Export</button>
+            </div>
+          </div>
+          <div class="grid-scroll">
+            <table class="grid-table">
+              <thead>
                 <tr>
-                  <th>Date</th>
-                  <th>Name</th>
-                  <th>Slug</th>
-                  <th>Divisions</th>
+                  ${grid.columns.map(c => `<th onclick="sortGrid('${c.key}')">${escapeHtml(c.label)}<span id="sort-ind-${c.key}" style="font-size:0.8rem;"></span></th>`).join('')}
+                  <th style="width:140px; cursor:default;">Actions</th>
                 </tr>
               </thead>
-              <tbody id="meets-table-body">
-                <tr><td colspan="4" class="text-center text-muted">Loading meets...</td></tr>
-              </tbody>
+              <tbody id="grid-body">${renderGridBody()}</tbody>
             </table>
           </div>
         </div>
+      `;
+      document.getElementById('content').innerHTML = html;
+      document.getElementById('grid-search')?.addEventListener('input', (e) => {
+        grid.searchTerm = e.target.value;
+        applyGridFilter();
+      });
+      if (grid.bindExtra) grid.bindExtra();
+      updateRecordCount(grid.filtered.length);
+    }
 
-      </div>
+    function renderGridBody() {
+      if (!grid.filtered.length) {
+        return `<tr><td colspan="${grid.columns.length + 1}" class="empty-state">No records found.</td></tr>`;
+      }
+      return renderGridRows();
+    }
 
-      <div class="col-md-4">
-        
-        <div class="card">
-          <div class="card-header bg-success text-white">Bulk Import Results</div>
-          <div class="card-body">
-            <p class="text-muted small">Select a meet and paste your CSV data (no headers) to import results.</p>
-            <form id="import-results-form">
-              <div class="mb-3">
-                <label class="form-label">Select Meet</label>
-                <select id="import-meet-slug" class="form-select" required>
-                  <option value="">Loading meets...</option>
-                </select>
-              </div>
-              <div class="mb-3">
-                <label class="form-label">CSV Data</label>
-                <textarea id="import-csv-data" class="form-control" rows="5" placeholder="John Smith,morgantown,M,18:30.45,5000,1" required></textarea>
-                <div class="form-text">Order: Name, School Slug, Gender, Time, Distance, Place</div>
-              </div>
-              <button type="submit" class="btn btn-success w-100">Run Import</button>
-            </form>
-            <div id="import-msg" class="mt-2 small"></div>
+    function renderGridRows() {
+      return grid.filtered.map(row => `
+        <tr>
+          ${grid.columns.map(c => {
+            const val = c.render ? c.render(row) : formatCell(row[c.key]);
+            return `<td>${val}</td>`;
+          }).join('')}
+          <td>
+            <button class="btn btn-secondary btn-small" onclick="openGridEditModal('${row[grid.idKey]}')">Edit</button>
+            <button class="btn btn-danger btn-small" onclick="confirmGridDelete('${row[grid.idKey]}')">Delete</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function refreshGridBody() {
+      const body = document.getElementById('grid-body');
+      if (body) body.innerHTML = renderGridBody();
+      const titleEl = document.getElementById('grid-title-count');
+      if (titleEl) titleEl.textContent = `${grid.title} (${grid.filtered.length})`;
+      updateRecordCount(grid.filtered.length);
+    }
+
+    function applyGridFilter() {
+      const term = (grid.searchTerm || '').toLowerCase();
+      grid.filtered = grid.data.filter(row => {
+        if (grid.customFilter && !grid.customFilter(row)) return false;
+        if (!term) return true;
+        return grid.columns.some(c => {
+          const v = row[c.key];
+          const s = Array.isArray(v) ? v.join(' ') : String(v ?? '');
+          return s.toLowerCase().includes(term);
+        });
+      });
+      refreshGridBody();
+    }
+
+    function sortGrid(col) {
+      if (grid.sortCol === col) grid.sortDir = grid.sortDir === 'asc' ? 'desc' : 'asc';
+      else { grid.sortCol = col; grid.sortDir = 'asc'; }
+
+      grid.data.sort((a, b) => {
+        let av = a[col], bv = b[col];
+        if (Array.isArray(av)) av = av.length;
+        if (Array.isArray(bv)) bv = bv.length;
+        av = av ?? ''; bv = bv ?? '';
+        const an = parseFloat(av), bn = parseFloat(bv);
+        let cmp;
+        if (!isNaN(an) && !isNaN(bn) && String(av).trim() !== '' && String(bv).trim() !== '') cmp = an - bn;
+        else cmp = String(av).localeCompare(String(bv));
+        return grid.sortDir === 'asc' ? cmp : -cmp;
+      });
+
+      applyGridFilter();
+      document.querySelectorAll('[id^="sort-ind-"]').forEach(el => el.textContent = '');
+      const ind = document.getElementById('sort-ind-' + col);
+      if (ind) ind.textContent = grid.sortDir === 'asc' ? ' ↑' : ' ↓';
+    }
+
+    function exportGridCSV() {
+      const headers = grid.columns.map(c => c.label).join(',');
+      const rows = grid.filtered.map(row => grid.columns.map(c => {
+        let v = row[c.key];
+        if (Array.isArray(v)) v = v.join('; ');
+        v = v ?? '';
+        return `"${String(v).replace(/"/g, '""')}"`;
+      }).join(','));
+      const csv = [headers, ...rows].join('\n');
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${grid.title.toLowerCase().replace(/\s+/g, '-')}-${new Date().toISOString().split('T')[0]}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function singularize(title) {
+      if (title.endsWith('ies')) return title.slice(0, -3) + 'y';
+      if (title.endsWith('s')) return title.slice(0, -1);
+      return title;
+    }
+
+    function openGridAddModal() {
+      editingId = null;
+      openModal(`Add ${singularize(grid.title)}`, generateGridFormHTML({}), 'Create');
+    }
+
+    function openGridEditModal(id) {
+      editingId = id;
+      const record = grid.data.find(r => String(r[grid.idKey]) === String(id));
+      if (!record) return;
+      openModal(`Edit ${singularize(grid.title)}`, generateGridFormHTML(record), 'Update');
+    }
+
+    function generateGridFormHTML(record) {
+      return grid.columns.filter(c => !c.formExclude).map(c => {
+        const raw = record[c.key];
+
+        if (c.type === 'select') {
+          const opts = typeof c.options === 'function' ? c.options() : (c.options || []);
+          return `<div class="form-group"><label class="form-label">${escapeHtml(c.label)}</label>
+            <select class="form-input" data-field="${c.key}">
+              <option value="">-- Select --</option>
+              ${opts.map(o => `<option value="${escapeAttr(o.value)}" ${String(raw ?? '') === String(o.value) ? 'selected' : ''}>${escapeHtml(o.label)}</option>`).join('')}
+            </select></div>`;
+        }
+
+        if (c.type === 'multiselect') {
+          const opts = typeof c.options === 'function' ? c.options() : (c.options || []);
+          const selected = Array.isArray(raw) ? raw : [];
+          return `<div class="form-group"><label class="form-label">${escapeHtml(c.label)}</label>
+            <div class="checkbox-grid" data-multiselect="${c.key}">
+              ${opts.map(o => `<label class="chk"><input type="checkbox" value="${escapeAttr(o.value)}" ${selected.includes(o.value) ? 'checked' : ''}> ${escapeHtml(o.label)}</label>`).join('')}
+            </div>
+            ${c.hint ? `<p class="muted" style="font-size:0.78rem;margin:4px 0 0;">${escapeHtml(c.hint)}</p>` : ''}
+          </div>`;
+        }
+
+        if (c.type === 'textarea') {
+          return `<div class="form-group"><label class="form-label">${escapeHtml(c.label)}</label>
+            <textarea class="form-input" data-field="${c.key}" rows="3" placeholder="${escapeAttr(c.placeholder || c.label)}">${escapeHtml(raw ?? '')}</textarea></div>`;
+        }
+
+        if (c.type === 'datalist') {
+          const opts = typeof c.options === 'function' ? c.options() : (c.options || []);
+          return `<div class="form-group"><label class="form-label">${escapeHtml(c.label)}</label>
+            <input class="form-input" list="dl-${c.key}" data-field="${c.key}" value="${escapeAttr(raw ?? '')}" placeholder="${escapeAttr(c.placeholder || c.label)}">
+            <datalist id="dl-${c.key}">${opts.map(o => `<option value="${escapeAttr(o.value)}">${escapeHtml(o.label)}</option>`).join('')}</datalist>
+          </div>`;
+        }
+
+        const inputType = c.type === 'number' ? 'number' : (c.inputType || 'text');
+        return `<div class="form-group"><label class="form-label">${escapeHtml(c.label)}</label>
+          <input type="${inputType}" class="form-input" data-field="${c.key}" value="${escapeAttr(raw ?? '')}" placeholder="${escapeAttr(c.placeholder || c.label)}">
+        </div>`;
+      }).join('');
+    }
+
+    function openModal(title, body, submitText = 'Save') {
+      const template = document.getElementById('modal-template');
+      const clone = template.content.cloneNode(true);
+      clone.querySelector('#modal-title').textContent = title;
+      clone.querySelector('#modal-body').innerHTML = body;
+      clone.querySelector('#modal-submit').textContent = submitText;
+      const overlay = clone.querySelector('.modal-overlay');
+      document.body.appendChild(overlay);
+      window.currentModal = overlay;
+    }
+
+    function closeModal() {
+      if (window.currentModal) {
+        window.currentModal.remove();
+        window.currentModal = null;
+      }
+    }
+
+    async function handleGridModalSubmit() {
+      const modal = window.currentModal;
+      if (!modal) return;
+
+      const formData = {};
+      modal.querySelectorAll('[data-field]').forEach(el => { formData[el.dataset.field] = el.value; });
+      modal.querySelectorAll('[data-multiselect]').forEach(div => {
+        const key = div.dataset.multiselect;
+        formData[key] = Array.from(div.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
+      });
+
+      // Strip empty/unset values
+      Object.keys(formData).forEach(k => {
+        if (formData[k] === '') delete formData[k];
+        if (Array.isArray(formData[k]) && formData[k].length === 0) delete formData[k];
+      });
+
+      // Column-level transforms (string -> number, time parsing, etc.)
+      grid.columns.forEach(c => {
+        if (c.transform && formData[c.key] !== undefined) {
+          const val = c.transform(formData[c.key], formData);
+          if (val === undefined || (typeof val === 'number' && isNaN(val))) delete formData[c.key];
+          else formData[c.key] = val;
+        }
+      });
+
+      if (grid.validate) {
+        const err = grid.validate(formData);
+        if (err) { alert(err); return; }
+      }
+
+      try {
+        if (editingId) await grid.onUpdate(editingId, formData);
+        else await grid.onCreate(formData);
+        closeModal();
+        await loadSection(currentSection);
+      } catch (e) {
+        console.error(e);
+        alert('Error: ' + e.message);
+      }
+    }
+
+    async function confirmGridDelete(id) {
+      if (!confirm('Are you sure you want to delete this record? This cannot be undone.')) return;
+      try {
+        await grid.onDelete(id);
+        await loadSection(currentSection);
+      } catch (e) {
+        alert('Error: ' + e.message);
+      }
+    }
+
+    // ==========================================
+    // Dashboard
+    // ==========================================
+    async function renderDashboard() {
+      const [meetsSnap, schoolsSnap, athletesSnap, resultsSnap, season] = await Promise.all([
+        window.firebaseDatabase.ref('crosscountry/meets').once('value'),
+        window.firebaseDatabase.ref('crosscountry/schools').once('value'),
+        window.firebaseDatabase.ref('crosscountry/athletes').once('value'),
+        window.firebaseDatabase.ref('crosscountry/results').once('value'),
+        getCurrentSeason()
+      ]);
+
+      const stats = {
+        meets: meetsSnap.numChildren(),
+        schools: schoolsSnap.numChildren(),
+        athletes: athletesSnap.numChildren(),
+        results: resultsSnap.numChildren()
+      };
+
+      document.getElementById('content').innerHTML = `
+        <div class="stats-grid">
+          <div class="stat-card"><div class="stat-number">${stats.meets}</div><div class="stat-label">Meets</div></div>
+          <div class="stat-card"><div class="stat-number">${stats.schools}</div><div class="stat-label">Schools</div></div>
+          <div class="stat-card"><div class="stat-number">${stats.athletes}</div><div class="stat-label">Athletes</div></div>
+          <div class="stat-card"><div class="stat-number">${stats.results}</div><div class="stat-label">Results</div></div>
+          <div class="stat-card"><div class="stat-number">${season?.year ?? '—'}</div><div class="stat-label">Current Season</div></div>
+        </div>
+        <div class="panel">
+          <h3>Quick Actions</h3>
+          <div style="display:flex; gap:12px; flex-wrap:wrap; margin-top:12px;">
+            <button class="btn btn-primary" onclick="setActiveNav('meets');loadSection('meets')">🏁 Manage Meets</button>
+            <button class="btn btn-primary" onclick="setActiveNav('schools');loadSection('schools')">🏫 Manage Schools</button>
+            <button class="btn btn-primary" onclick="setActiveNav('athletes');loadSection('athletes')">🏃 Manage Athletes</button>
+            <button class="btn btn-primary" onclick="setActiveNav('results');loadSection('results')">🏆 Manage Results</button>
+            <button class="btn btn-primary" onclick="setActiveNav('manual-entry');loadSection('manual-entry')">✏️ Manual Entry</button>
+            <button class="btn btn-primary" onclick="setActiveNav('seasons');loadSection('seasons')">📅 Seasons</button>
+            <button class="btn btn-primary" onclick="setActiveNav('email-tools');loadSection('email-tools')">✉️ Email Tools</button>
+          </div>
+        </div>
+        <div class="panel" style="margin-top:20px;">
+          <h3>External Tools</h3>
+          <div style="display:flex; gap:12px; flex-wrap:wrap; margin-top:12px;">
+            <a class="btn btn-secondary" href="meets-dashboard.html">📋 Meets Dashboard</a>
+            <a class="btn btn-secondary" href="csv-import.html">📥 CSV Import</a>
+            <a class="btn btn-secondary" href="courses/course-admin.html">🗺️ Course Admin</a>
+            <a class="btn btn-secondary" href="rankings.html">🥇 Rankings</a>
+            <a class="btn btn-secondary" href="analytics.html">📈 Analytics</a>
+          </div>
+        </div>
+      `;
+      updateRecordCount(stats.meets + stats.schools + stats.athletes + stats.results);
+    }
+
+    // ==========================================
+    // Meets
+    // ==========================================
+    let schoolsCache = [];
+    let meetsCache = [];
+    let coursesCache = [];
+
+    async function renderMeets() {
+      const [meets, schools, coursesSnap] = await Promise.all([
+        getAllMeets(9999),
+        getAllSchools(),
+        window.firebaseDatabase.ref('crosscountry/courses').once('value')
+      ]);
+      schoolsCache = schools;
+      meetsCache = meets;
+      const cData = coursesSnap.val() || {};
+      coursesCache = Object.keys(cData).map(id => ({ id, ...cData[id] }));
+
+      const schoolMap = {}; schools.forEach(s => { schoolMap[s.slug] = s.name; });
+      const courseMap = {}; coursesCache.forEach(c => { if (c.slug) courseMap[c.slug] = c.name; });
+
+      renderGridSection({
+        title: 'Meets',
+        data: meets,
+        columns: [
+          { key: 'name', label: 'Name', type: 'text' },
+          { key: 'slug', label: 'Slug', type: 'text', placeholder: 'auto-generated if blank' },
+          { key: 'date', label: 'Date', type: 'text', inputType: 'date',
+            render: row => row.date ? new Date(row.date + 'T00:00:00').toLocaleDateString() : '—' },
+          { key: 'location', label: 'Location', type: 'text' },
+          { key: 'description', label: 'Description', type: 'textarea',
+            render: row => row.description ? escapeHtml(row.description.slice(0, 60)) + (row.description.length > 60 ? '…' : '') : '—' },
+          { key: 'course_slug', label: 'Course', type: 'datalist', placeholder: 'course slug (optional)',
+            options: () => coursesCache.filter(c => c.slug).map(c => ({ value: c.slug, label: c.name })),
+            render: row => row.course_slug ? escapeHtml(courseMap[row.course_slug] || row.course_slug) : '—' },
+          { key: 'expected_teams', label: 'Expected Teams', type: 'multiselect',
+            hint: 'Schools invited/expected to compete at this meet.',
+            options: () => schools.map(s => ({ value: s.slug, label: s.name })),
+            render: row => {
+              const arr = Array.isArray(row.expected_teams) ? row.expected_teams : [];
+              if (!arr.length) return '<span class="badge badge-muted">0 teams</span>';
+              const names = arr.map(sl => schoolMap[sl] || sl).join(', ');
+              return `<span class="badge badge-info" title="${escapeAttr(names)}">${arr.length} team${arr.length === 1 ? '' : 's'}</span>`;
+            } }
+        ],
+        onCreate: async (data) => {
+          if (!data.slug) data.slug = slugify(data.name || '');
+          data.created_at = new Date().toISOString();
+          await createRecord('crosscountry/meets', data);
+        },
+        onUpdate: async (id, data) => updateRecord(`crosscountry/meets/${id}`, data),
+        onDelete: async (id) => deleteRecord(`crosscountry/meets/${id}`),
+        validate: data => !data.name ? 'Meet name is required.' : null
+      });
+    }
+
+    // ==========================================
+    // Schools
+    // ==========================================
+    async function renderSchools() {
+      const schools = await getAllSchools();
+      schoolsCache = schools;
+
+      renderGridSection({
+        title: 'Schools',
+        data: schools,
+        columns: [
+          { key: 'name', label: 'Name', type: 'text' },
+          { key: 'slug', label: 'Slug', type: 'text', placeholder: 'auto-generated if blank' }
+        ],
+        onCreate: async (data) => {
+          if (!data.slug) data.slug = slugify(data.name || '');
+          data.created_at = new Date().toISOString();
+          await createRecord('crosscountry/schools', data);
+        },
+        onUpdate: async (id, data) => updateRecord(`crosscountry/schools/${id}`, data),
+        onDelete: async (id) => deleteRecord(`crosscountry/schools/${id}`),
+        validate: data => !data.name ? 'School name is required.' : null
+      });
+    }
+
+    // ==========================================
+    // Athletes
+    // ==========================================
+    async function renderAthletes() {
+      const [athletes, schools] = await Promise.all([fetchNodeAsArray('crosscountry/athletes'), getAllSchools()]);
+      schoolsCache = schools;
+      const schoolMap = {}; schools.forEach(s => { schoolMap[s.slug] = s.name; });
+
+      renderGridSection({
+        title: 'Athletes',
+        data: athletes,
+        columns: [
+          { key: 'name', label: 'Name', type: 'text' },
+          { key: 'gender', label: 'Gender', type: 'select',
+            options: [{ value: 'M', label: 'Male' }, { value: 'F', label: 'Female' }] },
+          { key: 'school_slug', label: 'School', type: 'select',
+            options: () => schools.map(s => ({ value: s.slug, label: s.name })),
+            render: row => escapeHtml(schoolMap[row.school_slug] || (row.school_slug ? row.school_slug : 'Unattached')) },
+          { key: 'grade', label: 'Graduation Year', type: 'number', placeholder: 'e.g. 2027',
+            transform: v => v === '' ? undefined : Number(v) },
+          { key: 'status', label: 'Status', type: 'text', formExclude: true, render: row => renderAthleteStatusBadge(row) }
+        ],
+        onCreate: async (data) => {
+          data.created_at = new Date().toISOString();
+          await createRecord('crosscountry/athletes', data);
+        },
+        onUpdate: async (id, data) => updateRecord(`crosscountry/athletes/${id}`, data),
+        onDelete: async (id) => deleteRecord(`crosscountry/athletes/${id}`),
+        validate: data => !data.name ? 'Athlete name is required.' : null
+      });
+    }
+
+    // ==========================================
+    // Results
+    // ==========================================
+    async function renderResults() {
+      const [results, schools, meets] = await Promise.all([
+        fetchNodeAsArray('crosscountry/results'),
+        getAllSchools(),
+        getAllMeets(9999)
+      ]);
+      schoolsCache = schools;
+      meetsCache = meets;
+      const schoolMap = {}; schools.forEach(s => { schoolMap[s.slug] = s.name; });
+      const meetMap = {}; meets.forEach(m => { meetMap[m.slug] = m.name; });
+
+      renderGridSection({
+        title: 'Results',
+        data: results,
+        columns: [
+          { key: 'athlete_name', label: 'Athlete', type: 'text' },
+          { key: 'school_slug', label: 'School', type: 'select',
+            options: () => schools.map(s => ({ value: s.slug, label: s.name })),
+            render: row => escapeHtml(schoolMap[row.school_slug] || (row.school_slug ? row.school_slug : 'Unattached')) },
+          { key: 'gender', label: 'Gender', type: 'select',
+            options: [{ value: 'M', label: 'M' }, { value: 'F', label: 'F' }] },
+          { key: 'time', label: 'Time', type: 'text', placeholder: 'MM:SS.hh or seconds',
+            transform: v => { const s = parseTimeToSeconds(v); return isNaN(s) ? undefined : Number(s); },
+            render: row => (row.time !== undefined && row.time !== null && row.time !== '') ? formatSecondsToTime(Number(row.time)) : '—' },
+          { key: 'distance', label: 'Distance (m)', type: 'number',
+            transform: v => v === '' ? undefined : Number(v),
+            render: row => row.distance ? `${Number(row.distance)}m` : '—' },
+          { key: 'place', label: 'Place', type: 'number',
+            transform: v => v === '' ? undefined : Number(v) },
+          { key: 'race_type', label: 'Race / Division', type: 'text', placeholder: 'varsity, jv, emerging-elite…' },
+          { key: 'meet_slug', label: 'Meet', type: 'select',
+            options: () => meets.map(m => ({ value: m.slug, label: m.name })),
+            render: row => escapeHtml(meetMap[row.meet_slug] || row.meet_slug || '—') }
+        ],
+        extraFiltersHTML: `
+          <select id="filter-meet" class="form-input" style="min-width:170px;">
+            <option value="">All Meets</option>
+            ${meets.map(m => `<option value="${escapeAttr(m.slug)}">${escapeHtml(m.name)}</option>`).join('')}
+          </select>
+          <select id="filter-school" class="form-input" style="min-width:170px;">
+            <option value="">All Schools</option>
+            ${schools.map(s => `<option value="${escapeAttr(s.slug)}">${escapeHtml(s.name)}</option>`).join('')}
+          </select>
+        `,
+        bindExtra: () => {
+          document.getElementById('filter-meet')?.addEventListener('change', e => { grid.filterMeet = e.target.value; applyGridFilter(); });
+          document.getElementById('filter-school')?.addEventListener('change', e => { grid.filterSchool = e.target.value; applyGridFilter(); });
+        },
+        customFilter: row => (!grid.filterMeet || row.meet_slug === grid.filterMeet) && (!grid.filterSchool || row.school_slug === grid.filterSchool),
+        onCreate: async (data) => {
+          data.created_at = new Date().toISOString();
+          await createRecord('crosscountry/results', data);
+        },
+        onUpdate: async (id, data) => updateRecord(`crosscountry/results/${id}`, data),
+        onDelete: async (id) => deleteRecord(`crosscountry/results/${id}`),
+        validate: data => {
+          if (!data.athlete_name) return 'Athlete name is required.';
+          if (!data.meet_slug) return 'Meet is required.';
+          if (data.time === undefined) return 'A valid time is required (e.g. 18:32.4 or seconds).';
+          return null;
+        }
+      });
+    }
+
+    // ==========================================
+    // Manual Result Entry
+    // ==========================================
+    let manualEntryRecent = [];
+
+    async function renderManualEntry() {
+      const [meets, schools] = await Promise.all([getAllMeets(9999), getAllSchools()]);
+      meetsCache = meets;
+      schoolsCache = schools;
+
+      document.getElementById('content').innerHTML = `
+        <div class="panel">
+          <h3>✏️ Manual Result Entry</h3>
+          <p class="muted">Quickly add a single result without a CSV import.</p>
+          <div class="form-grid" style="margin-top:16px;">
+            <div class="form-group">
+              <label class="form-label">Meet *</label>
+              <select id="me-meet" class="form-input">
+                <option value="">-- Select Meet --</option>
+                ${meets.map(m => `<option value="${escapeAttr(m.slug)}">${escapeHtml(m.name)} (${escapeHtml(m.date || 'no date')})</option>`).join('')}
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Athlete Name *</label>
+              <input id="me-athlete" class="form-input" placeholder="Grant Perraut">
+            </div>
+            <div class="form-group">
+              <label class="form-label">School</label>
+              <select id="me-school" class="form-input">
+                <option value="">Unattached</option>
+                ${schools.map(s => `<option value="${escapeAttr(s.slug)}">${escapeHtml(s.name)}</option>`).join('')}
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Gender *</label>
+              <select id="me-gender" class="form-input">
+                <option value="M">Male</option>
+                <option value="F">Female</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Time *</label>
+              <input id="me-time" class="form-input" placeholder="18:32.4 or seconds">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Distance (m)</label>
+              <input id="me-distance" type="number" class="form-input" value="5000">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Place</label>
+              <input id="me-place" type="number" class="form-input" placeholder="1">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Race / Division</label>
+              <input id="me-race-type" class="form-input" placeholder="varsity">
+            </div>
+          </div>
+          <button class="btn btn-primary" onclick="submitManualResult()">+ Add Result</button>
+          <div id="me-status"></div>
+        </div>
+        <div class="panel" style="margin-top:20px;">
+          <h3>Recently Added (this session)</h3>
+          <div id="me-recent"><p class="muted">No results added yet this session.</p></div>
+        </div>
+      `;
+    }
+
+    async function submitManualResult() {
+      const meetSlug = document.getElementById('me-meet').value;
+      const athleteName = document.getElementById('me-athlete').value.trim();
+      const schoolSlug = document.getElementById('me-school').value;
+      const gender = document.getElementById('me-gender').value;
+      const timeStr = document.getElementById('me-time').value.trim();
+      const distance = document.getElementById('me-distance').value;
+      const place = document.getElementById('me-place').value;
+      const raceType = document.getElementById('me-race-type').value.trim();
+
+      if (!meetSlug) { showManualStatus('Please select a meet.', true); return; }
+      if (!athleteName) { showManualStatus('Please enter an athlete name.', true); return; }
+      const seconds = parseTimeToSeconds(timeStr);
+      if (!timeStr || isNaN(seconds)) { showManualStatus('Please enter a valid time.', true); return; }
+
+      const data = {
+        athlete_name: athleteName,
+        gender,
+        time: Number(seconds),
+        meet_slug: meetSlug,
+        created_at: new Date().toISOString()
+      };
+      if (schoolSlug) data.school_slug = schoolSlug;
+      if (distance) data.distance = Number(distance);
+      if (place) data.place = Number(place);
+      if (raceType) data.race_type = raceType;
+
+      try {
+        await createRecord('crosscountry/results', data);
+        showManualStatus(`✅ Added result for ${athleteName}.`, false);
+        manualEntryRecent.unshift(data);
+        renderManualRecent();
+        document.getElementById('me-athlete').value = '';
+        document.getElementById('me-time').value = '';
+        document.getElementById('me-place').value = '';
+      } catch (e) {
+        showManualStatus('Error: ' + e.message, true);
+      }
+    }
+
+    function showManualStatus(msg, isError) {
+      const el = document.getElementById('me-status');
+      if (!el) return;
+      el.innerHTML = `<div class="alert ${isError ? 'alert-danger' : 'alert-success'}">${escapeHtml(msg)}</div>`;
+    }
+
+    function renderManualRecent() {
+      const el = document.getElementById('me-recent');
+      if (!el) return;
+      if (!manualEntryRecent.length) { el.innerHTML = '<p class="muted">No results added yet this session.</p>'; return; }
+      el.innerHTML = `<table class="grid-table"><thead><tr><th>Athlete</th><th>Meet</th><th>Time</th><th>Place</th></tr></thead><tbody>
+        ${manualEntryRecent.slice(0, 10).map(r => `<tr>
+          <td>${escapeHtml(r.athlete_name)}</td>
+          <td>${escapeHtml(r.meet_slug)}</td>
+          <td>${formatSecondsToTime(r.time)}</td>
+          <td>${r.place ?? '—'}</td>
+        </tr>`).join('')}
+      </tbody></table>`;
+    }
+
+    // ==========================================
+    // Season Management
+    // ==========================================
+    async function renderSeasons() {
+      const [current, archived, athletes] = await Promise.all([
+        getCurrentSeason(),
+        getArchivedSeasons(),
+        fetchNodeAsArray('crosscountry/athletes')
+      ]);
+
+      const counts = { Senior: 0, Junior: 0, Sophomore: 0, Freshman: 0, Graduated: 0, Unknown: 0 };
+      athletes.forEach(a => {
+        const s = computeAthleteStatus(a);
+        if (counts[s.label] !== undefined) counts[s.label]++;
+        else counts.Unknown++;
+      });
+
+      document.getElementById('content').innerHTML = `
+        <div class="stats-grid">
+          <div class="stat-card"><div class="stat-number">${current?.year ?? '—'}</div><div class="stat-label">Current Season</div></div>
+          <div class="stat-card"><div class="stat-number">${counts.Senior}</div><div class="stat-label">Seniors</div></div>
+          <div class="stat-card"><div class="stat-number">${counts.Junior}</div><div class="stat-label">Juniors</div></div>
+          <div class="stat-card"><div class="stat-number">${counts.Sophomore}</div><div class="stat-label">Sophomores</div></div>
+          <div class="stat-card"><div class="stat-number">${counts.Freshman}</div><div class="stat-label">Freshmen</div></div>
+        </div>
+
+        <div class="panel">
+          <h3>📅 Season Settings</h3>
+          <p class="muted">Current season: <strong>${escapeHtml(current?.name || 'Not set')}</strong> (${current?.year ?? '—'})</p>
+          <div style="display:flex; gap:12px; flex-wrap:wrap; margin-top:12px;">
+            <button class="btn btn-primary" onclick="handleSetSeason()">Set New Season</button>
+            <button class="btn btn-secondary" onclick="handleArchiveSeason()">Archive Current Season</button>
           </div>
         </div>
 
-      </div>
-    </div>
-  </div>
+        <div class="panel" style="margin-top:20px;">
+          <h3>🎓 Athlete Lifecycle</h3>
+          <p class="muted">Run these at the start/end of a season. These actions affect ALL athletes and cannot be easily undone — use with care.</p>
+          <div style="display:flex; gap:12px; flex-wrap:wrap; margin-top:12px;">
+            <button class="btn btn-danger" onclick="handleGraduateSeniors()">🎓 Graduate All Seniors</button>
+            <button class="btn btn-danger" onclick="handleAdvanceAthletes()">⬆️ Advance All Athletes</button>
+          </div>
+          <div id="lifecycle-result"></div>
+        </div>
 
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+        <div class="panel" style="margin-top:20px;">
+          <h3>🗄️ Archived Seasons</h3>
+          ${archived.length === 0 ? '<p class="muted">No archived seasons yet.</p>' : `
+            <table class="grid-table"><thead><tr><th>Year</th><th>Name</th><th>Archived At</th></tr></thead><tbody>
+              ${archived.map(s => `<tr>
+                <td>${escapeHtml(s.year ?? s.id)}</td>
+                <td>${escapeHtml(s.name || '')}</td>
+                <td>${s.archivedAt ? new Date(s.archivedAt).toLocaleString() : '—'}</td>
+              </tr>`).join('')}
+            </tbody></table>`}
+        </div>
+      `;
+    }
 
-  <script src="firebase-config.js"></script>
-  <script src="firebase-helpers.js"></script>
+    async function handleSetSeason() {
+      const year = prompt('Enter season year (e.g. 2026):', new Date().getFullYear());
+      if (!year) return;
+      const ok = await setCurrentSeason(Number(year));
+      alert(ok ? `Season set to ${year}.` : 'Failed to set season.');
+      await loadSection('seasons');
+    }
 
-  <script>
-    document.addEventListener("DOMContentLoaded", async () => {
-      
-      // 1. Check Database Health
-      const statusBadge = document.getElementById('db-status');
-      const health = await window.checkDatabaseSchema();
-      if (health.success) {
-        statusBadge.textContent = "Database Connected";
-        statusBadge.className = "badge bg-success";
-        loadMeets(); // Load data once connected
-      } else {
-        statusBadge.textContent = "Offline / Error";
-        statusBadge.className = "badge bg-danger";
-        console.error(health.error);
+    async function handleArchiveSeason() {
+      const current = await getCurrentSeason();
+      if (!current) { alert('No current season to archive.'); return; }
+      if (!confirm(`Archive the ${current.year} season? This copies it into the archive list.`)) return;
+      const ok = await archiveSeason(current.year);
+      alert(ok ? 'Season archived.' : 'Failed to archive season.');
+      await loadSection('seasons');
+    }
+
+    async function handleGraduateSeniors() {
+      if (!confirm('This will mark all current seniors as graduated. Continue?')) return;
+      const result = await graduateAllSeniors();
+      renderLifecycleResult(result, 'graduatedCount', 'Graduated');
+    }
+
+    async function handleAdvanceAthletes() {
+      if (!confirm('This will advance every active athlete by one grade level. Continue?')) return;
+      const result = await advanceAllAthletes();
+      renderLifecycleResult(result, 'advancedCount', 'Advanced');
+    }
+
+    function renderLifecycleResult(result, countKey, verb) {
+      const el = document.getElementById('lifecycle-result');
+      if (!el) return;
+      if (!result || result.success === false) {
+        el.innerHTML = `<div class="alert alert-danger">Error: ${escapeHtml(result?.error || 'Unknown error')}</div>`;
+        return;
       }
+      const names = (result.athletes || []).slice(0, 25);
+      el.innerHTML = `<div class="alert alert-success">${verb} ${result[countKey]} athlete(s).</div>` +
+        (names.length ? `<div class="muted" style="margin-top:8px;font-size:0.85rem;">${names.map(escapeHtml).join(', ')}${result[countKey] > names.length ? '…' : ''}</div>` : '');
+    }
 
-      // 2. Load Meets into Table and Dropdown
-      async function loadMeets() {
-        const meets = await window.getMeets(10); // get last 10 meets
-        const tbody = document.getElementById('meets-table-body');
-        const select = document.getElementById('import-meet-slug');
-        
-        tbody.innerHTML = "";
-        select.innerHTML = '<option value="">-- Choose a Meet --</option>';
+    // ==========================================
+    // Email Tools
+    // ==========================================
+    async function renderEmailTools() {
+      const [lists, scheduled, analytics] = await Promise.all([
+        getEmailLists(),
+        getScheduledEmails(),
+        getEmailAnalytics()
+      ]);
 
-        if (meets.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">No meets found.</td></tr>';
-          return;
-        }
+      document.getElementById('content').innerHTML = `
+        <div class="stats-grid">
+          <div class="stat-card"><div class="stat-number">${analytics?.totalEmails ?? 0}</div><div class="stat-label">Total Emails</div></div>
+          <div class="stat-card"><div class="stat-number">${analytics?.sent ?? 0}</div><div class="stat-label">Sent</div></div>
+          <div class="stat-card"><div class="stat-number">${analytics?.scheduled ?? 0}</div><div class="stat-label">Scheduled</div></div>
+          <div class="stat-card"><div class="stat-number">${analytics?.totalRecipients ?? 0}</div><div class="stat-label">Total Recipients</div></div>
+        </div>
 
-        meets.forEach(meet => {
-          // Table Row
-          const tr = document.createElement('tr');
-          tr.innerHTML = `
-            <td>${meet.date}</td>
-            <td>${meet.name}</td>
-            <td><code>${meet.slug}</code></td>
-            <td>${meet.divisions || '-'}</td>
-          `;
-          tbody.appendChild(tr);
+        <div class="two-col">
+          <div class="panel">
+            <h3>📋 Email Lists</h3>
+            <div id="email-lists-body">${renderEmailListsTable(lists)}</div>
+            <hr class="divider">
+            <h4>Create New List</h4>
+            <div class="form-group"><label class="form-label">List Name</label><input id="el-name" class="form-input" placeholder="Coaches - Region 1"></div>
+            <div class="form-group"><label class="form-label">Emails (comma-separated)</label><textarea id="el-emails" class="form-input" rows="3" placeholder="coach1@school.edu, coach2@school.edu"></textarea></div>
+            <button class="btn btn-primary" onclick="handleCreateEmailList()">+ Create List</button>
+          </div>
 
-          // Dropdown Option
-          const opt = document.createElement('option');
-          opt.value = meet.slug;
-          opt.textContent = `${meet.name} (${meet.date})`;
-          select.appendChild(opt);
-        });
-      }
+          <div class="panel">
+            <h3>✉️ Compose Email</h3>
+            <div class="form-group">
+              <label class="form-label">Send to List</label>
+              <select id="em-list" class="form-input">
+                <option value="">-- Select List --</option>
+                ${lists.map(l => `<option value="${l.id}">${escapeHtml(l.name)} (${l.recipientCount || 0})</option>`).join('')}
+              </select>
+            </div>
+            <div class="form-group"><label class="form-label">Subject</label><input id="em-subject" class="form-input" placeholder="Meet results are up!"></div>
+            <div class="form-group"><label class="form-label">Content (HTML or plain text)</label><textarea id="em-content" class="form-input" rows="6" placeholder="<p>Hi coaches...</p>"></textarea></div>
+            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+              <button class="btn btn-secondary" onclick="handleSendTestEmail()">Send Test</button>
+              <button class="btn btn-secondary" onclick="handleScheduleEmail()">Schedule…</button>
+              <button class="btn btn-primary" onclick="handleSendEmailNow()">Send Now</button>
+            </div>
+            <div id="email-compose-status"></div>
+          </div>
+        </div>
 
-      // 3. Handle Meet Creation
-      document.getElementById('create-meet-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const msgDiv = document.getElementById('create-meet-msg');
-        
-        const meetData = {
-          name: document.getElementById('meet-name').value,
-          slug: document.getElementById('meet-slug').value,
-          date: document.getElementById('meet-date').value,
-          divisions: document.getElementById('meet-divisions').value,
-        };
+        <div class="panel" style="margin-top:20px;">
+          <h3>🕓 Scheduled / Sent Emails</h3>
+          ${scheduled.length === 0 ? '<p class="muted">No emails yet.</p>' : `
+            <table class="grid-table"><thead><tr><th>Subject</th><th>Status</th><th>Recipients</th><th>Scheduled For</th><th>Sent At</th></tr></thead><tbody>
+              ${scheduled.slice(0, 50).map(e => `<tr>
+                <td>${escapeHtml(e.subject || '')}</td>
+                <td><span class="badge ${e.status === 'sent' ? 'badge-success' : e.status === 'failed' ? 'badge-danger' : 'badge-info'}">${escapeHtml(e.status || '')}</span></td>
+                <td>${e.deliveryStatus?.total ?? (e.recipients?.length || 0)}</td>
+                <td>${e.scheduledFor ? new Date(e.scheduledFor).toLocaleString() : '—'}</td>
+                <td>${e.sentAt ? new Date(e.sentAt).toLocaleString() : '—'}</td>
+              </tr>`).join('')}
+            </tbody></table>`}
+        </div>
+      `;
+    }
 
-        const result = await window.createMeet(meetData);
-        if (result.error) {
-          msgDiv.textContent = `Error: ${result.error}`;
-          msgDiv.className = "mt-2 text-danger";
-        } else {
-          msgDiv.textContent = "Meet created successfully!";
-          msgDiv.className = "mt-2 text-success";
-          document.getElementById('create-meet-form').reset();
-          loadMeets(); // Refresh table
-        }
-        msgDiv.style.display = "block";
-        setTimeout(() => { msgDiv.style.display = "none"; }, 3000);
-      });
+    function renderEmailListsTable(lists) {
+      if (!lists.length) return '<p class="muted">No email lists yet.</p>';
+      return `<table class="grid-table"><thead><tr><th>Name</th><th>Recipients</th><th></th></tr></thead><tbody>
+        ${lists.map(l => `<tr>
+          <td>${escapeHtml(l.name)}</td>
+          <td>${l.recipientCount || 0}</td>
+          <td><button class="btn btn-danger btn-small" onclick="handleDeleteEmailList('${l.id}')">Delete</button></td>
+        </tr>`).join('')}
+      </tbody></table>`;
+    }
 
-      // 4. Handle CSV Bulk Import
-      document.getElementById('import-results-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const msgDiv = document.getElementById('import-msg');
-        msgDiv.innerHTML = "<span class='text-primary'>Importing...</span>";
-        
-        const meetSlug = document.getElementById('import-meet-slug').value;
-        const csvRaw = document.getElementById('import-csv-data').value;
-        
-        // Very basic CSV parser for text area
-        const rows = csvRaw.trim().split('\n').map(line => {
-          const [athlete_name, school_slug, gender, time, distance, place] = line.split(',').map(s => s.trim());
-          return { athlete_name, school_slug, gender, time, distance, place };
-        }).filter(row => row.athlete_name); // Skip empty lines
+    async function handleCreateEmailList() {
+      const name = document.getElementById('el-name').value.trim();
+      const emailsRaw = document.getElementById('el-emails').value.trim();
+      if (!name) { alert('List name is required.'); return; }
+      const emails = emailsRaw.split(',').map(e => e.trim()).filter(Boolean);
+      const result = await createEmailList(name, emails);
+      if (result?.error) { alert('Error: ' + result.error); return; }
+      await loadSection('email-tools');
+    }
 
-        const report = await window.bulkInsertResults(meetSlug, rows);
-        
-        if (report.errors && report.errors.length > 0) {
-          msgDiv.innerHTML = `<span class='text-danger'>Imported ${report.success}/${report.total}. Errors: ${report.errors.join('<br>')}</span>`;
-        } else {
-          msgDiv.innerHTML = `<span class='text-success'>Successfully imported all ${report.success} results!</span>`;
-          document.getElementById('import-csv-data').value = "";
-        }
-      });
+    async function handleDeleteEmailList(id) {
+      if (!confirm('Delete this email list?')) return;
+      await deleteEmailList(id);
+      await loadSection('email-tools');
+    }
+
+    async function getSelectedListRecipients(listId) {
+      const lists = await getEmailLists();
+      const list = lists.find(l => l.id === listId);
+      return list ? (list.emails || []) : [];
+    }
+
+    async function handleSendEmailNow() {
+      const listId = document.getElementById('em-list').value;
+      const subject = document.getElementById('em-subject').value.trim();
+      const content = document.getElementById('em-content').value;
+      if (!listId) { setComposeStatus('Please select a list.', true); return; }
+      if (!subject) { setComposeStatus('Subject is required.', true); return; }
+      const recipients = await getSelectedListRecipients(listId);
+      if (!recipients.length) { setComposeStatus('Selected list has no recipients.', true); return; }
+      const result = await sendEmailNow({ subject, htmlContent: content, recipients });
+      setComposeStatus(result.success ? result.message : ('Error: ' + result.error), !result.success);
+    }
+
+    async function handleScheduleEmail() {
+      const listId = document.getElementById('em-list').value;
+      const subject = document.getElementById('em-subject').value.trim();
+      const content = document.getElementById('em-content').value;
+      if (!listId) { setComposeStatus('Please select a list.', true); return; }
+      if (!subject) { setComposeStatus('Subject is required.', true); return; }
+      const when = prompt('Schedule for (YYYY-MM-DDTHH:MM), leave blank to send now:');
+      const scheduledFor = when ? new Date(when).toISOString() : new Date().toISOString();
+      const recipients = await getSelectedListRecipients(listId);
+      if (!recipients.length) { setComposeStatus('Selected list has no recipients.', true); return; }
+      const result = await scheduleEmail({ subject, htmlContent: content, recipients, scheduledFor });
+      setComposeStatus(result.error ? ('Error: ' + result.error) : `Scheduled for ${new Date(scheduledFor).toLocaleString()}.`, !!result.error);
+      await loadSection('email-tools');
+    }
+
+    async function handleSendTestEmail() {
+      const subject = document.getElementById('em-subject').value.trim();
+      const content = document.getElementById('em-content').value;
+      if (!subject) { setComposeStatus('Subject is required.', true); return; }
+      const testEmail = prompt('Send test to which email address?');
+      if (!testEmail) return;
+      const result = await sendTestEmail({ subject, htmlContent: content, testEmail });
+      setComposeStatus(result.success ? result.message : ('Error: ' + result.error), !result.success);
+    }
+
+    function setComposeStatus(msg, isError) {
+      const el = document.getElementById('email-compose-status');
+      if (!el) return;
+      el.innerHTML = `<div class="alert ${isError ? 'alert-danger' : 'alert-success'}">${escapeHtml(msg)}</div>`;
+    }
+
+    // ==========================================
+    // Init
+    // ==========================================
+    document.addEventListener('DOMContentLoaded', async () => {
+      await waitForFirebase();
+      loadSection('dashboard');
     });
   </script>
 
-  
-  </main>
-
-<div id="global-footer"></div>
 
 </body>
 </html>

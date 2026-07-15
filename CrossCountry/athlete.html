@@ -586,10 +586,10 @@ table.rt a:hover { border-bottom-color: var(--text-primary); }
       <div class="chart-card">
         <div class="chart-card-head">
           <div>
-            <div class="chart-card-title">Mark Progression</div>
-            <div class="chart-card-sub">Performance over time per event</div>
+            <div class="chart-card-title">Time Progression</div>
+            <div class="chart-card-sub">Race time by meet date (lower = faster)</div>
           </div>
-          <select class="event-select" id="progEventSel" aria-label="Select Event for Progression"></select>
+          <select class="event-select" id="progEventSel" aria-label="Select Distance for Progression"></select>
         </div>
         <div class="chart-wrap"><canvas id="chartProg"></canvas></div>
       </div>
@@ -597,8 +597,8 @@ table.rt a:hover { border-bottom-color: var(--text-primary); }
       <div class="chart-card">
         <div class="chart-card-head">
           <div>
-            <div class="chart-card-title">PR by Event</div>
-            <div class="chart-card-sub">Personal records across all events</div>
+            <div class="chart-card-title">PB by Distance</div>
+            <div class="chart-card-sub">Personal bests across all race distances</div>
           </div>
         </div>
         <div class="chart-wrap"><canvas id="chartPR"></canvas></div>
@@ -607,8 +607,8 @@ table.rt a:hover { border-bottom-color: var(--text-primary); }
       <div class="chart-card">
         <div class="chart-card-head">
           <div>
-            <div class="chart-card-title">Meets Activity</div>
-            <div class="chart-card-sub">Events competed per meet</div>
+            <div class="chart-card-title">Races per Meet</div>
+            <div class="chart-card-sub">Number of races run at each meet</div>
           </div>
         </div>
         <div class="chart-wrap"><canvas id="chartMeets"></canvas></div>
@@ -617,8 +617,8 @@ table.rt a:hover { border-bottom-color: var(--text-primary); }
       <div class="chart-card">
         <div class="chart-card-head">
           <div>
-            <div class="chart-card-title">All Events Trend</div>
-            <div class="chart-card-sub">Multi-event mark history</div>
+            <div class="chart-card-title">By Race Division</div>
+            <div class="chart-card-sub">Time trend split by division (varsity, JV, etc.)</div>
           </div>
         </div>
         <div class="chart-wrap"><canvas id="chartMulti"></canvas></div>
@@ -641,7 +641,7 @@ table.rt a:hover { border-bottom-color: var(--text-primary); }
     <div class="results-panel">
       <div class="results-controls">
         <input type="text" class="tbl-search" id="tblSearch" aria-label="Filter results" placeholder="Filter results…">
-        <select class="tbl-filter" id="tblEvent" aria-label="Filter by Event"><option value="">All Events</option></select>
+        <select class="tbl-filter" id="tblDivision" aria-label="Filter by Division"><option value="">All Divisions</option></select>
         <select class="tbl-filter" id="tblMeet" aria-label="Filter by Meet"><option value="">All Meets</option></select>
         <select class="tbl-filter" id="tblRows" aria-label="Rows per page">
           <option value="15">15 / page</option>
@@ -655,11 +655,11 @@ table.rt a:hover { border-bottom-color: var(--text-primary); }
         <table class="rt" id="mainTable">
           <thead>
             <tr>
-              <th id="th-date"  onclick="sortBy('date')">Date</th>
-              <th id="th-event" onclick="sortBy('event')">Event</th>
-              <th id="th-mark"  onclick="sortBy('mark')">Mark</th>
-              <th id="th-meet"  onclick="sortBy('meet')">Meet</th>
-              <th id="th-place" onclick="sortBy('place')">Place</th>
+              <th id="th-date"     onclick="sortBy('date')">Date</th>
+              <th id="th-division" onclick="sortBy('division')">Division</th>
+              <th id="th-time"     onclick="sortBy('time')">Time</th>
+              <th id="th-meet"     onclick="sortBy('meet')">Meet</th>
+              <th id="th-place"    onclick="sortBy('place')">Place</th>
             </tr>
           </thead>
           <tbody id="tblBody">
@@ -680,33 +680,20 @@ table.rt a:hover { border-bottom-color: var(--text-primary); }
 </main>
 <div class="toast-tray" id="toastTray"></div>
 
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-analytics-compat.js"></script>
-<script src="/Track/firebase-config.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+<script src="firebase-config.js"></script>
+<script src="firebase-helpers.js"></script>
 
 <script>
 /* ═══════════════════════════════════════════════════
    THEME & UTILS
+   Theme toggling itself is handled globally by
+   /assets/theme-toggle.js + /assets/components.js
+   (this page has no header/search markup of its own).
+   We just watch for theme changes so charts can
+   re-render with the right colors.
 ═══════════════════════════════════════════════════ */
-const themeToggle = document.getElementById('themeToggle');
-const themeIcon   = document.getElementById('themeIcon');
-
-function setTheme(t) {
-  document.documentElement.setAttribute('data-theme', t);
-  themeIcon.className = t === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
-  localStorage.setItem('msm-theme', t);
-  if (window._chartsReady) rebuildCharts();
-}
-themeToggle.addEventListener('click', () => {
-  setTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
-});
-(function initTheme() {
-  const saved = localStorage.getItem('msm-theme');
-  const sys   = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-  setTheme(saved || sys);
-})();
-
 function toast(msg) {
   const el = document.createElement('div');
   el.className = 'toast';
@@ -714,6 +701,10 @@ function toast(msg) {
   document.getElementById('toastTray').appendChild(el);
   setTimeout(() => el.remove(), 3000);
 }
+
+new MutationObserver(() => {
+  if (window._chartsReady) rebuildCharts();
+}).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 
 async function waitForFirebase() {
   let i = 0;
@@ -724,15 +715,43 @@ async function waitForFirebase() {
   if (!window.firebaseDatabase) throw new Error('Firebase not ready');
 }
 
+function norm(s) { return (s || '').toString().trim().toLowerCase(); }
+
+const KNOWN_DISTANCES = { 1600: '1 Mile', 3200: '2 Mile', 3000: '3K', 4000: '4K', 5000: '5K', 6000: '6K', 8000: '8K', 10000: '10K' };
+function distanceLabel(d) {
+  if (d == null || isNaN(d)) return 'Unknown Distance';
+  const rounded = Math.round(d);
+  const known = KNOWN_DISTANCES[rounded];
+  return known ? `${known} (${rounded}m)` : `${rounded}m`;
+}
+
+function formatTime(sec) {
+  if (sec == null || isNaN(sec)) return '—';
+  const mins = Math.floor(sec / 60);
+  const secs = sec % 60;
+  return `${mins}:${secs.toFixed(1).padStart(4, '0')}`;
+}
+
 /* ═══════════════════════════════════════════════════
    GLOBAL STATE
+   Resolution priority (see loadAthlete): ?id= (direct
+   crosscountry/athletes key) > ?slug= (legacy/rare) >
+   ?name=&school= (robust fallback matched against
+   crosscountry/results, since results have no
+   athlete_id foreign key).
 ═══════════════════════════════════════════════════ */
-const urlParams = new URLSearchParams(window.location.search);
-const athleteId = urlParams.get('id');
+const urlParams  = new URLSearchParams(window.location.search);
+const paramId     = urlParams.get('id');
+const paramSlug   = urlParams.get('slug');
+const paramName   = urlParams.get('name');
+const paramSchool = urlParams.get('school');
 
-let athlete   = null;
-let allResults = [];   
-let pbs        = {};   
+let athlete    = null;   // crosscountry/athletes record, if one could be resolved/matched
+let athleteName = '';
+let schoolSlug  = '';
+let schoolName  = '';
+let allResults = [];
+let pbs        = {};     // keyed by rounded distance (meters) -> { distance, timeSec, raw }
 let gCharts    = {};
 
 let tFiltered  = [];
@@ -741,152 +760,148 @@ let tSortDir   = 'desc';
 let tPage      = 1;
 let tPerPage   = 15;
 
-/* ═══════════════════════════════════════════════════
-   SEARCH FIX: Wrap push in curly braces!
-═══════════════════════════════════════════════════ */
-let allAthletes  = [];
-let searchTimer;
-
-async function loadAthleteList() {
-  try {
-    await waitForFirebase();
-    const snap = await window.firebaseDatabase.ref('Track/athletes').once('value');
-    snap.forEach(c => {
-      // The braces prevent 'push' from returning a truthy value and canceling the loop
-      allAthletes.push({ id: c.key, ...c.val() }); 
-    });
-  } catch(e) { console.warn("Athlete list for search unavailable."); }
-}
-
-const searchInput    = document.getElementById('searchInput');
-const searchDropdown = document.getElementById('searchDropdown');
-
-searchInput.addEventListener('input', () => {
-  clearTimeout(searchTimer);
-  searchTimer = setTimeout(runSearch, 150);
-});
-searchInput.addEventListener('keydown', e => {
-  const items = [...searchDropdown.querySelectorAll('.search-drop-item')];
-  let idx = items.findIndex(i => i.classList.contains('hl'));
-  if (e.key === 'ArrowDown') { e.preventDefault(); items.forEach(i=>i.classList.remove('hl')); if(items[++idx]) items[idx].classList.add('hl'); }
-  else if (e.key === 'ArrowUp') { e.preventDefault(); items.forEach(i=>i.classList.remove('hl')); if(items[Math.max(0,--idx)]) items[Math.max(0,idx)].classList.add('hl'); }
-  else if (e.key === 'Enter') { const hl = searchDropdown.querySelector('.hl'); if(hl) hl.click(); }
-  else if (e.key === 'Escape') { searchDropdown.classList.remove('open'); }
-});
-document.addEventListener('click', e => {
-  if (!e.target.closest('#searchWrap')) searchDropdown.classList.remove('open');
-});
-
-function runSearch() {
-  const queryText = searchInput.value.trim().toLowerCase();
-  if (!queryText) { searchDropdown.classList.remove('open'); return; }
-  
-  const terms = queryText.split(/\s+/);
-  const hits = allAthletes.filter(a => {
-    const searchString = `${a.first_name||''} ${a.last_name||''} ${a.school||''}`.toLowerCase();
-    return terms.every(term => searchString.includes(term)); 
-  }).slice(0, 8);
-
-  if (!hits.length) {
-    searchDropdown.innerHTML = `<div class="search-drop-empty">No athletes found</div>`;
-  } else {
-    searchDropdown.innerHTML = hits.map(a => {
-      const full = `${a.first_name||''} ${a.last_name||''}`;
-      const init = ((a.first_name||'')[0]||'')+((a.last_name||'')[0]||'');
-      return `<div class="search-drop-item" data-id="${a.id}">
-        <div class="search-drop-avatar">${init.toUpperCase()}</div>
-        <div>
-          <div class="search-drop-name">${full}</div>
-          <div class="search-drop-meta">${a.school||''}${a.grade?' · Grade '+a.grade:''}</div>
-        </div>
-      </div>`;
-    }).join('');
-    searchDropdown.querySelectorAll('.search-drop-item').forEach(el =>
-      el.addEventListener('click', () => { window.location.href = `athlete.html?id=${el.dataset.id}`; })
-    );
-  }
-  searchDropdown.classList.add('open');
+function showEmptyProfile(title, detail) {
+  document.getElementById('heroName').textContent = title;
+  document.getElementById('heroChips').innerHTML = detail ? `<p style="color:var(--text-tertiary)">${detail}</p>` : '';
+  document.getElementById('heroSummary').innerHTML = '';
+  document.getElementById('pbGrid').innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><i class="fas fa-trophy"></i><p>No data available.</p></div>`;
+  document.getElementById('tblBody').innerHTML = `<tr><td colspan="5" style="text-align:center;padding:2.5rem;color:var(--text-tertiary);">No results to display.</td></tr>`;
+  document.getElementById('rowCountLabel').textContent = 'No results';
 }
 
 /* ═══════════════════════════════════════════════════
    LOAD ATHLETE
 ═══════════════════════════════════════════════════ */
 async function loadAthlete() {
-  if (!athleteId) {
-    document.getElementById('heroName').textContent = 'No athlete selected';
-    document.getElementById('heroChips').innerHTML = '<p style="color:var(--text-tertiary)">Use the search bar to find an athlete.</p>';
-    document.getElementById('tblBody').innerHTML = '<tr><td colspan="5" style="text-align:center;">No data to load.</td></tr>';
+  if (!paramId && !paramSlug && !paramName) {
+    showEmptyProfile('No athlete selected', 'Open an athlete from a school, meet, or rankings page to view their profile.');
     return;
   }
 
   try {
     await waitForFirebase();
+    const db = window.firebaseDatabase;
 
-    const athSnap = await window.firebaseDatabase.ref(`Track/athletes/${athleteId}`).once('value');
-    athlete = athSnap.exists() ? { id: athleteId, ...athSnap.val() } : null;
-    
-    if (!athlete) {
-      document.getElementById('heroName').textContent = 'Athlete not found';
+    /* --- Resolve identity: id > slug > name(+school) --- */
+    if (paramId) {
+      const athSnap = await db.ref(`crosscountry/athletes/${paramId}`).once('value');
+      if (athSnap.exists()) athlete = { id: paramId, ...athSnap.val() };
+    }
+    if (!athlete && paramSlug) {
+      try {
+        const found = typeof window.getAthleteBySlug === 'function' ? await window.getAthleteBySlug(paramSlug) : null;
+        if (found) athlete = found;
+      } catch (e) { console.warn('Athlete slug lookup failed:', e); }
+    }
+
+    athleteName = (athlete && athlete.name) || paramName || '';
+    schoolSlug  = (athlete && athlete.school_slug) || paramSchool || '';
+
+    if (!athleteName) {
+      showEmptyProfile('Athlete not found', 'No matching athlete could be found for this link.');
       return;
     }
 
-    const fullName = `${athlete.first_name||''} ${athlete.last_name||''}`.trim();
-    document.title = `${fullName} — Mountain State Miles`;
-    document.getElementById('heroName').textContent = fullName;
-    document.getElementById('heroChips').innerHTML = [
-      athlete.school ? `<span class="hero-chip"><i class="fas fa-school"></i>${athlete.school}</span>` : '',
-      athlete.grade  ? `<span class="hero-chip"><i class="fas fa-graduation-cap"></i>Grade ${athlete.grade}</span>` : '',
-      athlete.gender ? `<span class="hero-chip"><i class="fas fa-user"></i>${athlete.gender}</span>` : ''
-    ].join('');
-
-    window.__MSM_COACH_CTX = { kind:'athlete', athleteName:fullName, schoolName:athlete.school||'' };
-    window.dispatchEvent(new CustomEvent('msm-coach-context-updated'));
-
-    const [resultsSnap, meetsSnap, eventsSnap] = await Promise.all([
-      window.firebaseDatabase.ref('Track/results').once('value'),
-      window.firebaseDatabase.ref('Track/meets').once('value'),
-      window.firebaseDatabase.ref('Track/events').once('value')
+    /* --- Pull the full results/meets/schools collections once and join client-side.
+           Results only carry athlete_name (+ optional school_slug) - there is no
+           athlete_id foreign key - so matching has to happen here, case/whitespace
+           insensitively, rather than via an exact-match Firebase query. --- */
+    const [resultsSnap, meetsSnap, schoolsSnap] = await Promise.all([
+      db.ref('crosscountry/results').once('value'),
+      db.ref('crosscountry/meets').once('value'),
+      db.ref('crosscountry/schools').once('value')
     ]);
 
-    const meetsMap  = {};
-    const eventsMap = {};
-    meetsSnap.forEach(c  => { meetsMap[c.key]  = { id: c.key,  ...c.val() }; });
-    eventsSnap.forEach(c => { eventsMap[c.key] = { id: c.key, ...c.val() }; });
+    const meetsMap = {};
+    meetsSnap.forEach(c => { const m = { id: c.key, ...c.val() }; if (m.slug) meetsMap[m.slug] = m; });
+    const schoolsMap = {};
+    schoolsSnap.forEach(c => { const s = { id: c.key, ...c.val() }; if (s.slug) schoolsMap[s.slug] = s; });
 
-    const raw = [];
-    resultsSnap.forEach(c => {
-      const r = { id: c.key, ...c.val() };
-      if (r.athlete_id === athleteId) raw.push(r);
+    const normName = norm(athleteName);
+    const rawResults = [];
+    resultsSnap.forEach(c => rawResults.push({ id: c.key, ...c.val() }));
+
+    // Name match is required; school match only narrows things down when both the
+    // known schoolSlug and the individual result actually carry a school_slug, so
+    // results with no school on them aren't dropped just because we can't verify them.
+    let matched = rawResults.filter(r => norm(r.athlete_name) === normName);
+    if (schoolSlug) {
+      matched = matched.filter(r => !r.school_slug || r.school_slug === schoolSlug);
+    }
+
+    // If we still don't have an athletes-roster record, try to find one by name(+school)
+    // to enrich gender/grad-year - many athletes only exist "virtually" via their results.
+    if (!athlete) {
+      const athletesSnap = await db.ref('crosscountry/athletes').once('value');
+      const candidates = [];
+      athletesSnap.forEach(c => {
+        const a = { id: c.key, ...c.val() };
+        if (norm(a.name) === normName && (!schoolSlug || !a.school_slug || a.school_slug === schoolSlug)) candidates.push(a);
+      });
+      if (candidates.length) athlete = candidates[0];
+    }
+
+    if (!schoolSlug) {
+      // No school hint at all - fall back to whichever school appears most often in their results.
+      const counts = {};
+      matched.forEach(r => { if (r.school_slug) counts[r.school_slug] = (counts[r.school_slug] || 0) + 1; });
+      schoolSlug = Object.keys(counts).sort((a, b) => counts[b] - counts[a])[0] || '';
+    }
+    schoolName = (schoolsMap[schoolSlug] && schoolsMap[schoolSlug].name) || schoolSlug || '';
+
+    allResults = matched.map(r => {
+      const meet = meetsMap[r.meet_slug] || {};
+      const timeSec = Number(r.time);
+      const distanceVal = Number(r.distance);
+      return {
+        ...r,
+        meet,
+        timeSec: isNaN(timeSec) ? null : timeSec,
+        distanceVal: isNaN(distanceVal) ? null : distanceVal,
+        sortDate: meet.date || r.created_at || ''
+      };
     });
+    allResults.sort((a, b) => (b.sortDate || '').localeCompare(a.sortDate || ''));
 
-    allResults = raw.map(r => ({
-      ...r,
-      meet:  meetsMap[r.meet_id]   || {},
-      event: eventsMap[r.event_id] || {}
-    }));
+    /* --- Hero --- */
+    document.title = `${athleteName} — Mountain State Miles`;
+    document.getElementById('heroName').textContent = athleteName;
 
-    allResults.sort((a, b) => (b.meet?.date||'').localeCompare(a.meet?.date||''));
+    const gender = (athlete && athlete.gender) || (matched.find(r => r.gender) || {}).gender || '';
+    const genderLabel = gender === 'M' ? 'Boys' : gender === 'F' ? 'Girls' : gender;
+    const gradYear = athlete && athlete.grade; // field is named "grade" but holds the graduation year
 
+    document.getElementById('heroChips').innerHTML = [
+      schoolSlug ? `<span class="hero-chip"><i class="fas fa-school"></i><a href="school.html?slug=${encodeURIComponent(schoolSlug)}" style="color:inherit;text-decoration:none;">${schoolName}</a></span>` : '',
+      gradYear ? `<span class="hero-chip"><i class="fas fa-graduation-cap"></i>Class of ${gradYear}</span>` : '',
+      genderLabel ? `<span class="hero-chip"><i class="fas fa-user"></i>${genderLabel}</span>` : ''
+    ].join('');
+
+    window.__MSM_COACH_CTX = { kind: 'athlete', athleteName, schoolName };
+    window.dispatchEvent(new CustomEvent('msm-coach-context-updated'));
+
+    /* --- Personal bests, grouped by distinct race distance --- */
+    pbs = {};
     allResults.forEach(r => {
-      const ev  = r.event?.name;
-      if (!ev) return;
-      const val = parseMark(r.mark); 
-      
-      if (!isNaN(val)) {
-        const isField = String(r.mark).includes('-') || String(r.mark).includes('m') || /jump|vault|shot|discus|javelin|throw/i.test(ev);
-        if (!pbs[ev]) {
-          pbs[ev] = { val, display: r.mark, isField };
-        } else {
-          const isNewPB = isField ? (val > pbs[ev].val) : (val < pbs[ev].val);
-          if (isNewPB) pbs[ev] = { val, display: r.mark, isField };
-        }
+      if (r.timeSec == null || r.distanceVal == null) return;
+      const key = String(Math.round(r.distanceVal));
+      if (!pbs[key] || r.timeSec < pbs[key].timeSec) {
+        pbs[key] = { distance: r.distanceVal, timeSec: r.timeSec, raw: r };
       }
     });
 
-    const uniqueMeets = new Set(allResults.map(r => r.meet_id).filter(Boolean));
+    const uniqueMeets = new Set(allResults.map(r => r.meet_slug).filter(Boolean));
+    const distEntries = Object.entries(pbs);
+    const countFor = key => allResults.filter(r => r.distanceVal != null && String(Math.round(r.distanceVal)) === key).length;
+    const mainKey = distEntries.length
+      ? distEntries.sort((a, b) => countFor(b[0]) - countFor(a[0]))[0][0]
+      : null;
+    const bestTimeDisplay = mainKey ? formatTime(pbs[mainKey].timeSec) : '\u2014';
+    const bestLabel = mainKey ? `${distanceLabel(Number(mainKey))} Best` : 'Best Time';
+
     document.getElementById('heroSummary').innerHTML = `
-      <div class="hero-stat-box"><div class="hero-stat-num">${allResults.length}</div><div class="hero-stat-lbl">Results</div></div>
-      <div class="hero-stat-box"><div class="hero-stat-num">${Object.keys(pbs).length}</div><div class="hero-stat-lbl">Events</div></div>
+      <div class="hero-stat-box"><div class="hero-stat-num">${allResults.length}</div><div class="hero-stat-lbl">Races</div></div>
+      <div class="hero-stat-box"><div class="hero-stat-num">${bestTimeDisplay}</div><div class="hero-stat-lbl">${bestLabel}</div></div>
       <div class="hero-stat-box"><div class="hero-stat-num">${uniqueMeets.size}</div><div class="hero-stat-lbl">Meets</div></div>
     `;
 
@@ -894,29 +909,28 @@ async function loadAthlete() {
     buildCharts();
     populateTableFilters();
     tFiltered = [...allResults];
+    doSort();
     renderTable();
 
   } catch(err) {
     console.error('Error loading athlete:', err);
-    document.getElementById('heroName').textContent = 'Error loading athlete';
-    document.getElementById('heroChips').innerHTML =
-      '<p style="color:var(--danger,#ef4444)">⚠ Could not load data. Check your connection.</p>';
+    showEmptyProfile('Error loading athlete', 'Could not load data. Check your connection and try again.');
   }
 }
 
 function renderPBs() {
   const grid = document.getElementById('pbGrid');
-  const entries = Object.entries(pbs);
+  const entries = Object.entries(pbs).sort((a, b) => Number(a[0]) - Number(b[0]));
 
   if (!entries.length) {
     grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><i class="fas fa-trophy"></i><p>No personal bests recorded yet.</p></div>`;
     return;
   }
 
-  grid.innerHTML = entries.map(([ev, pb], i) => `
+  grid.innerHTML = entries.map(([, pb], i) => `
     <div class="pb-card" style="animation-delay:${i*40}ms">
-      <div class="pb-event-name">${ev}</div>
-      <div class="pb-mark-val">${pb.display}</div>
+      <div class="pb-event-name">${distanceLabel(pb.distance)}</div>
+      <div class="pb-mark-val">${formatTime(pb.timeSec)}</div>
     </div>
   `).join('');
 }
@@ -968,33 +982,12 @@ function baseOptions(c, yTitle = '', xTitle = '') {
   };
 }
 
-function parseMark(mark) {
-  if (!mark) return NaN;
-  const m = String(mark).trim().toLowerCase();
-  
-  if (m.includes('-')) {
-    const parts = m.split('-');
-    const feet = parseFloat(parts[0]) || 0;
-    const inches = parseFloat(parts[1]) || 0;
-    return (feet * 12) + inches;
-  }
-  
-  if (m.includes(':')) {
-    const parts = m.split(':');
-    const mins = parseFloat(parts[0]) || 0;
-    const secs = parseFloat(parts[1]) || 0;
-    return (mins * 60) + secs;
-  }
-  
-  return parseFloat(m.replace(/[^\d.-]/g, ''));
-}
-
 function buildCharts() {
   populateProgSelect();
   buildProgChart();
   buildPRChart();
   buildMeetsChart();
-  buildMultiChart();
+  buildDivisionChart();
   window._chartsReady = true;
 }
 
@@ -1006,49 +999,33 @@ function rebuildCharts() {
 
 function populateProgSelect() {
   const sel = document.getElementById('progEventSel');
-  const events = [...new Set(allResults.map(r => r.event?.name).filter(Boolean))];
-  sel.innerHTML = events.map(ev => `<option value="${ev}">${ev}</option>`).join('');
-  sel.addEventListener('change', buildProgChart);
+  const distances = [...new Set(allResults.map(r => r.distanceVal).filter(v => v != null))].sort((a,b)=>a-b);
+  sel.innerHTML = distances.map(d => `<option value="${d}">${distanceLabel(d)}</option>`).join('');
+  sel.onchange = buildProgChart;
 }
 
 function buildProgChart() {
   const c = chartDefaults();
-  const ev = document.getElementById('progEventSel').value;
-  
-  const isFieldFeetInches = allResults.some(r => r.event?.name === ev && String(r.mark).includes('-'));
-  const isFieldMetric = allResults.some(r => r.event?.name === ev && String(r.mark).toLowerCase().includes('m'));
+  const sel = document.getElementById('progEventSel');
+  const dist = sel && sel.value !== '' ? Number(sel.value) : null;
 
   const pts = allResults
-    .filter(r => r.event?.name === ev && r.meet?.date && r.mark)
-    .map(r => ({ 
-        x: r.meet.date, 
-        y: parseMark(r.mark),
-        meetName: r.meet?.name || 'Unknown Meet',
-        rawMark: r.mark
+    .filter(r => r.timeSec != null && r.sortDate && (dist == null || r.distanceVal === dist))
+    .map(r => ({
+      x: r.sortDate,
+      y: r.timeSec,
+      meetName: r.meet?.name || r.meet_slug || 'Unknown Meet'
     }))
-    .filter(d => !isNaN(d.y))
     .sort((a,b) => a.x.localeCompare(b.x));
 
   if (gCharts.prog) gCharts.prog.destroy();
-  
-  let options = baseOptions(c, 'Mark / Time', 'Date of Meet'); 
-  
-  options.scales.y.ticks.callback = function(value) {
-      if (isFieldFeetInches) {
-          const feet = Math.floor(value / 12);
-          const inches = Math.round(value % 12);
-          return `${feet}-${String(inches).padStart(2, '0')}`;
-      } else if (value >= 60 && !isFieldMetric && !/jump|vault|throw/i.test(ev)) { 
-          const mins = Math.floor(value / 60);
-          const secs = Math.floor(value % 60);
-          return `${mins}:${String(secs).padStart(2, '0')}`;
-      }
-      return value;
-  };
 
+  let options = baseOptions(c, 'Time (mm:ss)', 'Meet Date');
+  options.scales.y.reverse = true; // lower time = faster, so "up" reads as improvement
+  options.scales.y.ticks.callback = value => formatTime(value);
   options.plugins.tooltip.callbacks = {
       title: (context) => pts[context[0].dataIndex].meetName,
-      label: (context) => `Mark: ${pts[context.dataIndex].rawMark}`
+      label: (context) => `Time: ${formatTime(pts[context.dataIndex].y)}`
   };
 
   gCharts.prog = new Chart(document.getElementById('chartProg'), {
@@ -1073,15 +1050,16 @@ function buildProgChart() {
 
 function buildPRChart() {
   const c = chartDefaults();
-  const labels = Object.keys(pbs);
-  const vals = labels.map(ev => pbs[ev].val);
-  const rawMarks = labels.map(ev => pbs[ev].display);
+  const entries = Object.entries(pbs).sort((a,b)=>Number(a[0])-Number(b[0]));
+  const labels = entries.map(([, pb]) => distanceLabel(pb.distance));
+  const vals = entries.map(([, pb]) => pb.timeSec);
 
   if (gCharts.pr) gCharts.pr.destroy();
-  
-  let options = baseOptions(c, 'Best Mark', 'Event');
+
+  let options = baseOptions(c, 'Best Time (mm:ss)', 'Distance');
+  options.scales.y.ticks.callback = value => formatTime(value);
   options.plugins.tooltip.callbacks = {
-      label: (context) => `PR: ${rawMarks[context.dataIndex]}`
+      label: (context) => `PB: ${formatTime(vals[context.dataIndex])}`
   };
 
   gCharts.pr = new Chart(document.getElementById('chartPR'), {
@@ -1105,16 +1083,16 @@ function buildMeetsChart() {
   const c = chartDefaults();
   const mc = {};
   allResults.forEach(r => {
-    const n = r.meet?.name || 'Unknown';
+    const n = r.meet?.name || r.meet_slug || 'Unknown';
     mc[n] = (mc[n]||0) + 1;
   });
   const sorted = Object.entries(mc).sort((a,b)=>b[1]-a[1]).slice(0,8);
 
   if (gCharts.meets) gCharts.meets.destroy();
-  
-  let options = { ...baseOptions(c, 'Meet Name', 'Events Competed'), indexAxis: 'y' };
+
+  let options = { ...baseOptions(c, 'Meet', 'Races'), indexAxis: 'y' };
   options.plugins.tooltip.callbacks = {
-      label: (context) => `${context.raw} Events`
+      label: (context) => `${context.raw} Race${context.raw === 1 ? '' : 's'}`
   };
 
   gCharts.meets = new Chart(document.getElementById('chartMeets'), {
@@ -1133,66 +1111,53 @@ function buildMeetsChart() {
   });
 }
 
-/* 🌟 FIX: MultiChart refactored from scatter to line with shared dates */
-function buildMultiChart() {
+/* Time trend split out by race division (varsity / JV / emerging-elite / etc.) */
+function buildDivisionChart() {
   const c = chartDefaults();
-  const events = [...new Set(allResults.map(r => r.event?.name).filter(Boolean))];
-  
+  const divisions = [...new Set(allResults.map(r => r.race_type).filter(Boolean))];
+
   // Create a unified X-axis label array so Chart.js correctly aligns dates
-  const rawDates = [...new Set(allResults.filter(r=>r.meet?.date).map(r=>r.meet.date))].sort();
+  const rawDates = [...new Set(allResults.filter(r=>r.sortDate).map(r=>r.sortDate))].sort();
   const labels = rawDates.map(d => new Date(d).toLocaleDateString('en-US',{month:'short',day:'numeric'}));
 
   const alphas = ['1','0.8','0.6','0.4','0.2','0.1'];
-  
-  const datasets = events.slice(0,6).map((ev, i) => {
-    
-    // Map the event's data explicitly to the shared date labels
-    const data = rawDates.map(dateStr => {
-      const res = allResults.find(r => r.event?.name === ev && r.meet?.date === dateStr && r.mark);
-      if (res) {
-        const yVal = parseMark(res.mark);
-        return isNaN(yVal) ? null : yVal;
-      }
-      return null;
-    });
 
-    // We store the raw marks so tooltips display nicely instead of parsed decimals
-    const rawMarks = rawDates.map(dateStr => {
-      const res = allResults.find(r => r.event?.name === ev && r.meet?.date === dateStr && r.mark);
-      return res ? res.mark : null;
+  const datasets = divisions.slice(0,6).map((div, i) => {
+    // Map this division's times explicitly to the shared date labels
+    const data = rawDates.map(dateStr => {
+      const res = allResults.find(r => r.race_type === div && r.sortDate === dateStr && r.timeSec != null);
+      return res ? res.timeSec : null;
     });
 
     const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
     const base = isDark ? '255,255,255' : '0,112,243';
-    
+
     return {
-      label: ev,
+      label: div,
       data: data,
-      rawMarks: rawMarks, // Custom prop for tooltips
       borderColor: `rgba(${base},${alphas[i]})`,
       backgroundColor: `rgba(${base},${alphas[i]})`,
       borderWidth: 2,
       pointRadius: 4,
       pointHoverRadius: 6,
       tension: 0.3,
-      spanGaps: true, // Tells Chart.js to draw the line across missing meet dates
+      spanGaps: true, // draw the line across meets this division didn't race at
       fill: false
     };
   });
 
-  if (gCharts.multi) gCharts.multi.destroy();
-  
-  let options = baseOptions(c, 'Mark', 'Date');
+  if (gCharts.division) gCharts.division.destroy();
+
+  let options = baseOptions(c, 'Time (mm:ss)', 'Date');
+  options.scales.y.reverse = true;
+  options.scales.y.ticks.callback = value => formatTime(value);
   options.plugins.legend = { display: true, labels: { color: c.textColor, boxWidth: 10, font: { size: 11 } } };
   options.plugins.tooltip.callbacks = {
-      label: (context) => {
-          const raw = context.dataset.rawMarks[context.dataIndex];
-          return `${context.dataset.label}: ${raw}`;
-      }
+      label: (context) => `${context.dataset.label}: ${formatTime(context.raw)}`
   };
 
-  gCharts.multi = new Chart(document.getElementById('chartMulti'), {
-    type: 'line', // Swapped from scatter to line
+  gCharts.division = new Chart(document.getElementById('chartMulti'), {
+    type: 'line',
     data: { labels, datasets },
     options: options
   });
@@ -1202,32 +1167,33 @@ function buildMultiChart() {
    TABLE & EXPORTS
 ═══════════════════════════════════════════════════ */
 function populateTableFilters() {
-  const events = [...new Set(allResults.map(r=>r.event?.name).filter(Boolean))].sort();
-  const meets  = [...new Set(allResults.map(r=>r.meet?.name).filter(Boolean))].sort();
+  const divisions = [...new Set(allResults.map(r=>r.race_type).filter(Boolean))].sort();
+  const meets     = [...new Set(allResults.map(r=>r.meet?.name || r.meet_slug).filter(Boolean))].sort();
 
-  const evSel = document.getElementById('tblEvent');
+  const dvSel = document.getElementById('tblDivision');
   const mtSel = document.getElementById('tblMeet');
-  evSel.innerHTML = '<option value="">All Events</option>' + events.map(e=>`<option>${e}</option>`).join('');
+  dvSel.innerHTML = '<option value="">All Divisions</option>' + divisions.map(d=>`<option>${d}</option>`).join('');
   mtSel.innerHTML = '<option value="">All Meets</option>'  + meets.map(m=>`<option>${m}</option>`).join('');
 
-  [document.getElementById('tblSearch'), evSel, mtSel].forEach(el => el.addEventListener('input', applyFilters));
-  document.getElementById('tblRows').addEventListener('change', e => { tPerPage=parseInt(e.target.value); tPage=1; renderTable(); });
+  [document.getElementById('tblSearch'), dvSel, mtSel].forEach(el => el.oninput = applyFilters);
+  document.getElementById('tblRows').onchange = e => { tPerPage=parseInt(e.target.value); tPage=1; renderTable(); };
 }
 
 function applyFilters() {
   const queryText = document.getElementById('tblSearch').value.toLowerCase().trim();
-  const terms = queryText.split(/\s+/); 
-  
-  const ev = document.getElementById('tblEvent').value;
+  const terms = queryText.split(/\s+/).filter(Boolean);
+
+  const dv = document.getElementById('tblDivision').value;
   const mt = document.getElementById('tblMeet').value;
 
   tFiltered = allResults.filter(r => {
-    const text = `${r.event?.name||''} ${r.meet?.name||''} ${r.mark||''} ${r.place||''}`.toLowerCase();
-    const matchesSearch = terms.every(term => text.includes(term));
-    
+    const meetName = r.meet?.name || r.meet_slug || '';
+    const text = `${r.race_type||''} ${meetName} ${r.place||''}`.toLowerCase();
+    const matchesSearch = !terms.length || terms.every(term => text.includes(term));
+
     return matchesSearch
-        && (!ev || r.event?.name === ev)
-        && (!mt || r.meet?.name  === mt);
+        && (!dv || r.race_type === dv)
+        && (!mt || meetName === mt);
   });
   tPage = 1;
   doSort();
@@ -1248,22 +1214,14 @@ function doSort() {
   tFiltered.sort((a, b) => {
     let va, vb;
     switch(tSortKey) {
-      case 'date':  va=a.meet?.date||'';     vb=b.meet?.date||'';     break;
-      case 'event': va=a.event?.name||'';    vb=b.event?.name||'';    break;
-      case 'meet':  va=a.meet?.name||'';     vb=b.meet?.name||'';     break;
-      case 'place': va=parseInt(a.place)||999; vb=parseInt(b.place)||999; break;
-      case 'mark':  
-        va = parseMark(a.mark); 
-        vb = parseMark(b.mark);
-        if(isNaN(va)) va = tSortDir==='asc' ? Infinity : -Infinity;
-        if(isNaN(vb)) vb = tSortDir==='asc' ? Infinity : -Infinity;
-        
-        const aIsField = pbs[a.event?.name]?.isField;
-        const bIsField = pbs[b.event?.name]?.isField;
-        
-        if (aIsField && bIsField) {
-            return tSortDir === 'asc' ? vb - va : va - vb;
-        } 
+      case 'date':     va=a.sortDate||'';                       vb=b.sortDate||'';                       break;
+      case 'division': va=a.race_type||'';                      vb=b.race_type||'';                      break;
+      case 'meet':     va=a.meet?.name||a.meet_slug||'';         vb=b.meet?.name||b.meet_slug||'';         break;
+      case 'place':    va=parseInt(a.place)||999;                vb=parseInt(b.place)||999;                break;
+      case 'time':
+        va = a.timeSec; vb = b.timeSec;
+        if (va == null) va = tSortDir==='asc' ? Infinity : -Infinity;
+        if (vb == null) vb = tSortDir==='asc' ? Infinity : -Infinity;
         break;
       default:      va=''; vb='';
     }
@@ -1292,20 +1250,20 @@ function renderTable() {
   } else {
     const fragment = document.createDocumentFragment();
     slice.forEach(r => {
-      const date    = r.meet?.date ? new Date(r.meet.date).toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric'}) : '—';
-      const evName  = r.event?.name || '—';
-      const evSlug  = r.event?.slug;
-      const mtName  = r.meet?.name  || '—';
-      const mtSlug  = r.meet?.slug;
-      const mark    = r.mark || '—';
-      const place   = r.place ? `${r.place}${ord(r.place)}` : '—';
-      const isPB    = pbs[evName]?.display === mark;
-      
+      const date       = r.sortDate ? new Date(r.sortDate).toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric'}) : '—';
+      const division   = r.race_type || '—';
+      const mtName     = r.meet?.name || r.meet_slug || '—';
+      const mtSlug     = r.meet?.slug || r.meet_slug;
+      const timeDisp   = r.timeSec != null ? formatTime(r.timeSec) : '—';
+      const place      = r.place ? `${r.place}${ord(r.place)}` : '—';
+      const distKey    = r.distanceVal != null ? String(Math.round(r.distanceVal)) : null;
+      const isPB       = distKey && pbs[distKey] && pbs[distKey].timeSec === r.timeSec;
+
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td>${date}</td>
-        <td>${evSlug?`<a href="event.html?event=${evSlug}">${evName}</a>`:evName}</td>
-        <td class="mark-col">${mark}${isPB?'<span class="pb-tag">PB</span>':''}</td>
+        <td>${division}</td>
+        <td class="mark-col">${timeDisp}${isPB?'<span class="pb-tag">PB</span>':''}</td>
         <td>${mtSlug?`<a href="meet.html?slug=${mtSlug}">${mtName}</a>`:mtName}</td>
         <td>${place}</td>
       `;
@@ -1345,7 +1303,7 @@ function ord(n) {
 }
 
 function athleteSlug() {
-  return athlete ? `${athlete.first_name||''}_${athlete.last_name||''}`.replace(/\s+/g,'_') : 'athlete';
+  return athleteName ? athleteName.replace(/\s+/g,'_') : 'athlete';
 }
 function dl(name, type, content) {
   const a = document.createElement('a');
@@ -1357,27 +1315,27 @@ function toCSVRow(cells) {
 }
 function resultRows() {
   return tFiltered.map(r=>[
-    r.meet?.date ? new Date(r.meet.date).toLocaleDateString() : '',
-    r.event?.name||'', r.mark||'', r.meet?.name||'', r.place||''
+    r.sortDate ? new Date(r.sortDate).toLocaleDateString() : '',
+    r.race_type||'', r.timeSec!=null?formatTime(r.timeSec):'', r.meet?.name||r.meet_slug||'', r.place||''
   ]);
 }
 
 function exportPBsCSV() {
-  const rows=[['Event','Personal Best'],...Object.entries(pbs).map(([ev,pb])=>[ev,pb.display])];
+  const rows=[['Distance','Personal Best'],...Object.values(pbs).map(pb=>[distanceLabel(pb.distance),formatTime(pb.timeSec)])];
   dl(`${athleteSlug()}_PBs.csv`,'text/csv', rows.map(toCSVRow).join('\n'));
   toast('✓ PBs exported as CSV');
 }
 function exportPBsPDF() {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
-  const name = athlete ? `${athlete.first_name} ${athlete.last_name}` : 'Athlete';
+  const name = athleteName || 'Athlete';
   doc.setFontSize(18); doc.setFont('helvetica','bold');
   doc.text(`${name} — Personal Bests`, 14, 20);
   doc.setFontSize(9); doc.setFont('helvetica','normal');
   doc.text(`Mountain State Miles · ${new Date().toLocaleDateString()}`, 14, 27);
   doc.autoTable({
-    head:[['Event','Personal Best']],
-    body: Object.entries(pbs).map(([ev,pb])=>[ev,pb.display]),
+    head:[['Distance','Personal Best']],
+    body: Object.values(pbs).map(pb=>[distanceLabel(pb.distance),formatTime(pb.timeSec)]),
     startY: 33,
     styles:{fontSize:10},
     headStyles:{fillColor:[0,0,0],textColor:[255,255,255]}
@@ -1387,37 +1345,37 @@ function exportPBsPDF() {
 }
 function exportPBsJSON() {
   dl(`${athleteSlug()}_PBs.json`,'application/json',
-    JSON.stringify(Object.entries(pbs).map(([event,pb])=>({event,mark:pb.display})),null,2));
+    JSON.stringify(Object.values(pbs).map(pb=>({distance:pb.distance, time:formatTime(pb.timeSec), seconds:pb.timeSec})),null,2));
   toast('✓ PBs exported as JSON');
 }
 
 function exportResultsCSV() {
-  const rows=[['Date','Event','Mark','Meet','Place'],...resultRows()];
+  const rows=[['Date','Division','Time','Meet','Place'],...resultRows()];
   dl(`${athleteSlug()}_Results.csv`,'text/csv', rows.map(toCSVRow).join('\n'));
   toast('✓ Results exported as CSV');
 }
 function exportResultsTSV() {
-  const rows=[['Date','Event','Mark','Meet','Place'],...resultRows()];
+  const rows=[['Date','Division','Time','Meet','Place'],...resultRows()];
   dl(`${athleteSlug()}_Results.tsv`,'text/tab-separated-values', rows.map(r=>r.join('\t')).join('\n'));
   toast('✓ Results exported as TSV');
 }
 function exportResultsJSON() {
   dl(`${athleteSlug()}_Results.json`,'application/json',
     JSON.stringify(tFiltered.map(r=>({
-      date:r.meet?.date||'', event:r.event?.name||'', mark:r.mark||'', meet:r.meet?.name||'', place:r.place||null
+      date:r.sortDate||'', division:r.race_type||'', time:r.timeSec!=null?formatTime(r.timeSec):'', seconds:r.timeSec, meet:r.meet?.name||r.meet_slug||'', place:r.place||null
     })),null,2));
   toast('✓ Results exported as JSON');
 }
 function exportResultsPDF() {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ orientation:'landscape' });
-  const name = athlete ? `${athlete.first_name} ${athlete.last_name}` : 'Athlete';
+  const name = athleteName || 'Athlete';
   doc.setFontSize(18); doc.setFont('helvetica','bold');
   doc.text(`${name} — Results`, 14, 16);
   doc.setFontSize(9); doc.setFont('helvetica','normal');
   doc.text(`Mountain State Miles · ${new Date().toLocaleDateString()} · ${tFiltered.length} results`, 14, 23);
   doc.autoTable({
-    head:[['Date','Event','Mark','Meet','Place']],
+    head:[['Date','Division','Time','Meet','Place']],
     body: resultRows(),
     startY:28,
     styles:{fontSize:9},
@@ -1436,8 +1394,7 @@ function exportChartPNG() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  loadAthleteList();           
-  setTimeout(loadAthlete, 80); 
+  loadAthlete();
 });
 </script>
 

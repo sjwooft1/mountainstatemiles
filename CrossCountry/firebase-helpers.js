@@ -478,15 +478,69 @@ async function bulkInsertResults(meetSlug, csvData) {
   try {
     const db = await getDB();
     const resultsRef = db.ref(`${CC_PREFIX}/results`);
-    const promises = validRows.map(row => resultsRef.push(row));
+    const nowIso = new Date().toISOString();
+    const promises = validRows.map(row => resultsRef.push({ created_at: nowIso, ...row }));
     await Promise.all(promises);
     results.success = validRows.length;
+
+    // Keep the athlete roster in sync automatically: any athlete_name/school_slug pair
+    // in this import that doesn't already have a matching crosscountry/athletes record
+    // gets one created, so rosters don't silently drift out of sync with results imports.
+    try {
+      results.newAthletesCreated = await syncAthleteRosterFromResults_(db, validRows);
+    } catch (rosterError) {
+      console.error('Roster sync error (results were still saved):', rosterError);
+      results.newAthletesCreated = 0;
+    }
   } catch (error) {
     console.error('Database insert error:', error);
     results.errors.push(`Database error: ${error.message}`);
   }
   
   return results;
+}
+
+/**
+ * Ensures every (athlete_name, school_slug) pair present in a batch of freshly-imported
+ * results has a corresponding crosscountry/athletes record, creating any that are missing.
+ * Matching is case-insensitive/trimmed on name, and only compares school_slug when a row has one
+ * (so unattached/no-school results never create duplicate "no school" athlete records).
+ * @returns {Promise<number>} Number of new athlete records created.
+ */
+async function syncAthleteRosterFromResults_(db, rows) {
+  const existingSnapshot = await db.ref(`${CC_PREFIX}/athletes`).once('value');
+  const existing = snapshotToArray(existingSnapshot);
+  const existingKeySet = new Set(
+    existing.map(a => `${(a.name || '').trim().toLowerCase()}|${(a.school_slug || '').trim().toLowerCase()}`)
+  );
+
+  const seen = new Set();
+  const toCreate = [];
+  const nowIso = new Date().toISOString();
+
+  rows.forEach(row => {
+    const name = (row.athlete_name || '').trim();
+    if (!name) return;
+    const schoolSlug = (row.school_slug || '').trim();
+    const key = `${name.toLowerCase()}|${schoolSlug.toLowerCase()}`;
+
+    if (existingKeySet.has(key) || seen.has(key)) return;
+    seen.add(key);
+
+    toCreate.push({
+      name,
+      school_slug: schoolSlug || undefined,
+      gender: row.gender || undefined,
+      created_at: nowIso,
+      source: 'csv_import'
+    });
+  });
+
+  if (toCreate.length === 0) return 0;
+
+  const athletesRef = db.ref(`${CC_PREFIX}/athletes`);
+  await Promise.all(toCreate.map(athlete => athletesRef.push(athlete)));
+  return toCreate.length;
 }
 
 /**
@@ -557,18 +611,52 @@ async function getCurrentSeason() {
   try {
     const db = await getDB();
     const snapshot = await db.ref(`${CC_PREFIX}/seasons/current`).once('value');
-    
-    if (!snapshot.exists()) {
-      // Default to current calendar year if not set
+
+    if (snapshot.exists()) {
+      return snapshot.val();
+    }
+
+    // No explicit "current" pointer set - fall back to scanning real season
+    // records (crosscountry/seasons/{id}: {name, start_date, end_date, description}),
+    // which is how seasons are actually created via the admin/Google Sheets tools.
+    const seasonsSnapshot = await db.ref(`${CC_PREFIX}/seasons`).once('value');
+    const seasons = snapshotToArray(seasonsSnapshot);
+
+    if (seasons.length > 0) {
+      const todayMs = Date.now();
+      const withRange = seasons.map(s => ({
+        ...s,
+        startMs: s.start_date ? new Date(s.start_date).getTime() : -Infinity,
+        endMs: s.end_date ? new Date(s.end_date).getTime() : Infinity
+      }));
+
+      // Prefer a season whose date range actually contains today...
+      let best = withRange.find(s => todayMs >= s.startMs && todayMs <= s.endMs);
+      // ...otherwise fall back to the most recently started season.
+      if (!best) {
+        best = withRange.sort((a, b) => b.startMs - a.startMs)[0];
+      }
+
+      const year = best.start_date ? new Date(best.start_date).getFullYear() : new Date().getFullYear();
       return {
-        year: new Date().getFullYear(),
-        startMonth: 8, // August
-        endMonth: 11, // November
-        name: `${new Date().getFullYear()} Season`
+        id: best.id,
+        year,
+        startMonth: best.start_date ? new Date(best.start_date).getMonth() : 8,
+        endMonth: best.end_date ? new Date(best.end_date).getMonth() : 11,
+        name: best.name || `${year} Season`,
+        start_date: best.start_date,
+        end_date: best.end_date,
+        description: best.description || ''
       };
     }
-    
-    return snapshot.val();
+
+    // Nothing at all in the database yet - default to current calendar year.
+    return {
+      year: new Date().getFullYear(),
+      startMonth: 8, // August
+      endMonth: 11, // November
+      name: `${new Date().getFullYear()} Season`
+    };
   } catch (error) {
     console.error('Error fetching current season:', error);
     return null;
@@ -716,7 +804,10 @@ async function getAthleteStatus(athleteSlug) {
     
     // Academic year starts in August (month 7)
     const academicYear = currentMonth >= 7 ? currentYear + 1 : currentYear;
-    const gradYear = parseInt(athlete.grad_year, 10);
+    // NOTE: the live database stores the athlete's graduation year in a field called
+    // `grade` (not `grad_year`), despite the confusing name. Support both so this keeps
+    // working regardless of which convention a given record was written with.
+    const gradYear = parseInt(athlete.grade ?? athlete.grad_year, 10);
     
     if (gradYear < academicYear) {
       return {
@@ -758,19 +849,28 @@ async function getAthleteStatus(athleteSlug) {
 async function updateAthleteGradYear(athleteSlug, newGradYear) {
   try {
     const db = await getDB();
-    
-    // Find the athlete by slug
+
+    // Athlete records don't reliably have a `slug` field in the live database - if the
+    // given value isn't found that way, fall back to treating it as a Firebase key directly.
+    let athleteId = null;
     const snapshot = await db.ref(`${CC_PREFIX}/athletes`).orderByChild('slug').equalTo(athleteSlug).once('value');
     const athletes = snapshotToArray(snapshot);
-    
-    if (athletes.length === 0) {
+
+    if (athletes.length > 0) {
+      athleteId = athletes[0].id;
+    } else {
+      const directSnap = await db.ref(`${CC_PREFIX}/athletes/${athleteSlug}`).once('value');
+      if (directSnap.exists()) athleteId = athleteSlug;
+    }
+
+    if (!athleteId) {
       console.error('Athlete not found:', athleteSlug);
       return false;
     }
-    
-    const athleteId = athletes[0].id;
+
+    // `grade` is the real field name used for graduation year in this database.
     await db.ref(`${CC_PREFIX}/athletes/${athleteId}`).update({
-      grad_year: newGradYear,
+      grade: newGradYear,
       updatedAt: new Date().toISOString()
     });
     
@@ -796,9 +896,10 @@ async function graduateAllSeniors() {
     const currentMonth = new Date().getMonth();
     const academicYear = currentMonth >= 7 ? currentYear + 1 : currentYear;
     
-    // Find all seniors (grad_year === academic year)
+    // Find all seniors (graduation year === academic year). Real records use `grade`
+    // for the graduation year; `grad_year` is supported too for backward compatibility.
     const seniors = athletes.filter(a => {
-      const gradYear = parseInt(a.grad_year, 10);
+      const gradYear = parseInt(a.grade ?? a.grad_year, 10);
       return gradYear === academicYear;
     });
     
@@ -811,7 +912,7 @@ async function graduateAllSeniors() {
     seniors.forEach(senior => {
       updates.push(
         db.ref(`${CC_PREFIX}/athletes/${senior.id}`).update({
-          grad_year: academicYear - 1, // Set to past year, marking as graduated
+          grade: academicYear - 1, // Set to past year, marking as graduated
           graduatedAt: new Date().toISOString(),
           status: 'graduated'
         })
@@ -846,9 +947,9 @@ async function advanceAllAthletes() {
     const currentMonth = new Date().getMonth();
     const academicYear = currentMonth >= 7 ? currentYear + 1 : currentYear;
     
-    // Find all non-graduated athletes
+    // Find all non-graduated athletes (again, `grade` is the real graduation-year field).
     const activeAthletes = athletes.filter(a => {
-      const gradYear = parseInt(a.grad_year, 10);
+      const gradYear = parseInt(a.grade ?? a.grad_year, 10);
       return gradYear >= academicYear;
     });
     
@@ -859,10 +960,10 @@ async function advanceAllAthletes() {
     // Advance each athlete by 1 year (they graduate 1 year earlier)
     const updates = [];
     activeAthletes.forEach(athlete => {
-      const currentGradYear = parseInt(athlete.grad_year, 10);
+      const currentGradYear = parseInt(athlete.grade ?? athlete.grad_year, 10);
       updates.push(
         db.ref(`${CC_PREFIX}/athletes/${athlete.id}`).update({
-          grad_year: currentGradYear - 1,
+          grade: currentGradYear - 1,
           advancedAt: new Date().toISOString()
         })
       );
@@ -907,6 +1008,7 @@ function calculateDaysToDate(targetDate) {
  */
 async function getSeasonSummary() {
   try {
+    const db = await getDB();
     const currentSeason = await getCurrentSeason();
     const athletesSnapshot = await db.ref(`${CC_PREFIX}/athletes`).once('value');
     const athletes = snapshotToArray(athletesSnapshot);
@@ -915,13 +1017,14 @@ async function getSeasonSummary() {
     const currentMonth = new Date().getMonth();
     const academicYear = currentMonth >= 7 ? currentYear + 1 : currentYear;
     
-    const seniors = athletes.filter(a => parseInt(a.grad_year, 10) === academicYear).length;
-    const juniors = athletes.filter(a => parseInt(a.grad_year, 10) === academicYear + 1).length;
-    const sophomores = athletes.filter(a => parseInt(a.grad_year, 10) === academicYear + 2).length;
-    const freshmen = athletes.filter(a => parseInt(a.grad_year, 10) === academicYear + 3).length;
+    const gradYearOf = a => parseInt(a.grade ?? a.grad_year, 10);
+    const seniors = athletes.filter(a => gradYearOf(a) === academicYear).length;
+    const juniors = athletes.filter(a => gradYearOf(a) === academicYear + 1).length;
+    const sophomores = athletes.filter(a => gradYearOf(a) === academicYear + 2).length;
+    const freshmen = athletes.filter(a => gradYearOf(a) === academicYear + 3).length;
     
     return {
-      currentSeason: currentSeason.year,
+      currentSeason: currentSeason ? currentSeason.year : null,
       totalAthletes: athletes.length,
       seniors,
       juniors,
@@ -1369,6 +1472,7 @@ window.getSchoolBySlug = getSchoolBySlug;
 window.getSchoolNameBySlug = getSchoolNameBySlug;
 window.getMeetBySlug = getMeetBySlug;
 window.getMeets = getAllMeets;
+window.getAllMeets = getAllMeets; // alias - some pages call getAllMeets() directly
 window.getResultsByMeet = getResultsByMeet;
 window.getResultsBySchool = getResultsBySchool;
 window.getResultsByAthlete = getResultsByAthlete;
@@ -1407,3 +1511,90 @@ window.saveEmailTemplate = saveEmailTemplate;
 window.deleteEmailTemplate = deleteEmailTemplate;
 window.getEmailAnalytics = getEmailAnalytics;
 window.generateEmailFromTemplate = generateEmailFromTemplate;
+
+// ==========================================
+// COURSES (crosscountry/courses)
+// ==========================================
+
+/**
+ * Get all courses, sorted alphabetically by name
+ * @returns {Promise<Array>} Array of course objects
+ */
+async function getAllCourses() {
+  try {
+    const db = await getDB();
+    const snapshot = await db.ref(`${CC_PREFIX}/courses`).once('value');
+    const courses = snapshotToArray(snapshot);
+    return courses.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+  } catch (error) {
+    console.error('Error fetching courses:', error);
+    return [];
+  }
+}
+
+/**
+ * Get a single course by its slug
+ * @param {string} slug
+ * @returns {Promise<Object|null>} Course object, or null if not found
+ */
+async function getCourseBySlug(slug) {
+  try {
+    const db = await getDB();
+    const snapshot = await db.ref(`${CC_PREFIX}/courses`).orderByChild('slug').equalTo(slug).once('value');
+    const courses = snapshotToArray(snapshot);
+    return courses.length > 0 ? courses[0] : null;
+  } catch (error) {
+    console.error('Error fetching course:', error);
+    return null;
+  }
+}
+
+/**
+ * Create or update a course record.
+ * If courseData.id is provided, updates the existing record at that id.
+ * Otherwise, pushes a new record.
+ * @param {Object} courseData - Course fields (name, slug, location, distance,
+ *   difficulty, description, video_url, gpx_url, notes, surfaces, etc). May
+ *   include an `id` property identifying an existing record to update.
+ * @returns {Promise<Object>} The saved course (with id), or an object with an `error` property
+ */
+async function saveCourse(courseData) {
+  try {
+    const db = await getDB();
+    const { id, ...data } = courseData || {};
+
+    if (id) {
+      await db.ref(`${CC_PREFIX}/courses/${id}`).update(data);
+      return { id, ...data };
+    }
+
+    const courseRef = db.ref(`${CC_PREFIX}/courses`).push();
+    const newId = courseRef.key;
+    await courseRef.set(data);
+    return { id: newId, ...data };
+  } catch (error) {
+    console.error('Error saving course:', error);
+    return { error: error.message };
+  }
+}
+
+/**
+ * Delete a course by its Firebase id
+ * @param {string} id
+ * @returns {Promise<boolean>} true on success, false on failure
+ */
+async function deleteCourse(id) {
+  try {
+    const db = await getDB();
+    await db.ref(`${CC_PREFIX}/courses/${id}`).remove();
+    return true;
+  } catch (error) {
+    console.error('Error deleting course:', error);
+    return false;
+  }
+}
+
+window.getAllCourses = getAllCourses;
+window.getCourseBySlug = getCourseBySlug;
+window.saveCourse = saveCourse;
+window.deleteCourse = deleteCourse;

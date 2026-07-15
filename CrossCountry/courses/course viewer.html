@@ -291,6 +291,32 @@
     max-width:var(--maxw); margin:0 auto; padding:16px 20px 28px; font-size:12px; color:var(--text-faint);
     border-top:1px solid var(--card-border);
   }
+
+  /* Course Records + Upcoming Meets panels */
+  .records-grid{display:grid; grid-template-columns:1fr 1fr; gap:16px; padding:16px 18px;}
+  @media (max-width:700px){ .records-grid{grid-template-columns:1fr;} }
+  .record-col{display:flex; flex-direction:column; gap:8px;}
+  .record-col-title{font-size:11px; text-transform:uppercase; letter-spacing:0.5px; font-weight:700; color:var(--text-dim);}
+  .record-highlight{
+    background:var(--bg-elevated); border:1px solid var(--card-border); border-radius:10px; padding:12px 14px;
+  }
+  .record-highlight .rh-time{font-family:'Oswald',sans-serif; font-size:26px; font-weight:700; color:var(--trail);}
+  .record-highlight .rh-name{font-size:13.5px; font-weight:600; color:var(--text);}
+  .record-highlight .rh-meta{font-size:11.5px; color:var(--text-faint); margin-top:2px;}
+  .record-table{width:100%; border-collapse:collapse; font-size:12.5px;}
+  .record-table td{padding:5px 4px; border-bottom:1px solid var(--card-border); color:var(--text-dim);}
+  .record-table td.rt-rank{color:var(--text-faint); width:22px;}
+  .record-table td.rt-time{color:var(--trail); font-family:'JetBrains Mono',monospace; text-align:right;}
+  .record-empty{color:var(--text-faint); font-size:12.5px; padding:4px 0;}
+  .upcoming-list{display:flex; flex-direction:column; gap:8px; padding:14px 18px;}
+  .upcoming-item{
+    display:flex; justify-content:space-between; align-items:center; gap:10px;
+    background:var(--bg-elevated); border:1px solid var(--card-border); border-radius:9px; padding:10px 14px;
+    text-decoration:none; color:var(--text);
+  }
+  .upcoming-item:hover{border-color:var(--trail);}
+  .upcoming-item .um-name{font-size:13.5px; font-weight:600;}
+  .upcoming-item .um-date{font-size:12px; color:var(--text-dim); white-space:nowrap;}
 </style>
 
   <link rel="stylesheet" href="/assets/main.css" />
@@ -319,6 +345,10 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="../firebase-config.js"></script>
+<script src="../firebase-helpers.js"></script>
 <script>
   const SURFACE_COLORS = {
     "Grass": "#284706",
@@ -391,11 +421,11 @@
       { type: "Grass", pct: 40 }
     ],},
     {
-      slug: "beckley-invitational",
-      name: "Beckley Invitational",
-      video: "/CrossCountry/courses/assets/Beckley Invitational.mp4",
-      profile: "/CrossCountry/courses/assets/Beckley Invitational.svg",
-      gpx: "/CrossCountry/courses/Beckley Invitational.gpx",
+      slug: "pipestem-state-park",
+      name: "Pipestem State Park",
+      video: "/CrossCountry/courses/assets/Pipestem.mp4",
+      profile: "/CrossCountry/courses/assets/Pipestem.svg",
+      gpx: "/CrossCountry/courses/Pipestem.gpx",
       notes: "Heavy wooded variants featuring dense canopy sections and technical turns. Ground is highly organic and shifts dynamically based on precipitation margins.",
       surfaces: [
         { type: "Grass", pct: 75 },
@@ -530,6 +560,69 @@
     return n === null || isNaN(n) ? '—' : n.toFixed(digits);
   }
 
+  // ---------- Firebase merge: crosscountry/courses + local DEFAULT_COURSES fallback ----------
+  // Firebase holds the "real" course records (name/slug/location/distance/difficulty/
+  // description + newer video_url/gpx_url/notes/surfaces fields as they get filled in via
+  // course-admin.html). Until every course is fully populated there, we backfill any missing
+  // media/notes/surfaces fields from the legacy hardcoded DEFAULT_COURSES array, matched first
+  // by slug and then by name (older Firebase docs, e.g. "cabell", don't share a slug with the
+  // legacy "cabell-midland" entry even though they're the same course).
+  async function mergeCoursesFromFirebase() {
+    if (typeof window.getAllCourses !== 'function') return;
+
+    let fbCourses = [];
+    try {
+      fbCourses = await window.getAllCourses();
+    } catch (e) {
+      console.error('Course viewer: failed to load courses from Firebase', e);
+      return;
+    }
+    if (!Array.isArray(fbCourses) || !fbCourses.length) return;
+
+    const hardcodedBySlug = {};
+    const hardcodedByName = {};
+    DEFAULT_COURSES.forEach(c => {
+      hardcodedBySlug[c.slug] = c;
+      hardcodedByName[(c.name || '').trim().toLowerCase()] = c;
+    });
+
+    const consumedSlugs = new Set();
+
+    const merged = fbCourses.map(fb => {
+      const fallback = hardcodedBySlug[fb.slug] || hardcodedByName[(fb.name || '').trim().toLowerCase()] || null;
+      if (fallback) consumedSlugs.add(fallback.slug);
+
+      const surfaces = (Array.isArray(fb.surfaces) && fb.surfaces.length)
+        ? fb.surfaces
+        : ((fallback && fallback.surfaces) || []);
+
+      return {
+        id: fb.id,
+        slug: fb.slug || (fallback && fallback.slug) || '',
+        name: fb.name || (fallback && fallback.name) || 'Unnamed Course',
+        location: fb.location || '',
+        distance: fb.distance || '',
+        difficulty: fb.difficulty || '',
+        description: fb.description || '',
+        video: fb.video_url || (fallback && fallback.video) || '',
+        profile: (fallback && fallback.profile) || '',
+        gpx: fb.gpx_url || (fallback && fallback.gpx) || '',
+        notes: fb.notes || (fallback && fallback.notes) || fb.description || '',
+        surfaces: surfaces,
+        fallbackTrack: (fallback && fallback.fallbackTrack) || null
+      };
+    }).filter(c => c.slug);
+
+    // Keep any legacy hardcoded-only courses that have no Firebase counterpart yet,
+    // so nothing currently visible on the page regresses while data migrates.
+    DEFAULT_COURSES.forEach(c => {
+      const alreadyPresent = consumedSlugs.has(c.slug) || merged.some(m => m.slug === c.slug);
+      if (!alreadyPresent) merged.push(c);
+    });
+
+    if (merged.length) COURSES = merged;
+  }
+
   // ---------- page shell for a course ----------
   function courseTemplate(course) {
     const surfaceBarsHtml = (course.surfaces || []).map(s => {
@@ -551,7 +644,7 @@
         <div class="hero-title-block">
           <div class="eyebrow"><span class="dot"></span> Course Profile Dashboard</div>
           <h1 class="course-title">${course.name}</h1>
-          <p class="course-sub">Fly-through media, sync-interactive track mappings, and terrain parameters.</p>
+          <p class="course-sub">${[course.location, course.difficulty ? `${course.difficulty} difficulty` : ''].filter(Boolean).join(' &middot; ') || 'Fly-through media, sync-interactive track mappings, and terrain parameters.'}</p>
         </div>
         <div class="stat-strip" id="stat-strip">
           <div class="stat"><span class="val">…</span><span class="lab">Miles</span></div>
@@ -688,8 +781,30 @@
             </ul>
           </div>
           <div class="btn-row">
-            <a class="btn primary" href="${encodeURI(course.gpx)}" download>⬇ Download GPX Framework</a>
-            <a class="btn" href="../courses">← Track Inventory</a>
+            <a class="btn primary" href="${encodeURI(course.gpx)}" download>Download GPX Framework</a>
+            <a class="btn" href="../courses">Track Inventory</a>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-head">
+              <h2><span class="swatch" style="background:var(--danger)"></span>Course Records</h2>
+              <span class="tag">All-time fastest results at this course</span>
+            </div>
+            <div id="course-records-panel">
+              <div class="record-empty" style="padding:16px 18px;">Loading course records...</div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <h2><span class="swatch" style="background:var(--summit)"></span>Upcoming Meets</h2>
+              <span class="tag">Scheduled events at this course</span>
+            </div>
+            <div id="upcoming-meets-panel">
+              <div class="record-empty" style="padding:16px 18px;">Loading upcoming meets...</div>
+            </div>
           </div>
         </div>
       </main>
@@ -713,6 +828,115 @@
     });
   }
 
+  // ---------- Course Records + Upcoming Meets (crosscountry/meets + crosscountry/results) ----------
+  function formatMeetDate(dateStr) {
+    if (!dateStr) return '';
+    const d = new Date(dateStr + 'T00:00:00');
+    if (isNaN(d.getTime())) return dateStr;
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  }
+
+  function formatSecondsAsTime(totalSeconds) {
+    if (totalSeconds === null || totalSeconds === undefined || isNaN(totalSeconds)) return '—';
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds - minutes * 60;
+    return `${minutes}:${seconds < 10 ? '0' : ''}${seconds.toFixed(2)}`;
+  }
+
+  function renderRecordColumn(label, results) {
+    if (!results.length) {
+      return `<div class="record-col"><span class="record-col-title">${label}</span><div class="record-empty">No recorded results at this course yet.</div></div>`;
+    }
+    const top = results[0];
+    const restRows = results.slice(1, 5).map((r, i) => `
+      <tr>
+        <td class="rt-rank">${i + 2}</td>
+        <td>${r.athlete_name || 'Unknown'}</td>
+        <td class="rt-time">${formatSecondsAsTime(r.timeSeconds)}</td>
+      </tr>`).join('');
+    return `
+      <div class="record-col">
+        <span class="record-col-title">${label}</span>
+        <div class="record-highlight">
+          <div class="rh-time">${formatSecondsAsTime(top.timeSeconds)}</div>
+          <div class="rh-name">${top.athlete_name || 'Unknown'}</div>
+          <div class="rh-meta">${top.meetName || 'Unknown Meet'} &middot; ${formatMeetDate(top.meetDate)}</div>
+        </div>
+        ${restRows ? `<table class="record-table"><tbody>${restRows}</tbody></table>` : ''}
+      </div>`;
+  }
+
+  async function loadCourseRecordsAndUpcomingMeets(course) {
+    const recordsPanel = document.getElementById('course-records-panel');
+    const upcomingPanel = document.getElementById('upcoming-meets-panel');
+    if (!recordsPanel && !upcomingPanel) return;
+
+    if (typeof window.getAllMeets !== 'function' || typeof window.getResultsByMeet !== 'function') {
+      if (recordsPanel) recordsPanel.innerHTML = '<div class="record-empty" style="padding:16px 18px;">Course record lookups unavailable right now.</div>';
+      if (upcomingPanel) upcomingPanel.innerHTML = '<div class="record-empty" style="padding:16px 18px;">Upcoming meet lookups unavailable right now.</div>';
+      return;
+    }
+
+    try {
+      const allMeets = await window.getAllMeets(5000);
+      const courseMeets = (allMeets || []).filter(m => m.course_slug && m.course_slug === course.slug);
+
+      // ---- Upcoming meets ----
+      if (upcomingPanel) {
+        const todayStr = new Date().toISOString().slice(0, 10);
+        const upcoming = courseMeets
+          .filter(m => m.date && m.date >= todayStr)
+          .sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+
+        if (!upcoming.length) {
+          upcomingPanel.innerHTML = '<div class="record-empty" style="padding:16px 18px;">No upcoming meets scheduled at this course yet.</div>';
+        } else {
+          upcomingPanel.innerHTML = `<div class="upcoming-list">${upcoming.map(m => `
+            <a class="upcoming-item" href="../meet.html?slug=${encodeURIComponent(m.slug)}">
+              <span class="um-name">${m.name || m.slug}</span>
+              <span class="um-date">${formatMeetDate(m.date)}</span>
+            </a>`).join('')}</div>`;
+        }
+      }
+
+      // ---- Course records ----
+      if (recordsPanel) {
+        if (!courseMeets.length) {
+          recordsPanel.innerHTML = '<div class="record-empty" style="padding:16px 18px;">No meets are linked to this course yet, so no records are available. Link meets to this course via course-admin.html to populate this panel.</div>';
+        } else {
+          const resultsByMeet = await Promise.all(courseMeets.map(m => window.getResultsByMeet(m.slug)));
+          const boys = [];
+          const girls = [];
+
+          courseMeets.forEach((meet, idx) => {
+            (resultsByMeet[idx] || []).forEach(r => {
+              const timeSeconds = parseFloat(r.time);
+              if (isNaN(timeSeconds) || timeSeconds <= 0) return;
+              const entry = {
+                athlete_name: r.athlete_name,
+                timeSeconds: timeSeconds,
+                meetName: meet.name,
+                meetDate: meet.date
+              };
+              const gender = (r.gender || '').toUpperCase();
+              if (gender === 'M' || gender === 'B' || gender === 'BOY' || gender === 'BOYS') boys.push(entry);
+              else if (gender === 'F' || gender === 'G' || gender === 'GIRL' || gender === 'GIRLS') girls.push(entry);
+            });
+          });
+
+          boys.sort((a, b) => a.timeSeconds - b.timeSeconds);
+          girls.sort((a, b) => a.timeSeconds - b.timeSeconds);
+
+          recordsPanel.innerHTML = `<div class="records-grid">${renderRecordColumn('Fastest Boys', boys)}${renderRecordColumn('Fastest Girls', girls)}</div>`;
+        }
+      }
+    } catch (error) {
+      console.error('Error loading course records/upcoming meets:', error);
+      if (recordsPanel) recordsPanel.innerHTML = '<div class="record-empty" style="padding:16px 18px;">Unable to load course records right now.</div>';
+      if (upcomingPanel) upcomingPanel.innerHTML = '<div class="record-empty" style="padding:16px 18px;">Unable to load upcoming meets right now.</div>';
+    }
+  }
+
   function loadCourse(slug, pushState) {
     const course = COURSES.find(c => c.slug === slug) || COURSES[0];
     if (!course) {
@@ -724,6 +948,7 @@
     document.getElementById('breadcrumb-course').textContent = course.name;
     document.getElementById('page-content').innerHTML = courseTemplate(course);
     renderSwitcher(course.slug);
+    loadCourseRecordsAndUpcomingMeets(course);
 
     if (pushState) {
       const url = new URL(window.location.href);
@@ -1191,7 +1416,11 @@ function runPredictorCalculations(currentCourse, points) {
       });
   }
 
-  function boot() {
+  async function boot() {
+    // Load the live crosscountry/courses data from Firebase and merge it with the
+    // legacy DEFAULT_COURSES array before rendering, so the switcher/course detail
+    // view reflect real course records as soon as they're populated via course-admin.html.
+    await mergeCoursesFromFirebase();
     const params = new URLSearchParams(window.location.search);
     const slug = params.get('course') || (COURSES[0] && COURSES[0].slug);
     loadCourse(slug, false);
@@ -1203,7 +1432,6 @@ function runPredictorCalculations(currentCourse, points) {
     loadCourse(slug, false);
   });
 
-  // Bypassed the external fetch for courses.json and initialize directly using the default array
   window.addEventListener('DOMContentLoaded', boot);
 </script>
 

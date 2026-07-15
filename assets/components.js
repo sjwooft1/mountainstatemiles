@@ -12,23 +12,24 @@ const BASE_LINKS = [
   // Contextual Sport Navigation configurations
   const SPORT_LINKS = {
     crosscountry: [
-      { name: 'XC Meets', url: '/CrossCountry/meets.html' },
-      { name: 'XC Rankings', url: '/CrossCountry/rankings.html' },
-      { name: 'Schools', url: '/CrossCountry/schools.html' },
-      { name: 'Courses', url: '/CrossCountry/courses/course%20viewer.html?course=chick-fil-a' }
+      { name: 'XC Meets', url: 'CrossCountry/meets.html' },
+      { name: 'XC Rankings', url: 'CrossCountry/rankings.html' },
+      { name: 'Schools', url: 'CrossCountry/schools.html' },
+      { name: 'Courses', url: 'CrossCountry/courses/course%20viewer.html' },
+      { name: 'Athlete', url: 'CrossCountry/athlete.html'}
     ],
     track: [
-      { name: 'Track Meets', url: '/Track/meets.html' },
-      { name: 'Track Rankings', url: '/Track/rankings.html' },
-      { name: 'Teams', url: '/Track/teams.html' },
-      { name: 'Analytics', url: '/Track/analytics.html'},
-      { name: 'Athlete', url:'/Track/athlete.html'}
+      { name: 'Track Meets', url: 'Track/meets.html' },
+      { name: 'Track Rankings', url: 'Track/rankings.html' },
+      { name: 'Teams', url: 'Track/teams.html' },
+      { name: 'Analytics', url: 'Track/analytics.html'},
+      { name: 'Athlete', url:'Track/athlete.html'}
     ],
     default: [
       { name: 'About', url:'/home/about.html'},
       { name: 'Weather', url:'/weather.html'},
       { name: 'Track', url: '/Track/index.html' },
-      { name: 'Cross Country', url: '/crosscountry/xc.html' },
+      { name: 'Cross Country', url: '/CrossCountry/xc.html' },
     ]
   };
   
