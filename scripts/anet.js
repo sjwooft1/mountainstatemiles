@@ -121,21 +121,21 @@ javascript:(async function(){
     const timer = setInterval(() => {
         parseVisible();
         
-        window.scrollBy(0, window.innerHeight * 0.6);
+        window.scrollBy(0, window.innerHeight * 100);
         
         let currentHeight = document.documentElement.scrollHeight;
         let windowBottom = window.scrollY + window.innerHeight;
         
         if (windowBottom >= currentHeight - 50) {
             scrollAttempts++;
-            if (scrollAttempts > 4) {
+            if (scrollAttempts > 2) {
                 clearInterval(timer);
                 finishScrape();
             }
         } else {
             scrollAttempts = 0;
         }
-    }, 600); 
+    }, 50); 
 
     function finishScrape() {
         document.body.removeChild(loader);

@@ -291,7 +291,10 @@
     <script src="firebase-helpers.js"></script>
 
     <script>
-        const CC_PREFIX = 'crosscountry';
+        // NOTE: CC_PREFIX is already declared globally by firebase-helpers.js (loaded above) -
+        // it must NOT be redeclared here with const/let, or the browser throws
+        // "Identifier 'CC_PREFIX' has already been declared" and silently kills this
+        // entire script block (meets never load, createNewMeet never gets defined, etc.).
 
         // Recognized race-division keywords, checked in this order. Anything left over after
         // stripping gender/distance tokens from the event name falls back to this list too,

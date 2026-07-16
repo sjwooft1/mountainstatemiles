@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>School – Mountain State Miles</title>
+  <meta name="description" content="Team roster, upcoming schedule, expected opponents, course info, and performance results — Mountain State Miles." />
   <link rel="icon" type="image/png" href="assets/Favicon Generator/favicon-96x96.png" sizes="96x96" />
   <link rel="icon" type="image/svg+xml" href="assets/Favicon Generator/favicon.svg" />
   <link rel="shortcut icon" href="assets/Favicon Generator/favicon.ico" />
@@ -11,472 +12,1176 @@
   <link rel="manifest" href="assets/Favicon Generator/site.webmanifest" />
   <link rel="stylesheet" href="/assets/main.css" />
 
-  
-  <!-- Firebase SDKs -->
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-  
-  <!-- Your Configuration and Helper Scripts -->
-  <script src="firebase-config.js"></script>
-  <script src="firebase-helpers.js"></script>
-
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-  
+  <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.7.1/jspdf.plugin.autotable.min.js"></script>
+
   <script src="/assets/theme-toggle.js" defer></script>
   <script src="/assets/components.js" defer></script>
+
+  <style>
+    /* ================================================
+       School profile — MSM styling. Extends main.css.
+       ================================================ */
+
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes toastIn { from { opacity: 0; transform: translateX(12px); } to { opacity: 1; transform: translateX(0); } }
+    @keyframes shimmer { to { transform: translateX(100%); } }
+
+    .section-block { margin: 0 0 3.5rem; }
+    .section-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-bottom: 1.25rem;
+    }
+    .section-heading {
+      font-family: var(--font-display);
+      font-size: 1.6rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .section-heading::before {
+      content: '';
+      display: inline-block;
+      width: 4px; height: 1.15em;
+      background: var(--team-color, var(--text-primary));
+      border-radius: 2px;
+    }
+    .section-heading i { color: var(--team-color, var(--text-primary)); font-size: 1.2rem; }
+    .section-sub { color: var(--text-tertiary); font-size: 0.85rem; margin-top: 2px; }
+
+    .export-row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .xbtn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 14px;
+      font-family: var(--font-sans);
+      font-size: 0.82rem; font-weight: 600;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      background: var(--bg-primary);
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all var(--transition);
+      white-space: nowrap;
+      text-decoration: none;
+    }
+    .xbtn:hover {
+      border-color: var(--team-color, var(--text-primary));
+      background: var(--team-color, var(--text-primary));
+      color: #fff;
+    }
+    .xbtn i { font-size: 0.78rem; }
+    .xbtn.xbtn-primary {
+      background: var(--team-color, var(--text-primary));
+      color: #fff;
+      border-color: transparent;
+    }
+    .xbtn.xbtn-primary:hover { opacity: 0.88; }
+
+    /* ---- Hero ---- */
+    .school-hero {
+      position: relative;
+      border-radius: 24px;
+      overflow: hidden;
+      padding: 46px 30px 34px;
+      text-align: center;
+      margin-bottom: 3rem;
+      border: 1px solid var(--border);
+      background: radial-gradient(circle at 50% -10%, var(--team-glow, rgba(0,0,0,0.10)) 0%, var(--bg-primary) 62%);
+      animation: fadeUp 0.4s ease both;
+    }
+    .school-hero-logo-wrap {
+      width: 128px; height: 128px;
+      margin: 0 auto 18px;
+      border-radius: 50%;
+      background: var(--bg-primary);
+      display: flex; align-items: center; justify-content: center;
+      border: 4px solid var(--team-color, var(--text-primary));
+      box-shadow: 0 10px 30px var(--team-glow, rgba(0,0,0,0.2));
+    }
+    .school-hero-logo {
+      width: 88px; height: 88px;
+      object-fit: contain;
+    }
+    .school-hero-name {
+      font-family: var(--font-display);
+      font-size: clamp(2rem, 5vw, 3rem);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: var(--text-primary);
+      margin-bottom: 6px;
+    }
+    .school-hero-sub {
+      color: var(--text-secondary);
+      font-size: 1.05rem;
+      font-weight: 500;
+      margin-bottom: 18px;
+    }
+    .school-hero-chips {
+      display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;
+      margin-bottom: 24px;
+    }
+    .hero-chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 6px 14px;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      background: var(--bg-primary);
+    }
+    .hero-chip i { color: var(--team-color, var(--text-primary)); font-size: 0.75rem; }
+    .school-hero-actions {
+      display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;
+    }
+
+    /* ---- Stats ---- */
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 1rem; }
+    .stat-card { position: relative; overflow: hidden; }
+    .stat-card i {
+      position: absolute; top: 12px; right: 14px;
+      font-size: 1.3rem; opacity: 0.35;
+    }
+    .stat-label { display: flex; align-items: center; gap: 6px; }
+
+    /* ---- Schedule ---- */
+    .schedule-grid { display: flex; flex-direction: column; gap: 16px; }
+    .schedule-card {
+      display: flex;
+      gap: 20px;
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      animation: fadeUp 0.35s ease both;
+      transition: box-shadow var(--transition), border-color var(--transition);
+    }
+    .schedule-card:hover { border-color: var(--team-color, var(--text-primary)); box-shadow: 0 8px 22px var(--shadow-light); }
+    .schedule-date {
+      flex-shrink: 0;
+      width: 76px; height: 76px;
+      border-radius: var(--radius-lg);
+      background: var(--team-color, var(--text-primary));
+      color: #fff;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+    }
+    .schedule-date-month { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.85; }
+    .schedule-date-day { font-family: var(--font-display); font-size: 1.9rem; font-weight: 800; line-height: 1; }
+    .schedule-body { flex: 1; min-width: 0; }
+    .schedule-countdown {
+      display: inline-block;
+      font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+      color: var(--team-color, var(--text-primary));
+      margin-bottom: 4px;
+    }
+    .schedule-meet-name { font-size: 1.25rem; font-weight: 800; margin-bottom: 4px; }
+    .schedule-meet-name a { color: var(--text-primary); text-decoration: none; }
+    .schedule-meet-name a:hover { text-decoration: underline; }
+    .schedule-location { color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+
+    .course-info-panel {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 12px 14px;
+      margin-bottom: 14px;
+    }
+    .course-info-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+    .course-info-name { font-weight: 700; font-size: 0.92rem; display: flex; align-items: center; gap: 6px; }
+    .course-info-stats { display: flex; gap: 14px; flex-wrap: wrap; font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 6px; }
+    .course-info-stats span { display: flex; align-items: center; gap: 5px; }
+    .course-info-desc { font-size: 0.82rem; color: var(--text-tertiary); margin-bottom: 8px; line-height: 1.5; }
+    .course-info-link { font-size: 0.8rem; font-weight: 700; color: var(--team-color, var(--text-primary)); text-decoration: none; display: inline-flex; align-items: center; gap: 5px; }
+    .course-info-link:hover { text-decoration: underline; }
+    .course-info-missing { font-size: 0.82rem; color: var(--text-tertiary); font-style: italic; margin-bottom: 0; }
+
+    .diff-pill { padding: 3px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+    .diff-easy { background: rgba(16,185,129,0.15); color: var(--success); }
+    .diff-medium { background: rgba(245,158,11,0.15); color: var(--warning); }
+    .diff-hard { background: rgba(239,68,68,0.15); color: var(--danger); }
+    .diff-none { background: var(--border-light); color: var(--text-tertiary); }
+
+    .schedule-teams-label { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-tertiary); margin-bottom: 6px; }
+    .schedule-teams-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+    .team-chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 10px 4px 4px;
+      border-radius: 20px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      text-decoration: none;
+      color: var(--text-primary);
+      font-size: 0.78rem;
+      font-weight: 600;
+    }
+    .team-chip.self { border-color: var(--team-color, var(--text-primary)); background: var(--team-glow, rgba(0,0,0,0.08)); }
+    .team-chip img { width: 20px; height: 20px; border-radius: 50%; object-fit: contain; background: #fff; }
+    .schedule-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    /* ---- Performance ---- */
+    .performance-list { display: flex; flex-direction: column; gap: 16px; }
+    .performance-card {
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 18px 20px;
+      animation: fadeUp 0.35s ease both;
+    }
+    .performance-card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+    .performance-card-head h3 { font-size: 1.15rem; font-weight: 800; margin-bottom: 2px; }
+    .performance-card-head h3 a { color: var(--text-primary); text-decoration: none; }
+    .performance-card-head h3 a:hover { text-decoration: underline; }
+    .performance-date { color: var(--text-tertiary); font-size: 0.82rem; display: flex; align-items: center; gap: 6px; }
+    .performance-badges { display: flex; gap: 8px; flex-wrap: wrap; }
+    .pr-flame { color: var(--warning); margin-left: 4px; }
+    .gender-pill { padding: 2px 8px; border-radius: 20px; font-size: 0.7rem; font-weight: 700; }
+    .gender-pill.m { background: rgba(59,130,246,0.15); color: #3b82f6; }
+    .gender-pill.f { background: rgba(236,72,153,0.15); color: #ec4899; }
+    .scorer-tag { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--team-color, var(--text-primary)); border: 1px solid var(--team-color, var(--text-primary)); border-radius: 10px; padding: 1px 6px; margin-left: 6px; }
+    .show-more-wrap { text-align: center; margin-top: 6px; }
+
+    /* ---- Roster ---- */
+    .roster-search { padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--bg-primary); color: var(--text-primary); font-family: var(--font-sans); font-size: 0.85rem; min-width: 220px; }
+    .roster-search:focus { outline: none; border-color: var(--team-color, var(--text-primary)); }
+    .grad-badge { padding: 2px 8px; border-radius: 12px; background: var(--bg-secondary); border: 1px solid var(--border); font-size: 0.78rem; font-weight: 600; }
+
+    /* ---- Chart ---- */
+    .chart-card { background: var(--bg-primary); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 22px; }
+    .chart-wrap-lg { position: relative; height: 340px; }
+
+    /* ---- Skeleton / loading ---- */
+    .skeleton-block {
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      height: 90px;
+      position: relative;
+      overflow: hidden;
+    }
+    .skeleton-block::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(90deg, transparent, var(--border-light), transparent);
+      transform: translateX(-100%);
+      animation: shimmer 1.4s infinite;
+    }
+
+    /* ---- Toast ---- */
+    .toast-tray { position: fixed; bottom: 20px; right: 20px; display: flex; flex-direction: column; gap: 6px; z-index: 9999; pointer-events: none; }
+    .toast {
+      background: var(--bg-dark, #000); color: #fff;
+      padding: 10px 16px; border-radius: var(--radius-lg);
+      font-size: 0.82rem; font-weight: 500;
+      border-left: 3px solid var(--team-color, var(--text-primary));
+      pointer-events: auto;
+      animation: toastIn 0.2s ease;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    }
+
+    @media (max-width: 640px) {
+      .schedule-card { flex-direction: column; }
+      .schedule-date { flex-direction: row; width: 100%; height: auto; padding: 8px; gap: 8px; }
+    }
+  </style>
 </head>
 <body>
 
   <div id="global-header"></div>
 
 <script src="/assets/msm-loader.js"></script>
-<main class="content-section page-container">
-    <header class="hero-section hero-profile">
-      <div class="hero-content">
-        <!-- School Logo Display -->
-        <!-- Logo path based on assets/team_logos/school_slug.png -->
-        <img id="school-logo" class="hero-logo" src="" alt="School Logo" style="display: none;" 
-             onerror="this.onerror=null; this.src='../assets/Wvruns Logo.png'; this.style.display='block';"> 
-        <h1 id="school-name" class="text-4xl font-extrabold mb-2">School Profile</h1>
-        <p id="school-info" class="text-xl font-medium text-gray-200">Loading school information...</p>
+<main class="content-section">
+
+    <!-- HERO -->
+    <header class="school-hero" id="school-hero">
+      <div class="school-hero-logo-wrap">
+        <img id="school-logo" class="school-hero-logo" src="" alt="School Logo" style="display: none;"
+             onerror="this.onerror=null; this.src='/assets/images/logob.png'; this.style.display='block';">
+      </div>
+      <h1 id="school-name" class="school-hero-name">School Profile</h1>
+      <p id="school-info" class="school-hero-sub">Loading school information...</p>
+      <div class="school-hero-chips" id="school-hero-chips"></div>
+      <div class="school-hero-actions">
+        <button class="xbtn xbtn-primary" id="btn-export-schedule" type="button"><i class="fa-solid fa-calendar-days"></i> Export Schedule (PDF)</button>
+        <button class="xbtn" id="btn-export-performance" type="button"><i class="fa-solid fa-chart-line"></i> Export Performance (PDF)</button>
+        <button class="xbtn" id="btn-print" type="button"><i class="fa-solid fa-print"></i> Print</button>
       </div>
     </header>
 
-    <section class="content-section">
-      <div class="container">
-        
-        <!-- Roster Section -->
-        <h2 class="section-title mb-4">Current Roster</h2>
-        <div id="roster-loading" class="loading-message">
-            Loading roster...
+    <!-- TEAM STATISTICS -->
+    <section class="section-block">
+      <div class="section-head">
+        <h2 class="section-heading"><i class="fa-solid fa-ranking-star"></i> Team Statistics</h2>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label"><i class="fa-solid fa-stopwatch"></i> Average Team Time</div>
+          <div class="stat-value" id="avg-time">--:--</div>
         </div>
-        <div id="no-athletes" class="loading-message" style="display: none;">
-            No athletes found for this school.
+        <div class="stat-card">
+          <div class="stat-label"><i class="fa-solid fa-people-group"></i> Total Athletes</div>
+          <div class="stat-value" id="total-athletes">0</div>
         </div>
-        <div id="roster-grid" class="table-container" style="display: none;">
-          <!-- Custom HTML Roster Table will render here -->
+        <div class="stat-card">
+          <div class="stat-label"><i class="fa-solid fa-bolt"></i> Personal Records Set</div>
+          <div class="stat-value" id="pr-count">0</div>
         </div>
-
-        <!-- Meet Results Section -->
-        <h2 class="section-title mt-10 mb-4">Meet Results Summary</h2>
-        <div id="meets-loading" class="loading-message">
-            Loading recent meet results...
+        <div class="stat-card">
+          <div class="stat-label"><i class="fa-solid fa-flag-checkered"></i> Meet Appearances</div>
+          <div class="stat-value" id="meet-count">0</div>
         </div>
-        <div id="meets-list">
-            <!-- Meet list will be injected here -->
+        <div class="stat-card">
+          <div class="stat-label"><i class="fa-solid fa-medal"></i> Best Team Performance</div>
+          <div class="stat-value" id="best-time">--:--</div>
         </div>
-
-        <!-- Team Statistics Section -->
-        <h2 class="section-title mt-10 mb-4">Team Statistics</h2>
-        <div class="stats-grid">
-          <div class="stat-card">
-            <div class="stat-label">Average Team Time</div>
-            <div class="stat-value" id="avg-time">--:--</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-label">Total Athletes</div>
-            <div class="stat-value" id="total-athletes">0</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-label">Personal Records Set</div>
-            <div class="stat-value" id="pr-count">0</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-label">Total Meet Appearances</div>
-            <div class="stat-value" id="meet-count">0</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-label">Best Team Performance</div>
-            <div class="stat-value" id="best-time">--:--</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-label">Fastest Athlete</div>
-            <div class="stat-value" id="fastest-athlete">--</div>
-          </div>
+        <div class="stat-card">
+          <div class="stat-label"><i class="fa-solid fa-bolt-lightning"></i> Fastest Athlete</div>
+          <div class="stat-value" id="fastest-athlete">--</div>
         </div>
-
-        <!-- Season Trends Section -->
-        <h2 class="section-title mt-10 mb-4">Season Performance</h2>
-        <div id="trends-container" style="background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);">
-          <canvas id="trendsChart" style="max-height: 400px;"></canvas>
-        </div>
-        
       </div>
     </section>
+
+    <!-- UPCOMING SCHEDULE -->
+    <section class="section-block">
+      <div class="section-head">
+        <div>
+          <h2 class="section-heading"><i class="fa-solid fa-calendar-days"></i> Upcoming Schedule</h2>
+          <p class="section-sub">Meets this team is expected to compete in, with opponents and course info for coaches.</p>
+        </div>
+        <div class="export-row">
+          <button class="xbtn" onclick="exportSchedulePDF()" type="button"><i class="fa-solid fa-file-pdf"></i> Export PDF</button>
+        </div>
+      </div>
+      <div id="schedule-loading">
+        <div class="skeleton-block" style="margin-bottom:12px;"></div>
+        <div class="skeleton-block"></div>
+      </div>
+      <p class="loading-message" id="schedule-empty" style="display:none;">No upcoming meets are currently scheduled for this team. Check back once the season schedule is published.</p>
+      <div class="schedule-grid" id="schedule-list"></div>
+    </section>
+
+    <!-- PERFORMANCE RESULTS -->
+    <section class="section-block">
+      <div class="section-head">
+        <div>
+          <h2 class="section-heading"><i class="fa-solid fa-chart-simple"></i> Performance Results</h2>
+          <p class="section-sub">Post-meet results, team scoring, and personal records by race.</p>
+        </div>
+        <div class="export-row">
+          <button class="xbtn" onclick="exportPerformancePDF()" type="button"><i class="fa-solid fa-file-pdf"></i> Export PDF</button>
+        </div>
+      </div>
+      <div id="meets-loading" class="loading-message">Loading recent meet results...</div>
+      <div id="meets-empty" class="loading-message" style="display:none;">No meet results found for this school in the database.</div>
+      <div id="meets-list" class="performance-list"></div>
+      <div class="show-more-wrap" id="performance-show-more-wrap" style="display:none;">
+        <button class="xbtn" id="performance-show-more" type="button">Show older meets</button>
+      </div>
+    </section>
+
+    <!-- ROSTER -->
+    <section class="section-block">
+      <div class="section-head">
+        <h2 class="section-heading"><i class="fa-solid fa-users"></i> Current Roster</h2>
+        <input type="text" id="roster-search" class="roster-search" placeholder="Search roster...">
+      </div>
+      <div id="roster-loading" class="loading-message">Loading roster...</div>
+      <div id="no-athletes" class="loading-message" style="display: none;">No athletes found for this school.</div>
+      <div id="roster-grid" class="table-container" style="display: none;"></div>
+    </section>
+
+    <!-- SEASON TRENDS -->
+    <section class="section-block">
+      <div class="section-head">
+        <h2 class="section-heading"><i class="fa-solid fa-chart-area"></i> Season Performance Trends</h2>
+      </div>
+      <div class="chart-card">
+        <div class="chart-wrap-lg"><canvas id="trendsChart"></canvas></div>
+        <p class="loading-message" id="trends-empty" style="display:none; text-align:center;">Not enough recorded meets yet to chart a season trend.</p>
+      </div>
+    </section>
+
   </main>
-<script>
-    // Utility function to format time (in seconds) to M:SS.ss
+<div class="toast-tray" id="toastTray"></div>
+
+<!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-analytics-compat.js"></script>
+  <!-- Firebase Configuration -->
+  <script src="firebase-config.js"></script>
+  <script src="firebase-helpers.js"></script>
+
+  <script>
+    // ==========================================
+    // STATE
+    // ==========================================
+    let schoolSlug = null;
+    let schoolObj = null;
+    let allSchoolsMap = {};
+    let allMeetsList = [];
+    let meetsBySlug = {};
+    let schoolResults = [];
+    let rosterData = [];
+    let personalBestMap = {}; // athlete key -> best time (seconds)
+    let upcomingScheduleData = []; // resolved for PDF export
+    let performanceMeetsSorted = []; // grouped meets, desc by date, for rendering + export
+    let performanceMeetsVisible = 6;
+    let trendsChartInstance = null;
+    let teamColorRgb = 'rgb(20,20,20)';
+
+    // ==========================================
+    // UTILITIES
+    // ==========================================
     function formatTime(seconds) {
       const timeSec = parseFloat(seconds);
       if (isNaN(timeSec) || timeSec <= 0) return 'N/A';
-      
       const totalMinutes = Math.floor(timeSec / 60);
-      // Ensure the seconds part is padded and has two decimal places
-      const remainingSeconds = (timeSec % 60).toFixed(2).padStart(5, '0'); 
+      const remainingSeconds = (timeSec % 60).toFixed(2).padStart(5, '0');
       return `${totalMinutes}:${remainingSeconds}`;
     }
-    
-    // Element references
-    const schoolLogoEl = document.getElementById('school-logo');
-    const schoolNameEl = document.getElementById('school-name');
-    const schoolInfoEl = document.getElementById('school-info');
-    const rosterGrid = document.getElementById('roster-grid');
-    const rosterLoading = document.getElementById('roster-loading');
-    const noAthletes = document.getElementById('no-athletes');
-    const meetsList = document.getElementById('meets-list');
-    const meetsLoading = document.getElementById('meets-loading');
 
-
-    /**
-     * Loads school name, info, and logo from URL parameter.
-     * @returns {Promise<string|null>} The school slug or null if not found.
-     */
-    async function loadSchoolInfo() {
-      const params = new URLSearchParams(window.location.search);
-      const schoolSlug = params.get('slug');
-
-      if (!schoolSlug) {
-        schoolNameEl.textContent = 'School Not Found';
-        schoolInfoEl.textContent = 'Please provide a valid school slug in the URL.';
-        return null;
-      }
-
-      try {
-        const school = await getSchoolBySlug(schoolSlug);
-        if (school && school.name) {
-          schoolNameEl.textContent = school.name;
-          schoolInfoEl.textContent = `School in ${school.city || 'West Virginia'}`;
-          document.title = `${school.name} Profile – Mountain State Miles`;
-          
-          // Set Logo path as requested: assets/team_logos/school_slug.png
-          const logoPath = `/assets/team logos/${schoolSlug}.png`;
-          const fallbackLogo = `/assets/images/logob.png`;
-          schoolLogoEl.onerror = function() {
-            this.onerror = null;
-            this.src = fallbackLogo;
-            this.style.display = 'block';
-          };
-          schoolLogoEl.src = logoPath;
-          schoolLogoEl.style.display = 'block'; 
-          
-          return schoolSlug;
-        } else {
-          schoolNameEl.textContent = 'School Not Found';
-          schoolInfoEl.textContent = `No data found for slug: ${schoolSlug}`;
-          return null;
-        }
-      } catch (error) {
-        console.error('Error fetching school info:', error);
-        schoolNameEl.textContent = 'Error Loading Data';
-        schoolInfoEl.textContent = 'Could not connect to database.';
-        return null;
-      }
+    function escapeHtml(str) {
+      return String(str == null ? '' : str).replace(/[&<>"']/g, c => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      }[c]));
     }
 
-    /**
-     * Loads the roster by querying the /athletes folder for school_slug matches.
-     * @param {string} schoolSlug The school identifier.
-     */
-    async function loadRoster(schoolSlug) {
-      rosterLoading.style.display = 'block';
-      rosterGrid.style.display = 'none';
-      noAthletes.style.display = 'none';
-      rosterGrid.innerHTML = ''; 
-
-      try {
-        // Fetch athletes using the helper which should query /athletes filtered by school_slug
-        const roster = await getAthletesBySchool(schoolSlug);
-
-        if (roster && roster.length > 0) {
-          
-          const tableHTML = `
-            <table class="results-table">
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>Gender</th>
-                  <th>Graduation Year</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${roster.map(athlete => {
-                  // Resilient name fetching
-                  const name = athlete.athlete_name || athlete.name || 'Name Unknown'; 
-                  
-                  // === FIX: Resilient graduation year fetching ===
-                  let gradYear = athlete.grad_year || athlete.graduation_year || athlete.class;
-                  gradYear = gradYear ? `C/o ${gradYear}` : 'N/A';
-                  // ===============================================
-
-                  const gender = athlete.gender === 'M' ? 'Male' : (athlete.gender === 'F' ? 'Female' : 'N/A');
-
-                  // Link to athlete page. Athlete records don't have a stable slug in this
-                  // database, so we resolve profiles by name + school (athlete.html supports
-                  // this as a robust fallback - see its `id` > `slug` > `name`+`school` lookup order).
-                  const link = athlete.id
-                      ? `<a href="athlete.html?id=${athlete.id}" style="color: var(--xc-primary); font-weight: 600;">${name}</a>`
-                      : `<a href="athlete.html?name=${encodeURIComponent(name)}&school=${encodeURIComponent(schoolSlug)}" style="color: var(--xc-primary); font-weight: 600;">${name}</a>`;
-
-                  return `
-                    <tr>
-                      <td data-label="Name">${link}</td>
-                      <td data-label="Gender">${gender}</td>
-                      <td data-label="Graduation Year">${gradYear}</td>
-                    </tr>
-                  `;
-                }).join('')}
-              </tbody>
-            </table>
-          `;
-
-          rosterGrid.innerHTML = tableHTML;
-          rosterLoading.style.display = 'none';
-          rosterGrid.style.display = 'block';
-
-        } else {
-          rosterLoading.style.display = 'none';
-          noAthletes.style.display = 'block';
-        }
-      } catch (error) {
-        console.error('Error loading roster:', error);
-        rosterLoading.textContent = 'Error loading roster data: ' + error.message;
-        rosterLoading.style.display = 'block';
-        rosterGrid.style.display = 'none';
-        noAthletes.style.display = 'none';
-      }
+    function milesFromMeters(m) {
+      const meters = parseFloat(m);
+      if (isNaN(meters) || meters <= 0) return null;
+      return (meters / 1609.34).toFixed(2);
     }
-    
-    /**
-     * Loads the list of meets a school has participated in by querying the /results 
-     * folder for results matching the school's slug.
-     * @param {string} schoolSlug The school identifier.
-     */
-    async function loadMeets(schoolSlug) {
-      meetsLoading.style.display = 'block';
-      meetsList.innerHTML = '';
-      try {
-        // Fetch results using the helper which should query /results filtered by school_slug
-        const results = await getResultsBySchool(schoolSlug);
-        
-        if (results && results.length > 0) {
-            // Group results by unique meet slug
-            const meetsMap = results.reduce((acc, result) => {
-                const meetSlug = result.meet_slug;
-                
-                if (!meetSlug) return acc; // Skip results missing a meet slug
 
-                // === FIX: Prioritize clean name over 'Unknown Meet' + slug ===
-                let meetName = result.meet_name || result.meet; 
-                if (!meetName) {
-                    // Fallback: If no proper name, use the slug directly.
-                    meetName = meetSlug.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' '); 
-                }
-                // =============================================================
-                
-                if (!acc[meetSlug]) {
-                    acc[meetSlug] = {
-                        meet_slug: meetSlug,
-                        meet_name: meetName, // Use the determined name
-                        date: result.date || null,
-                        results: []
-                    };
-                }
-                acc[meetSlug].results.push(result);
-                return acc;
-            }, {});
+    function diffClass(difficulty) {
+      const d = (difficulty || '').toLowerCase();
+      if (d === 'easy') return 'easy';
+      if (d === 'medium') return 'medium';
+      if (d === 'hard') return 'hard';
+      return 'none';
+    }
 
-            const meetsArray = Object.values(meetsMap);
-            
-            // Sort meets by date, newest first
-            meetsArray.sort((a, b) => {
-                const dateA = new Date(a.date);
-                const dateB = new Date(b.date);
-                if (isNaN(dateA)) return 1;
-                if (isNaN(dateB)) return -1;
-                return dateB.getTime() - dateA.getTime(); 
+    function formatDateLong(dateStr) {
+      if (!dateStr) return 'Date Unknown';
+      const d = new Date(dateStr + 'T00:00:00');
+      if (isNaN(d.getTime())) return dateStr;
+      return d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    }
+
+    function daysUntilLabel(dateStr) {
+      const today = new Date(); today.setHours(0, 0, 0, 0);
+      const target = new Date(dateStr + 'T00:00:00');
+      if (isNaN(target.getTime())) return '';
+      const diff = Math.round((target - today) / 86400000);
+      if (diff === 0) return 'Today';
+      if (diff === 1) return 'Tomorrow';
+      if (diff > 1) return `In ${diff} days`;
+      return 'Recently';
+    }
+
+    function toast(msg) {
+      const el = document.createElement('div');
+      el.className = 'toast';
+      el.textContent = msg;
+      const tray = document.getElementById('toastTray');
+      if (tray) tray.appendChild(el);
+      setTimeout(() => el.remove(), 3200);
+    }
+
+    function dl(name, type, content) {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([content], { type }));
+      a.download = name;
+      a.click();
+    }
+
+    function athleteKey(r) {
+      return r.athlete_slug || r.athlete_id || r.athlete_name || r.name;
+    }
+
+    // ==========================================
+    // COLOR EXTRACTION (team branding)
+    // ==========================================
+    function extractMainColor(logoUrl) {
+      return new Promise(resolve => {
+        const img = new window.Image();
+        img.crossOrigin = 'Anonymous';
+        img.src = logoUrl;
+        img.onload = () => {
+          try {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.naturalWidth; canvas.height = img.naturalHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0);
+            const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+            const hist = {};
+            for (let i = 0; i < data.length; i += 4) {
+              const r = data[i], g = data[i + 1], b = data[i + 2], a = data[i + 3];
+              if (a < 120) continue;
+              if (r > 230 && g > 230 && b > 230) continue;
+              if (r < 28 && g < 28 && b < 28) continue;
+              const max = Math.max(r, g, b), min = Math.min(r, g, b);
+              if (max - min < 18) continue;
+              const key = `${Math.round(r / 12) * 12},${Math.round(g / 12) * 12},${Math.round(b / 12) * 12}`;
+              hist[key] = (hist[key] || 0) + 1;
+            }
+            let maxCount = 0, bestColors = [];
+            Object.entries(hist).forEach(([k, v]) => {
+              if (v > maxCount) { maxCount = v; bestColors = [k.split(',').map(Number)]; }
+              else if (v === maxCount) bestColors.push(k.split(',').map(Number));
             });
+            let col = [20, 20, 20];
+            if (bestColors.length && maxCount > 0) {
+              if (bestColors.length === 1) col = bestColors[0];
+              else {
+                col = [0, 0, 0];
+                bestColors.forEach(c => { col[0] += c[0]; col[1] += c[1]; col[2] += c[2]; });
+                col = col.map(v => Math.round(v / bestColors.length));
+              }
+            }
+            resolve(`rgb(${col.join(',')})`);
+          } catch (e) { resolve('rgb(20,20,20)'); }
+        };
+        img.onerror = () => resolve('rgb(20,20,20)');
+      });
+    }
 
-            const html = meetsArray.map(meet => {
-                // Find the best overall time from this school at this meet
-                const bestTimeResult = meet.results.reduce((best, current) => {
-                    const currentTime = parseFloat(current.time);
-                    if (isNaN(currentTime) || currentTime <= 0) return best; 
-                    
-                    const bestTime = best ? parseFloat(best.time) : Infinity;
-                    return currentTime < bestTime ? current : best;
-                }, null);
-                
-                const bestTimeDisplay = bestTimeResult ? formatTime(bestTimeResult.time) : 'No Valid Time Recorded';
-                
-                // Resilient name fetching for fastest athlete: athlete_name, then name, then fallback
-                const bestTimeAthlete = bestTimeResult 
-                    ? bestTimeResult.athlete_name || bestTimeResult.name || 'Unknown Athlete' 
-                    : '';
+    function applyTeamColor(rgb) {
+      teamColorRgb = rgb;
+      const root = document.documentElement;
+      root.style.setProperty('--team-color', rgb);
+      root.style.setProperty('--team-glow', rgb.replace('rgb', 'rgba').replace(')', ',0.28)'));
+    }
 
-                let displayDate = 'Date Unknown';
-                if (meet.date) {
-                    const dateObj = new Date(meet.date);
-                    if (!isNaN(dateObj.getTime())) {
-                        displayDate = dateObj.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-                    }
-                }
-                
+    // ==========================================
+    // HERO
+    // ==========================================
+    function setupHero(school) {
+      document.getElementById('school-name').textContent = school.name;
+      document.getElementById('school-info').textContent = `School in ${school.city || 'West Virginia'}`;
+      document.title = `${school.name} Profile – Mountain State Miles`;
+
+      const logoEl = document.getElementById('school-logo');
+      const logoPath = `/assets/team logos/${schoolSlug}.png`;
+      logoEl.onerror = function () {
+        this.onerror = null;
+        this.src = '/assets/images/logob.png';
+        this.style.display = 'block';
+      };
+      logoEl.src = logoPath;
+      logoEl.style.display = 'block';
+
+      extractMainColor(logoPath).then(applyTeamColor);
+    }
+
+    function renderHeroChips(roster, upcomingCount) {
+      const chipsEl = document.getElementById('school-hero-chips');
+      const chips = [];
+      if (schoolObj && schoolObj.city) {
+        chips.push(`<span class="hero-chip"><i class="fa-solid fa-location-dot"></i> ${escapeHtml(schoolObj.city)}, WV</span>`);
+      }
+      chips.push(`<span class="hero-chip"><i class="fa-solid fa-people-group"></i> ${roster.length} Athlete${roster.length === 1 ? '' : 's'}</span>`);
+      chips.push(`<span class="hero-chip"><i class="fa-solid fa-calendar-check"></i> ${upcomingCount} Upcoming Meet${upcomingCount === 1 ? '' : 's'}</span>`);
+      chipsEl.innerHTML = chips.join('');
+    }
+
+    // ==========================================
+    // ROSTER
+    // ==========================================
+    function renderRoster(roster) {
+      const rosterGrid = document.getElementById('roster-grid');
+      const rosterLoading = document.getElementById('roster-loading');
+      const noAthletes = document.getElementById('no-athletes');
+
+      if (roster && roster.length > 0) {
+        const tableHTML = `
+          <table class="results-table">
+            <thead>
+              <tr><th>Name</th><th>Gender</th><th>Graduation Year</th></tr>
+            </thead>
+            <tbody>
+              ${roster.map(athlete => {
+                const name = athlete.athlete_name || athlete.name || 'Name Unknown';
+                let gradYear = athlete.grad_year || athlete.graduation_year || athlete.class;
+                gradYear = gradYear ? `C/o ${gradYear}` : 'N/A';
+                const genderCode = (athlete.gender || '').toUpperCase();
+                const gender = genderCode === 'M' ? 'Male' : (genderCode === 'F' ? 'Female' : 'N/A');
+                const genderPill = genderCode === 'M' || genderCode === 'F'
+                  ? `<span class="gender-pill ${genderCode.toLowerCase()}">${gender}</span>`
+                  : gender;
+                const link = athlete.id
+                  ? `<a href="athlete.html?id=${athlete.id}" style="color: var(--team-color); font-weight: 600;">${escapeHtml(name)}</a>`
+                  : `<a href="athlete.html?name=${encodeURIComponent(name)}&school=${encodeURIComponent(schoolSlug)}" style="color: var(--team-color); font-weight: 600;">${escapeHtml(name)}</a>`;
                 return `
-                    <div class="meet-card">
-                        <a href="meet.html?slug=${meet.meet_slug}">${meet.meet_name}</a>
-                        <p>Date: ${displayDate}</p>
-                        <p>Fastest Time: ${bestTimeDisplay} ${bestTimeAthlete ? `(by ${bestTimeAthlete})` : ''}</p>
-                    </div>
+                  <tr data-name="${escapeHtml(name.toLowerCase())}">
+                    <td data-label="Name">${link}</td>
+                    <td data-label="Gender">${genderPill}</td>
+                    <td data-label="Graduation Year"><span class="grad-badge">${gradYear}</span></td>
+                  </tr>
                 `;
-            }).join('');
-
-            meetsList.innerHTML = html;
-        } else {
-            meetsList.innerHTML = '<p class="loading-message">No meet results found for this school in the database.</p>';
-        }
-
-      } catch (error) {
-        console.error('Error loading meets:', error);
-        meetsList.innerHTML = `<p class="loading-message" style="color: red;">Error loading meet data: ${error.message}</p>`;
-      } finally {
-        meetsLoading.style.display = 'none';
+              }).join('')}
+            </tbody>
+          </table>
+        `;
+        rosterGrid.innerHTML = tableHTML;
+        rosterLoading.style.display = 'none';
+        rosterGrid.style.display = 'block';
+      } else {
+        rosterLoading.style.display = 'none';
+        noAthletes.style.display = 'block';
       }
     }
 
-    /**
-     * Loads and calculates team statistics for a school
-     * @param {string} schoolSlug The school identifier.
-     */
-    async function loadTeamStatistics(schoolSlug) {
-      try {
-        // Fetch all results for this school
-        const results = await getResultsBySchool(schoolSlug);
-        
-        if (!results || results.length === 0) {
-          // No data, show 0s or N/A
-          document.getElementById('total-athletes').textContent = '0';
-          document.getElementById('avg-time').textContent = '--:--';
-          document.getElementById('pr-count').textContent = '0';
-          document.getElementById('meet-count').textContent = '0';
-          document.getElementById('best-time').textContent = '--:--';
-          document.getElementById('fastest-athlete').textContent = '--';
-          return;
-        }
+    function wireRosterSearch() {
+      const input = document.getElementById('roster-search');
+      input.addEventListener('input', () => {
+        const q = input.value.toLowerCase().trim();
+        document.querySelectorAll('#roster-grid tbody tr').forEach(row => {
+          const name = row.getAttribute('data-name') || '';
+          row.style.display = name.includes(q) ? '' : 'none';
+        });
+      });
+    }
 
-        // Calculate statistics
-        const uniqueAthletes = new Set(results.map(r => r.athlete_slug || r.athlete_name).filter(Boolean));
-        const uniqueMeets = new Set(results.map(r => r.meet_slug).filter(Boolean));
-        
-        // Get valid times (numbers > 0)
-        const validTimes = results
-          .map(r => parseFloat(r.time))
-          .filter(t => !isNaN(t) && t > 0);
-        
-        // Calculate average time
-        let avgTimeDisplay = '--:--';
-        if (validTimes.length > 0) {
-          const avgSeconds = validTimes.reduce((a, b) => a + b, 0) / validTimes.length;
-          avgTimeDisplay = formatTime(avgSeconds);
-        }
-        
-        // Find best (fastest) time
-        let bestTimeDisplay = '--:--';
-        let fastestAthleteName = '--';
-        if (validTimes.length > 0) {
-          const bestTimeValue = Math.min(...validTimes);
-          const bestResult = results.find(r => parseFloat(r.time) === bestTimeValue);
-          bestTimeDisplay = formatTime(bestTimeValue);
-          fastestAthleteName = bestResult ? (bestResult.athlete_name || bestResult.name || '--') : '--';
-        }
-        
-        // Count PRs (simplified: check if result has pr flag or if it's the best time for that athlete)
-        let prCount = 0;
-        const athletePersonalBests = {};
-        results.forEach(r => {
-          const athleteId = r.athlete_slug || r.athlete_name;
-          const time = parseFloat(r.time);
-          if (isNaN(time) || time <= 0) return;
-          
-          if (!athletePersonalBests[athleteId] || time < athletePersonalBests[athleteId]) {
-            athletePersonalBests[athleteId] = time;
-          }
-        });
-        
-        // Count how many results are personal records
-        results.forEach(r => {
-          const athleteId = r.athlete_slug || r.athlete_name;
-          const time = parseFloat(r.time);
-          if (isNaN(time) || time <= 0) return;
-          
-          if (time === athletePersonalBests[athleteId]) {
-            prCount++;
-          }
-        });
-        
-        // Update the DOM with calculated statistics
-        document.getElementById('total-athletes').textContent = uniqueAthletes.size;
-        document.getElementById('avg-time').textContent = avgTimeDisplay;
-        document.getElementById('pr-count').textContent = prCount;
-        document.getElementById('meet-count').textContent = uniqueMeets.size;
-        document.getElementById('best-time').textContent = bestTimeDisplay;
-        document.getElementById('fastest-athlete').textContent = fastestAthleteName;
-        
-      } catch (error) {
-        console.error('Error loading team statistics:', error);
-        // On error, display N/A values
-        document.getElementById('total-athletes').textContent = '0';
+    // ==========================================
+    // TEAM STATISTICS
+    // ==========================================
+    function computeStats(results, roster) {
+      if (!results || results.length === 0) {
+        document.getElementById('total-athletes').textContent = roster ? roster.length : '0';
         document.getElementById('avg-time').textContent = '--:--';
         document.getElementById('pr-count').textContent = '0';
         document.getElementById('meet-count').textContent = '0';
         document.getElementById('best-time').textContent = '--:--';
         document.getElementById('fastest-athlete').textContent = '--';
+        return;
+      }
+
+      const uniqueAthletes = new Set(results.map(r => athleteKey(r)).filter(Boolean));
+      const uniqueMeets = new Set(results.map(r => r.meet_slug).filter(Boolean));
+      const validTimes = results.map(r => parseFloat(r.time)).filter(t => !isNaN(t) && t > 0);
+
+      let avgTimeDisplay = '--:--';
+      if (validTimes.length > 0) {
+        const avgSeconds = validTimes.reduce((a, b) => a + b, 0) / validTimes.length;
+        avgTimeDisplay = formatTime(avgSeconds);
+      }
+
+      let bestTimeDisplay = '--:--';
+      let fastestAthleteName = '--';
+      if (validTimes.length > 0) {
+        const bestTimeValue = Math.min(...validTimes);
+        const bestResult = results.find(r => parseFloat(r.time) === bestTimeValue);
+        bestTimeDisplay = formatTime(bestTimeValue);
+        fastestAthleteName = bestResult ? (bestResult.athlete_name || bestResult.name || '--') : '--';
+      }
+
+      // Build all-time personal-best map (used for PR tagging in performance cards & exports)
+      personalBestMap = {};
+      results.forEach(r => {
+        const key = athleteKey(r);
+        const time = parseFloat(r.time);
+        if (!key || isNaN(time) || time <= 0) return;
+        if (!personalBestMap[key] || time < personalBestMap[key]) personalBestMap[key] = time;
+      });
+
+      let prCount = 0;
+      results.forEach(r => {
+        const key = athleteKey(r);
+        const time = parseFloat(r.time);
+        if (!key || isNaN(time) || time <= 0) return;
+        if (time === personalBestMap[key]) prCount++;
+      });
+
+      document.getElementById('total-athletes').textContent = roster && roster.length ? roster.length : uniqueAthletes.size;
+      document.getElementById('avg-time').textContent = avgTimeDisplay;
+      document.getElementById('pr-count').textContent = prCount;
+      document.getElementById('meet-count').textContent = uniqueMeets.size;
+      document.getElementById('best-time').textContent = bestTimeDisplay;
+      document.getElementById('fastest-athlete').textContent = fastestAthleteName;
+    }
+
+    // ==========================================
+    // UPCOMING SCHEDULE
+    // ==========================================
+    async function renderUpcomingSchedule() {
+      const loadingEl = document.getElementById('schedule-loading');
+      const emptyEl = document.getElementById('schedule-empty');
+      const listEl = document.getElementById('schedule-list');
+
+      const todayStr = new Date().toISOString().slice(0, 10);
+      const upcoming = allMeetsList
+        .filter(m => Array.isArray(m.expected_teams) && m.expected_teams.includes(schoolSlug) && m.date && m.date >= todayStr)
+        .sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+
+      loadingEl.style.display = 'none';
+
+      if (upcoming.length === 0) {
+        emptyEl.style.display = 'block';
+        renderHeroChips(rosterData, 0);
+        return;
+      }
+
+      // Resolve course info for unique course slugs
+      const courseSlugs = [...new Set(upcoming.map(m => m.course_slug).filter(Boolean))];
+      const courseEntries = await Promise.all(courseSlugs.map(async slug => {
+        try { return [slug, await getCourseBySlug(slug)]; } catch (e) { return [slug, null]; }
+      }));
+      const courseMap = Object.fromEntries(courseEntries);
+
+      upcomingScheduleData = [];
+
+      listEl.innerHTML = upcoming.map(meet => {
+        const d = new Date((meet.date || '') + 'T00:00:00');
+        const month = isNaN(d.getTime()) ? '' : d.toLocaleDateString('en-US', { month: 'short' }).toUpperCase();
+        const day = isNaN(d.getTime()) ? '?' : d.getDate();
+        const course = meet.course_slug ? courseMap[meet.course_slug] : null;
+
+        let courseHtml = '<p class="course-info-missing"><i class="fa-solid fa-circle-info"></i> Course details haven\'t been added for this venue yet.</p>';
+        if (course) {
+          const distanceLabel = milesFromMeters(course.distance)
+            ? `${course.distance}m (${milesFromMeters(course.distance)} mi)`
+            : (course.distance ? `${course.distance}m` : 'Distance TBD');
+          const surfacesLabel = Array.isArray(course.surfaces) && course.surfaces.length
+            ? course.surfaces.map(s => `${s.type} ${s.pct}%`).join(' • ')
+            : null;
+          courseHtml = `
+            <div class="course-info-panel">
+              <div class="course-info-head">
+                <span class="course-info-name"><i class="fa-solid fa-route"></i> ${escapeHtml(course.name || 'Course')}</span>
+                <span class="diff-pill diff-${diffClass(course.difficulty)}">${escapeHtml(course.difficulty || 'Unrated')}</span>
+              </div>
+              <div class="course-info-stats">
+                <span><i class="fa-solid fa-ruler-horizontal"></i> ${distanceLabel}</span>
+                ${surfacesLabel ? `<span><i class="fa-solid fa-layer-group"></i> ${escapeHtml(surfacesLabel)}</span>` : ''}
+              </div>
+              ${course.description ? `<p class="course-info-desc">${escapeHtml(course.description)}</p>` : ''}
+              <a class="course-info-link" href="courses/course viewer.html?course=${encodeURIComponent(course.slug)}"><i class="fa-solid fa-cube"></i> View 3D Course &amp; Flyover</a>
+            </div>
+          `;
+        }
+
+        const teams = meet.expected_teams.filter(Boolean);
+        const opponentNames = teams.filter(sl => sl !== schoolSlug).map(sl => allSchoolsMap[sl] || sl.replace(/-/g, ' '));
+        const teamsChips = teams.map(sl => {
+          const isSelf = sl === schoolSlug;
+          const name = allSchoolsMap[sl] || sl.replace(/-/g, ' ');
+          const logoUrl = `/assets/team logos/${sl}.png`;
+          return `<a href="school.html?slug=${sl}" class="team-chip ${isSelf ? 'self' : ''}">
+            <img src="${logoUrl}" alt="" onerror="this.style.display='none';">${escapeHtml(name)}${isSelf ? ' <i class="fa-solid fa-check" style="font-size:0.65rem;"></i>' : ''}
+          </a>`;
+        }).join('');
+
+        upcomingScheduleData.push({
+          name: meet.name || meet.slug,
+          slug: meet.slug,
+          dateDisplay: formatDateLong(meet.date),
+          location: meet.location || '',
+          course,
+          opponentNames
+        });
+
+        return `
+          <div class="schedule-card">
+            <div class="schedule-date">
+              <span class="schedule-date-month">${month}</span>
+              <span class="schedule-date-day">${day}</span>
+            </div>
+            <div class="schedule-body">
+              <span class="schedule-countdown">${daysUntilLabel(meet.date)} · ${formatDateLong(meet.date)}</span>
+              <h3 class="schedule-meet-name"><a href="meet.html?slug=${meet.slug}">${escapeHtml(meet.name || meet.slug)}</a></h3>
+              ${meet.location ? `<p class="schedule-location"><i class="fa-solid fa-location-dot"></i> ${escapeHtml(meet.location)}</p>` : ''}
+              ${courseHtml}
+              <div class="schedule-teams-label">Teams Expected (${teams.length})</div>
+              <div class="schedule-teams-chips">${teamsChips}</div>
+              <div class="schedule-actions">
+                <a class="xbtn" href="meet.html?slug=${meet.slug}"><i class="fa-solid fa-arrow-right"></i> View Meet Page</a>
+                <button class="xbtn" type="button" onclick="addToCalendar('${meet.slug}')"><i class="fa-regular fa-calendar-plus"></i> Add to Calendar</button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      renderHeroChips(rosterData, upcoming.length);
+    }
+
+    function addToCalendar(meetSlug) {
+      const meet = meetsBySlug[meetSlug];
+      if (!meet) { toast('Could not find meet details.'); return; }
+      const dateStr = (meet.date || '').replace(/-/g, '');
+      const stamp = new Date().toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+      const ics = [
+        'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Mountain State Miles//CrossCountry//EN', 'BEGIN:VEVENT',
+        `UID:${meetSlug}-${Date.now()}@mountainstatemiles`,
+        `DTSTAMP:${stamp}`,
+        `DTSTART;VALUE=DATE:${dateStr}`,
+        `DTEND;VALUE=DATE:${dateStr}`,
+        `SUMMARY:${(meet.name || 'Meet').replace(/[\n,;]/g, ' ')}`,
+        `LOCATION:${(meet.location || '').replace(/[\n,;]/g, ' ')}`,
+        'END:VEVENT', 'END:VCALENDAR'
+      ].join('\r\n');
+      dl(`${meetSlug}.ics`, 'text/calendar', ics);
+      toast('✓ Calendar file downloaded');
+    }
+
+    // ==========================================
+    // PERFORMANCE RESULTS (post-meet)
+    // ==========================================
+    function buildPerformanceMeets(results) {
+      const meetsMap = {};
+      results.forEach(result => {
+        const meetSlug = result.meet_slug;
+        if (!meetSlug) return;
+        const meetRecord = meetsBySlug[meetSlug];
+        if (!meetsMap[meetSlug]) {
+          meetsMap[meetSlug] = {
+            meet_slug: meetSlug,
+            meet_name: (meetRecord && meetRecord.name) || result.meet_name || result.meet || meetSlug.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),
+            date: (meetRecord && meetRecord.date) || result.date || null,
+            location: (meetRecord && meetRecord.location) || '',
+            results: []
+          };
+        }
+        meetsMap[meetSlug].results.push(result);
+      });
+
+      const meetsArray = Object.values(meetsMap);
+      meetsArray.sort((a, b) => {
+        const dateA = a.date || '', dateB = b.date || '';
+        if (!dateA) return 1;
+        if (!dateB) return -1;
+        return dateB.localeCompare(dateA);
+      });
+
+      meetsArray.forEach(meet => {
+        meet.results.sort((a, b) => (parseFloat(a.time) || Infinity) - (parseFloat(b.time) || Infinity));
+        const validTimes = meet.results.map(r => parseFloat(r.time)).filter(t => !isNaN(t) && t > 0);
+        meet.avgTime = validTimes.length ? validTimes.reduce((a, b) => a + b, 0) / validTimes.length : null;
+        meet.bestTime = validTimes.length ? Math.min(...validTimes) : null;
+        meet.bestResult = meet.results.find(r => parseFloat(r.time) === meet.bestTime) || null;
+      });
+
+      return meetsArray;
+    }
+
+    function renderPerformanceResults() {
+      const loadingEl = document.getElementById('meets-loading');
+      const emptyEl = document.getElementById('meets-empty');
+      const listEl = document.getElementById('meets-list');
+      const showMoreWrap = document.getElementById('performance-show-more-wrap');
+      const showMoreBtn = document.getElementById('performance-show-more');
+
+      loadingEl.style.display = 'none';
+
+      if (!schoolResults || schoolResults.length === 0) {
+        emptyEl.style.display = 'block';
+        return;
+      }
+
+      performanceMeetsSorted = buildPerformanceMeets(schoolResults);
+
+      function renderCards() {
+        const visible = performanceMeetsSorted.slice(0, performanceMeetsVisible);
+        listEl.innerHTML = visible.map(meet => {
+          // Scoring runners are the fastest 5 per gender (results are already
+          // sorted ascending by time), matching standard XC team-scoring rules.
+          const byGender = { M: [], F: [], OTHER: [] };
+          meet.results.forEach(r => {
+            const g = (r.gender || '').toUpperCase();
+            (byGender[g] || byGender.OTHER).push(r);
+          });
+          const scoringSlugs = new Set();
+          ['M', 'F', 'OTHER'].forEach(g => {
+            byGender[g].slice(0, 5).forEach(r => scoringSlugs.add(athleteKey(r)));
+          });
+          const rows = meet.results.map((r, idx) => {
+            const time = parseFloat(r.time);
+            const key = athleteKey(r);
+            const isPR = !isNaN(time) && time > 0 && personalBestMap[key] === time;
+            const genderCode = (r.gender || '').toUpperCase();
+            const genderPill = genderCode === 'M' || genderCode === 'F'
+              ? `<span class="gender-pill ${genderCode.toLowerCase()}">${genderCode}</span>`
+              : '—';
+            const isScorer = scoringSlugs.has(key);
+            return `
+              <tr>
+                <td data-label="Place">${r.place || (idx + 1)}</td>
+                <td data-label="Athlete">${escapeHtml(r.athlete_name || r.name || 'Unknown')}${isScorer ? '<span class="scorer-tag">Scorer</span>' : ''}${isPR ? '<i class="fa-solid fa-fire pr-flame" title="Personal Record"></i>' : ''}</td>
+                <td data-label="Gender">${genderPill}</td>
+                <td data-label="Time">${formatTime(time)}</td>
+              </tr>
+            `;
+          }).join('');
+
+          return `
+            <div class="performance-card">
+              <div class="performance-card-head">
+                <div>
+                  <h3><a href="meet.html?slug=${meet.meet_slug}">${escapeHtml(meet.meet_name)}</a></h3>
+                  <p class="performance-date"><i class="fa-solid fa-calendar"></i> ${formatDateLong(meet.date)}${meet.location ? ' · ' + escapeHtml(meet.location) : ''}</p>
+                </div>
+                <div class="performance-badges">
+                  <span class="badge">Avg ${meet.avgTime ? formatTime(meet.avgTime) : '--:--'}</span>
+                  <span class="badge">Best ${meet.bestTime ? formatTime(meet.bestTime) : '--:--'}${meet.bestResult ? ' (' + escapeHtml(meet.bestResult.athlete_name || meet.bestResult.name || '') + ')' : ''}</span>
+                </div>
+              </div>
+              <div class="table-container">
+                <table class="results-table">
+                  <thead><tr><th>Place</th><th>Athlete</th><th>Gender</th><th>Time</th></tr></thead>
+                  <tbody>${rows}</tbody>
+                </table>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      renderCards();
+
+      if (performanceMeetsSorted.length > performanceMeetsVisible) {
+        showMoreWrap.style.display = 'block';
+        showMoreBtn.textContent = `Show older meets (${performanceMeetsSorted.length - performanceMeetsVisible} more)`;
+        showMoreBtn.onclick = () => {
+          performanceMeetsVisible = performanceMeetsSorted.length;
+          renderCards();
+          showMoreWrap.style.display = 'none';
+        };
+      } else {
+        showMoreWrap.style.display = 'none';
       }
     }
 
-    // Initialize page
+    // ==========================================
+    // SEASON TRENDS CHART
+    // ==========================================
+    function renderTrendsChart() {
+      const canvas = document.getElementById('trendsChart');
+      const emptyEl = document.getElementById('trends-empty');
+      if (!canvas) return;
+
+      const chronological = [...performanceMeetsSorted]
+        .filter(m => m.date && m.avgTime)
+        .sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+
+      if (chronological.length < 2 || typeof Chart === 'undefined') {
+        canvas.style.display = 'none';
+        emptyEl.style.display = 'block';
+        return;
+      }
+
+      const labels = chronological.map(m => {
+        const d = new Date(m.date + 'T00:00:00');
+        return isNaN(d.getTime()) ? m.date : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      });
+      const avgData = chronological.map(m => Math.round(m.avgTime * 100) / 100);
+      const bestData = chronological.map(m => m.bestTime ? Math.round(m.bestTime * 100) / 100 : null);
+
+      const dark = document.documentElement.getAttribute('data-theme') === 'dark';
+      const gridColor = dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)';
+      const textColor = dark ? '#b0b0b0' : '#666666';
+
+      if (trendsChartInstance) trendsChartInstance.destroy();
+      trendsChartInstance = new Chart(canvas.getContext('2d'), {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [
+            {
+              label: 'Team Average',
+              data: avgData,
+              borderColor: teamColorRgb,
+              backgroundColor: teamColorRgb.replace('rgb', 'rgba').replace(')', ',0.12)'),
+              tension: 0.35,
+              fill: true,
+              pointRadius: 3
+            },
+            {
+              label: 'Team Best',
+              data: bestData,
+              borderColor: dark ? '#ffffff' : '#000000',
+              backgroundColor: 'transparent',
+              borderDash: [6, 4],
+              tension: 0.35,
+              pointRadius: 3
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { labels: { color: textColor } },
+            tooltip: {
+              callbacks: {
+                label: ctx => `${ctx.dataset.label}: ${formatTime(ctx.raw)}`
+              }
+            }
+          },
+          scales: {
+            x: { grid: { color: gridColor }, ticks: { color: textColor } },
+            y: { grid: { color: gridColor }, ticks: { color: textColor, callback: v => formatTime(v) } }
+          }
+        }
+      });
+    }
+
+    // ==========================================
+    // EXPORTS (PDF)
+    // ==========================================
+    function exportSchedulePDF() {
+      if (!upcomingScheduleData.length) { toast('No upcoming meets to export yet.'); return; }
+      if (typeof window.jspdf === 'undefined') { toast('PDF library still loading — try again in a moment.'); return; }
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ orientation: 'landscape' });
+      const name = (schoolObj && schoolObj.name) || 'Team';
+      doc.setFontSize(18); doc.setFont('helvetica', 'bold');
+      doc.text(`${name} — Upcoming Schedule`, 14, 16);
+      doc.setFontSize(9); doc.setFont('helvetica', 'normal');
+      doc.text(`Mountain State Miles · Generated ${new Date().toLocaleDateString()} · ${upcomingScheduleData.length} meet(s)`, 14, 23);
+      doc.autoTable({
+        head: [['Date', 'Meet', 'Location', 'Distance', 'Difficulty', 'Surface', 'Opponents']],
+        body: upcomingScheduleData.map(m => [
+          m.dateDisplay,
+          m.name,
+          m.location || '—',
+          m.course && milesFromMeters(m.course.distance) ? `${milesFromMeters(m.course.distance)} mi` : (m.course && m.course.distance ? `${m.course.distance}m` : '—'),
+          m.course ? (m.course.difficulty || '—') : '—',
+          m.course && Array.isArray(m.course.surfaces) && m.course.surfaces.length ? m.course.surfaces.map(s => `${s.type} ${s.pct}%`).join(', ') : '—',
+          m.opponentNames.join(', ') || '—'
+        ]),
+        startY: 29,
+        styles: { fontSize: 8.5 },
+        headStyles: { fillColor: [20, 20, 20], textColor: [255, 255, 255] },
+        alternateRowStyles: { fillColor: [245, 245, 245] }
+      });
+      doc.save(`${schoolSlug}_schedule.pdf`);
+      toast('✓ Schedule exported as PDF');
+    }
+
+    function exportPerformancePDF() {
+      if (!schoolResults.length) { toast('No performance results to export yet.'); return; }
+      if (typeof window.jspdf === 'undefined') { toast('PDF library still loading — try again in a moment.'); return; }
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ orientation: 'landscape' });
+      const name = (schoolObj && schoolObj.name) || 'Team';
+      doc.setFontSize(18); doc.setFont('helvetica', 'bold');
+      doc.text(`${name} — Performance Report`, 14, 16);
+      doc.setFontSize(9); doc.setFont('helvetica', 'normal');
+      doc.text(`Mountain State Miles · Generated ${new Date().toLocaleDateString()} · Avg ${document.getElementById('avg-time').textContent} · Best ${document.getElementById('best-time').textContent}`, 14, 23);
+
+      const rows = [];
+      performanceMeetsSorted.forEach(meet => {
+        meet.results.forEach(r => {
+          const time = parseFloat(r.time);
+          const key = athleteKey(r);
+          const isPR = !isNaN(time) && time > 0 && personalBestMap[key] === time;
+          rows.push([
+            formatDateLong(meet.date),
+            meet.meet_name,
+            r.athlete_name || r.name || 'Unknown',
+            (r.gender || '—').toUpperCase(),
+            formatTime(time),
+            r.place || '—',
+            isPR ? '★ PR' : ''
+          ]);
+        });
+      });
+
+      doc.autoTable({
+        head: [['Date', 'Meet', 'Athlete', 'Gender', 'Time', 'Place', 'PR']],
+        body: rows,
+        startY: 29,
+        styles: { fontSize: 8 },
+        headStyles: { fillColor: [20, 20, 20], textColor: [255, 255, 255] },
+        alternateRowStyles: { fillColor: [245, 245, 245] }
+      });
+      doc.save(`${schoolSlug}_performance.pdf`);
+      toast('✓ Performance report exported as PDF');
+    }
+
+    // ==========================================
+    // INIT
+    // ==========================================
+    function showFatalError(message) {
+      document.getElementById('school-name').textContent = 'School Not Found';
+      document.getElementById('school-info').textContent = message;
+      ['roster-loading', 'meets-loading', 'schedule-loading'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = 'none';
+      });
+    }
+
     async function init() {
       try {
         if (typeof getSchoolBySlug === 'undefined') {
-            document.getElementById('roster-loading').textContent = 'Error: Firebase helpers not loaded. Check script tags.';
-            document.getElementById('meets-loading').textContent = '';
-            return;
+          showFatalError('Error: Firebase helpers not loaded. Check script tags.');
+          return;
         }
 
-        const schoolSlug = await loadSchoolInfo();
-        if (schoolSlug) {
-          await Promise.all([
-            loadRoster(schoolSlug),
-            loadMeets(schoolSlug),
-            loadTeamStatistics(schoolSlug),
-          ]);
-        } else {
-          document.getElementById('roster-loading').style.display = 'none';
-          document.getElementById('meets-loading').style.display = 'none';
+        const params = new URLSearchParams(window.location.search);
+        schoolSlug = params.get('slug');
+        if (!schoolSlug) {
+          showFatalError('Please provide a valid school slug in the URL.');
+          return;
         }
+
+        schoolObj = await getSchoolBySlug(schoolSlug);
+        if (!schoolObj || !schoolObj.name) {
+          showFatalError(`No data found for slug: ${schoolSlug}`);
+          return;
+        }
+
+        setupHero(schoolObj);
+
+        const [allSchools, roster, results, meets] = await Promise.all([
+          getAllSchools(),
+          getAthletesBySchool(schoolSlug),
+          getResultsBySchool(schoolSlug),
+          getAllMeets(9999)
+        ]);
+
+        allSchoolsMap = {};
+        (allSchools || []).forEach(s => { if (s.slug) allSchoolsMap[s.slug] = s.name || s.slug; });
+
+        allMeetsList = meets || [];
+        meetsBySlug = {};
+        allMeetsList.forEach(m => { if (m.slug) meetsBySlug[m.slug] = m; });
+
+        rosterData = roster || [];
+        schoolResults = results || [];
+
+        renderRoster(rosterData);
+        wireRosterSearch();
+        computeStats(schoolResults, rosterData);
+        renderPerformanceResults();
+        renderTrendsChart();
+        await renderUpcomingSchedule();
+
+        document.getElementById('btn-export-schedule').addEventListener('click', exportSchedulePDF);
+        document.getElementById('btn-export-performance').addEventListener('click', exportPerformancePDF);
+        document.getElementById('btn-print').addEventListener('click', () => window.print());
+      } catch (error) {
+        console.error('Error initializing school page:', error);
+        showFatalError('Could not connect to database.');
       } finally {
         document.dispatchEvent(new Event("MSMDataLoaded"));
       }
     }
 
-    // Run when page loads
-    window.onload = function() {
-      init();
-      
-      // Mobile menu toggle
-
-);
-        
-        // Close menu when clicking outside
-        document.addEventListener('click', (e) => {
-          if (!navMenu.contains(e.target) && !menuToggle.contains(e.target)) {
-            navMenu.classList.remove('mobile-open');
-          }
-        });
-      }
-    };
+    document.addEventListener('DOMContentLoaded', init);
   </script>
 
   <div id="global-footer"></div>

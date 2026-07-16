@@ -282,7 +282,10 @@
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
 
 <script>
-  const CC_PREFIX = 'crosscountry';
+  // NOTE: CC_PREFIX is already declared globally by firebase-helpers.js (loaded above) -
+  // it must NOT be redeclared here with const/let, or the browser throws
+  // "Identifier 'CC_PREFIX' has already been declared" and silently kills this
+  // entire script block.
 
   // Best-effort geocoding for common WV (and a few bordering) meet locations.
   // Matching is done by checking if the meet's `location` string CONTAINS one of these keys.

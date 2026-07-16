@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Schools – Mountain State Miles</title>
+  <meta name="description" content="Browse every West Virginia cross country program on Mountain State Miles — rosters, upcoming schedules, and results." />
   <link rel="icon" type="image/png" href="assets/Favicon Generator/favicon-96x96.png" sizes="96x96" />
   <link rel="icon" type="image/svg+xml" href="assets/Favicon Generator/favicon.svg" />
   <link rel="shortcut icon" href="assets/Favicon Generator/favicon.ico" />
@@ -11,10 +12,199 @@
   <link rel="manifest" href="assets/Favicon Generator/site.webmanifest" />
   <link rel="stylesheet" href="/assets/main.css" />
 
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-  
   <script src="/assets/theme-toggle.js" defer></script>
   <script src="/assets/components.js" defer></script>
+
+  <style>
+    /* ================================================
+       Schools directory — MSM styling
+       Extends main.css, doesn't replace it.
+       ================================================ */
+
+    .schools-hero {
+      max-width: 900px;
+      margin: 0 auto 10px;
+      text-align: center;
+    }
+    .schools-hero-sub {
+      color: var(--text-secondary);
+      font-size: 1.05rem;
+      max-width: 620px;
+      margin: 0 auto 28px;
+    }
+    .schools-stat-strip {
+      display: flex;
+      justify-content: center;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-bottom: 8px;
+    }
+    .mini-stat {
+      min-width: 130px;
+      padding: 14px 22px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      background: var(--bg-primary);
+      text-align: center;
+      animation: fadeUp 0.4s ease both;
+    }
+    .mini-stat-num {
+      display: block;
+      font-family: var(--font-display);
+      font-size: 1.9rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: var(--text-primary);
+      line-height: 1;
+    }
+    .mini-stat-lbl {
+      display: block;
+      margin-top: 4px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-tertiary);
+    }
+
+    .schools-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin: 30px 0 6px;
+    }
+    .schools-toolbar .search-bar { margin-top: 0; }
+    .sort-control {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      font-weight: 600;
+    }
+    .sort-control select {
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: 2px solid var(--border);
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+    .sort-control select:focus { outline: none; border-color: var(--text-primary); }
+
+    .results-count {
+      text-align: center;
+      color: var(--text-tertiary);
+      font-size: 0.85rem;
+      margin: 18px 0 -4px;
+    }
+
+    /* ---- Card overhaul ---- */
+    .school-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      padding: 28px 18px 22px;
+      animation: fadeUp 0.35s ease both;
+    }
+    .school-card-logo-wrap {
+      width: 92px;
+      height: 92px;
+      border-radius: 50%;
+      background: var(--bg-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 0 4px rgba(255,255,255,0.55), 0 6px 18px var(--school-glow, rgba(0,0,0,0.18));
+      border: 3px solid var(--school-main, var(--text-primary));
+      margin-bottom: 14px;
+      transition: transform var(--transition), box-shadow var(--transition);
+    }
+    .school-card:hover .school-card-logo-wrap {
+      transform: scale(1.06);
+    }
+    .school-card img {
+      width: 62px;
+      height: 62px;
+      object-fit: contain;
+    }
+    .school-card h3 {
+      font-family: var(--font-display);
+      font-size: 1.15rem;
+      letter-spacing: -0.01em;
+      text-align: center;
+    }
+    .school-card-city {
+      font-size: 0.78rem;
+      color: var(--text-tertiary);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-top: -2px;
+    }
+    .school-card-meta {
+      margin-top: 12px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      justify-content: center;
+    }
+    .meet-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      background: rgba(0,0,0,0.06);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+    }
+    html[data-theme="dark"] .meet-chip { background: rgba(255,255,255,0.08); }
+    .meet-chip.next {
+      background: var(--school-main, var(--text-primary));
+      color: #fff;
+      border-color: transparent;
+    }
+    .meet-chip i { font-size: 0.68rem; }
+
+    .schools-skeleton {
+      background: var(--bg-primary);
+      border-radius: 30px;
+      height: 210px;
+      border: 2px solid var(--border);
+      position: relative;
+      overflow: hidden;
+    }
+    .schools-skeleton::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, transparent, var(--border-light), transparent);
+      transform: translateX(-100%);
+      animation: shimmer 1.4s infinite;
+    }
+    @keyframes shimmer { to { transform: translateX(100%); } }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+
+    .no-results-msg {
+      text-align: center;
+      color: var(--text-tertiary);
+      padding: 40px 0;
+      font-size: 1rem;
+    }
+  </style>
 </head>
 <body>
 
@@ -22,14 +212,35 @@
 
 <script src="/assets/msm-loader.js"></script>
 <main class="content-section">
-    <h1 class="section-title">West Virginia Schools</h1>
-    <p class="text-center">Select a school below to view their roster and results.</p>
 
-    <div class="search-bar">
-      <input type="text" id="search" placeholder="Search for a school...">
+    <section class="schools-hero">
+      <h1 class="section-title">West Virginia Schools</h1>
+      <p class="schools-hero-sub">Every Mountain State Miles cross country program in one place — rosters, upcoming schedules, and results.</p>
+      <div class="schools-stat-strip">
+        <div class="mini-stat"><span class="mini-stat-num" id="stat-total-schools">–</span><span class="mini-stat-lbl">Teams</span></div>
+        <div class="mini-stat"><span class="mini-stat-num" id="stat-total-meets">–</span><span class="mini-stat-lbl">Meets This Season</span></div>
+        <div class="mini-stat"><span class="mini-stat-num" id="stat-upcoming">–</span><span class="mini-stat-lbl">Upcoming (14 Days)</span></div>
+      </div>
+    </section>
+
+    <div class="schools-toolbar">
+      <div class="search-bar">
+        <input type="text" id="search" placeholder="Search for a school...">
+      </div>
+      <div class="sort-control">
+        <label for="sort-select">Sort</label>
+        <select id="sort-select">
+          <option value="name">Name (A–Z)</option>
+          <option value="next">Next Meet Date</option>
+          <option value="upcoming">Most Upcoming Meets</option>
+        </select>
+      </div>
     </div>
 
+    <p class="results-count" id="results-count" style="display:none;"></p>
+
     <div class="schools-grid" id="schools-grid"></div>
+    <p class="no-results-msg" id="no-results-msg" style="display:none;">No schools match your search.</p>
   </main>
 <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -39,95 +250,210 @@
   <script src="firebase-config.js"></script>
   <script src="firebase-helpers.js"></script>
   <script>
+    let allSchoolsData = [];
+    let scheduleBySlug = {}; // slug -> { upcomingCount, nextMeetDate, nextMeetName, totalMeets }
+    const colorCache = {};
+
+    function extractMainColor(logoUrl) {
+      if (colorCache[logoUrl]) return Promise.resolve(colorCache[logoUrl]);
+      return new Promise(resolve => {
+        const img = new window.Image();
+        img.crossOrigin = 'Anonymous';
+        img.src = logoUrl;
+        img.onload = () => {
+          try {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.naturalWidth; canvas.height = img.naturalHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0);
+            const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+            const hist = {};
+            for (let i = 0; i < data.length; i += 4) {
+              const r = data[i], g = data[i + 1], b = data[i + 2], a = data[i + 3];
+              if (a < 120) continue;
+              if (r > 230 && g > 230 && b > 230) continue; // near-white
+              if (r < 28 && g < 28 && b < 28) continue; // near-black
+              const max = Math.max(r, g, b), min = Math.min(r, g, b);
+              if (max - min < 18) continue; // grayish
+              const key = `${Math.round(r / 12) * 12},${Math.round(g / 12) * 12},${Math.round(b / 12) * 12}`;
+              hist[key] = (hist[key] || 0) + 1;
+            }
+            let maxCount = 0, bestColors = [];
+            Object.entries(hist).forEach(([k, v]) => {
+              if (v > maxCount) { maxCount = v; bestColors = [k.split(',').map(Number)]; }
+              else if (v === maxCount) bestColors.push(k.split(',').map(Number));
+            });
+            let col = [44, 95, 125];
+            if (bestColors.length && maxCount > 0) {
+              if (bestColors.length === 1) col = bestColors[0];
+              else {
+                col = [0, 0, 0];
+                bestColors.forEach(c => { col[0] += c[0]; col[1] += c[1]; col[2] += c[2]; });
+                col = col.map(v => Math.round(v / bestColors.length));
+              }
+            }
+            const rgb = `rgb(${col.join(',')})`;
+            colorCache[logoUrl] = rgb;
+            resolve(rgb);
+          } catch (e) { resolve('#18212e'); }
+        };
+        img.onerror = () => resolve('#18212e');
+      });
+    }
+
+    function daysFromToday(dateStr) {
+      if (!dateStr) return null;
+      const target = new Date(dateStr + 'T00:00:00');
+      if (isNaN(target.getTime())) return null;
+      const today = new Date(); today.setHours(0, 0, 0, 0);
+      return Math.round((target - today) / 86400000);
+    }
+
+    function formatShortDate(dateStr) {
+      const d = new Date(dateStr + 'T00:00:00');
+      if (isNaN(d.getTime())) return dateStr;
+      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
+
+    function buildSchoolSchedule(meets) {
+      const map = {};
+      const todayStr = new Date().toISOString().slice(0, 10);
+      meets.forEach(m => {
+        const teams = Array.isArray(m.expected_teams) ? m.expected_teams.filter(Boolean) : [];
+        teams.forEach(slug => {
+          if (!map[slug]) map[slug] = { upcomingCount: 0, nextMeetDate: null, nextMeetName: null, totalMeets: 0 };
+          map[slug].totalMeets++;
+          if (m.date && m.date >= todayStr) {
+            map[slug].upcomingCount++;
+            if (!map[slug].nextMeetDate || m.date < map[slug].nextMeetDate) {
+              map[slug].nextMeetDate = m.date;
+              map[slug].nextMeetName = m.name || m.slug;
+            }
+          }
+        });
+      });
+      return map;
+    }
+
+    function renderStatStrip(schools, meets) {
+      const todayStr = new Date().toISOString().slice(0, 10);
+      const in14 = new Date(); in14.setDate(in14.getDate() + 14);
+      const in14Str = in14.toISOString().slice(0, 10);
+      const upcomingCount = meets.filter(m => m.date && m.date >= todayStr && m.date <= in14Str).length;
+      document.getElementById('stat-total-schools').textContent = schools.length;
+      document.getElementById('stat-total-meets').textContent = meets.length;
+      document.getElementById('stat-upcoming').textContent = upcomingCount;
+    }
+
+    function sortSchools(schools, mode) {
+      const arr = [...schools];
+      if (mode === 'upcoming') {
+        arr.sort((a, b) => {
+          const ua = (scheduleBySlug[a.slug] || {}).upcomingCount || 0;
+          const ub = (scheduleBySlug[b.slug] || {}).upcomingCount || 0;
+          if (ub !== ua) return ub - ua;
+          return (a.name || '').localeCompare(b.name || '');
+        });
+      } else if (mode === 'next') {
+        arr.sort((a, b) => {
+          const da = (scheduleBySlug[a.slug] || {}).nextMeetDate;
+          const db = (scheduleBySlug[b.slug] || {}).nextMeetDate;
+          if (da && db) return da.localeCompare(db);
+          if (da) return -1;
+          if (db) return 1;
+          return (a.name || '').localeCompare(b.name || '');
+        });
+      } else {
+        arr.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+      }
+      return arr;
+    }
+
     async function loadSchools() {
       const grid = document.getElementById("schools-grid");
       const search = document.getElementById("search");
+      const sortSelect = document.getElementById("sort-select");
+      const noResults = document.getElementById("no-results-msg");
+      const resultsCount = document.getElementById("results-count");
+
+      // Skeleton loading state
+      grid.innerHTML = Array.from({ length: 8 }).map(() => '<div class="schools-skeleton"></div>').join('');
+
       let schools = [];
+      let meets = [];
 
       try {
-        // Try to fetch from Firebase first
-        schools = await getAllSchools();
+        [schools, meets] = await Promise.all([
+          getAllSchools(),
+          (typeof getAllMeets === 'function' ? getAllMeets(9999) : Promise.resolve([]))
+        ]);
 
         if (!schools || schools.length === 0) {
-          // No data in Firebase, use local JSON
           const res = await fetch("data/schools.json");
           schools = await res.json();
         }
       } catch (error) {
         console.error('Error loading schools:', error);
-        const res = await fetch("data/schools.json");
-        schools = await res.json();
+        try {
+          const res = await fetch("data/schools.json");
+          schools = await res.json();
+        } catch (e) { schools = []; }
       }
 
-      async function extractMainColor(logoUrl) {
-        return new Promise(resolve=>{
-          const img = new window.Image();
-          img.crossOrigin = 'Anonymous';
-          img.src = logoUrl;
-          img.onload = () => {
-            try {
-              const canvas = document.createElement('canvas');
-              canvas.width = img.naturalWidth; canvas.height = img.naturalHeight;
-              const ctx = canvas.getContext('2d');
-              ctx.drawImage(img,0,0);
-              const data = ctx.getImageData(0,0,canvas.width,canvas.height).data;
-              const hist = {};
-              for (let i = 0; i < data.length; i += 4) {
-                const r = data[i],g = data[i+1],b = data[i+2],a = data[i+3];
-                if(a<120) continue;
-                if(r>230&&g>230&&b>230) continue; // skip near-white
-                if(r<28 && g<28 && b<28) continue; // skip near-black
-                const max = Math.max(r,g,b), min = Math.min(r,g,b);
-                if(max-min<18) continue; // skip grayish
-                const key = `${Math.round(r/12)*12},${Math.round(g/12)*12},${Math.round(b/12)*12}`;
-                hist[key] = (hist[key]||0)+1;
-              }
-              // find most-used color(s)
-              let maxCount = 0, bestColors = [];
-              Object.entries(hist).forEach(([k,v])=>{
-                if(v>maxCount) { maxCount=v; bestColors=[k.split(',').map(Number)]; }
-                else if(v===maxCount) bestColors.push(k.split(',').map(Number));
-              });
-              let col = [44, 95, 125];
-              if(bestColors.length && maxCount>0){
-                if(bestColors.length===1) col=bestColors[0];
-                else {
-                  col=[0,0,0]; bestColors.forEach(c=>{col[0]+=c[0];col[1]+=c[1];col[2]+=c[2];});
-                  col=col.map(v=>Math.round(v/bestColors.length));
-                }
-              }
-              resolve(`rgb(${col.join(',')})`);
-            } catch(e){ resolve('#18212e'); }
-          };
-          img.onerror = ()=>resolve('#18212e');
-        });
-      }
+      allSchoolsData = schools || [];
+      scheduleBySlug = buildSchoolSchedule(meets || []);
+      renderStatStrip(allSchoolsData, meets || []);
 
-      function renderList(filter = "") {
+      function renderList(filter = "", sortMode = "name") {
+        const filtered = allSchoolsData.filter(sc => (sc.name || '').toLowerCase().includes(filter.toLowerCase()));
+        const sorted = sortSchools(filtered, sortMode);
+
         grid.innerHTML = "";
-        for (const s of schools.filter(sc => sc.name.toLowerCase().includes(filter.toLowerCase()))) {
+        noResults.style.display = sorted.length === 0 ? "block" : "none";
+        resultsCount.style.display = filter ? "block" : "none";
+        resultsCount.textContent = filter ? `${sorted.length} school${sorted.length === 1 ? '' : 's'} found` : '';
+
+        for (const s of sorted) {
           const card = document.createElement("div");
           card.className = "school-card";
           const logoUrl = `/assets/team logos/${s.slug}.png`;
           const fallbackLogo = `/assets/images/logob.png`;
+          const sched = scheduleBySlug[s.slug] || { upcomingCount: 0, nextMeetDate: null, nextMeetName: null };
+
+          let metaHtml = '';
+          if (sched.nextMeetDate) {
+            metaHtml += `<span class="meet-chip next"><i class="fa-solid fa-calendar-days"></i> Next: ${formatShortDate(sched.nextMeetDate)}</span>`;
+            if (sched.upcomingCount > 1) {
+              metaHtml += `<span class="meet-chip">+${sched.upcomingCount - 1} more</span>`;
+            }
+          } else {
+            metaHtml += `<span class="meet-chip"><i class="fa-regular fa-calendar"></i> No meets scheduled</span>`;
+          }
+
           card.innerHTML = `
-            <img src="${logoUrl}" alt="${s.name} Logo" onerror="this.onerror=null; this.src='${fallbackLogo}';">
+            <div class="school-card-logo-wrap">
+              <img src="${logoUrl}" alt="${s.name} Logo" onerror="this.onerror=null; this.src='${fallbackLogo}';">
+            </div>
             <h3>${s.name}</h3>
+            ${s.city ? `<span class="school-card-city">${s.city}</span>` : ''}
+            <div class="school-card-meta">${metaHtml}</div>
           `;
-          // apply coloring after logo is loaded
-          extractMainColor(logoUrl).then(col=>{
+
+          extractMainColor(logoUrl).then(col => {
             card.style.setProperty('--school-main', col);
-            card.style.background = `linear-gradient(127deg, var(--school-main, #295085) 18%, #e8f4ff 100%)`;
-            card.style.boxShadow = `0 4px 26px var(--school-main, #29508538)`;
-            card.onmouseover = ()=>{
-              card.style.boxShadow = `0 8px 48px var(--school-main, #29508549)`;
-              card.style.transform = 'translateY(-8px) scale(1.04)';
+            card.style.setProperty('--school-glow', col.replace('rgb', 'rgba').replace(')', ',0.35)'));
+            card.style.background = `linear-gradient(127deg, ${col.replace('rgb', 'rgba').replace(')', ',0.14)')} 0%, var(--bg-primary) 65%)`;
+            card.style.boxShadow = `0 4px 26px ${col.replace('rgb', 'rgba').replace(')', ',0.22)')}`;
+            card.onmouseover = () => {
+              card.style.boxShadow = `0 10px 34px ${col.replace('rgb', 'rgba').replace(')', ',0.38)')}`;
+              card.style.transform = 'translateY(-8px) scale(1.03)';
             };
-            card.onmouseleave = ()=>{
-              card.style.boxShadow = `0 4px 26px var(--school-main, #29508538)`;
+            card.onmouseleave = () => {
+              card.style.boxShadow = `0 4px 26px ${col.replace('rgb', 'rgba').replace(')', ',0.22)')}`;
               card.style.transform = '';
             };
           });
+
           card.addEventListener("click", () => {
             window.location.href = "school.html?slug=" + s.slug;
           });
@@ -138,7 +464,10 @@
       renderList();
 
       search.addEventListener("input", e => {
-        renderList(e.target.value);
+        renderList(e.target.value, sortSelect.value);
+      });
+      sortSelect.addEventListener("change", () => {
+        renderList(search.value, sortSelect.value);
       });
 
       document.dispatchEvent(new Event("MSMDataLoaded"));
