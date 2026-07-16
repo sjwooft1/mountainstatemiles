@@ -20,6 +20,7 @@
   <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.7.1/jspdf.plugin.autotable.min.js"></script>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
   <script src="/assets/theme-toggle.js" defer></script>
   <script src="/assets/components.js" defer></script>
@@ -1038,19 +1039,50 @@
       });
     }
 
-    // ==========================================
+ // ==========================================
     // EXPORTS (PDF)
     // ==========================================
+    
+    // Helper to parse the dynamically extracted "rgb(r,g,b)" into an array for jsPDF
+    function getTeamColorRgbArray() {
+      const match = teamColorRgb.match(/\d+/g);
+      if (match && match.length >= 3) {
+        return [parseInt(match[0]), parseInt(match[1]), parseInt(match[2])];
+      }
+      return [20, 20, 20]; // Default dark fallback if color extraction fails
+    }
+
     function exportSchedulePDF() {
       if (!upcomingScheduleData.length) { toast('No upcoming meets to export yet.'); return; }
       if (typeof window.jspdf === 'undefined') { toast('PDF library still loading — try again in a moment.'); return; }
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF({ orientation: 'landscape' });
       const name = (schoolObj && schoolObj.name) || 'Team';
+      const brandColor = getTeamColorRgbArray();
+
+      // 1. Draw a branded accent bar at the top of the page
+      doc.setFillColor(brandColor[0], brandColor[1], brandColor[2]);
+      doc.rect(0, 0, doc.internal.pageSize.getWidth(), 5, 'F');
+
+      let textX = 14;
+      // 2. Dynamically add the school's logo if loaded
+      try {
+        const logoImg = document.getElementById('school-logo');
+        if (logoImg && logoImg.complete && logoImg.naturalWidth > 0 && !logoImg.src.includes('logob.png')) {
+          doc.addImage(logoImg, 'PNG', 14, 10, 15, 15);
+          textX = 34; // Shift header text to the right to make room for the logo
+        }
+      } catch (e) {
+        console.error("Could not add logo to PDF:", e);
+      }
+
+      // 3. Document Headers
       doc.setFontSize(18); doc.setFont('helvetica', 'bold');
-      doc.text(`${name} — Upcoming Schedule`, 14, 16);
+      doc.text(`${name} — Upcoming Schedule`, textX, 18);
       doc.setFontSize(9); doc.setFont('helvetica', 'normal');
-      doc.text(`Mountain State Miles · Generated ${new Date().toLocaleDateString()} · ${upcomingScheduleData.length} meet(s)`, 14, 23);
+      doc.text(`Mountain State Miles · Generated ${new Date().toLocaleDateString()} · ${upcomingScheduleData.length} meet(s)`, textX, 24);
+
+      // 4. Draw branded Table
       doc.autoTable({
         head: [['Date', 'Meet', 'Location', 'Distance', 'Difficulty', 'Surface', 'Opponents']],
         body: upcomingScheduleData.map(m => [
@@ -1060,11 +1092,11 @@
           m.course && milesFromMeters(m.course.distance) ? `${milesFromMeters(m.course.distance)} mi` : (m.course && m.course.distance ? `${m.course.distance}m` : '—'),
           m.course ? (m.course.difficulty || '—') : '—',
           m.course && Array.isArray(m.course.surfaces) && m.course.surfaces.length ? m.course.surfaces.map(s => `${s.type} ${s.pct}%`).join(', ') : '—',
-          m.opponentNames.join(', ') || '—'
+          m.opponentNames.join(', ') || 'no other teams expected at this time'
         ]),
-        startY: 29,
+        startY: 32,
         styles: { fontSize: 8.5 },
-        headStyles: { fillColor: [20, 20, 20], textColor: [255, 255, 255] },
+        headStyles: { fillColor: brandColor, textColor: [255, 255, 255] }, // Uses dynamic brand color
         alternateRowStyles: { fillColor: [245, 245, 245] }
       });
       doc.save(`${schoolSlug}_schedule.pdf`);
@@ -1077,10 +1109,29 @@
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF({ orientation: 'landscape' });
       const name = (schoolObj && schoolObj.name) || 'Team';
+      const brandColor = getTeamColorRgbArray();
+
+      // 1. Draw a branded accent bar at the top of the page
+      doc.setFillColor(brandColor[0], brandColor[1], brandColor[2]);
+      doc.rect(0, 0, doc.internal.pageSize.getWidth(), 5, 'F');
+
+      let textX = 14;
+      // 2. Dynamically add the school's logo if loaded
+      try {
+        const logoImg = document.getElementById('school-logo');
+        if (logoImg && logoImg.complete && logoImg.naturalWidth > 0 && !logoImg.src.includes('logob.png')) {
+          doc.addImage(logoImg, 'PNG', 14, 10, 15, 15);
+          textX = 34; // Shift header text to the right to make room for the logo
+        }
+      } catch (e) {
+        console.error("Could not add logo to PDF:", e);
+      }
+
+      // 3. Document Headers
       doc.setFontSize(18); doc.setFont('helvetica', 'bold');
-      doc.text(`${name} — Performance Report`, 14, 16);
+      doc.text(`${name} — Performance Report`, textX, 18);
       doc.setFontSize(9); doc.setFont('helvetica', 'normal');
-      doc.text(`Mountain State Miles · Generated ${new Date().toLocaleDateString()} · Avg ${document.getElementById('avg-time').textContent} · Best ${document.getElementById('best-time').textContent}`, 14, 23);
+      doc.text(`Mountain State Miles · Generated ${new Date().toLocaleDateString()} · Avg ${document.getElementById('avg-time').textContent} · Best ${document.getElementById('best-time').textContent}`, textX, 24);
 
       const rows = [];
       performanceMeetsSorted.forEach(meet => {
@@ -1100,12 +1151,13 @@
         });
       });
 
+      // 4. Draw branded Table
       doc.autoTable({
         head: [['Date', 'Meet', 'Athlete', 'Gender', 'Time', 'Place', 'PR']],
         body: rows,
-        startY: 29,
+        startY: 32,
         styles: { fontSize: 8 },
-        headStyles: { fillColor: [20, 20, 20], textColor: [255, 255, 255] },
+        headStyles: { fillColor: brandColor, textColor: [255, 255, 255] }, // Uses dynamic brand color
         alternateRowStyles: { fillColor: [245, 245, 245] }
       });
       doc.save(`${schoolSlug}_performance.pdf`);
