@@ -121,19 +121,54 @@
   .breadcrumb a:hover{color:var(--trail);}
   .breadcrumb .sep{opacity:.5;}
 
-  /* ---------- course switcher chips ---------- */
-  .course-switcher{
-    max-width:var(--maxw); margin:14px auto 0; padding:0 20px;
-    display:flex; gap:8px; overflow-x:auto; scrollbar-width:none;
+ /* ---------- course grid (replaces switcher chips) ---------- */ 
+ .course-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 22px;
+    max-width: var(--maxw);
+    margin: 20px auto 60px;
+    padding: 0 20px;
   }
-  .course-switcher::-webkit-scrollbar{display:none;}
-  .chip{
-    flex:0 0 auto; padding:7px 14px; border-radius:999px; font-size:12.5px; font-weight:500;
-    background:var(--card); border:1px solid var(--card-border); color:var(--text-dim);
-    cursor:pointer; white-space:nowrap; transition:border-color .15s,color .15s,background .15s;
+  .course-card {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius);
+    padding: 24px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
   }
-  .chip:hover{color:var(--text); border-color:var(--trail-dim);}
-  .chip.active{background:var(--trail); color:#062018; border-color:transparent; font-weight:600;}
+  .course-card:hover {
+    transform: translateY(-4px);
+    border-color: var(--trail);
+    box-shadow: 0 10px 20px -10px rgba(47, 208, 163, 0.15);
+  }
+  .course-card-title {
+    font-family: 'Oswald', sans-serif;
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--text);
+    margin: 0;
+    letter-spacing: 0.3px;
+  }
+  .course-card-meta {
+    font-size: 13.5px;
+    color: var(--text-dim);
+    line-height: 1.5;
+  }
+  .course-card-footer {
+    margin-top: auto;
+    font-size: 13px;
+    color: var(--trail);
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding-top: 10px;
+  }
 
   /* ---------- hero ---------- */
   .hero{
@@ -561,12 +596,6 @@
   }
 
   // ---------- Firebase merge: crosscountry/courses + local DEFAULT_COURSES fallback ----------
-  // Firebase holds the "real" course records (name/slug/location/distance/difficulty/
-  // description + newer video_url/gpx_url/notes/surfaces fields as they get filled in via
-  // course-admin.html). Until every course is fully populated there, we backfill any missing
-  // media/notes/surfaces fields from the legacy hardcoded DEFAULT_COURSES array, matched first
-  // by slug and then by name (older Firebase docs, e.g. "cabell", don't share a slug with the
-  // legacy "cabell-midland" entry even though they're the same course).
   async function mergeCoursesFromFirebase() {
     if (typeof window.getAllCourses !== 'function') return;
 
@@ -613,14 +642,53 @@
       };
     }).filter(c => c.slug);
 
-    // Keep any legacy hardcoded-only courses that have no Firebase counterpart yet,
-    // so nothing currently visible on the page regresses while data migrates.
     DEFAULT_COURSES.forEach(c => {
       const alreadyPresent = consumedSlugs.has(c.slug) || merged.some(m => m.slug === c.slug);
       if (!alreadyPresent) merged.push(c);
     });
 
     if (merged.length) COURSES = merged;
+  }
+
+  // ---------- Main Course Grid View ----------
+  function showCourseList() {
+    document.title = `Courses | Mountain State Miles`;
+    document.getElementById('breadcrumb-course').textContent = 'All Courses';
+
+    const switcher = document.getElementById('course-switcher');
+    if (switcher) switcher.style.display = 'none';
+
+    const gridHtml = COURSES.map(c => `
+      <div class="course-card" onclick="loadCourse('${c.slug}', true)">
+        <h3 class="course-card-title">${c.name}</h3>
+        <div class="course-card-meta">
+          ${c.notes ? c.notes.substring(0, 90) + '...' : 'Interactive course layout, 3D profile, and terrain metrics.'}
+        </div>
+        <div class="course-card-footer">
+          View Detailed Profile &rarr;
+        </div>
+      </div>
+    `).join('');
+
+    document.getElementById('page-content').innerHTML = `
+      <section class="hero" style="padding-bottom: 10px;">
+        <div class="hero-title-block">
+          <div class="eyebrow"><span class="dot"></span> Directory</div>
+          <h1 class="course-title">Select a Course</h1>
+          <p class="course-sub">Choose a course below to view its interactive map, 3D fly-through, and race predictor.</p>
+        </div>
+      </section>
+      <div class="course-grid">
+        ${gridHtml}
+      </div>
+    `;
+
+    const url = new URL(window.location.href);
+    url.searchParams.delete('course');
+    window.history.pushState({}, '', url);
+    
+    if (map) { map.remove(); map = null; }
+    if (activeElevationChart) { activeElevationChart.destroy(); activeElevationChart = null; }
   }
 
   // ---------- page shell for a course ----------
@@ -640,6 +708,10 @@
     }).join('');
 
     return `
+      <div style="max-width: var(--maxw); margin: 0 auto; padding: 0 20px;">
+        <button class="btn" onclick="showCourseList()" style="margin-bottom: 10px;">&larr; Back to All Courses</button>
+      </div>
+      
       <section class="hero">
         <div class="hero-title-block">
           <div class="eyebrow"><span class="dot"></span> Course Profile Dashboard</div>
@@ -818,17 +890,7 @@
     </div>`;
   }
 
-  function renderSwitcher(activeSlug) {
-    const el = document.getElementById('course-switcher');
-    el.innerHTML = COURSES.map(c => `
-      <button class="chip ${c.slug === activeSlug ? 'active' : ''}" data-slug="${c.slug}">${c.name}</button>
-    `).join('');
-    el.querySelectorAll('.chip').forEach(btn => {
-      btn.addEventListener('click', () => loadCourse(btn.dataset.slug, true));
-    });
-  }
-
-  // ---------- Course Records + Upcoming Meets (crosscountry/meets + crosscountry/results) ----------
+  // ---------- Course Records + Upcoming Meets ----------
   function formatMeetDate(dateStr) {
     if (!dateStr) return '';
     const d = new Date(dateStr + 'T00:00:00');
@@ -881,7 +943,6 @@
       const allMeets = await window.getAllMeets(5000);
       const courseMeets = (allMeets || []).filter(m => m.course_slug && m.course_slug === course.slug);
 
-      // ---- Upcoming meets ----
       if (upcomingPanel) {
         const todayStr = new Date().toISOString().slice(0, 10);
         const upcoming = courseMeets
@@ -899,7 +960,6 @@
         }
       }
 
-      // ---- Course records ----
       if (recordsPanel) {
         if (!courseMeets.length) {
           recordsPanel.innerHTML = '<div class="record-empty" style="padding:16px 18px;">No meets are linked to this course yet, so no records are available. Link meets to this course via course-admin.html to populate this panel.</div>';
@@ -938,7 +998,13 @@
   }
 
   function loadCourse(slug, pushState) {
-    const course = COURSES.find(c => c.slug === slug) || COURSES[0];
+    if (!slug) {
+      showCourseList();
+      return;
+    }
+
+    const course = COURSES.find(c => c.slug === slug);
+    
     if (!course) {
       document.getElementById('page-content').innerHTML = emptyState(slug);
       return;
@@ -947,7 +1013,7 @@
     document.title = `${course.name} — Course | Mountain State Miles`;
     document.getElementById('breadcrumb-course').textContent = course.name;
     document.getElementById('page-content').innerHTML = courseTemplate(course);
-    renderSwitcher(course.slug);
+    
     loadCourseRecordsAndUpcomingMeets(course);
 
     if (pushState) {
@@ -1037,87 +1103,79 @@
 
     // ---------- NEW ENGINE: Three.js Interactive 3D Orbit Component ----------
     function build3DTrackOrbitModel(trackPoints) {
-  const container = document.getElementById('canvas3d-wrap');
-  if (!container) return;
-  container.innerHTML = ''; 
+      const container = document.getElementById('canvas3d-wrap');
+      if (!container) return;
+      container.innerHTML = ''; 
 
-  const width = container.clientWidth;
-  const height = container.clientHeight;
+      const width = container.clientWidth;
+      const height = container.clientHeight;
 
-  scene3d = new THREE.Scene();
-  const cardColor = getComputedStyle(document.documentElement).getPropertyValue('--card').trim() || '#151a22';
-  scene3d.background = new THREE.Color(cardColor);
+      scene3d = new THREE.Scene();
+      const cardColor = getComputedStyle(document.documentElement).getPropertyValue('--card').trim() || '#151a22';
+      scene3d.background = new THREE.Color(cardColor);
 
-  // 1. FIXED: Set safe near/far planes to prevent track clipping
-  camera3d = new THREE.PerspectiveCamera(30, width / height, 0.1, 1000);
-  camera3d.position.set(0, 12, 30); // Higher vantage point to see elevation layout
-  camera3d.lookAt(0, 0, 0); 
+      camera3d = new THREE.PerspectiveCamera(30, width / height, 0.1, 1000);
+      camera3d.position.set(0, 12, 30); 
+      camera3d.lookAt(0, 0, 0); 
 
-  // 2. NEW: Add lighting to expose track elevation geometry (3D depth)
-  const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-  scene3d.add(ambientLight);
-  const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
-  dirLight.position.set(10, 20, 10);
-  scene3d.add(dirLight);
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+      scene3d.add(ambientLight);
+      const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+      dirLight.position.set(10, 20, 10);
+      scene3d.add(dirLight);
 
-  renderer3d = new THREE.WebGLRenderer({ antialias: true });
-  renderer3d.setSize(width, height);
-  renderer3d.setPixelRatio(window.devicePixelRatio);
-  container.appendChild(renderer3d.domElement);
+      renderer3d = new THREE.WebGLRenderer({ antialias: true });
+      renderer3d.setSize(width, height);
+      renderer3d.setPixelRatio(window.devicePixelRatio);
+      container.appendChild(renderer3d.domElement);
 
-  let minLat = Infinity, maxLat = -Infinity;
-  let minLon = Infinity, maxLon = -Infinity;
-  let minEle = Infinity, maxEle = -Infinity;
+      let minLat = Infinity, maxLat = -Infinity;
+      let minLon = Infinity, maxLon = -Infinity;
+      let minEle = Infinity, maxEle = -Infinity;
 
-  trackPoints.forEach(p => {
-    if (p.lat < minLat) minLat = p.lat; if (p.lat > maxLat) maxLat = p.lat;
-    if (p.lon < minLon) minLon = p.lon; if (p.lon > maxLon) maxLon = p.lon;
-    if (p.ele < minEle) minEle = p.ele; if (p.ele > maxEle) maxEle = p.ele;
-  });
+      trackPoints.forEach(p => {
+        if (p.lat < minLat) minLat = p.lat; if (p.lat > maxLat) maxLat = p.lat;
+        if (p.lon < minLon) minLon = p.lon; if (p.lon > maxLon) maxLon = p.lon;
+        if (p.ele < minEle) minEle = p.ele; if (p.ele > maxEle) maxEle = p.ele;
+      });
 
-  const centerLat = (minLat + maxLat) / 2;
-  const centerLon = (minLon + maxLon) / 2;
-  const centerEle = (minEle + maxEle) / 2;
+      const centerLat = (minLat + maxLat) / 2;
+      const centerLon = (minLon + maxLon) / 2;
+      const centerEle = (minEle + maxEle) / 2;
 
-  // 3. FIXED: Mercator/Cosine approximation to prevent track stretching
-  const latCorrection = Math.cos(centerLat * Math.PI / 180);
-  const deltaLat = maxLat - minLat;
-  const deltaLon = (maxLon - minLon) * latCorrection;
-  
-  const maxDiff = Math.max(deltaLat, deltaLon) || 1;
-  const geoScale = 14 / maxDiff;
-  
-  // Keep elevation pronounced but relative to the map scale
-  const eleScale = (maxEle - minEle !== 0) ? 2.5 / (maxEle - minEle) : 1; 
+      const latCorrection = Math.cos(centerLat * Math.PI / 180);
+      const deltaLat = maxLat - minLat;
+      const deltaLon = (maxLon - minLon) * latCorrection;
+      
+      const maxDiff = Math.max(deltaLat, deltaLon) || 1;
+      const geoScale = 14 / maxDiff;
+      
+      const eleScale = (maxEle - minEle !== 0) ? 2.5 / (maxEle - minEle) : 1; 
 
-  trackGroup3d = new THREE.Group();
+      trackGroup3d = new THREE.Group();
 
-  const threePointsArray = trackPoints.map(p => {
-    // 4. FIXED: Lon maps to X (East/West), Lat maps to Z (North/South)
-    return new THREE.Vector3(
-      (p.lon - centerLon) * geoScale * latCorrection,
-      (p.ele - centerEle) * eleScale, 
-      -(p.lat - centerLat) * geoScale  // Negated because -Z is "forward/North" in Three.js
-    );
-  });
+      const threePointsArray = trackPoints.map(p => {
+        return new THREE.Vector3(
+          (p.lon - centerLon) * geoScale * latCorrection,
+          (p.ele - centerEle) * eleScale, 
+          -(p.lat - centerLat) * geoScale  
+        );
+      });
 
-  // Inside build3DTrackOrbitModel, replace the tube geometry logic with this:
-  const trackCurve = new THREE.CatmullRomCurve3(threePointsArray);
+      const trackCurve = new THREE.CatmullRomCurve3(threePointsArray);
       const tubeGeometry = new THREE.TubeGeometry(trackCurve, Math.min(300, trackPoints.length), 0.14, 8, false);
       
-      // Generate colors based on slope (Heatmap effect)
       const colors = [];
       for (let i = 0; i < tubeGeometry.attributes.position.count; i++) {
-        // Sample points to find local slope
         const t = i / tubeGeometry.attributes.position.count;
         const pt1 = trackCurve.getPoint(Math.max(0, t - 0.01));
         const pt2 = trackCurve.getPoint(Math.min(1, t + 0.01));
         const slope = pt2.y - pt1.y;
 
         const color = new THREE.Color();
-        if (slope > 0.05) color.setHex(0xe8654f); // Red for steep uphill
-        else if (slope < -0.05) color.setHex(0x2fd0a3); // Green for downhill
-        else color.setHex(0xf2a65a); // Orange for flat/rolling
+        if (slope > 0.05) color.setHex(0xe8654f); 
+        else if (slope < -0.05) color.setHex(0x2fd0a3); 
+        else color.setHex(0xf2a65a); 
 
         colors.push(color.r, color.g, color.b);
       }
@@ -1125,180 +1183,168 @@
       tubeGeometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
       
       const tubeMaterial = new THREE.MeshBasicMaterial({ 
-        vertexColors: true, // Tell Three.js to use the heatmap colors
+        vertexColors: true,
         wireframe: false 
       });
       const lineMesh = new THREE.Mesh(tubeGeometry, tubeMaterial);
       trackGroup3d.add(lineMesh);
 
-  // Markers use standard materials to catch lighting highlights
-  const markerMaterialStart = new THREE.MeshStandardMaterial({ color: 0x2fd0a3, roughness: 0.2 });
-  const markerMaterialEnd = new THREE.MeshStandardMaterial({ color: 0xe8654f, roughness: 0.2 });
+      const markerMaterialStart = new THREE.MeshStandardMaterial({ color: 0x2fd0a3, roughness: 0.2 });
+      const markerMaterialEnd = new THREE.MeshStandardMaterial({ color: 0xe8654f, roughness: 0.2 });
 
-  const startSphere = new THREE.Mesh(new THREE.SphereGeometry(0.35, 16, 16), markerMaterialStart);
-  startSphere.position.copy(threePointsArray[0]);
-  trackGroup3d.add(startSphere);
+      const startSphere = new THREE.Mesh(new THREE.SphereGeometry(0.35, 16, 16), markerMaterialStart);
+      startSphere.position.copy(threePointsArray[0]);
+      trackGroup3d.add(startSphere);
 
-  const finishSphere = new THREE.Mesh(new THREE.SphereGeometry(0.35, 16, 16), markerMaterialEnd);
-  finishSphere.position.copy(threePointsArray[threePointsArray.length - 1]);
-  trackGroup3d.add(finishSphere);
+      const finishSphere = new THREE.Mesh(new THREE.SphereGeometry(0.35, 16, 16), markerMaterialEnd);
+      finishSphere.position.copy(threePointsArray[threePointsArray.length - 1]);
+      trackGroup3d.add(finishSphere);
 
-  // Floor grid adjusted to look clean under the centered elevation path
-  const gridSystem = new THREE.GridHelper(20, 20, 0x5f6b7a, 0x232b36);
-  gridSystem.position.y = -3;
-  scene3d.add(gridSystem);
-  scene3d.add(trackGroup3d);
+      const gridSystem = new THREE.GridHelper(20, 20, 0x5f6b7a, 0x232b36);
+      gridSystem.position.y = -3;
+      scene3d.add(gridSystem);
+      scene3d.add(trackGroup3d);
 
-  // Mouse & touch interaction handlers 
-  let isInteracting = false;
-  let lastMousePos = { x: 0, y: 0 };
+      let isInteracting = false;
+      let lastMousePos = { x: 0, y: 0 };
 
-  container.addEventListener('mousedown', (e) => {
-    isInteracting = true;
-    lastMousePos = { x: e.clientX, y: e.clientY };
-  });
+      container.addEventListener('mousedown', (e) => {
+        isInteracting = true;
+        lastMousePos = { x: e.clientX, y: e.clientY };
+      });
 
-  container.addEventListener('mousemove', (e) => {
-    if (!isInteracting) return;
-    const deltaX = e.clientX - lastMousePos.x;
-    const deltaY = e.clientY - lastMousePos.y;
-    trackGroup3d.rotation.y += deltaX * 0.007;
-    // Constrain X rotation to prevent the track from turning completely upside down
-    trackGroup3d.rotation.x = Math.max(-Math.PI/3, Math.min(Math.PI/3, trackGroup3d.rotation.x + deltaY * 0.007));
-    lastMousePos = { x: e.clientX, y: e.clientY };
-  });
+      container.addEventListener('mousemove', (e) => {
+        if (!isInteracting) return;
+        const deltaX = e.clientX - lastMousePos.x;
+        const deltaY = e.clientY - lastMousePos.y;
+        trackGroup3d.rotation.y += deltaX * 0.007;
+        trackGroup3d.rotation.x = Math.max(-Math.PI/3, Math.min(Math.PI/3, trackGroup3d.rotation.x + deltaY * 0.007));
+        lastMousePos = { x: e.clientX, y: e.clientY };
+      });
 
-  window.addEventListener('mouseup', () => isInteracting = false);
+      window.addEventListener('mouseup', () => isInteracting = false);
 
-  container.addEventListener('touchstart', (e) => {
-    if(e.touches.length === 1) {
-      isInteracting = true;
-      lastMousePos = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      container.addEventListener('touchstart', (e) => {
+        if(e.touches.length === 1) {
+          isInteracting = true;
+          lastMousePos = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        }
+      }, {passive: true});
+
+      container.addEventListener('touchmove', (e) => {
+        if (!isInteracting || e.touches.length !== 1) return;
+        const deltaX = e.touches[0].clientX - lastMousePos.x;
+        const deltaY = e.touches[0].clientY - lastMousePos.y;
+        trackGroup3d.rotation.y += deltaX * 0.007;
+        trackGroup3d.rotation.x = Math.max(-Math.PI/3, Math.min(Math.PI/3, trackGroup3d.rotation.x + deltaY * 0.007));
+        lastMousePos = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      }, {passive: true});
+
+      window.addEventListener('touchend', () => isInteracting = false);
+
+      function renderFrameLoop() {
+        if (!renderer3d) return;
+        requestAnimationFrame(renderFrameLoop);
+        if (!isInteracting) {
+          trackGroup3d.rotation.y += 0.0025; 
+        }
+        renderer3d.render(scene3d, camera3d);
+      }
+      renderFrameLoop();
     }
-  }, {passive: true});
-
-  container.addEventListener('touchmove', (e) => {
-    if (!isInteracting || e.touches.length !== 1) return;
-    const deltaX = e.touches[0].clientX - lastMousePos.x;
-    const deltaY = e.touches[0].clientY - lastMousePos.y;
-    trackGroup3d.rotation.y += deltaX * 0.007;
-    trackGroup3d.rotation.x = Math.max(-Math.PI/3, Math.min(Math.PI/3, trackGroup3d.rotation.x + deltaY * 0.007));
-    lastMousePos = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-  }, {passive: true});
-
-  window.addEventListener('touchend', () => isInteracting = false);
-
-  function renderFrameLoop() {
-    if (!renderer3d) return;
-    requestAnimationFrame(renderFrameLoop);
-    if (!isInteracting) {
-      trackGroup3d.rotation.y += 0.0025; 
-    }
-    renderer3d.render(scene3d, camera3d);
-  }
-  renderFrameLoop();
-}
-
 
    // ---------- ADVANCED ENGINE: Grade-Adjusted Topographical Predictor ----------
-function runPredictorCalculations(currentCourse, points) {
-  const minEl = document.getElementById('pred-min');
-  const secEl = document.getElementById('pred-sec');
-  if (!minEl || !secEl || !points.length) return;
+    function runPredictorCalculations(currentCourse, points) {
+      const minEl = document.getElementById('pred-min');
+      const secEl = document.getElementById('pred-sec');
+      if (!minEl || !secEl || !points.length) return;
 
-  const userMinutes = parseInt(minEl.value) || 17;
-  const userSeconds = parseInt(secEl.value) || 0;
-  
-  // Base pace per mile in seconds
-  const totalBaseTrackSeconds = (userMinutes * 60) + userSeconds;
-  const basePacePerMile = totalBaseTrackSeconds / 3.10686; 
+      const userMinutes = parseInt(minEl.value) || 17;
+      const userSeconds = parseInt(secEl.value) || 0;
+      
+      const totalBaseTrackSeconds = (userMinutes * 60) + userSeconds;
+      const basePacePerMile = totalBaseTrackSeconds / 3.10686; 
 
-  const atmosphericMultiplier = parseFloat(document.getElementById('pred-weather').value) || 1.00;
+      const atmosphericMultiplier = parseFloat(document.getElementById('pred-weather').value) || 1.00;
 
-  let surfaceMultiplier = 1.02; // Default fallback
-  if (currentCourse.surfaces && currentCourse.surfaces.length > 0) {
-    surfaceMultiplier = 0;
-    currentCourse.surfaces.forEach(s => {
-      const weight = SURFACE_MULTIPLIERS[s.type] || 1.02;
-      surfaceMultiplier += (s.pct / 100) * weight;
-    });
-  }
+      let surfaceMultiplier = 1.02; 
+      if (currentCourse.surfaces && currentCourse.surfaces.length > 0) {
+        surfaceMultiplier = 0;
+        currentCourse.surfaces.forEach(s => {
+          const weight = SURFACE_MULTIPLIERS[s.type] || 1.02;
+          surfaceMultiplier += (s.pct / 100) * weight;
+        });
+      }
 
-  // Slice course into mile segments to calculate actual gradient impact
-  let totalDistanceMi = 0;
-  let splits = [];
-  let currentSplit = { dist: 0, gain: 0, loss: 0, points: 0 };
-  let currentMileTarget = 1;
+      let totalDistanceMi = 0;
+      let splits = [];
+      let currentSplit = { dist: 0, gain: 0, loss: 0, points: 0 };
+      let currentMileTarget = 1;
 
-  for (let i = 1; i < points.length; i++) {
-    const stepDist = haversine(points[i-1].lat, points[i-1].lon, points[i].lat, points[i].lon) / 1609.34;
-    totalDistanceMi += stepDist;
-    currentSplit.dist += stepDist;
-    currentSplit.points++;
+      for (let i = 1; i < points.length; i++) {
+        const stepDist = haversine(points[i-1].lat, points[i-1].lon, points[i].lat, points[i].lon) / 1609.34;
+        totalDistanceMi += stepDist;
+        currentSplit.dist += stepDist;
+        currentSplit.points++;
 
-    const stepElev = points[i].ele - points[i-1].ele; // in meters
-    if (stepElev > 0) currentSplit.gain += stepElev;
-    else currentSplit.loss -= stepElev;
+        const stepElev = points[i].ele - points[i-1].ele; 
+        if (stepElev > 0) currentSplit.gain += stepElev;
+        else currentSplit.loss -= stepElev;
 
-    // When crossing a mile marker (or finishing the course)
-    if (totalDistanceMi >= currentMileTarget || i === points.length - 1) {
-      splits.push({...currentSplit, mileLabel: totalDistanceMi >= 3.1 ? 'Final Kick' : `Mile ${currentMileTarget}`});
-      currentSplit = { dist: 0, gain: 0, loss: 0, points: 0 };
-      currentMileTarget++;
+        if (totalDistanceMi >= currentMileTarget || i === points.length - 1) {
+          splits.push({...currentSplit, mileLabel: totalDistanceMi >= 3.1 ? 'Final Kick' : `Mile ${currentMileTarget}`});
+          currentSplit = { dist: 0, gain: 0, loss: 0, points: 0 };
+          currentMileTarget++;
+        }
+      }
+
+      let predictedTotalSeconds = 0;
+      let splitsHtml = `
+        <tr style="border-bottom: 1px solid var(--card-border); color: var(--text-faint); font-size:10.5px; text-transform:uppercase;">
+          <th style="padding: 6px 0;">Segment</th>
+          <th>Topo Data (Gain/Loss)</th>
+          <th style="text-align: right;">Predicted Split</th>
+        </tr>
+      `;
+
+      const standardPad = (val) => val < 10 ? '0' + val : val;
+      const segmentFormatter = (secs) => `${Math.floor(secs / 60)}:${standardPad(Math.floor(secs % 60))}`;
+
+      splits.forEach(split => {
+        const netElevChangeMi = ((split.gain - split.loss) * 3.28084) / 5280; 
+        const gradient = (netElevChangeMi / split.dist) * 100;
+        
+        let gradeMultiplier = 1.0;
+        if (gradient > 0) gradeMultiplier += (gradient * 0.033);
+        else if (gradient < 0 && gradient > -10) gradeMultiplier += (gradient * 0.015);
+        else if (gradient <= -10) gradeMultiplier += 0.05;
+
+        const combinedMultiplier = gradeMultiplier * atmosphericMultiplier * surfaceMultiplier;
+        const splitSeconds = (basePacePerMile * split.dist) * combinedMultiplier;
+        predictedTotalSeconds += splitSeconds;
+
+        splitsHtml += `
+          <tr style="border-bottom: 1px solid var(--ridge);">
+            <td style="padding: 7px 0; color: var(--text); font-weight:500;">${split.mileLabel}</td>
+            <td style="color: var(--text-dim); font-size:12px;">
+              <span style="color:#e8654f">↑${Math.round(split.gain * 3.28084)}ft</span> / 
+              <span style="color:#2fd0a3">↓${Math.round(split.loss * 3.28084)}ft</span>
+            </td>
+            <td style="text-align: right; font-family: monospace; color: var(--trail); font-weight:600; font-size:13.5px;">
+              ${segmentFormatter(splitSeconds)}
+            </td>
+          </tr>
+        `;
+      });
+
+      const parsedOutputMinutes = Math.floor(predictedTotalSeconds / 60);
+      const parsedOutputSeconds = Math.floor(predictedTotalSeconds % 60);
+
+      document.getElementById('predicted-time-display').textContent = `${parsedOutputMinutes}:${standardPad(parsedOutputSeconds)}`;
+      const netOverheadSeconds = Math.round(predictedTotalSeconds - totalBaseTrackSeconds);
+      document.getElementById('predicted-diff-label').textContent = `Predicted XC Conversion (+${netOverheadSeconds}s vs flat track PR)`;
+      document.getElementById('splits-table').innerHTML = splitsHtml;
     }
-  }
-
-  // Minetti's equation simplified: Uphills cost more time than downhills save
-  // We apply a gradient multiplier to the base pace for each specific split
-  let predictedTotalSeconds = 0;
-  let splitsHtml = `
-    <tr style="border-bottom: 1px solid var(--card-border); color: var(--text-faint); font-size:10.5px; text-transform:uppercase;">
-      <th style="padding: 6px 0;">Segment</th>
-      <th>Topo Data (Gain/Loss)</th>
-      <th style="text-align: right;">Predicted Split</th>
-    </tr>
-  `;
-
-  const standardPad = (val) => val < 10 ? '0' + val : val;
-  const segmentFormatter = (secs) => `${Math.floor(secs / 60)}:${standardPad(Math.floor(secs % 60))}`;
-
-  splits.forEach(split => {
-    // Calculate average gradient for this specific mile (%)
-    const netElevChangeMi = ((split.gain - split.loss) * 3.28084) / 5280; 
-    const gradient = (netElevChangeMi / split.dist) * 100;
-    
-    // Grade adjustment: +1% grade slows you by ~3%, -1% speeds you by ~1.5%
-    let gradeMultiplier = 1.0;
-    if (gradient > 0) gradeMultiplier += (gradient * 0.033);
-    else if (gradient < 0 && gradient > -10) gradeMultiplier += (gradient * 0.015);
-    else if (gradient <= -10) gradeMultiplier += 0.05; // extremely steep downhills slow you down due to braking
-
-    const combinedMultiplier = gradeMultiplier * atmosphericMultiplier * surfaceMultiplier;
-    const splitSeconds = (basePacePerMile * split.dist) * combinedMultiplier;
-    predictedTotalSeconds += splitSeconds;
-
-    splitsHtml += `
-      <tr style="border-bottom: 1px solid var(--ridge);">
-        <td style="padding: 7px 0; color: var(--text); font-weight:500;">${split.mileLabel}</td>
-        <td style="color: var(--text-dim); font-size:12px;">
-          <span style="color:#e8654f">↑${Math.round(split.gain * 3.28084)}ft</span> / 
-          <span style="color:#2fd0a3">↓${Math.round(split.loss * 3.28084)}ft</span>
-        </td>
-        <td style="text-align: right; font-family: monospace; color: var(--trail); font-weight:600; font-size:13.5px;">
-          ${segmentFormatter(splitSeconds)}
-        </td>
-      </tr>
-    `;
-  });
-
-  const parsedOutputMinutes = Math.floor(predictedTotalSeconds / 60);
-  const parsedOutputSeconds = Math.floor(predictedTotalSeconds % 60);
-
-  document.getElementById('predicted-time-display').textContent = `${parsedOutputMinutes}:${standardPad(parsedOutputSeconds)}`;
-  const netOverheadSeconds = Math.round(predictedTotalSeconds - totalBaseTrackSeconds);
-  document.getElementById('predicted-diff-label').textContent = `Predicted XC Conversion (+${netOverheadSeconds}s vs flat track PR)`;
-  document.getElementById('splits-table').innerHTML = splitsHtml;
-}
 
     // ---------- Interactive Elevation Profile Logic ----------
     function buildElevationChart(fullTrackPoints) {
@@ -1417,18 +1463,15 @@ function runPredictorCalculations(currentCourse, points) {
   }
 
   async function boot() {
-    // Load the live crosscountry/courses data from Firebase and merge it with the
-    // legacy DEFAULT_COURSES array before rendering, so the switcher/course detail
-    // view reflect real course records as soon as they're populated via course-admin.html.
     await mergeCoursesFromFirebase();
     const params = new URLSearchParams(window.location.search);
-    const slug = params.get('course') || (COURSES[0] && COURSES[0].slug);
+    const slug = params.get('course'); // No fallback! Let it be null to trigger the list view
     loadCourse(slug, false);
   }
 
   window.addEventListener('popstate', () => {
     const params = new URLSearchParams(window.location.search);
-    const slug = params.get('course') || (COURSES[0] && COURSES[0].slug);
+    const slug = params.get('course');
     loadCourse(slug, false);
   });
 
