@@ -91,7 +91,7 @@
                 </div>
             </div>
 
-            <h2 class="section-title">Recent Meets</h2>
+            <h2 class="section-title">Upcoming Meets</h2>
             <div id="meet-list" class="meet-grid">Loading recent meets...</div>
         </main>
 
@@ -103,49 +103,74 @@
         <script src="firebase-config.js"></script>
         <script src="firebase-helpers.js"></script>
         <script>
-            async function loadRecentMeets() {
-                const container = document.getElementById("meet-list");
-                try {
-                    const meets = await getAllMeets(10);
-                    if (!meets.length) {
-                        container.innerHTML = "<p>No recent meets found.</p>";
-                        return;
-                    }
-                    function formatDate(dateString) {
-                        if (!dateString) return "Date TBD";
-                        const parts = dateString.split("-");
-                        if (parts.length === 3) {
-                            const year = parseInt(parts[0], 10);
-                            const month = parseInt(parts[1], 10) - 1;
-                            const day = parseInt(parts[2], 10);
-                            const date = new Date(year, month, day);
-                            return date.toLocaleDateString();
-                        }
-                        return new Date(dateString).toLocaleDateString();
-                    }
-                    container.innerHTML = meets
-                        .map((meet) => {
-                            const date = formatDate(meet.date);
-                            const location = meet.location || "";
-                            return `
-            <a href="meet.html?slug=${meet.slug}" class="meet-card">
-              <h5 class="meet-card-title">${meet.name}</h5>
-              <h6 class="meet-card-date">📅 ${date}</h6>
-              ${location ? `<h6 class="meet-card-location">📍 ${location}</h6>` : ""}
-            </a>
-          `;
-                        })
-                        .join("");
-                } catch (e) {
-                    console.error("Error loading meets:", e);
-                    container.innerHTML = "<p>Error loading recent meets.</p>";
-                } finally {
-                    document.dispatchEvent(new Event("MSMDataLoaded"));
-                }
-            }
-            document.addEventListener("DOMContentLoaded", () => {
-                loadRecentMeets();
-            });
+           async function loadClosestFutureMeets() {
+  const container = document.getElementById("meet-list");
+  try {
+    // 1. Fetch all meets from your API helper
+    const meets = await getAllMeets(); 
+    
+    if (!meets || !meets.length) {
+      container.innerHTML = "<p>No meets found.</p>";
+      return;
+    }
+
+    // 2. Get the start of today's date for accurate comparisons
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // 3. Filter for future dates, sort chronologically, and take the top 10
+    const upcomingMeets = meets
+      .filter((meet) => {
+        if (!meet.date) return false;
+        const meetDate = new Date(meet.date);
+        return meetDate >= today; // Keep only today or future dates
+      })
+      .sort((a, b) => new Date(a.date) - new Date(b.date)) // Closest date first
+      .slice(0, 10); // Take the top 10 closest future events
+
+    if (!upcomingMeets.length) {
+      container.innerHTML = "<p>No upcoming meets scheduled.</p>";
+      return;
+    }
+
+    function formatDate(dateString) {
+      if (!dateString) return "Date TBD";
+      const parts = dateString.split("-");
+      if (parts.length === 3) {
+        const year = parseInt(parts[0], 10);
+        const month = parseInt(parts[1], 10) - 1;
+        const day = parseInt(parts[2], 10);
+        const date = new Date(year, month, day);
+        return date.toLocaleDateString();
+      }
+      return new Date(dateString).toLocaleDateString();
+    }
+
+    container.innerHTML = upcomingMeets
+      .map((meet) => {
+        const date = formatDate(meet.date);
+        const location = meet.location || "";
+        return `
+          <a href="meet.html?slug=${meet.slug}" class="meet-card">
+            <h5 class="meet-card-title">${meet.name}</h5>
+            <h6 class="meet-card-date">📅 ${date}</h6>
+            ${location ? `<h6 class="meet-card-location">📍 ${location}</h6>` : ""}
+          </a>
+        `;
+      })
+      .join("");
+  } catch (e) {
+    console.error("Error loading meets:", e);
+    container.innerHTML = "<p>Error loading upcoming meets.</p>";
+  } finally {
+    document.dispatchEvent(new Event("MSMDataLoaded"));
+  }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  loadClosestFutureMeets();
+});
+
         </script>
     </body>
 </html>

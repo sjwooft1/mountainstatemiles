@@ -14,8 +14,8 @@
   <meta name="description" content="WV running results, rankings, times, rosters, and meet data — Mountain State Miles." />
   <meta name="keywords" content="WVXC, WV Track, West Virginia Running, Cross Country Results, WV HS Running, Mountain State Miles" />
   <link rel="stylesheet" href="/assets/main.css" />
-  
-  
+  <script src="/assets/components.js" defer></script>
+  <script src="/assets/theme-toggle.js" defer></script>
   <script>
     window.addEventListener("DOMContentLoaded", () => {
       const params = new URLSearchParams(window.location.search);
@@ -26,7 +26,84 @@
     });
   </script>
 
-  
+  <style>
+    @font-face {
+      font-family: 'Aqeon Demo';
+      src: url('../assets/Aqeon Demo Font.ttf') format('truetype');
+    }
+    :root {
+      --font-display: 'Aqeon Demo', sans-serif;
+      --radius-lg: 12px;
+    }
+
+    /* Hero & Stat Strip (Matches schools.html) */
+    .page-hero {
+      max-width: 900px; margin: 0 auto 10px; text-align: center; animation: fadeUp 0.4s ease both;
+    }
+    .page-hero-sub {
+      color: var(--text-secondary); font-size: 1.05rem; max-width: 620px; margin: 0 auto 20px; line-height: 1.5;
+    }
+    .section-title {
+      font-family: var(--font-display); font-size: 2.5rem; font-weight: 800;
+      color: var(--text-primary); margin: 0 0 10px 0; letter-spacing: -0.02em;
+    }
+    .stat-strip {
+      display: flex; justify-content: center; gap: 14px; flex-wrap: wrap; margin: 24px 0 30px;
+    }
+    .mini-stat {
+      min-width: 120px; padding: 14px 22px; border: 1px solid var(--border);
+      border-radius: var(--radius-lg); background: var(--bg-primary); text-align: center;
+      box-shadow: 0 2px 8px var(--shadow-light);
+    }
+    .mini-stat-num {
+      display: block; font-family: var(--font-display); font-size: 1.8rem; font-weight: 800; 
+      letter-spacing: -0.02em; color: var(--text-primary); line-height: 1;
+    }
+    .mini-stat-lbl {
+      display: block; margin-top: 4px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; 
+      letter-spacing: 0.06em; color: var(--text-tertiary);
+    }
+
+    /* Interactive Pill Buttons */
+    .btn-pill {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      padding: 10px 22px; background: var(--primary); color: var(--bg-primary);
+      border-radius: 30px; font-weight: 600; font-size: 0.95rem; text-decoration: none;
+      transition: transform 0.2s, box-shadow 0.2s, background 0.2s; border: none; cursor: pointer;
+    }
+    .btn-pill:hover {
+      transform: translateY(-2px); box-shadow: 0 6px 16px var(--shadow-light); filter: brightness(1.1);
+    }
+    .btn-pill.course-btn {
+      background: linear-gradient(135deg, #2fd0a3, #1a5f4c); color: #ffffff;
+      box-shadow: 0 4px 14px rgba(47, 208, 163, 0.3);
+    }
+    
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* Fix Selector Layout */
+    #selector-card {
+      background: var(--bg-primary); border: 1px solid var(--border); border-radius: var(--radius-lg);
+      padding: 24px; box-shadow: 0 4px 16px var(--shadow-light); text-align: center; margin-bottom: 30px;
+    }
+    .tabs-row { display: flex; justify-content: center; gap: 12px; margin-bottom: 20px; }
+    .gender-tab {
+      padding: 8px 30px; font-weight: 700; font-size: 0.95rem; border-radius: 20px;
+      border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-secondary);
+      cursor: pointer; transition: all 0.2s ease;
+    }
+    .gender-tab.active { background: var(--primary); color: var(--bg-primary); border-color: var(--primary); }
+    #select-heading { font-family: var(--font-display); font-size: 1.5rem; color: var(--text-primary); margin-bottom: 4px; }
+    #select-sub { font-size: 0.9rem; color: var(--text-tertiary); margin-bottom: 20px; }
+    .race-buttons { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+    .race-button {
+      padding: 8px 18px; border-radius: 6px; font-weight: 600; font-size: 0.9rem; cursor: pointer; border: 1px solid var(--border); transition: all 0.2s;
+    }
+    .race-button.primary { background: var(--text-primary); color: var(--bg-primary); border-color: var(--text-primary); }
+    .race-button.secondary { background: var(--bg-secondary); color: var(--text-secondary); }
+    .race-button.secondary:hover { background: var(--border); }
+  </style>
+
   <script src="/assets/theme-toggle.js" defer></script>
   <script src="/assets/components.js" defer></script>
 </head>
@@ -34,29 +111,45 @@
 <body>
 
   <div id="global-header"></div>
+  <script src="/assets/msm-loader.js"></script>
 
-<script src="/assets/msm-loader.js"></script>
-<main class="content-section">
-      <h1 id="meet-title">Meet Results</h1>
-      <div id="meet-meta" class="meet-metadata"></div>
-      <div id="weather-widget" class="weather-widget" style="display:none; margin-top: 20px;"></div>
-      <div id="error" class="error-message" style="display:none;"></div>
+  <main class="content-section" style="max-width: 1100px; margin: 0 auto; padding: 40px 20px;">
+      
+      <!-- Styled Hero Section -->
+      <section class="page-hero">
+        <h1 class="section-title" id="meet-title">Loading Meet...</h1>
+        <div id="meet-meta" class="page-hero-sub">Retrieving data...</div>
+        
+        <div id="course-btn-container" style="margin-top: 10px;"></div>
 
-      <div id="selector" style="display:none; margin-top: 30px;">
+        <div class="stat-strip" id="meet-stats" style="display:none;">
+          <div class="mini-stat"><span class="mini-stat-num" id="stat-races">-</span><span class="mini-stat-lbl">Races</span></div>
+          <div class="mini-stat"><span class="mini-stat-num" id="stat-teams">-</span><span class="mini-stat-lbl">Teams</span></div>
+          <div class="mini-stat"><span class="mini-stat-num" id="stat-athletes">-</span><span class="mini-stat-lbl">Athletes</span></div>
+        </div>
+
+        <div id="weather-widget" class="weather-widget" style="display:none; margin-top: 20px;"></div>
+      </section>
+
+      <div id="error" class="error-message" style="display:none; text-align: center; color: var(--danger); padding: 20px; background: rgba(239, 68, 68, 0.1); border-radius: 8px; margin-bottom: 20px;"></div>
+
+      <!-- Selector -->
+      <div id="selector" style="display:none;">
         <div id="selector-card">
           <div class="tabs-row" role="tablist" aria-label="Gender tabs">
-            <button id="tab-boys" class="gender-tab">BOYS</button>
-            <button id="tab-girls" class="gender-tab">GIRLS</button>
+            <button id="tab-boys" class="gender-tab active">Boys Results</button>
+            <button id="tab-girls" class="gender-tab">Girls Results</button>
           </div>
-          <div id="select-heading">Select a Race</div>
-          <div id="select-sub">Choose which race results you want to view for this meet.</div>
+          <div id="select-heading">Select a Race Division</div>
+          <div id="select-sub">Filter times and team scores by specific divisions.</div>
           <div id="race-button-wrap" class="race-buttons"></div>
         </div>
       </div>
 
     <div id="results-box" class="results-box"></div>
   </main>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
   <script src="firebase-config.js"></script>
   <script src="firebase-helpers.js"></script>
@@ -86,7 +179,6 @@
       if (!gradYear) return '';
       const currentSeasonYear = 2025; 
       const diff = gradYear - (currentSeasonYear + 1);
-      
       const gradeMap = { 0: '12', 1: '11', 2: '10', 3: '9', 4: '8', 5: '7', 6: '6' };
       return gradeMap[diff] || gradYear; 
     }
@@ -128,38 +220,38 @@
         if (!currentMeetData) throw new Error("Meet not found.");
 
         document.getElementById("meet-title").textContent = currentMeetData.name;
-        metaDiv.innerHTML = `
-            <strong>Date:</strong> ${currentMeetData.date || 'TBA'} <span style="margin:0 10px">|</span> 
-            <strong>Location:</strong> ${currentMeetData.location || 'Unknown'}
-        `;
+        
+        const formattedDate = currentMeetData.date ? new Date(currentMeetData.date).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : 'Date TBA';
+        metaDiv.innerHTML = `<strong>${formattedDate}</strong> &nbsp;•&nbsp; ${currentMeetData.location || 'Location Unknown'}`;
 
-        // Course Viewer integration
-        const courseMap = {
-            'cabell midland': 'cabell-midland',
-            'mineral wells': 'chick-fil-a',
-            'meadowood': 'meadowood-park',
-            'pipestem': 'pipestem-state-park',
-            'south harrison': 'south-harrison',
-            'glen oak': 'glen-oak',
-            'holmdel': 'holmdel-park'
-        };
-
-        let courseSlug = null;
-        const locLower = (currentMeetData.location || '').toLowerCase();
-        for (const [key, cSlug] of Object.entries(courseMap)) {
-            if (locLower.includes(key)) {
-                courseSlug = cSlug;
-                break;
+        // Accurate Course Viewer Link Logic
+        let courseSlug = currentMeetData.course_slug || null; // Check Firebase slug first
+        
+        if (!courseSlug) {
+            // Text matching fallback
+            const courseMap = {
+                'cabell midland': 'cabell-midland',
+                'mineral wells': 'chick-fil-a',
+                'meadowood': 'meadowood-park',
+                'pipestem': 'pipestem-state-park',
+                'south harrison': 'south-harrison',
+                'glen oak': 'glen-oak',
+                'holmdel': 'holmdel-park'
+            };
+            const locLower = (currentMeetData.location || '').toLowerCase();
+            for (const [key, cSlug] of Object.entries(courseMap)) {
+                if (locLower.includes(key)) {
+                    courseSlug = cSlug;
+                    break;
+                }
             }
         }
 
         if (courseSlug) {
-            metaDiv.innerHTML += `
-                <div style="margin-top: 15px;">
-                    <a href="courses/course viewer.html?course=${courseSlug}" class="btn primary" style="background: var(--trail, #2fd0a3); color: #0b0e13; font-weight: 600; border: none; padding: 6px 14px; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px;">
-                        ▶️ View 3D Course & Flyover
-                    </a>
-                </div>
+            document.getElementById('course-btn-container').innerHTML = `
+                <a href="courses/course%20viewer.html?course=${courseSlug}" class="btn-pill course-btn">
+                    ▶️ View 3D Course & Flyover Map
+                </a>
             `;
         }
 
@@ -167,7 +259,7 @@
           loadWeatherForMeet(currentMeetData.location, currentMeetData.date);
         }
 
-        // Fetch schools once - used both for "teams coming" chips and to resolve result school names below.
+        // Fetch schools
         const schools = await window.getAllSchools();
         const schoolSlugToName = {};
         if (schools && schools.length) {
@@ -189,6 +281,15 @@
             r.school_name = schoolSlugToName[r.school_slug] || r.school_slug;
           }
         });
+        
+        // Populate Top Stats
+        const uniqueRaces = new Set(allResults.map(r => r.race_type)).size;
+        const uniqueTeams = new Set(allResults.map(r => r.school_slug || r.school_name || r.school)).size;
+        
+        document.getElementById('stat-races').textContent = uniqueRaces || '-';
+        document.getElementById('stat-teams').textContent = uniqueTeams || '-';
+        document.getElementById('stat-athletes').textContent = allResults.length || '-';
+        document.getElementById('meet-stats').style.display = 'flex';
 
         selectorDiv.style.display = "block";
         setupGenderTabs();
@@ -212,23 +313,23 @@
       if (teams.length === 0) return;
 
       const metaDiv = document.getElementById("meet-meta");
-      const chipStyle = "display:inline-flex;align-items:center;gap:6px;padding:5px 10px 5px 6px;margin:4px 4px 0 0;border-radius:20px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);text-decoration:none;color:inherit;font-size:0.85rem;font-weight:600;";
-      const imgStyle = "width:20px;height:20px;border-radius:50%;object-fit:cover;background:#fff;";
+      const chipStyle = "display:inline-flex;align-items:center;gap:6px;padding:5px 12px;margin:4px 4px 0 0;border-radius:20px;background:var(--bg-secondary);border:1px solid var(--border);text-decoration:none;color:var(--text-primary);font-size:0.85rem;font-weight:600;transition:transform 0.2s,box-shadow 0.2s;";
+      const imgStyle = "width:20px;height:20px;border-radius:50%;object-fit:contain;";
 
       const chipsHtml = teams.map(function (slug) {
         const name = schoolSlugToName[slug] || slug.replace(/-/g, ' ');
         const logoUrl = "/assets/team logos/" + slug + ".png";
-        return '<a href="school.html?slug=' + slug + '" class="team-chip" style="' + chipStyle + '">' +
-          '<img src="' + logoUrl + '" alt="" style="' + imgStyle + '" onerror="this.style.display=\'none\';">' +
+        return '<a href="school.html?slug=' + slug + '" class="team-chip" style="' + chipStyle + '" onmouseover="this.style.transform=\'translateY(-2px)\';this.style.boxShadow=\'0 4px 10px rgba(0,0,0,0.1)\';" onmouseout="this.style.transform=\'none\';this.style.boxShadow=\'none\';">' +
+          '<img src="' + logoUrl + '" alt="" style="' + imgStyle + '" onerror="this.src=\'/assets/images/logob.png\';">' +
           name +
           '</a>';
       }).join('');
 
       const wrapper = document.createElement('div');
-      wrapper.style.marginTop = '14px';
+      wrapper.style.marginTop = '20px';
       wrapper.innerHTML =
-        '<div style="font-size:0.8rem;text-transform:uppercase;letter-spacing:0.04em;color:var(--text-dim,#9fb4c8);margin-bottom:6px;">Teams Expected</div>' +
-        '<div style="display:flex;flex-wrap:wrap;">' + chipsHtml + '</div>';
+        '<div style="font-size:0.75rem;text-transform:uppercase;letter-spacing:0.04em;color:var(--text-tertiary);margin-bottom:8px;font-weight:700;">Participating Teams</div>' +
+        '<div style="display:flex;flex-wrap:wrap;justify-content:center;">' + chipsHtml + '</div>';
       metaDiv.appendChild(wrapper);
     }
 
@@ -277,12 +378,8 @@
       try {
         const weatherWidget = document.getElementById('weather-widget');
         const coordinates = getCoordinatesForLocation(location);
-        
         if (!coordinates) return;
-
-        const meetDateStr = meetDate; 
-        const weather = await fetchWeatherData(coordinates.lat, coordinates.lon, meetDateStr);
-        
+        const weather = await fetchWeatherData(coordinates.lat, coordinates.lon, meetDate);
         if (weather) {
           weatherWidget.style.display = 'block';
           renderWeatherWidget(weather, location, weather.weatherType);
@@ -297,17 +394,14 @@
         const targetDate = new Date(dateStr);
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-        
         const daysDiff = (today - targetDate) / (1000 * 60 * 60 * 24);
         let apiUrl = '';
         let weatherType = 'forecast';
 
         if (daysDiff > 5) {
-            // Use historical archive API
             apiUrl = `https://archive-api.open-meteo.com/v1/archive?latitude=${lat}&longitude=${lon}&start_date=${dateStr}&end_date=${dateStr}&daily=temperature_2m_max,temperature_2m_min,weather_code,precipitation_sum,wind_speed_10m_max&temperature_unit=fahrenheit&timezone=auto`;
             weatherType = 'historical';
         } else {
-            // Use standard forecast API
             apiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,temperature_2m_min,weather_code,precipitation_sum,wind_speed_10m_max&temperature_unit=fahrenheit&timezone=auto`;
             if (daysDiff === 0) weatherType = 'current';
         }
@@ -318,16 +412,11 @@
         if (data.daily && data.daily.time) {
           let weatherIndex = data.daily.time.indexOf(dateStr);
           if (weatherIndex === -1) weatherIndex = 0; 
-          
           return {
-            date: dateStr,
-            maxTemp: data.daily.temperature_2m_max[weatherIndex],
-            minTemp: data.daily.temperature_2m_min[weatherIndex],
-            weatherCode: data.daily.weather_code[weatherIndex],
-            precipitation: data.daily.precipitation_sum[weatherIndex],
-            windSpeed: data.daily.wind_speed_10m_max[weatherIndex],
-            timezone: data.timezone,
-            weatherType: weatherType
+            date: dateStr, maxTemp: data.daily.temperature_2m_max[weatherIndex],
+            minTemp: data.daily.temperature_2m_min[weatherIndex], weatherCode: data.daily.weather_code[weatherIndex],
+            precipitation: data.daily.precipitation_sum[weatherIndex], windSpeed: data.daily.wind_speed_10m_max[weatherIndex],
+            timezone: data.timezone, weatherType: weatherType
           };
         }
         return null;
@@ -369,14 +458,14 @@
       if (weatherType === 'current') weatherLabel = '📍 Current Weather';
       
       widget.innerHTML = `
-        <div class="weather-content" style="background: var(--card); border: 1px solid var(--card-border); padding: 16px; border-radius: 12px; display: inline-flex; gap: 14px; align-items: center;">
-          <div class="weather-icon" style="font-size: 32px;">${icon}</div>
-          <div class="weather-info">
-            <div class="weather-label" style="font-size: 11px; text-transform: uppercase; color: var(--text-faint); font-weight: 600;">${weatherLabel}</div>
-            <div class="weather-conditions" style="font-weight: 600; font-size: 15px; margin: 2px 0;">${description} • ${maxTemp}°F <span style="color:var(--text-faint)">/ ${minTemp}°F</span></div>
-            <div class="weather-details" style="font-size: 12px; color: var(--text-dim);">
-              <span class="detail-item">💨 ${windSpeed} mph</span> | 
-              <span class="detail-item">💧 ${precipitation}"</span>
+        <div style="background: var(--bg-primary); border: 1px solid var(--border); padding: 16px 24px; border-radius: var(--radius-lg); display: inline-flex; gap: 18px; align-items: center; box-shadow: 0 4px 12px var(--shadow-light);">
+          <div style="font-size: 38px; line-height: 1;">${icon}</div>
+          <div style="text-align: left;">
+            <div style="font-size: 0.7rem; text-transform: uppercase; color: var(--text-tertiary); font-weight: 700; letter-spacing: 0.05em;">${weatherLabel}</div>
+            <div style="font-weight: 700; font-size: 1.15rem; color: var(--text-primary); margin: 2px 0;">${description} &nbsp;•&nbsp; ${maxTemp}°F <span style="color:var(--text-tertiary); font-weight: 500;">/ ${minTemp}°F</span></div>
+            <div style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 500;">
+              <span>💨 Wind: ${windSpeed} mph</span> &nbsp;|&nbsp; 
+              <span>💧 Precip: ${precipitation}"</span>
             </div>
           </div>
         </div>
@@ -409,7 +498,7 @@
 
         const relevantResults = allResults.filter(r => (r.gender || '').toUpperCase() === activeGender);
         if (relevantResults.length === 0) {
-            container.innerHTML = `<div style="color:#ccc; grid-column: 1/-1; text-align:center;">No results found for this category.</div>`;
+            container.innerHTML = `<div style="color:var(--text-tertiary); grid-column: 1/-1; text-align:center;">No results found for this category.</div>`;
             return;
         }
 
@@ -494,24 +583,12 @@
             const sixthPlace = sorted[5]?.scoringPlace ?? 999;
             const seventhPlace = sorted[6]?.scoringPlace ?? 999;
 
-            // Advanced Analytics Variables
             const top5Times = topFive.map(a => parseFloat(a.time));
             const totalTime = top5Times.reduce((sum, t) => sum + t, 0);
             const teamAvg = totalTime / 5;
             const teamSplit = top5Times[4] - top5Times[0];
 
-            scores.push({
-                school,
-                score,
-                sixthPlace,
-                seventhPlace,
-                teamAvg,
-                teamSplit,
-                athletes: topFive,
-                finishersCount: 5,
-                totalAthletes: sorted.length,
-                allAthletes: sorted
-            });
+            scores.push({ school, score, sixthPlace, seventhPlace, teamAvg, teamSplit, athletes: topFive, finishersCount: 5, totalAthletes: sorted.length, allAthletes: sorted });
         });
 
         return scores.sort((a, b) => {
@@ -527,7 +604,7 @@
 
         const teamHTML = `
             <section class="results-table-container">
-                <h3 style="color: var(--text); margin-bottom: 20px; font-size: 1.3rem;">🏆 Team Scores</h3>
+                <h3 style="color: var(--text-primary); margin-bottom: 20px; font-size: 1.5rem; font-family: var(--font-display);">🏆 Team Scores</h3>
                 <table class="results-table">
                     <thead>
                         <tr>
@@ -550,7 +627,7 @@
                                 <td data-label="Place" style="font-weight: 700;">${index + 1}</td>
                                 <td data-label="School" style="font-weight: 600;">${team.school}</td>
                                 <td data-label="Team Score" style="font-weight: 700; color: #4f8bf0; font-size: 1.1rem;">${team.score}</td>
-                                <td data-label="Stats" style="font-size: 0.9rem; color: var(--text-dim);">
+                                <td data-label="Stats" style="font-size: 0.9rem; color: var(--text-secondary);">
                                     <div style="margin-bottom: 4px;"><strong>Avg:</strong> ${formatTime(team.teamAvg)}</div>
                                     <div><strong>Split:</strong> ${formatTime(team.teamSplit)}</div>
                                 </td>
@@ -561,7 +638,7 @@
                                         </div>
                                     `).join('')}
                                 </td>
-                                <td data-label="Tiebreaker" style="font-size: 0.9rem; text-align: center; color: var(--text-faint);">${tiebreaker}</td>
+                                <td data-label="Tiebreaker" style="font-size: 0.9rem; text-align: center; color: var(--text-tertiary);">${tiebreaker}</td>
                             </tr>
                             `;
                         }).join('')}
@@ -606,18 +683,18 @@
                             <tr>
                                 <td data-label="Place">${runner.place || '-'}</td>
                                 <td data-label="Name">
-                                    <a href="${athleteHref}" style="font-weight:bold; color:var(--text);">
+                                    <a href="${athleteHref}" style="font-weight:700; color:var(--text-primary); text-decoration:none;">
                                         ${athleteName}
                                     </a>
                                 </td>
                                 <td data-label="Grade">${formatGrade(runner.gradYear)}</td>
                                 <td data-label="School">
-                                    <a href="school.html?slug=${schoolSlug}" style="color:var(--text-dim);">
+                                    <a href="school.html?slug=${schoolSlug}" style="color:var(--text-secondary); text-decoration:none;">
                                         ${rawSchool}
                                     </a>
                                 </td>
                                 <td data-label="Time" style="font-weight:700;">${formatTime(timeSeconds)}</td>
-                                <td data-label="Pace/Mile" style="color:var(--text-faint);">${calculatePacePerMile(timeSeconds, distanceMeters)}</td>
+                                <td data-label="Pace/Mile" style="color:var(--text-tertiary);">${calculatePacePerMile(timeSeconds, distanceMeters)}</td>
                             </tr>
                         `}).join('')}
                     </tbody>
