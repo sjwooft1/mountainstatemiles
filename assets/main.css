@@ -445,6 +445,44 @@ main {
   font-weight: 500;
 }
 
+.state-championship-section {
+  margin: 0 0 48px;
+  padding: 28px 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg, 12px);
+  background: var(--bg-secondary);
+}
+
+.state-championship-subtitle {
+  margin: -4px 0 24px;
+  color: var(--text-secondary);
+  font-size: 1rem;
+}
+
+.state-championship-card {
+  position: relative;
+}
+
+.state-championship-badge {
+  align-self: flex-start;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+}
+
+.state-championship-season {
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
 .meet-card-location {
   font-size: 0.9rem;
 }

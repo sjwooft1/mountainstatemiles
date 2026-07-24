@@ -372,6 +372,7 @@
                 const date = prompt("Meet date (YYYY-MM-DD):", new Date().toISOString().split('T')[0]);
                 if (!date) return;
                 const location = prompt("Location (optional):", "") || "";
+                const isStateChampionship = confirm("Is this a WV State Championship meet?");
 
                 const slug = this.slugify(name);
                 const meetData = {
@@ -381,6 +382,7 @@
                     course_slug: "",
                     created_at: new Date().toISOString()
                 };
+                if (isStateChampionship) meetData.is_state_championship = true;
 
                 try {
                     await window.firebaseDatabase.ref(`${CC_PREFIX}/meets`).push(meetData);

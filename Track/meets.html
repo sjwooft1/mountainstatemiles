@@ -568,8 +568,7 @@ html[data-theme="light"] {
         </div>
       </div>
     </div>
-
-    
+    <div id="state-championship-section" hidden></div>
 
     <div id="meets-list" class="meets-grid">
       <div style="grid-column: 1/-1; text-align: center;">Loading meets...</div>
@@ -583,6 +582,7 @@ html[data-theme="light"] {
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
   <script src="firebase-config.js"></script>
+  <script src="/assets/state-championship-meets.js"></script>
   
   <script>
     let calendar = null;
@@ -602,11 +602,21 @@ html[data-theme="light"] {
           allMeets.push({ id: child.key, ...child.val() });
         });
 
+        renderStateChampionshipSection();
         renderList('all');
         initCalendar();
       } finally {
         document.dispatchEvent(new Event("MSMDataLoaded"));
       }
+    }
+
+    function renderStateChampionshipSection() {
+      const container = document.getElementById('state-championship-section');
+      if (!container || !window.MSMStateChampionships) return;
+      window.MSMStateChampionships.renderStateChampionshipSection(container, allMeets, {
+        sportPath: 'Track',
+        showSeason: true
+      });
     }
 
     // 2. View Switcher

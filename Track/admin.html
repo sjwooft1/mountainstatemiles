@@ -1509,6 +1509,19 @@
           </div>
         `;
       }
+
+      if (col.type === 'checkbox') {
+        const checked = value === true || value === 'true' || value === 'yes' || value === 1;
+        return `
+          <div class="form-group">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.95rem;">
+              <input type="checkbox" name="${col.key}" data-boolean="1" ${checked ? 'checked' : ''}>
+              ${col.label}
+            </label>
+            ${col.hint ? `<p style="font-size:0.8rem;color:var(--muted);margin:6px 0 0;">${col.hint}</p>` : ''}
+          </div>
+        `;
+      }
       
       return `
         <div class="form-group">
@@ -1550,6 +1563,9 @@
       if (input.type === 'number') value = value ? parseFloat(value) : null;
       formData[input.name] = value;
     });
+    modal.querySelectorAll('[data-boolean]').forEach(input => {
+      formData[input.name] = input.checked;
+    });
 
     const divisionChecks = modal.querySelectorAll('input[type="checkbox"][name="divisions"]:checked');
     if (modal.querySelector('input[type="checkbox"][name="divisions"]')) {
@@ -1583,6 +1599,9 @@
     // Remove empty/null values to avoid Firebase key errors
     Object.keys(formData).forEach(key => {
       if (formData[key] === '' || formData[key] === null || formData[key] === undefined) {
+        delete formData[key];
+      }
+      if (formData[key] === false) {
         delete formData[key];
       }
     });
@@ -1699,7 +1718,9 @@
       { key: 'description', label: 'Description', type: 'text' },
       { key: 'location', label: 'Location', type: 'text' },
       { key: 'season', label: 'Season', type: 'select', options: ['indoor', 'outdoor'] },
-      { key: 'divisions', label: 'Divisions', type: 'multiselect', options: WV_DIVISIONS }
+      { key: 'divisions', label: 'Divisions', type: 'multiselect', options: WV_DIVISIONS },
+      { key: 'is_state_championship', label: 'WV State Championship meet', type: 'checkbox',
+        hint: 'Shows this meet in the Past State Championship Results section after the meet date passes.' }
     ];
     
     currentOptions = {
@@ -1752,6 +1773,7 @@
                 <th class="sortable" onclick="sortMeetsTable('name')">Name</th>
                 <th class="sortable" onclick="sortMeetsTable('date')">Date</th>
                 <th class="sortable" onclick="sortMeetsTable('season')">Season</th>
+                <th>State</th>
                 <th>Divisions</th>
                 <th class="sortable" onclick="sortMeetsTable('location')">Location</th>
                 <th style="width:120px;">Actions</th>
@@ -1764,6 +1786,7 @@
                   <td><strong>${row.name}</strong><br><span style="font-size:0.8em; color:var(--muted)">${row.slug}</span></td>
                   <td>${row.date}</td>
                   <td><span style="padding:2px 6px; border-radius:4px; font-size:0.8em; background:${row.season === 'indoor' ? '#0f3460' : '#4a2511'}">${row.season}</span></td>
+                  <td>${row.is_state_championship ? '<span style="padding:2px 8px; border-radius:999px; font-size:0.75em; background:var(--bg); border:1px solid var(--border);">State</span>' : '—'}</td>
                   <td>${formatDivisionsCell(row.divisions)}</td>
                   <td>${row.location || '—'}</td>
                   <td>
@@ -2066,6 +2089,7 @@
           <td><strong>${row.name}</strong><br><span style="font-size:0.8em; color:var(--muted)">${row.slug}</span></td>
           <td>${row.date}</td>
           <td><span style="padding:2px 6px; border-radius:4px; font-size:0.8em; background:${row.season === 'indoor' ? '#0f3460' : '#4a2511'}">${row.season}</span></td>
+          <td>${row.is_state_championship ? '<span style="padding:2px 8px; border-radius:999px; font-size:0.75em; background:var(--bg); border:1px solid var(--border);">State</span>' : '—'}</td>
           <td>${formatDivisionsCell(row.divisions)}</td>
           <td>${row.location || '—'}</td>
           <td>

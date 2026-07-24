@@ -830,6 +830,14 @@
           </div>`;
         }
 
+        if (c.type === 'checkbox') {
+          const checked = raw === true || raw === 'true' || raw === 'yes' || raw === 1;
+          return `<div class="form-group">
+            <label class="chk"><input type="checkbox" data-field="${c.key}" data-boolean="1" ${checked ? 'checked' : ''}> ${escapeHtml(c.label)}</label>
+            ${c.hint ? `<p class="muted" style="font-size:0.78rem;margin:4px 0 0;">${escapeHtml(c.hint)}</p>` : ''}
+          </div>`;
+        }
+
         if (c.type === 'textarea') {
           return `<div class="form-group"><label class="form-label">${escapeHtml(c.label)}</label>
             <textarea class="form-input" data-field="${c.key}" rows="3" placeholder="${escapeAttr(c.placeholder || c.label)}">${escapeHtml(raw ?? '')}</textarea></div>`;
@@ -874,6 +882,7 @@
 
       const formData = {};
       modal.querySelectorAll('[data-field]').forEach(el => { formData[el.dataset.field] = el.value; });
+      modal.querySelectorAll('[data-boolean]').forEach(el => { formData[el.dataset.field] = el.checked; });
       modal.querySelectorAll('[data-multiselect]').forEach(div => {
         const key = div.dataset.multiselect;
         formData[key] = Array.from(div.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
@@ -882,6 +891,7 @@
       // Strip empty/unset values
       Object.keys(formData).forEach(k => {
         if (formData[k] === '') delete formData[k];
+        if (formData[k] === false) delete formData[k];
         if (Array.isArray(formData[k]) && formData[k].length === 0) delete formData[k];
       });
 
@@ -1003,6 +1013,9 @@
           { key: 'date', label: 'Date', type: 'text', inputType: 'date',
             render: row => row.date ? new Date(row.date + 'T00:00:00').toLocaleDateString() : '—' },
           { key: 'location', label: 'Location', type: 'text' },
+          { key: 'is_state_championship', label: 'WV State Championship meet', type: 'checkbox',
+            hint: 'Shows this meet in the Past State Championship Results section after the meet date passes.',
+            render: row => row.is_state_championship ? '<span class="badge badge-info">State</span>' : '—' },
           { key: 'description', label: 'Description', type: 'textarea',
             render: row => row.description ? escapeHtml(row.description.slice(0, 60)) + (row.description.length > 60 ? '…' : '') : '—' },
           { key: 'course_slug', label: 'Course', type: 'datalist', placeholder: 'course slug (optional)',

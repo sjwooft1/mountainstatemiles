@@ -113,16 +113,17 @@
       box-shadow: 0 10px 30px var(--team-glow, rgba(0,0,0,0.2));
     }
     .school-hero-logo {
-      width: 88px; height: 88px;
+      width: 1000px; height: 1000px;
       object-fit: contain;
     }
     .school-hero-name {
       font-family: var(--font-display);
-      font-size: clamp(2rem, 5vw, 3rem);
+      font-size: clamp(4rem, 5vw, 3rem);
       font-weight: 800;
       letter-spacing: -0.02em;
       color: var(--text-primary);
       margin-bottom: 6px;
+      text-shadow: 0 2px 4px rgba(0,0,0,1.0);
     }
     .school-hero-sub {
       color: var(--text-secondary);
@@ -1053,55 +1054,83 @@
     }
 
     function exportSchedulePDF() {
-      if (!upcomingScheduleData.length) { toast('No upcoming meets to export yet.'); return; }
-      if (typeof window.jspdf === 'undefined') { toast('PDF library still loading — try again in a moment.'); return; }
+      if (!upcomingScheduleData.length) {
+        toast('No upcoming meets to export yet.');
+        return;
+      }
+      if (typeof window.jspdf === 'undefined') {
+        toast('PDF library still loading — try again in a moment.');
+        return;
+      }
+    
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF({ orientation: 'landscape' });
       const name = (schoolObj && schoolObj.name) || 'Team';
       const brandColor = getTeamColorRgbArray();
-
-      // 1. Draw a branded accent bar at the top of the page
-      doc.setFillColor(brandColor[0], brandColor[1], brandColor[2]);
-      doc.rect(0, 0, doc.internal.pageSize.getWidth(), 5, 'F');
-
-      let textX = 14;
-      // 2. Dynamically add the school's logo if loaded
-      try {
-        const logoImg = document.getElementById('school-logo');
-        if (logoImg && logoImg.complete && logoImg.naturalWidth > 0 && !logoImg.src.includes('logob.png')) {
-          doc.addImage(logoImg, 'PNG', 14, 10, 15, 15);
-          textX = 34; // Shift header text to the right to make room for the logo
-        }
-      } catch (e) {
-        console.error("Could not add logo to PDF:", e);
-      }
-
-      // 3. Document Headers
-      doc.setFontSize(18); doc.setFont('helvetica', 'bold');
-      doc.text(`${name} — Upcoming Schedule`, textX, 18);
-      doc.setFontSize(9); doc.setFont('helvetica', 'normal');
-      doc.text(`Mountain State Miles · Generated ${new Date().toLocaleDateString()} · ${upcomingScheduleData.length} meet(s)`, textX, 24);
-
-      // 4. Draw branded Table
+    
+      // Define table data first so we know what we are printing
+      const tableHeaders = [['Date', 'Meet', 'Location', 'Distance', 'Difficulty', 'Surface', 'Opponents']];
+      const tableBody = upcomingScheduleData.map(m => [
+        m.dateDisplay,
+        m.name,
+        m.location || '—',
+        m.course && milesFromMeters(m.course.distance) ? `${milesFromMeters(m.course.distance)} mi` : (m.course && m.course.distance ? `${m.course.distance}m` : '—'),
+        m.course ? (m.course.difficulty || '—') : '—',
+        m.course && Array.isArray(m.course.surfaces) && m.course.surfaces.length ? m.course.surfaces.map(s => `${s.type} ${s.pct}%`).join(', ') : '—',
+        m.opponentNames.join(', ') || 'None expected at this time'
+      ]);
+    
       doc.autoTable({
-        head: [['Date', 'Meet', 'Location', 'Distance', 'Difficulty', 'Surface', 'Opponents']],
-        body: upcomingScheduleData.map(m => [
-          m.dateDisplay,
-          m.name,
-          m.location || '—',
-          m.course && milesFromMeters(m.course.distance) ? `${milesFromMeters(m.course.distance)} mi` : (m.course && m.course.distance ? `${m.course.distance}m` : '—'),
-          m.course ? (m.course.difficulty || '—') : '—',
-          m.course && Array.isArray(m.course.surfaces) && m.course.surfaces.length ? m.course.surfaces.map(s => `${s.type} ${s.pct}%`).join(', ') : '—',
-          m.opponentNames.join(', ') || 'no other teams expected at this time'
-        ]),
+        head: tableHeaders,
+        body: tableBody,
         startY: 32,
-        styles: { fontSize: 8.5 },
-        headStyles: { fillColor: brandColor, textColor: [255, 255, 255] }, // Uses dynamic brand color
-        alternateRowStyles: { fillColor: [245, 245, 245] }
+        styles: { 
+          fontSize: 8.5,
+          overflow: 'linebreak' // Ensures long text wraps cleanly within the cell
+        },
+        headStyles: { 
+          fillColor: brandColor, 
+          textColor: [255, 255, 255] 
+        },
+        alternateRowStyles: { 
+          fillColor: [245, 245, 245] 
+        },
+        // This hook runs on every page, drawing your headers and logos dynamically
+        didDrawPage: function (data) {
+          // 1. Draw branded top accent bar
+          doc.setFillColor(brandColor[0], brandColor[1], brandColor[2]);
+          doc.rect(0, 0, doc.internal.pageSize.getWidth(), 5, 'F');
+    
+          let textX = 14;
+    
+          // 2. Safely add logo
+          try {
+            const logoImg = document.getElementById('school-logo');
+            if (logoImg && logoImg.complete && logoImg.naturalWidth > 0 && !logoImg.src.includes('logob.png')) {
+              doc.addImage(logoImg, 'PNG', 14, 10, 15, 15);
+              textX = 34;
+            }
+          } catch (e) {
+            console.error("Could not add logo to PDF:", e);
+          }
+    
+          // 3. Render Document Headers
+          doc.setFontSize(18);
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(0, 0, 0);
+          doc.text(`${name} — Upcoming Schedule`, textX, 18);
+    
+          doc.setFontSize(9);
+          doc.setFont('helvetica', 'normal');
+          doc.setTextColor(100, 100, 100); // Muted grey for subheaders
+          doc.text(`Mountain State Miles · Generated ${new Date().toLocaleDateString()} · ${upcomingScheduleData.length} meet(s)`, textX, 24);
+        }
       });
+    
       doc.save(`${schoolSlug}_schedule.pdf`);
       toast('✓ Schedule exported as PDF');
     }
+
 
     function exportPerformancePDF() {
       if (!schoolResults.length) { toast('No performance results to export yet.'); return; }

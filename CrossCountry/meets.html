@@ -89,6 +89,7 @@
       color: var(--text-primary);
       margin: 0 0 10px 0;
       letter-spacing: -0.02em;
+      margin-top: 5%;
     }
     .stat-strip {
       display: flex; justify-content: center; gap: 14px; flex-wrap: wrap; margin-bottom: 24px;
@@ -216,6 +217,8 @@
       </div>
     </section>
 
+    <div id="state-championship-section" hidden></div>
+
     <!-- Toolbar -->
     <div id="list-controls" class="toolbar">
       <div class="filter-bar">
@@ -269,6 +272,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
   <script src="firebase-config.js"></script>
+  <script src="/assets/state-championship-meets.js"></script>
   
   <script>
     let calendar = null;
@@ -289,6 +293,7 @@
         });
 
         updateStats();
+        renderStateChampionshipSection();
         renderList('all');
         initCalendar();
       } finally {
@@ -306,6 +311,14 @@
       document.getElementById('stat-total').textContent = allMeets.length;
       document.getElementById('stat-upcoming').textContent = upcomingCount;
       document.getElementById('stat-past').textContent = pastCount;
+    }
+
+    function renderStateChampionshipSection() {
+      const container = document.getElementById('state-championship-section');
+      if (!container || !window.MSMStateChampionships) return;
+      window.MSMStateChampionships.renderStateChampionshipSection(container, allMeets, {
+        sportPath: 'CrossCountry'
+      });
     }
 
     // 2. View Switcher
@@ -367,12 +380,10 @@
 
       container.innerHTML = filtered2.map(meet => {
         const isUpcoming = meet.date ? new Date(meet.date) >= today : false;
-        const icon = isUpcoming ? '⏱️' : '🏁';
         return `
         <a href="meet.html?slug=${encodeURIComponent(meet.slug || meet.id)}" class="meet-card">
-          <div class="meet-card-icon">${icon}</div>
           <h3 class="meet-card-title">${(meet.name || 'Unnamed Meet').replace(/</g, '&lt;')}</h3>
-          <p class="meet-card-date">${new Date(meet.date).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}</p>
+          <p class="meet-card-date">📅 ${formatMeetDate(meet.date)}</p>
           <p class="meet-card-location">${meet.location ? String(meet.location).replace(/</g, '&lt;') : 'Location TBD'}</p>
           ${meet.date ? `<span class="meet-card-status ${isUpcoming ? 'upcoming' : ''}">${isUpcoming ? 'Upcoming Meet' : 'Results Posted'}</span>` : ''}
         </a>
@@ -384,6 +395,22 @@
       document.querySelectorAll('.filter-chip').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       renderList(filter);
+    }
+    function formatMeetDate(dateStr) {
+      if (!dateStr) return "Date TBD";
+      const parts = String(dateStr).split("T")[0].split("-");
+      if (parts.length === 3) {
+        const year = parseInt(parts[0], 10);
+        const month = parseInt(parts[1], 10) - 1;
+        const day = parseInt(parts[2], 10);
+        return new Date(year, month, day).toLocaleDateString(undefined, {
+          weekday: "short",
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        });
+      }
+      return new Date(dateStr).toLocaleDateString();
     }
 
     // 4. Initialize Calendar (FullCalendar 6)

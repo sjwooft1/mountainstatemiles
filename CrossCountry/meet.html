@@ -11,7 +11,7 @@
   <link rel="apple-touch-icon" sizes="180x180" href="assets/Favicon Generator/apple-touch-icon.png" />
   <link rel="manifest" href="assets/Favicon Generator/site.webmanifest" />
   
-  <meta name="description" content="WV running results, rankings, times, rosters, and meet data — Mountain State Miles." />
+  <meta name="description" content="WV cross country running results, rankings, team scores, and meet data — Mountain State Miles." />
   <meta name="keywords" content="WVXC, WV Track, West Virginia Running, Cross Country Results, WV HS Running, Mountain State Miles" />
   <link rel="stylesheet" href="/assets/main.css" />
   <script src="/assets/components.js" defer></script>
@@ -33,79 +33,271 @@
     }
     :root {
       --font-display: 'Aqeon Demo', sans-serif;
-      --radius-lg: 12px;
+      --radius-lg: 14px;
+      --radius-md: 8px;
     }
 
-    /* Hero & Stat Strip (Matches schools.html) */
+    /* Hero & Stat Strip */
     .page-hero {
-      max-width: 900px; margin: 0 auto 10px; text-align: center; animation: fadeUp 0.4s ease both;
+      max-width: 950px; 
+      margin: 0 auto 15px; 
+      text-align: center; 
+      animation: fadeUp 0.4s ease both;
     }
     .page-hero-sub {
-      color: var(--text-secondary); font-size: 1.05rem; max-width: 620px; margin: 0 auto 20px; line-height: 1.5;
+      color: var(--text-secondary); 
+      font-size: 1.05rem; 
+      max-width: 680px; 
+      margin: 0 auto 20px; 
+      line-height: 1.5;
     }
     .section-title {
-      font-family: var(--font-display); font-size: 2.5rem; font-weight: 800;
-      color: var(--text-primary); margin: 0 0 10px 0; letter-spacing: -0.02em;
+      font-family: var(--font-display); 
+      font-size: 4rem; 
+      font-weight: 800;
+      color: var(--text-primary); 
+      margin: 40px 0 10px 0; 
+      letter-spacing: -0.02em;
     }
+    
+    .hero-actions {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+
     .stat-strip {
-      display: flex; justify-content: center; gap: 14px; flex-wrap: wrap; margin: 24px 0 30px;
+      display: flex; 
+      justify-content: center; 
+      gap: 14px; 
+      flex-wrap: wrap; 
+      margin: 20px 0 25px;
     }
     .mini-stat {
-      min-width: 120px; padding: 14px 22px; border: 1px solid var(--border);
-      border-radius: var(--radius-lg); background: var(--bg-primary); text-align: center;
+      min-width: 120px; 
+      padding: 14px 22px; 
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg); 
+      background: var(--bg-primary); 
+      text-align: center;
       box-shadow: 0 2px 8px var(--shadow-light);
     }
     .mini-stat-num {
-      display: block; font-family: var(--font-display); font-size: 1.8rem; font-weight: 800; 
-      letter-spacing: -0.02em; color: var(--text-primary); line-height: 1;
+      display: block; 
+      font-family: var(--font-display); 
+      font-size: 1.8rem; 
+      font-weight: 800; 
+      letter-spacing: -0.02em; 
+      color: var(--text-primary); 
+      line-height: 1;
     }
     .mini-stat-lbl {
-      display: block; margin-top: 4px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; 
-      letter-spacing: 0.06em; color: var(--text-tertiary);
+      display: block; 
+      margin-top: 4px; 
+      font-size: 0.7rem; 
+      font-weight: 700; 
+      text-transform: uppercase; 
+      letter-spacing: 0.06em; 
+      color: var(--text-tertiary);
     }
 
-    /* Interactive Pill Buttons */
+    /* Interactive Buttons */
     .btn-pill {
-      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-      padding: 10px 22px; background: var(--primary); color: var(--bg-primary);
-      border-radius: 30px; font-weight: 600; font-size: 0.95rem; text-decoration: none;
-      transition: transform 0.2s, box-shadow 0.2s, background 0.2s; border: none; cursor: pointer;
+      display: inline-flex; 
+      align-items: center; 
+      justify-content: center; 
+      gap: 8px;
+      padding: 10px 22px; 
+      background: var(--primary); 
+      color: var(--bg-primary);
+      border-radius: 30px; 
+      font-weight: 600; 
+      font-size: 0.95rem; 
+      text-decoration: none;
+      transition: transform 0.2s, box-shadow 0.2s, background 0.2s; 
+      border: none; 
+      cursor: pointer;
     }
     .btn-pill:hover {
-      transform: translateY(-2px); box-shadow: 0 6px 16px var(--shadow-light); filter: brightness(1.1);
+      transform: translateY(-2px); 
+      box-shadow: 0 6px 16px var(--shadow-light); 
+      filter: brightness(1.1);
     }
     .btn-pill.course-btn {
-      background: linear-gradient(135deg, #2fd0a3, #1a5f4c); color: #ffffff;
+      background: linear-gradient(135deg, #2fd0a3, #1a5f4c); 
+      color: #ffffff;
       box-shadow: 0 4px 14px rgba(47, 208, 163, 0.3);
     }
+    .btn-pill.secondary-btn {
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+    }
     
-    @keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeUp { 
+      from { opacity: 0; transform: translateY(14px); } 
+      to { opacity: 1; transform: translateY(0); } 
+    }
 
-    /* Fix Selector Layout */
+    /* Selector Card */
     #selector-card {
-      background: var(--bg-primary); border: 1px solid var(--border); border-radius: var(--radius-lg);
-      padding: 24px; box-shadow: 0 4px 16px var(--shadow-light); text-align: center; margin-bottom: 30px;
+      background: var(--bg-primary); 
+      border: 1px solid var(--border); 
+      border-radius: var(--radius-lg);
+      padding: 24px; 
+      box-shadow: 0 4px 16px var(--shadow-light); 
+      text-align: center; 
+      margin-bottom: 25px;
     }
-    .tabs-row { display: flex; justify-content: center; gap: 12px; margin-bottom: 20px; }
+    .tabs-row { 
+      display: flex; 
+      justify-content: center; 
+      gap: 10px; 
+      margin-bottom: 18px; 
+    }
     .gender-tab {
-      padding: 8px 30px; font-weight: 700; font-size: 0.95rem; border-radius: 20px;
-      border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-secondary);
-      cursor: pointer; transition: all 0.2s ease;
+      padding: 8px 26px; 
+      font-weight: 700; 
+      font-size: 0.95rem; 
+      border-radius: 20px;
+      border: 1px solid var(--border); 
+      background: var(--bg-secondary); 
+      color: var(--text-secondary);
+      cursor: pointer; 
+      transition: all 0.2s ease;
     }
-    .gender-tab.active { background: var(--primary); color: var(--bg-primary); border-color: var(--primary); }
-    #select-heading { font-family: var(--font-display); font-size: 1.5rem; color: var(--text-primary); margin-bottom: 4px; }
-    #select-sub { font-size: 0.9rem; color: var(--text-tertiary); margin-bottom: 20px; }
-    .race-buttons { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+    .gender-tab.active { 
+      background: var(--primary); 
+      color: var(--bg-primary); 
+      border-color: var(--primary); 
+    }
+    #select-heading { 
+      font-family: var(--font-display); 
+      font-size: 1.4rem; 
+      color: var(--text-primary); 
+      margin-bottom: 4px; 
+    }
+    #select-sub { 
+      font-size: 0.88rem; 
+      color: var(--text-tertiary); 
+      margin-bottom: 18px; 
+    }
+    .race-buttons { 
+      display: flex; 
+      flex-wrap: wrap; 
+      justify-content: center; 
+      gap: 10px; 
+    }
     .race-button {
-      padding: 8px 18px; border-radius: 6px; font-weight: 600; font-size: 0.9rem; cursor: pointer; border: 1px solid var(--border); transition: all 0.2s;
+      padding: 8px 18px; 
+      border-radius: 20px; 
+      font-weight: 600; 
+      font-size: 0.88rem; 
+      cursor: pointer; 
+      border: 1px solid var(--border); 
+      transition: all 0.2s;
     }
-    .race-button.primary { background: var(--text-primary); color: var(--bg-primary); border-color: var(--text-primary); }
-    .race-button.secondary { background: var(--bg-secondary); color: var(--text-secondary); }
-    .race-button.secondary:hover { background: var(--border); }
-  </style>
+    .race-button.primary { 
+      background: var(--text-primary); 
+      color: var(--bg-primary); 
+      border-color: var(--text-primary); 
+    }
+    .race-button.secondary { 
+      background: var(--bg-secondary); 
+      color: var(--text-secondary); 
+    }
+    .race-button.secondary:hover { 
+      background: var(--border); 
+    }
 
-  <script src="/assets/theme-toggle.js" defer></script>
-  <script src="/assets/components.js" defer></script>
+    /* Utility Bar: Search, View Toggles & Export Options */
+    .controls-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 14px 20px;
+      margin-bottom: 25px;
+      box-shadow: 0 2px 10px var(--shadow-light);
+    }
+    .search-input-wrap {
+      flex: 1;
+      min-width: 220px;
+      position: relative;
+    }
+    .search-input {
+      width: 100%;
+      padding: 8px 14px 8px 36px;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .search-input:focus {
+      border-color: var(--primary);
+    }
+    .search-icon {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 0.85rem;
+      color: var(--text-tertiary);
+    }
+    .view-toggles, .export-group {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .toggle-btn {
+      padding: 6px 14px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      background: var(--bg-secondary);
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .toggle-btn.active {
+      background: var(--primary);
+      color: var(--bg-primary);
+      border-color: var(--primary);
+    }
+
+    /* Weather Widget Styling */
+    .weather-card {
+      background: var(--bg-primary); 
+      border: 1px solid var(--border); 
+      padding: 16px 24px; 
+      border-radius: var(--radius-lg); 
+      display: inline-flex; 
+      gap: 18px; 
+      align-items: center; 
+      box-shadow: 0 4px 12px var(--shadow-light);
+    }
+
+    /* Print Stylesheet */
+    @media print {
+      body { background: #fff !important; color: #000 !important; }
+      #global-header, #global-footer, .controls-bar, .hero-actions, .tabs-row, .race-buttons, .weather-card { display: none !important; }
+      .content-section { max-width: 100% !important; padding: 0 !important; }
+      .section-title { font-size: 2rem !important; margin-top: 0 !important; }
+      .results-table-container { box-shadow: none !important; border: 1px solid #ccc !important; }
+      table { width: 100% !important; border-collapse: collapse !important; }
+      th, td { border: 1px solid #ddd !important; padding: 6px !important; color: #000 !important; }
+    }
+  </style>
 </head>
 
 <body>
@@ -115,12 +307,13 @@
 
   <main class="content-section" style="max-width: 1100px; margin: 0 auto; padding: 40px 20px;">
       
-      <!-- Styled Hero Section -->
       <section class="page-hero">
         <h1 class="section-title" id="meet-title">Loading Meet...</h1>
         <div id="meet-meta" class="page-hero-sub">Retrieving data...</div>
         
-        <div id="course-btn-container" style="margin-top: 10px;"></div>
+        <div class="hero-actions" id="hero-actions">
+          <div id="course-btn-container"></div>
+        </div>
 
         <div class="stat-strip" id="meet-stats" style="display:none;">
           <div class="mini-stat"><span class="mini-stat-num" id="stat-races">-</span><span class="mini-stat-lbl">Races</span></div>
@@ -128,21 +321,42 @@
           <div class="mini-stat"><span class="mini-stat-num" id="stat-athletes">-</span><span class="mini-stat-lbl">Athletes</span></div>
         </div>
 
-        <div id="weather-widget" class="weather-widget" style="display:none; margin-top: 20px;"></div>
+        <div id="weather-widget" class="weather-widget" style="display:none; margin-top: 15px;"></div>
       </section>
 
       <div id="error" class="error-message" style="display:none; text-align: center; color: var(--danger); padding: 20px; background: rgba(239, 68, 68, 0.1); border-radius: 8px; margin-bottom: 20px;"></div>
 
-      <!-- Selector -->
       <div id="selector" style="display:none;">
         <div id="selector-card">
           <div class="tabs-row" role="tablist" aria-label="Gender tabs">
             <button id="tab-boys" class="gender-tab active">Boys Results</button>
             <button id="tab-girls" class="gender-tab">Girls Results</button>
           </div>
-          <div id="select-heading">Select a Race Division</div>
-          <div id="select-sub">Filter times and team scores by specific divisions.</div>
+          <div id="select-heading">Select Race Division</div>
+          <div id="select-sub">Filter individual times and team standings by division.</div>
           <div id="race-button-wrap" class="race-buttons"></div>
+        </div>
+      </div>
+
+      <div id="controls-bar" class="controls-bar" style="display:none;">
+        <div class="search-input-wrap">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="search-input" class="search-input" placeholder="Search runner or school name..." />
+        </div>
+
+        <div class="view-toggles">
+          <button class="toggle-btn active" id="view-all-btn">All Views</button>
+          <button class="toggle-btn" id="view-teams-btn">Team Scores</button>
+          <button class="toggle-btn" id="view-indiv-btn">Individual Results</button>
+        </div>
+
+        <div class="export-group">
+          <button class="btn-pill secondary-btn" onclick="exportToCSV()" title="Export race results to CSV file" style="padding: 6px 14px; font-size: 0.82rem;">
+            📊 CSV Export
+          </button>
+          <button class="btn-pill secondary-btn" onclick="window.print()" title="Print or save as PDF" style="padding: 6px 14px; font-size: 0.82rem;">
+            🖨️ Print / PDF
+          </button>
         </div>
       </div>
 
@@ -184,8 +398,38 @@
     }
 
     function slugify(name) {
-        if (!name) return '';
-        return name.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+      if (!name) return '';
+      return name.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+    }
+
+    function normalizeGender(r) {
+      const g = String(r.gender || '').trim().toUpperCase();
+      if (['M', 'BOYS', 'BOY', 'MALE', 'B'].includes(g)) return 'M';
+      if (['F', 'GIRLS', 'GIRL', 'FEMALE', 'G'].includes(g)) return 'F';
+
+      // Fallback: Check race_type or division name if gender property is missing/ambiguous
+      const raceText = (r.race_type || r.division || r.event || r.event_name || '').toLowerCase();
+      if (raceText.includes('girl') || raceText.includes('female') || raceText.includes('women')) return 'F';
+      if (raceText.includes('boy') || raceText.includes('male') || raceText.includes('men')) return 'M';
+
+      return 'M';
+    }
+
+    function normalizeRaceType(r) {
+      let raw = r.race_type || r.division || r.event || r.event_name || 'Varsity 5K';
+      if (typeof raw !== 'string') return 'Varsity 5K';
+      raw = raw.trim();
+      if (!raw) return 'Varsity 5K';
+
+      // Clean up common abbreviations
+      return raw
+        .split(/\s+/)
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+        .join(' ')
+        .replace(/\b5k\b/i, '5K')
+        .replace(/\b3k\b/i, '3K')
+        .replace(/\bJv\b/g, 'JV')
+        .replace(/\bMs\b/g, 'Middle School');
     }
 
     // ==========================================
@@ -195,6 +439,8 @@
     let allResults = [];
     let activeGender = 'M';
     let activeRaceType = null;
+    let currentFilteredResults = [];
+    let activeViewMode = 'all'; // 'all', 'teams', 'indiv'
 
     // ==========================================
     // 3. MAIN INITIALIZATION
@@ -207,6 +453,7 @@
       const errorDiv = document.getElementById("error");
       const metaDiv = document.getElementById("meet-meta");
       const selectorDiv = document.getElementById("selector");
+      const controlsBar = document.getElementById("controls-bar");
 
       if (!slug) {
         errorDiv.style.display = "block";
@@ -214,21 +461,21 @@
         document.dispatchEvent(new Event("MSMDataLoaded"));
         return;
       }
-
+      
       try {
         currentMeetData = await window.getMeetBySlug(slug);
         if (!currentMeetData) throw new Error("Meet not found.");
 
         document.getElementById("meet-title").textContent = currentMeetData.name;
         
-        const formattedDate = currentMeetData.date ? new Date(currentMeetData.date).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : 'Date TBA';
+        const formattedDate = currentMeetData.date 
+          ? new Date(currentMeetData.date).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) 
+          : 'Date TBA';
         metaDiv.innerHTML = `<strong>${formattedDate}</strong> &nbsp;•&nbsp; ${currentMeetData.location || 'Location Unknown'}`;
 
-        // Accurate Course Viewer Link Logic
-        let courseSlug = currentMeetData.course_slug || null; // Check Firebase slug first
-        
+        // Course Viewer Link Logic
+        let courseSlug = currentMeetData.course_slug || null;
         if (!courseSlug) {
-            // Text matching fallback
             const courseMap = {
                 'cabell midland': 'cabell-midland',
                 'mineral wells': 'chick-fil-a',
@@ -249,7 +496,7 @@
 
         if (courseSlug) {
             document.getElementById('course-btn-container').innerHTML = `
-                <a href="courses/course%20viewer.html?course=${courseSlug}" class="btn-pill course-btn">
+                <a href="CrossCountry/courses/course viewer.html?course=${courseSlug}" class="btn-pill course-btn">
                     ▶️ View 3D Course & Flyover Map
                 </a>
             `;
@@ -259,7 +506,7 @@
           loadWeatherForMeet(currentMeetData.location, currentMeetData.date);
         }
 
-        // Fetch schools
+        // Fetch schools for logos and names
         const schools = await window.getAllSchools();
         const schoolSlugToName = {};
         if (schools && schools.length) {
@@ -277,13 +524,15 @@
         }
 
         allResults.forEach(r => {
+          r.normalizedGender = normalizeGender(r);
+          r.normalizedRaceType = normalizeRaceType(r);
           if ((!r.school_name && !r.school) && r.school_slug) {
             r.school_name = schoolSlugToName[r.school_slug] || r.school_slug;
           }
         });
         
         // Populate Top Stats
-        const uniqueRaces = new Set(allResults.map(r => r.race_type)).size;
+        const uniqueRaces = new Set(allResults.map(r => r.normalizedRaceType)).size;
         const uniqueTeams = new Set(allResults.map(r => r.school_slug || r.school_name || r.school)).size;
         
         document.getElementById('stat-races').textContent = uniqueRaces || '-';
@@ -292,6 +541,9 @@
         document.getElementById('meet-stats').style.display = 'flex';
 
         selectorDiv.style.display = "block";
+        controlsBar.style.display = "flex";
+
+        setupSearchAndControls();
         setupGenderTabs();
         document.getElementById("tab-boys").click();
 
@@ -314,7 +566,7 @@
 
       const metaDiv = document.getElementById("meet-meta");
       const chipStyle = "display:inline-flex;align-items:center;gap:6px;padding:5px 12px;margin:4px 4px 0 0;border-radius:20px;background:var(--bg-secondary);border:1px solid var(--border);text-decoration:none;color:var(--text-primary);font-size:0.85rem;font-weight:600;transition:transform 0.2s,box-shadow 0.2s;";
-      const imgStyle = "width:20px;height:20px;border-radius:50%;object-fit:contain;";
+      const imgStyle = "width:25px;height:25px;border-radius:50%;object-fit:contain;";
 
       const chipsHtml = teams.map(function (slug) {
         const name = schoolSlugToName[slug] || slug.replace(/-/g, ' ');
@@ -326,7 +578,7 @@
       }).join('');
 
       const wrapper = document.createElement('div');
-      wrapper.style.marginTop = '20px';
+      wrapper.style.marginTop = '16px';
       wrapper.innerHTML =
         '<div style="font-size:0.75rem;text-transform:uppercase;letter-spacing:0.04em;color:var(--text-tertiary);margin-bottom:8px;font-weight:700;">Participating Teams</div>' +
         '<div style="display:flex;flex-wrap:wrap;justify-content:center;">' + chipsHtml + '</div>';
@@ -334,51 +586,41 @@
     }
 
     // ==========================================
-    // 3.5 HISTORICAL WEATHER WIDGET FUNCTIONS
+    // 3.5 HISTORICAL WEATHER WIDGET
     // ==========================================
 
-    const schoolCoordinatesMap = {
-      'grafton high school': { lat: 39.34, lon: -80.03 },
-      'parkersburg high school': { lat: 39.27, lon: -81.56 },
-      'parkersburg south high school': { lat: 39.27, lon: -81.56 },
-      'morgantown high school': { lat: 39.64, lon: -79.96 },
-      'bridgeport high school': { lat: 39.29, lon: -80.26 },
-      'buckhannon sampson high school': { lat: 38.99, lon: -80.23 },
-      'cabell midland high school': { lat: 38.54, lon: -82.45 },
-      'capital high school': { lat: 38.35, lon: -81.64 },
-      'george washington high school': { lat: 38.35, lon: -81.64 },
-      'hedgesville high school': { lat: 39.18, lon: -78.05 },
-      'huntington high school': { lat: 38.42, lon: -82.45 },
-      'hurricane high school': { lat: 38.49, lon: -82.48 },
-      'jefferson high school': { lat: 39.33, lon: -77.74 },
-      'martinsburg high school': { lat: 39.47, lon: -77.97 },
-      'musselman high school': { lat: 39.48, lon: -78.03 },
-      'oak hill high school': { lat: 38.41, lon: -81.60 },
-      'preston high school': { lat: 39.34, lon: -80.03 },
-      'riverside high school': { lat: 38.46, lon: -81.75 },
-      'spring mills high school': { lat: 39.47, lon: -77.97 },
-      'spring valley high school': { lat: 38.42, lon: -82.45 },
-      'st albans high school': { lat: 38.54, lon: -81.83 },
-      'university high school': { lat: 39.64, lon: -79.96 },
-      'washington high school': { lat: 38.35, lon: -81.64 },
-      'wheeling park high school': { lat: 40.07, lon: -80.71 },
-      'woodrow wilson high school': { lat: 37.78, lon: -81.19 }
+    const locationCoordinatesMap = {
+      'cabell midland': { lat: 38.41, lon: -82.20 },
+      'mineral wells': { lat: 39.18, lon: -81.51 },
+      'chick-fil-a': { lat: 39.18, lon: -81.51 },
+      'meadowood': { lat: 38.60, lon: -81.93 },
+      'pipestem': { lat: 37.52, lon: -80.99 },
+      'south harrison': { lat: 39.18, lon: -80.40 },
+      'glen oak': { lat: 37.95, lon: -81.12 },
+      'holmdel': { lat: 40.36, lon: -74.17 },
+      'preston': { lat: 39.46, lon: -79.71 },
+      'morgantown': { lat: 39.63, lon: -79.95 },
+      'bridgeport': { lat: 39.28, lon: -80.25 },
+      'parkersburg': { lat: 39.27, lon: -81.55 },
+      'huntington': { lat: 38.41, lon: -82.44 },
+      'wheeling park': { lat: 40.06, lon: -80.68 },
+      'woodrow wilson': { lat: 37.78, lon: -81.18 },
+      'charleston': { lat: 38.35, lon: -81.63 }
     };
 
     function getCoordinatesForLocation(location) {
-      if (!location) return null;
+      if (!location) return { lat: 38.80, lon: -80.50 }; // Default WV central
       const normalized = location.toLowerCase().trim();
-      if (schoolCoordinatesMap[normalized]) {
-        return schoolCoordinatesMap[normalized];
+      for (const [key, coords] of Object.entries(locationCoordinatesMap)) {
+        if (normalized.includes(key)) return coords;
       }
-      return null;
+      return { lat: 38.80, lon: -80.50 };
     }
 
     async function loadWeatherForMeet(location, meetDate) {
       try {
         const weatherWidget = document.getElementById('weather-widget');
         const coordinates = getCoordinatesForLocation(location);
-        if (!coordinates) return;
         const weather = await fetchWeatherData(coordinates.lat, coordinates.lon, meetDate);
         if (weather) {
           weatherWidget.style.display = 'block';
@@ -441,29 +683,29 @@
         86: { icon: '🌨️', description: 'Heavy Snow Showers' }, 95: { icon: '⛈️', description: 'Thunderstorm' },
         96: { icon: '⛈️', description: 'Hail Thunderstorm' }, 99: { icon: '⛈️', description: 'Hail Thunderstorm' }
       };
-      return weatherMap[code] || { icon: '❓', description: 'Unknown' };
+      return weatherMap[code] || { icon: '🌤️', description: 'Fair' };
     }
 
     function renderWeatherWidget(weather, location, weatherType) {
       const widget = document.getElementById('weather-widget');
       const { icon, description } = getWeatherDetails(weather.weatherCode);
       
-      const maxTemp = Math.round(weather.maxTemp);
-      const minTemp = Math.round(weather.minTemp);
-      const windSpeed = Math.round(weather.windSpeed);
-      const precipitation = Math.round(weather.precipitation * 100) / 100;
+      const maxTemp = Math.round(weather.maxTemp || 70);
+      const minTemp = Math.round(weather.minTemp || 50);
+      const windSpeed = Math.round(weather.windSpeed || 5);
+      const precipitation = Math.round((weather.precipitation || 0) * 100) / 100;
       
-      let weatherLabel = '⛅ Meet Day Forecast';
-      if (weatherType === 'historical') weatherLabel = '🌤️ Historical Weather';
+      let weatherLabel = '⛅ Meet Day Weather';
+      if (weatherType === 'historical') weatherLabel = '🌤️ Historical Meet Weather';
       if (weatherType === 'current') weatherLabel = '📍 Current Weather';
       
       widget.innerHTML = `
-        <div style="background: var(--bg-primary); border: 1px solid var(--border); padding: 16px 24px; border-radius: var(--radius-lg); display: inline-flex; gap: 18px; align-items: center; box-shadow: 0 4px 12px var(--shadow-light);">
+        <div class="weather-card">
           <div style="font-size: 38px; line-height: 1;">${icon}</div>
           <div style="text-align: left;">
             <div style="font-size: 0.7rem; text-transform: uppercase; color: var(--text-tertiary); font-weight: 700; letter-spacing: 0.05em;">${weatherLabel}</div>
-            <div style="font-weight: 700; font-size: 1.15rem; color: var(--text-primary); margin: 2px 0;">${description} &nbsp;•&nbsp; ${maxTemp}°F <span style="color:var(--text-tertiary); font-weight: 500;">/ ${minTemp}°F</span></div>
-            <div style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 500;">
+            <div style="font-weight: 700; font-size: 1.1rem; color: var(--text-primary); margin: 2px 0;">${description} &nbsp;•&nbsp; ${maxTemp}°F <span style="color:var(--text-tertiary); font-weight: 500;">/ ${minTemp}°F</span></div>
+            <div style="font-size: 0.82rem; color: var(--text-secondary); font-weight: 500;">
               <span>💨 Wind: ${windSpeed} mph</span> &nbsp;|&nbsp; 
               <span>💧 Precip: ${precipitation}"</span>
             </div>
@@ -473,8 +715,27 @@
     }
 
     // ==========================================
-    // 4. UI LOGIC (TABS & BUTTONS)
+    // 4. UI CONTROLS & SEARCH
     // ==========================================
+
+    function setupSearchAndControls() {
+      const searchInput = document.getElementById('search-input');
+      if (searchInput) {
+        searchInput.addEventListener('input', () => {
+          renderTableForSelection();
+        });
+      }
+
+      const btnAll = document.getElementById('view-all-btn');
+      const btnTeams = document.getElementById('view-teams-btn');
+      const btnIndiv = document.getElementById('view-indiv-btn');
+
+      const resetViewBtns = () => [btnAll, btnTeams, btnIndiv].forEach(b => b.classList.remove('active'));
+
+      btnAll.addEventListener('click', () => { resetViewBtns(); btnAll.classList.add('active'); activeViewMode = 'all'; renderTableForSelection(); });
+      btnTeams.addEventListener('click', () => { resetViewBtns(); btnTeams.classList.add('active'); activeViewMode = 'teams'; renderTableForSelection(); });
+      btnIndiv.addEventListener('click', () => { resetViewBtns(); btnIndiv.classList.add('active'); activeViewMode = 'indiv'; renderTableForSelection(); });
+    }
 
     function setupGenderTabs() {
         const btnBoys = document.getElementById('tab-boys');
@@ -496,20 +757,18 @@
         container.innerHTML = ''; 
         document.getElementById('results-box').innerHTML = '';
 
-        const relevantResults = allResults.filter(r => (r.gender || '').toUpperCase() === activeGender);
+        const relevantResults = allResults.filter(r => r.normalizedGender === activeGender);
         if (relevantResults.length === 0) {
-            container.innerHTML = `<div style="color:var(--text-tertiary); grid-column: 1/-1; text-align:center;">No results found for this category.</div>`;
+            container.innerHTML = `<div style="color:var(--text-tertiary); text-align:center;">No results found for this category.</div>`;
             return;
         }
 
-        const raceTypes = [...new Set(relevantResults.map(r => r.race_type))].sort();
+        const raceTypes = [...new Set(relevantResults.map(r => r.normalizedRaceType))].sort();
 
         raceTypes.forEach((type, index) => {
             const btn = document.createElement('button');
             btn.className = 'race-button secondary'; 
-            
-            const label = type ? type.charAt(0).toUpperCase() + type.slice(1) : 'Unlabeled Race';
-            btn.textContent = label;
+            btn.textContent = type;
 
             btn.onclick = () => {
                 Array.from(container.children).forEach(c => {
@@ -526,20 +785,40 @@
     }
 
     function renderTableForSelection() {
-        const filteredData = allResults.filter(r => 
-            (r.gender || '').toUpperCase() === activeGender && r.race_type === activeRaceType
+        const query = (document.getElementById('search-input')?.value || '').toLowerCase().trim();
+
+        let filteredData = allResults.filter(r => 
+            r.normalizedGender === activeGender && r.normalizedRaceType === activeRaceType
         );
 
+        if (query) {
+          filteredData = filteredData.filter(r => {
+            const name = (r.athlete_name || r.name || '').toLowerCase();
+            const school = (r.school_name || r.school || '').toLowerCase();
+            return name.includes(query) || school.includes(query);
+          });
+        }
+
         filteredData.sort((a, b) => {
-            if (a.place && b.place) return a.place - b.place;
+            if (a.place && b.place) return parseInt(a.place) - parseInt(b.place);
             return parseFloat(a.time) - parseFloat(b.time); 
         });
+
+        currentFilteredResults = filteredData;
 
         const distance = filteredData.length > 0 ? parseFloat(filteredData[0].distance) : 5000;
         const teamScores = calculateTeamScores(filteredData);
 
-        renderResultsTable(filteredData, distance);
-        renderTeamResults(teamScores);
+        const resultsBox = document.getElementById('results-box');
+        resultsBox.innerHTML = '';
+
+        if (activeViewMode === 'all' || activeViewMode === 'teams') {
+          renderTeamResults(teamScores);
+        }
+
+        if (activeViewMode === 'all' || activeViewMode === 'indiv') {
+          renderResultsTable(filteredData, distance);
+        }
     }
 
     function normalizeSchoolName(schoolName) {
@@ -583,10 +862,10 @@
             const sixthPlace = sorted[5]?.scoringPlace ?? 999;
             const seventhPlace = sorted[6]?.scoringPlace ?? 999;
 
-            const top5Times = topFive.map(a => parseFloat(a.time));
+            const top5Times = topFive.map(a => parseFloat(a.time)).filter(t => !isNaN(t) && t > 0);
             const totalTime = top5Times.reduce((sum, t) => sum + t, 0);
-            const teamAvg = totalTime / 5;
-            const teamSplit = top5Times[4] - top5Times[0];
+            const teamAvg = top5Times.length === 5 ? totalTime / 5 : 0;
+            const teamSplit = top5Times.length === 5 ? top5Times[4] - top5Times[0] : 0;
 
             scores.push({ school, score, sixthPlace, seventhPlace, teamAvg, teamSplit, athletes: topFive, finishersCount: 5, totalAthletes: sorted.length, allAthletes: sorted });
         });
@@ -600,20 +879,25 @@
 
     function renderTeamResults(teamScores) {
         const resultsBox = document.getElementById('results-box');
-        if (!teamScores || teamScores.length === 0) return;
+        if (!teamScores || teamScores.length === 0) {
+          if (activeViewMode === 'teams') {
+            resultsBox.innerHTML = '<section class="results-table-container"><p style="padding:20px; text-align:center;">No team scores available for this selection (minimum 5 finishers required).</p></section>';
+          }
+          return;
+        }
 
         const teamHTML = `
-            <section class="results-table-container">
-                <h3 style="color: var(--text-primary); margin-bottom: 20px; font-size: 1.5rem; font-family: var(--font-display);">🏆 Team Scores</h3>
+            <section class="results-table-container" style="margin-bottom:30px;">
+                <h3 style="color: var(--text-primary); margin-bottom: 20px; font-size: 1.5rem; font-family: var(--font-display);">🏆 Team Standings</h3>
                 <table class="results-table">
                     <thead>
                         <tr>
                             <th>Place</th>
                             <th>School</th>
-                            <th>Team Score</th>
+                            <th>Score</th>
                             <th>Stats (Avg / Split)</th>
-                            <th>Top 5 Finishers</th>
-                            <th style="font-size: 0.85rem;">Tiebreaker<br/>(6th, 7th)</th>
+                            <th>Scoring Top 5</th>
+                            <th style="font-size: 0.85rem; text-align:center;">Tiebreaker<br/>(6th, 7th)</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -626,19 +910,21 @@
                             <tr>
                                 <td data-label="Place" style="font-weight: 700;">${index + 1}</td>
                                 <td data-label="School" style="font-weight: 600;">${team.school}</td>
-                                <td data-label="Team Score" style="font-weight: 700; color: #4f8bf0; font-size: 1.1rem;">${team.score}</td>
-                                <td data-label="Stats" style="font-size: 0.9rem; color: var(--text-secondary);">
-                                    <div style="margin-bottom: 4px;"><strong>Avg:</strong> ${formatTime(team.teamAvg)}</div>
+                                <td data-label="Score" style="font-weight: 700; color: var(--primary); font-size: 1.15rem;">${team.score}</td>
+                                <td data-label="Stats" style="font-size: 0.88rem; color: var(--text-secondary);">
+                                    <div style="margin-bottom: 2px;"><strong>Avg:</strong> ${formatTime(team.teamAvg)}</div>
                                     <div><strong>Split:</strong> ${formatTime(team.teamSplit)}</div>
                                 </td>
-                                <td data-label="Top 5 Finishers">
-                                    ${team.athletes.map(a => `
-                                        <div style="font-size: 0.9rem; padding: 4px 0;">
-                                            <strong>#${a.scoringPlace != null ? a.scoringPlace : a.place}</strong> ${a.athlete_name || a.name || 'Unknown'}
-                                        </div>
-                                    `).join('')}
+                                <td data-label="Scoring Top 5">
+                                    <div style="display:flex; flex-wrap:wrap; gap:6px;">
+                                      ${team.athletes.map(a => `
+                                          <span style="font-size: 0.82rem; padding: 2px 8px; background:var(--bg-secondary); border-radius:12px; border:1px solid var(--border);">
+                                              <strong>#${a.scoringPlace != null ? a.scoringPlace : a.place}</strong> ${a.athlete_name || a.name || 'Runner'}
+                                          </span>
+                                      `).join('')}
+                                    </div>
                                 </td>
-                                <td data-label="Tiebreaker" style="font-size: 0.9rem; text-align: center; color: var(--text-tertiary);">${tiebreaker}</td>
+                                <td data-label="Tiebreaker" style="font-size: 0.88rem; text-align: center; color: var(--text-tertiary);">${tiebreaker}</td>
                             </tr>
                             `;
                         }).join('')}
@@ -647,19 +933,20 @@
             </section>
         `;
 
-        resultsBox.innerHTML = teamHTML + resultsBox.innerHTML;
+        resultsBox.innerHTML += teamHTML;
     }
 
     function renderResultsTable(results, distanceMeters) {
         const resultsBox = document.getElementById('results-box');
         
         if (!results || results.length === 0) {
-            resultsBox.innerHTML = '<section><p>No results found.</p></section>';
+            resultsBox.innerHTML += '<section class="results-table-container"><p style="padding:20px; text-align:center;">No individual results found.</p></section>';
             return;
         }
 
         const tableHTML = `
             <section class="results-table-container">
+                <h3 style="color: var(--text-primary); margin-bottom: 20px; font-size: 1.5rem; font-family: var(--font-display);">🏃 Individual Results</h3>
                 <table class="results-table">
                     <thead>
                         <tr>
@@ -681,19 +968,19 @@
 
                             return `
                             <tr>
-                                <td data-label="Place">${runner.place || '-'}</td>
+                                <td data-label="Place" style="font-weight:700;">${runner.place || '-'}</td>
                                 <td data-label="Name">
                                     <a href="${athleteHref}" style="font-weight:700; color:var(--text-primary); text-decoration:none;">
                                         ${athleteName}
                                     </a>
                                 </td>
-                                <td data-label="Grade">${formatGrade(runner.gradYear)}</td>
+                                <td data-label="Grade">${formatGrade(runner.gradYear || runner.grade)}</td>
                                 <td data-label="School">
                                     <a href="school.html?slug=${schoolSlug}" style="color:var(--text-secondary); text-decoration:none;">
                                         ${rawSchool}
                                     </a>
                                 </td>
-                                <td data-label="Time" style="font-weight:700;">${formatTime(timeSeconds)}</td>
+                                <td data-label="Time" style="font-weight:700; color:var(--primary);">${formatTime(timeSeconds)}</td>
                                 <td data-label="Pace/Mile" style="color:var(--text-tertiary);">${calculatePacePerMile(timeSeconds, distanceMeters)}</td>
                             </tr>
                         `}).join('')}
@@ -702,6 +989,55 @@
             </section>
         `;
         resultsBox.innerHTML += tableHTML;
+    }
+
+    // ==========================================
+    // 5. EXPORT UTILITY (CSV EXPORT)
+    // ==========================================
+
+    function exportToCSV() {
+      if (!currentFilteredResults || currentFilteredResults.length === 0) {
+        alert("No results available to export.");
+        return;
+      }
+
+      const meetName = currentMeetData ? currentMeetData.name : "Meet_Results";
+      const genderLabel = activeGender === 'M' ? 'Boys' : 'Girls';
+      const divisionLabel = activeRaceType || 'Division';
+      const filename = `${slugify(meetName)}_${slugify(genderLabel)}_${slugify(divisionLabel)}.csv`;
+
+      let csvRows = [
+        ["Place", "Athlete Name", "Grade", "School", "Time", "Pace Per Mile"]
+      ];
+
+      const distance = currentFilteredResults.length > 0 ? parseFloat(currentFilteredResults[0].distance) : 5000;
+
+      currentFilteredResults.forEach(r => {
+        const timeSec = r.time ? parseFloat(r.time) : 0;
+        const timeFormatted = formatTime(timeSec);
+        const paceFormatted = calculatePacePerMile(timeSec, distance);
+        const athleteName = r.athlete_name || r.name || 'Unknown';
+        const schoolName = r.school_name || r.school || 'Unknown';
+        const grade = formatGrade(r.gradYear || r.grade);
+
+        csvRows.push([
+          r.place || '',
+          `"${athleteName.replace(/"/g, '""')}"`,
+          `"${grade}"`,
+          `"${schoolName.replace(/"/g, '""')}"`,
+          `"${timeFormatted}"`,
+          `"${paceFormatted}"`
+        ]);
+      });
+
+      const csvContent = "data:text/csv;charset=utf-8," + csvRows.map(e => e.join(",")).join("\n");
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", filename);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     }
   </script>
 

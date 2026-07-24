@@ -22,6 +22,7 @@ const BASE_LINKS = [
       { name: 'Track Meets', url: 'Track/meets.html' },
       { name: 'Track Rankings', url: 'Track/rankings.html' },
       { name: 'Teams', url: 'Track/teams.html' },
+      { name: 'Events', url: 'Track/events.html' },
       { name: 'Analytics', url: 'Track/analytics.html'},
       { name: 'Athlete', url:'Track/athlete.html'}
     ],
