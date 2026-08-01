@@ -1,170 +1,549 @@
 <!doctype html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Mountain State Miles — Track & Cross Country</title>
-        <meta property="og:image" content="/assets/images/logo.png" />
-        <link
-            rel="icon"
-            type="image/png"
-            href="/assets/images/favicon/favicon-96x96.png"
-            sizes="96x96"
-        />
-        <link
-            rel="icon"
-            type="image/svg+xml"
-            href="/assets/images/favicon/favicon.svg"
-        />
-        <link rel="shortcut icon" href="/assets/images/favicon/favicon.ico" />
-        <link
-            rel="apple-touch-icon"
-            sizes="180x180"
-            href="/assets/images/favicon/apple-touch-icon.png"
-        />
-        <meta name="apple-mobile-web-app-title" content="MSM" />
-        <link rel="manifest" href="/assets/images/favicon/site.webmanifest" />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-        <link
-            href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
-            rel="stylesheet"
-        />
-        <link
-            rel="stylesheet"
-            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-        />
-        <link rel="stylesheet" href="/assets/main.css" />
-        
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mountain State Miles &mdash; Track &amp; Cross Country</title>
+    
+    <meta property="og:image" content="/assets/images/logo.png" />
+    <link rel="icon" type="image/png" href="/assets/images/favicon/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="/assets/images/favicon/favicon.svg" />
+    <link rel="shortcut icon" href="/assets/images/favicon/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/images/favicon/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-title" content="MSM" />
+    <link rel="manifest" href="/assets/images/favicon/site.webmanifest" />
 
-        <script src="/assets/theme-toggle.js" defer></script>
-        <script src="/assets/components.js" defer></script>
-    </head>
-    <body class="home-page">
-        <div id="global-header"></div>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="stylesheet" href="/assets/main.css" />
 
-        <script src="/assets/msm-loader.js"></script>
+    <style>
+        /* --- Hero Section --- */
+        .home-hero {
+            text-align: center;
+            padding: 48px 20px 8px;
+        }
+        .home-hero .hero-logo {
+            max-width: 96px;
+            height: auto;
+            margin-bottom: 14px;
+        }
+        .home-hero h1 {
+            font-size: clamp(2rem, 5vw, 3rem);
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            margin: 0 0 0.4rem;
+        }
+        .home-hero p {
+            color: var(--text-secondary);
+            max-width: 560px;
+            margin: 0 auto;
+            font-size: 1.05rem;
+        }
 
-        <main class="content-section">
-            <div class="content-wrapper">
-                <div class="hero">
-                    <img
-                        src="/assets/images/logo.png"
-                        alt="Mountain State Miles Logo"
-                        class="hero-logo"
-                        data-theme-light-src="/assets/images/logo.png"
-                        data-theme-dark-src="/assets/images/logob.png"
-                    />
-                    <h1>Mountain State Miles</h1>
-                    <p>
-                        Your source for West Virginia track & cross country
-                        results, rankings, and records
-                    </p>
+        /* --- Search Bar --- */
+        .home-search {
+            max-width: 560px;
+            margin: 22px auto 4px;
+            position: relative;
+        }
+        .home-search input {
+            width: 100%;
+            padding: 14px 16px 14px 44px;
+            font-size: 1rem;
+            font-family: inherit;
+            border: 1.5px solid var(--border-color, #dcdcdc);
+            border-radius: 10px;
+            background: var(--card-bg, #fff);
+            color: inherit;
+            outline: none;
+            transition: border-color 0.15s;
+        }
+        .home-search input:focus {
+            border-color: var(--accent, #c07f1e);
+        }
+        .home-search .search-icon {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+            pointer-events: none;
+        }
+
+        /* --- Layout Grid --- */
+        .home-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
+            gap: 28px;
+            align-items: start;
+            margin-top: 34px;
+        }
+        @media(max-width: 860px) {
+            .home-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* --- Section Headers --- */
+        .home-section {
+            margin-bottom: 34px;
+        }
+        .home-section-head {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            border-bottom: 2px solid var(--text-primary, #1a1a1a);
+            padding-bottom: 8px;
+            margin-bottom: 14px;
+        }
+        .home-section-head h2 {
+            margin: 0;
+            font-size: 1.35rem;
+            font-weight: 800;
+        }
+        .home-section-head .view-all-link {
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* --- Results Table --- */
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .results-table td {
+            padding: 11px 8px;
+            border-top: 1px solid var(--border-color, #e6e6e6);
+            vertical-align: middle;
+        }
+        .results-table tr:first-child td {
+            border-top: none;
+        }
+        .res-place {
+            font-weight: 800;
+            color: var(--accent, #c07f1e);
+            width: 30px;
+            font-size: 1.05rem;
+        }
+        .res-name {
+            font-weight: 700;
+        }
+        .res-sub {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+        .res-meet {
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+        .res-mark {
+            font-weight: 800;
+            text-align: right;
+            white-space: nowrap;
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* --- Meets List --- */
+        .meet-row {
+            display: flex;
+            gap: 14px;
+            padding: 13px 0;
+            border-top: 1px solid var(--border-color, #e6e6e6);
+        }
+        .meet-row:first-child {
+            border-top: none;
+        }
+        .meet-cal {
+            flex: none;
+            width: 52px;
+            text-align: center;
+            border-radius: 8px;
+            padding: 8px 0;
+            background: var(--accent, #1f4d3a);
+            color: #fff;
+        }
+        .meet-cal .m {
+            font-size: 0.62rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            opacity: 0.9;
+        }
+        .meet-cal .d {
+            font-size: 1.35rem;
+            font-weight: 800;
+            line-height: 1;
+        }
+        .meet-info h3 {
+            margin: 0 0 3px;
+            font-size: 1rem;
+            font-weight: 700;
+        }
+        .meet-info .badges {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+        .div-badge {
+            font-size: 0.62rem;
+            font-weight: 800;
+            letter-spacing: 0.04em;
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: var(--border-color, #eee);
+            color: var(--text-secondary);
+        }
+
+        /* --- Utilities & Cards --- */
+        .loading-state {
+            padding: 20px;
+            text-align: center;
+            color: var(--text-secondary);
+        }
+        .sport-cards {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+            margin-top: 6px;
+        }
+        @media(max-width: 520px) {
+            .sport-cards {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+
+    <script src="/assets/theme-toggle.js" defer></script>
+    <script src="/assets/components.js" defer></script>
+</head>
+<body class="home-page">
+    <div id="global-header"></div>
+    <script src="/assets/msm-loader.js"></script>
+
+    <main class="content-section">
+        <div class="content-wrapper">
+            <div class="hero home-hero">
+                <img src="/assets/images/logo.png" alt="Mountain State Miles Logo" class="hero-logo"
+                     data-theme-light-src="/assets/images/logo.png"
+                     data-theme-dark-src="/assets/images/logob.png" />
+                <h1>Mountain State Miles</h1>
+                <p>Your source for West Virginia track &amp; cross country results, rankings, and records</p>
+
+                <div class="home-search">
+                    <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                    <input id="home-search-input" type="search"
+                           placeholder="Search athletes, schools, or meets&hellip;" aria-label="Search" />
                 </div>
+            </div>
 
-                <div class="sport-cards">
-                    <a href="/Track/index" class="sport-card">
-                        <h3>🏃 Track & Field</h3>
-                        <p>Meet records, rankings, and results</p>
-                    </a>
-                    <a href="/CrossCountry/xc" class="sport-card">
-                        <h3>🏅 Cross Country</h3>
-                        <p>School rankings and meet results</p>
-                    </a>
-                </div>
-
-                <div class="meets-section" id="news-section">
-                    <div class="meets-header">
-                        <h2>📰 Latest Recaps</h2>
-                        <a href="/news" class="view-all-link">View All →</a>
+            <div class="home-grid">
+                <div>
+                    <div class="home-section" id="results-section">
+                        <div class="home-section-head">
+                            <h2>Latest Results</h2>
+                            <a href="/CrossCountry/xc" class="view-all-link">All Meets &rarr;</a>
+                        </div>
+                        <div id="results-body">
+                            <div class="loading-state">Loading results&hellip;</div>
+                        </div>
                     </div>
-                    <div class="meets-grid" id="news-grid">
-                        <div class="loading-state">Loading recaps...</div>
+
+                    <div class="meets-section home-section" id="news-section">
+                        <div class="home-section-head meets-header">
+                            <h2>&#128240; Latest Recaps</h2>
+                            <a href="/news" class="view-all-link">View All &rarr;</a>
+                        </div>
+                        <div class="meets-grid" id="news-grid">
+                            <div class="loading-state">Loading recaps&hellip;</div>
+                        </div>
+                    </div>
+
+                    <div class="sport-cards">
+                        <a href="/Track/index" class="sport-card">
+                            <h3>&#127939; Track &amp; Field</h3>
+                            <p>Meet records, rankings, and results</p>
+                        </a>
+                        <a href="/CrossCountry/xc" class="sport-card">
+                            <h3>&#127941; Cross Country</h3>
+                            <p>School rankings and meet results</p>
+                        </a>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="home-section" id="upcoming-section">
+                        <div class="home-section-head">
+                            <h2>Recent &amp; Upcoming Meets</h2>
+                        </div>
+                        <div id="upcoming-body">
+                            <div class="loading-state">Loading meets&hellip;</div>
+                        </div>
                     </div>
                 </div>
             </div>
-        </main>
+        </div>
+    </main>
 
-        <div id="global-footer"></div>
+    <div id="global-footer"></div>
 
-        <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-        <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-        <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-analytics-compat.js"></script>
-        <script>
-            const firebaseConfig = {
-                apiKey: "AIzaSyCBQt9I_OSoUuTM61F-JXNBkD98f7PCJcA",
-                authDomain: "mountainstatemiles-1326f.firebaseapp.com",
-                databaseURL:
-                    "https://mountainstatemiles-1326f-default-rtdb.firebaseio.com",
-                projectId: "mountainstatemiles-1326f",
-                storageBucket: "mountainstatemiles-1326f.firebasestorage.app",
-                messagingSenderId: "605911511756",
-                appId: "1:605911511756:web:0e99071a816f0a39210869",
-                measurementId: "G-N3DNFRQNF9",
-            };
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-analytics-compat.js"></script>
+    
+    <script>
+        // --- Firebase Configuration ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyCBQt9I_OSoUuTM61F-JXNBkD98f7PCJcA",
+            authDomain: "mountainstatemiles-1326f.firebaseapp.com",
+            databaseURL: "https://mountainstatemiles-1326f-default-rtdb.firebaseio.com",
+            projectId: "mountainstatemiles-1326f",
+            storageBucket: "mountainstatemiles-1326f.firebasestorage.app",
+            messagingSenderId: "605911511756",
+            appId: "1:605911511756:web:0e99071a816f0a39210869",
+            measurementId: "G-N3DNFRQNF9",
+        };
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
 
-            firebase.initializeApp(firebaseConfig);
-            const database = firebase.database();
-
-            async function loadRecentNews() {
-                const newsGrid = document.getElementById("news-grid");
-                try {
-                    const snapshot = await database.ref("news").once("value");
-                    const articles = [];
-
-                    snapshot.forEach((child) => {
-                        articles.push({
-                            id: child.key,
-                            ...child.val(),
-                        });
-                    });
-
-                    articles.sort((a, b) => {
-                        const dateA = new Date(a.date || 0);
-                        const dateB = new Date(b.date || 0);
-                        return dateB - dateA;
-                    });
-
-                    const recentArticles = articles.slice(0, 3);
-
-                    if (!recentArticles.length) {
-                        newsGrid.innerHTML =
-                            '<div class="loading-state">No articles yet. Check back soon!</div>';
-                        return;
-                    }
-
-                    function formatDate(dateString) {
-                        const date = new Date(dateString);
-                        return date.toLocaleDateString("en-US", {
-                            month: "short",
-                            day: "numeric",
-                        });
-                    }
-
-                    newsGrid.innerHTML = recentArticles
-                        .map(
-                            (article) => `
-                    <div class="meet-card" style="cursor: default;">
-                        <h3 class="meet-card-title">${article.title}</h3>
-                        <p class="meet-card-date">📅 ${formatDate(article.date)}</p>
-                        ${article.category ? `<p class="meet-card-location">${article.category}</p>` : ""}
-                        <p style="font-size: 0.9rem; color: var(--text-secondary); margin: 0;">${article.content.substring(0, 100)}...</p>
-                    </div>
-                `,
-                        )
-                        .join("");
-                } catch (error) {
-                    console.error("Error loading news:", error);
-                    newsGrid.innerHTML =
-                        '<div class="loading-state">Error loading articles.</div>';
-                } finally {
-                    document.dispatchEvent(new Event("MSMDataLoaded"));
-                }
+        // --- Shared Helpers ---
+        function snapshotToArray(snapshot) {
+            if (!snapshot.exists()) return [];
+            const data = snapshot.val();
+            if (!data) return [];
+            if (typeof data === "object" && !Array.isArray(data)) {
+                return Object.keys(data).map((key) => ({ id: key, ...data[key] }));
             }
+            return Array.isArray(data) ? data : [];
+        }
 
-            document.addEventListener("DOMContentLoaded", () => {
-                loadRecentNews();
+        function esc(s) {
+            return String(s == null ? "" : s)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;");
+        }
+
+        function fmtShort(dateString) {
+            const d = new Date(dateString);
+            return isNaN(d) ? "" : d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+        }
+
+        function fmtTime(secs) {
+            const n = Number(secs);
+            if (!Number.isFinite(n) || n <= 0) return "";
+            const m = Math.floor(n / 60);
+            const s = n - m * 60;
+            const sStr = (s < 10 ? "0" : "") + s.toFixed(2);
+            return m + ":" + sStr;
+        }
+
+        // --- Data Loading Functions ---
+
+        async function loadLatestResults() {
+                    const body = document.getElementById("results-body");
+                    try {
+                        const [ccMeetsSnap, trkMeetsSnap] = await Promise.all([
+                            database.ref("crosscountry/meets").once("value"),
+                            database.ref("Track/meets").once("value"),
+                        ]);
+                        
+                        const now = Date.now();
+        
+                        const meets = [
+                            ...snapshotToArray(ccMeetsSnap).map((m) => ({ ...m, _tree: "crosscountry" })),
+                            ...snapshotToArray(trkMeetsSnap).map((m) => ({ ...m, _tree: "Track" })),
+                        ]
+                        // 1. Ensure the date is valid
+                        .filter((m) => m.date && !isNaN(new Date(m.date).getTime()))
+                        // 2. Only include meets that are happening today or have already happened
+                        .filter((m) => new Date(m.date).getTime() <= now)
+                        // 3. Sort by the closest time to right now
+                        .sort((a, b) => {
+                            const diffA = Math.abs(now - new Date(a.date).getTime());
+                            const diffB = Math.abs(now - new Date(b.date).getTime());
+                            return diffA - diffB;
+                        });
+        
+                        if (!meets.length) {
+                            body.innerHTML = '<div class="loading-state">No past meets posted yet.</div>';
+                            return;
+                        }
+                        
+                        const latest = meets[0];
+                        const snap = await database.ref(`${latest._tree}/results`)
+                            .orderByChild("meet_slug").equalTo(latest.slug).once("value");
+                            
+                        let results = snapshotToArray(snap)
+                            .sort((a, b) => (a.time ?? Infinity) - (b.time ?? Infinity))
+                            .slice(0, 8);
+        
+                        if (!results.length) {
+                            body.innerHTML = `<div class="loading-state">Latest meet: ${esc(latest.name)} &mdash; results coming soon.</div>`;
+                            return;
+                        }
+        
+                        // Render Results
+                        let html = `
+                            <p style="font-size:0.82rem; color:var(--text-secondary); margin:0 0 10px;">
+                                ${esc(latest.name)} &middot; ${esc(fmtShort(latest.date))}
+                            </p>
+                            <table class="results-table">
+                                <tbody>
+                        `;
+                        
+                        results.forEach((r, i) => {
+                            const place = r.place || r.placement || i + 1;
+                            const name = r.athlete_name || "&mdash;";
+                            const school = r.school_slug || "";
+                            const genderStr = r.gender ? " &middot; " + r.gender : "";
+                            
+                            html += `
+                                <tr>
+                                    <td class="res-place">${place}</td>
+                                    <td>
+                                        <div class="res-name">${esc(name)}</div>
+                                        <div class="res-sub">${esc(school)}${esc(genderStr)}</div>
+                                    </td>
+                                    <td class="res-mark">${esc(fmtTime(r.time))}</td>
+                                </tr>
+                            `;
+                        });
+                        
+                        html += `</tbody></table>`;
+                        body.innerHTML = html;
+        
+                    } catch (err) {
+                        console.error("Error loading results:", err);
+                        body.innerHTML = '<div class="loading-state">Results feed unavailable.</div>';
+                    }
+                }
+
+        async function loadRecentNews() {
+            const grid = document.getElementById("news-grid");
+            try {
+                const snap = await database.ref("news").once("value");
+                const articles = snapshotToArray(snap)
+                    .sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0))
+                    .slice(0, 3);
+                    
+                if (!articles.length) {
+                    grid.innerHTML = '<div class="loading-state">No articles yet. Check back soon!</div>';
+                    return;
+                }
+                
+                let html = "";
+                articles.forEach((a) => {
+                    const locationHtml = a.category ? `<p class="meet-card-location">${esc(a.category)}</p>` : "";
+                    const snippet = (a.content || "").substring(0, 100) + "&hellip;";
+                    
+                    html += `
+                        <div class="meet-card" style="cursor:default;">
+                            <h3 class="meet-card-title">${esc(a.title)}</h3>
+                            <p class="meet-card-date">&#128197; ${esc(fmtShort(a.date))}</p>
+                            ${locationHtml}
+                            <p style="font-size:0.9rem; color:var(--text-secondary); margin:0;">${esc(snippet)}</p>
+                        </div>
+                    `;
+                });
+                
+                grid.innerHTML = html;
+                
+            } catch (err) {
+                console.error("Error loading news:", err);
+                grid.innerHTML = '<div class="loading-state">Error loading articles.</div>';
+            } finally {
+                document.dispatchEvent(new Event("MSMDataLoaded"));
+            }
+        }
+
+        async function loadMeets() {
+            const body = document.getElementById("upcoming-body");
+            try {
+                const [ccSnap, trkSnap] = await Promise.all([
+                    database.ref("crosscountry/meets").once("value"),
+                    database.ref("Track/meets").once("value"),
+                ]);
+        
+                const now = Date.now();
+        
+                const meets = [
+                    ...snapshotToArray(ccSnap).map((m) => ({ ...m, _sport: "XC" })),
+                    ...snapshotToArray(trkSnap).map((m) => ({ ...m, _sport: "TF" })),
+                ]
+                .filter((m) => m.date && !isNaN(new Date(m.date).getTime())) 
+                .sort((a, b) => {
+                    const diffA = Math.abs(new Date(a.date).getTime() - now);
+                    const diffB = Math.abs(new Date(b.date).getTime() - now);
+                    return diffA - diffB; // Sort ascending by closest time distance to today
+                })
+                .slice(0, 5);
+        
+                if (!meets.length) {
+                    body.innerHTML = '<div class="loading-state">No meets scheduled.</div>';
+                    return;
+                }
+                
+                let html = "";
+                meets.forEach((m) => {
+                    const d = new Date(m.date);
+                    const mon = isNaN(d) ? "" : d.toLocaleDateString("en-US", { month: "short" });
+                    const day = isNaN(d) ? "" : d.getDate();
+                    
+                    const divs = (m.divisions ? String(m.divisions).split(/[,|]/) : [])
+                        .map((x) => x.trim())
+                        .filter(Boolean);
+                        
+                    const badges = [m._sport, ...divs]
+                        .map((b) => `<span class="div-badge">${esc(b)}</span>`)
+                        .join("");
+                        
+                    html += `
+                        <div class="meet-row">
+                            <div class="meet-cal">
+                                <div class="m">${mon}</div>
+                                <div class="d">${day}</div>
+                            </div>
+                            <div class="meet-info">
+                                <h3>${esc(m.name || "Meet")}</h3>
+                                <div class="badges">${badges}</div>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                body.innerHTML = html;
+                
+            } catch (err) {
+                console.error("Error loading meets:", err);
+                body.innerHTML = '<div class="loading-state">Schedule unavailable.</div>';
+            }
+        }
+
+        // --- Init Functionality ---
+        function initSearch() {
+            const input = document.getElementById("home-search-input");
+            if (!input) return;
+            input.addEventListener("keydown", (e) => {
+                if (e.key === "Enter") {
+                    const q = input.value.trim();
+                    if (q) window.location.href = "/CrossCountry/xc?q=" + encodeURIComponent(q);
+                }
             });
-        </script>
-    </body>
+        }
+
+        // Run on load
+        document.addEventListener("DOMContentLoaded", () => {
+            loadLatestResults();
+            loadRecentNews();
+            loadMeets();
+            initSearch();
+        });
+    </script>
+</body>
 </html>

@@ -126,7 +126,7 @@
         return meetDate >= today; // Keep only today or future dates
       })
       .sort((a, b) => new Date(a.date) - new Date(b.date)) // Closest date first
-      .slice(0, 10); // Take the top 10 closest future events
+      .slice(0, 9); // Take the top 10 closest future events
 
     if (!upcomingMeets.length) {
       container.innerHTML = "<p>No upcoming meets scheduled.</p>";

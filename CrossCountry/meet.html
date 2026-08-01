@@ -14,6 +14,8 @@
   <meta name="description" content="WV cross country running results, rankings, team scores, and meet data — Mountain State Miles." />
   <meta name="keywords" content="WVXC, WV Track, West Virginia Running, Cross Country Results, WV HS Running, Mountain State Miles" />
   <link rel="stylesheet" href="/assets/main.css" />
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.7.1/jspdf.plugin.autotable.min.js"></script>
   <script src="/assets/components.js" defer></script>
   <script src="/assets/theme-toggle.js" defer></script>
   <script>
@@ -27,6 +29,9 @@
   </script>
 
   <style>
+    /* ============================================
+       Modern Meet Page Styles
+       ============================================ */
     @font-face {
       font-family: 'Aqeon Demo';
       src: url('../assets/Aqeon Demo Font.ttf') format('truetype');
@@ -37,265 +42,303 @@
       --radius-md: 8px;
     }
 
-    /* Hero & Stat Strip */
-    .page-hero {
-      max-width: 950px; 
-      margin: 0 auto 15px; 
-      text-align: center; 
-      animation: fadeUp 0.4s ease both;
+    *, *::before, *::after { box-sizing: border-box; }
+
+    .content-section {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 30px 16px;
     }
-    .page-hero-sub {
-      color: var(--text-secondary); 
-      font-size: 1.05rem; 
-      max-width: 680px; 
-      margin: 0 auto 20px; 
-      line-height: 1.5;
+
+    /* --- Hero Header --- */
+    .meet-header {
+      background: var(--bg-primary);
+      padding: 24px 16px;
+      text-align: center;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border);
+      margin-bottom: 24px;
+      box-shadow: 0 4px 16px var(--shadow-light);
     }
-    .section-title {
-      font-family: var(--font-display); 
-      font-size: 4rem; 
+    .meet-title {
+      font-family: var(--font-display);
+      font-size: clamp(2rem, 6vw, 3rem);
       font-weight: 800;
-      color: var(--text-primary); 
-      margin: 40px 0 10px 0; 
-      letter-spacing: -0.02em;
+      color: var(--text-primary);
+      margin: 0 0 8px;
+      line-height: 1.1;
     }
-    
-    .hero-actions {
+    .meet-subtitle {
+      font-size: 0.95rem;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+    .meet-stats {
       display: flex;
       justify-content: center;
-      gap: 12px;
-      flex-wrap: wrap;
-      margin-bottom: 20px;
+      gap: 16px;
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
     }
-
-    .stat-strip {
-      display: flex; 
-      justify-content: center; 
-      gap: 14px; 
-      flex-wrap: wrap; 
-      margin: 20px 0 25px;
-    }
-    .mini-stat {
-      min-width: 120px; 
-      padding: 14px 22px; 
-      border: 1px solid var(--border);
-      border-radius: var(--radius-lg); 
-      background: var(--bg-primary); 
+    .stat-item {
       text-align: center;
-      box-shadow: 0 2px 8px var(--shadow-light);
+      padding: 0 12px;
     }
-    .mini-stat-num {
-      display: block; 
-      font-family: var(--font-display); 
-      font-size: 1.8rem; 
-      font-weight: 800; 
-      letter-spacing: -0.02em; 
-      color: var(--text-primary); 
-      line-height: 1;
-    }
-    .mini-stat-lbl {
-      display: block; 
-      margin-top: 4px; 
-      font-size: 0.7rem; 
-      font-weight: 700; 
-      text-transform: uppercase; 
-      letter-spacing: 0.06em; 
-      color: var(--text-tertiary);
-    }
-
-    /* Interactive Buttons */
-    .btn-pill {
-      display: inline-flex; 
-      align-items: center; 
-      justify-content: center; 
-      gap: 8px;
-      padding: 10px 22px; 
-      background: var(--primary); 
-      color: var(--bg-primary);
-      border-radius: 30px; 
-      font-weight: 600; 
-      font-size: 0.95rem; 
-      text-decoration: none;
-      transition: transform 0.2s, box-shadow 0.2s, background 0.2s; 
-      border: none; 
-      cursor: pointer;
-    }
-    .btn-pill:hover {
-      transform: translateY(-2px); 
-      box-shadow: 0 6px 16px var(--shadow-light); 
-      filter: brightness(1.1);
-    }
-    .btn-pill.course-btn {
-      background: linear-gradient(135deg, #2fd0a3, #1a5f4c); 
-      color: #ffffff;
-      box-shadow: 0 4px 14px rgba(47, 208, 163, 0.3);
-    }
-    .btn-pill.secondary-btn {
-      background: var(--bg-secondary);
+    .stat-value {
+      display: block;
+      font-size: 1.4rem;
+      font-weight: 800;
       color: var(--text-primary);
-      border: 1px solid var(--border);
     }
-    
-    @keyframes fadeUp { 
-      from { opacity: 0; transform: translateY(14px); } 
-      to { opacity: 1; transform: translateY(0); } 
+    .stat-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      font-weight: 700;
+      color: var(--text-tertiary);
+      letter-spacing: 0.05em;
     }
 
-    /* Selector Card */
-    #selector-card {
-      background: var(--bg-primary); 
-      border: 1px solid var(--border); 
-      border-radius: var(--radius-lg);
-      padding: 24px; 
-      box-shadow: 0 4px 16px var(--shadow-light); 
-      text-align: center; 
-      margin-bottom: 25px;
+    /* --- App-Style Tabs (Gender & Views) --- */
+    .app-tabs-container {
+      margin-bottom: 24px;
     }
-    .tabs-row { 
-      display: flex; 
-      justify-content: center; 
-      gap: 10px; 
-      margin-bottom: 18px; 
+    .app-tabs {
+      display: flex;
+      overflow-x: auto;
+      border-bottom: 2px solid var(--border);
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none; /* Firefox */
     }
-    .gender-tab {
-      padding: 8px 26px; 
-      font-weight: 700; 
-      font-size: 0.95rem; 
-      border-radius: 20px;
-      border: 1px solid var(--border); 
-      background: var(--bg-secondary); 
+    .app-tabs::-webkit-scrollbar { display: none; } /* Chrome/Safari */
+    
+    .app-tab {
+      padding: 12px 20px;
+      font-size: 0.95rem;
+      font-weight: 600;
       color: var(--text-secondary);
-      cursor: pointer; 
-      transition: all 0.2s ease;
+      background: transparent;
+      border: none;
+      white-space: nowrap;
+      cursor: pointer;
+      position: relative;
+      transition: color 0.2s;
     }
-    .gender-tab.active { 
-      background: var(--primary); 
-      color: var(--bg-primary); 
-      border-color: var(--primary); 
+    .app-tab.active {
+      color: var(--text-primary);
     }
-    #select-heading { 
-      font-family: var(--font-display); 
-      font-size: 1.4rem; 
-      color: var(--text-primary); 
-      margin-bottom: 4px; 
+    .app-tab.active::after {
+      content: '';
+      position: absolute;
+      bottom: -2px;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background: var(--text-primary);
     }
-    #select-sub { 
-      font-size: 0.88rem; 
-      color: var(--text-tertiary); 
-      margin-bottom: 18px; 
+
+    /* --- Selectors (Divisions) --- */
+    .division-chips {
+      display: flex;
+      flex-wrap: nowrap;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 12px 0 4px;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
     }
-    .race-buttons { 
-      display: flex; 
-      flex-wrap: wrap; 
-      justify-content: center; 
-      gap: 10px; 
-    }
-    .race-button {
-      padding: 8px 18px; 
-      border-radius: 20px; 
-      font-weight: 600; 
-      font-size: 0.88rem; 
-      cursor: pointer; 
-      border: 1px solid var(--border); 
+    .division-chips::-webkit-scrollbar { display: none; }
+    
+    .chip {
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      background: var(--bg-secondary);
+      color: var(--text-secondary);
+      border: 1px solid var(--border);
+      cursor: pointer;
+      white-space: nowrap;
       transition: all 0.2s;
     }
-    .race-button.primary { 
-      background: var(--text-primary); 
-      color: var(--bg-primary); 
-      border-color: var(--text-primary); 
-    }
-    .race-button.secondary { 
-      background: var(--bg-secondary); 
-      color: var(--text-secondary); 
-    }
-    .race-button.secondary:hover { 
-      background: var(--border); 
+    .chip.active {
+      background: var(--text-primary);
+      color: var(--bg-primary);
+      border-color: var(--text-primary);
     }
 
-    /* Utility Bar: Search, View Toggles & Export Options */
-    .controls-bar {
+    /* --- Search & Actions --- */
+    .utility-bar {
       display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      justify-content: space-between;
       gap: 12px;
-      background: var(--bg-primary);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
-      padding: 14px 20px;
-      margin-bottom: 25px;
-      box-shadow: 0 2px 10px var(--shadow-light);
+      margin-bottom: 24px;
+      flex-wrap: wrap;
     }
-    .search-input-wrap {
+    .search-box {
       flex: 1;
-      min-width: 220px;
+      min-width: 200px;
       position: relative;
     }
-    .search-input {
+    .search-box input {
       width: 100%;
-      padding: 8px 14px 8px 36px;
+      padding: 12px 16px 12px 40px;
+      border-radius: 12px;
       border: 1px solid var(--border);
-      border-radius: 20px;
       background: var(--bg-secondary);
       color: var(--text-primary);
-      font-size: 0.9rem;
+      font-size: 0.95rem;
       outline: none;
-      transition: border-color 0.2s;
     }
-    .search-input:focus {
-      border-color: var(--primary);
+    .search-box input:focus {
+      border-color: var(--text-primary);
     }
-    .search-icon {
+    .search-box i {
       position: absolute;
-      left: 12px;
+      left: 14px;
       top: 50%;
       transform: translateY(-50%);
-      font-size: 0.85rem;
       color: var(--text-tertiary);
     }
-    .view-toggles, .export-group {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-    }
-    .toggle-btn {
-      padding: 6px 14px;
-      font-size: 0.82rem;
-      font-weight: 600;
-      border-radius: 16px;
+    .action-btn {
+      padding: 10px 16px;
+      border-radius: 12px;
       border: 1px solid var(--border);
       background: var(--bg-secondary);
-      color: var(--text-secondary);
+      color: var(--text-primary);
+      font-weight: 600;
+      font-size: 0.85rem;
       cursor: pointer;
-      transition: all 0.2s ease;
-    }
-    .toggle-btn.active {
-      background: var(--primary);
-      color: var(--bg-primary);
-      border-color: var(--primary);
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
 
-    /* Weather Widget Styling */
-    .weather-card {
-      background: var(--bg-primary); 
-      border: 1px solid var(--border); 
-      padding: 16px 24px; 
-      border-radius: var(--radius-lg); 
-      display: inline-flex; 
-      gap: 18px; 
-      align-items: center; 
-      box-shadow: 0 4px 12px var(--shadow-light);
+    /* --- App-Style List Layout (The Core Update) --- */
+    .app-list {
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 32px;
+      box-shadow: 0 2px 8px var(--shadow-light);
+    }
+    .list-header {
+      background: var(--bg-secondary);
+      padding: 12px 16px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border-bottom: 1px solid var(--border);
+    }
+    .list-item {
+      display: flex;
+      align-items: stretch; /* Stretches the place box to full height */
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-primary);
+      transition: background 0.2s;
+    }
+    .list-item:last-child {
+      border-bottom: none;
+    }
+    .list-item:hover {
+      background: var(--bg-secondary);
+    }
+
+    /* Placement Block */
+    .item-place {
+      width: 48px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--text-primary);
+      color: var(--bg-primary);
+      font-weight: 800;
+      font-size: 1.15rem;
+    }
+
+    /* Avatar / Logo */
+    .item-avatar {
+      display: flex;
+      align-items: center;
+      padding-left: 12px;
+    }
+    .item-avatar img {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      object-fit: contain;
+      background: #fff; /* Keep white bg for logos to pop */
+      padding: 2px;
+      border: 1px solid var(--border);
+    }
+
+    /* Middle Details */
+    .item-details {
+      flex: 1;
+      padding: 12px;
+      min-width: 0; /* Prevents flex blowout on long names */
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .item-name {
+      font-weight: 700;
+      font-size: 1.05rem;
+      color: var(--text-primary);
+      text-decoration: none;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .item-school {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      text-decoration: none;
+      margin: 2px 0 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .item-meta {
+      font-size: 0.75rem;
+      color: var(--text-tertiary);
+      font-weight: 600;
+    }
+
+    /* Right Side (Time / Score) */
+    .item-score {
+      padding: 12px 16px 12px 8px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      font-weight: 800;
+      font-size: 1.15rem;
+      color: var(--text-primary);
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Mini Scorer Badges */
+    .scorer-badge {
+      display: inline-block;
+      padding: 2px 6px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-size: 0.65rem;
+      font-weight: 700;
+      margin-right: 4px;
+      color: var(--text-secondary);
     }
 
     /* Print Stylesheet */
     @media print {
       body { background: #fff !important; color: #000 !important; }
-      #global-header, #global-footer, .controls-bar, .hero-actions, .tabs-row, .race-buttons, .weather-card { display: none !important; }
-      .content-section { max-width: 100% !important; padding: 0 !important; }
-      .section-title { font-size: 2rem !important; margin-top: 0 !important; }
-      .results-table-container { box-shadow: none !important; border: 1px solid #ccc !important; }
-      table { width: 100% !important; border-collapse: collapse !important; }
-      th, td { border: 1px solid #ddd !important; padding: 6px !important; color: #000 !important; }
+      #global-header, #global-footer, .app-tabs-container, .utility-bar { display: none !important; }
+      .app-list { box-shadow: none; border: 1px solid #ccc; }
+      .item-place { background: #eee !important; color: #000 !important; -webkit-print-color-adjust: exact; }
     }
   </style>
 </head>
@@ -305,62 +348,51 @@
   <div id="global-header"></div>
   <script src="/assets/msm-loader.js"></script>
 
-  <main class="content-section" style="max-width: 1100px; margin: 0 auto; padding: 40px 20px;">
+  <main class="content-section">
       
-      <section class="page-hero">
-        <h1 class="section-title" id="meet-title">Loading Meet...</h1>
-        <div id="meet-meta" class="page-hero-sub">Retrieving data...</div>
+      <div class="meet-header">
+        <h1 class="meet-title" id="meet-title">Loading Meet...</h1>
+        <div id="meet-meta" class="meet-subtitle">Retrieving data...</div>
         
-        <div class="hero-actions" id="hero-actions">
-          <div id="course-btn-container"></div>
+        <div class="meet-stats" id="meet-stats" style="display:none;">
+          <div class="stat-item"><span class="stat-value" id="stat-races">-</span><span class="stat-label">Races</span></div>
+          <div class="stat-item"><span class="stat-value" id="stat-teams">-</span><span class="stat-label">Teams</span></div>
+          <div class="stat-item"><span class="stat-value" id="stat-athletes">-</span><span class="stat-label">Athletes</span></div>
         </div>
-
-        <div class="stat-strip" id="meet-stats" style="display:none;">
-          <div class="mini-stat"><span class="mini-stat-num" id="stat-races">-</span><span class="mini-stat-lbl">Races</span></div>
-          <div class="mini-stat"><span class="mini-stat-num" id="stat-teams">-</span><span class="mini-stat-lbl">Teams</span></div>
-          <div class="mini-stat"><span class="mini-stat-num" id="stat-athletes">-</span><span class="mini-stat-lbl">Athletes</span></div>
-        </div>
-
-        <div id="weather-widget" class="weather-widget" style="display:none; margin-top: 15px;"></div>
-      </section>
+      </div>
 
       <div id="error" class="error-message" style="display:none; text-align: center; color: var(--danger); padding: 20px; background: rgba(239, 68, 68, 0.1); border-radius: 8px; margin-bottom: 20px;"></div>
 
       <div id="selector" style="display:none;">
-        <div id="selector-card">
-          <div class="tabs-row" role="tablist" aria-label="Gender tabs">
-            <button id="tab-boys" class="gender-tab active">Boys Results</button>
-            <button id="tab-girls" class="gender-tab">Girls Results</button>
+        
+        <div class="app-tabs-container">
+          <div class="app-tabs">
+            <button class="app-tab active" id="view-all-btn">All Results</button>
+            <button class="app-tab" id="view-teams-btn">Team Scores</button>
+            <button class="app-tab" id="view-indiv-btn">Individual Grid</button>
           </div>
-          <div id="select-heading">Select Race Division</div>
-          <div id="select-sub">Filter individual times and team standings by division.</div>
-          <div id="race-button-wrap" class="race-buttons"></div>
         </div>
+
+        <div class="app-tabs-container">
+          <div class="app-tabs">
+            <button id="tab-boys" class="app-tab active">Boys</button>
+            <button id="tab-girls" class="app-tab">Girls</button>
+          </div>
+          <div class="division-chips" id="race-button-wrap"></div>
+        </div>
+
+        <div class="utility-bar">
+          <div class="search-box">
+            <i>🔍</i>
+            <input type="text" id="search-input" placeholder="Search athlete or school..." />
+          </div>
+          <button class="action-btn" onclick="exportToCSV()">📊 CSV</button>
+          <button class="action-btn" onclick="exportResultsPDF()">📄 PDF</button>
+        </div>
+
       </div>
 
-      <div id="controls-bar" class="controls-bar" style="display:none;">
-        <div class="search-input-wrap">
-          <span class="search-icon">🔍</span>
-          <input type="text" id="search-input" class="search-input" placeholder="Search runner or school name..." />
-        </div>
-
-        <div class="view-toggles">
-          <button class="toggle-btn active" id="view-all-btn">All Views</button>
-          <button class="toggle-btn" id="view-teams-btn">Team Scores</button>
-          <button class="toggle-btn" id="view-indiv-btn">Individual Results</button>
-        </div>
-
-        <div class="export-group">
-          <button class="btn-pill secondary-btn" onclick="exportToCSV()" title="Export race results to CSV file" style="padding: 6px 14px; font-size: 0.82rem;">
-            📊 CSV Export
-          </button>
-          <button class="btn-pill secondary-btn" onclick="window.print()" title="Print or save as PDF" style="padding: 6px 14px; font-size: 0.82rem;">
-            🖨️ Print / PDF
-          </button>
-        </div>
-      </div>
-
-    <div id="results-box" class="results-box"></div>
+    <div id="results-box"></div>
   </main>
 
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -406,12 +438,9 @@
       const g = String(r.gender || '').trim().toUpperCase();
       if (['M', 'BOYS', 'BOY', 'MALE', 'B'].includes(g)) return 'M';
       if (['F', 'GIRLS', 'GIRL', 'FEMALE', 'G'].includes(g)) return 'F';
-
-      // Fallback: Check race_type or division name if gender property is missing/ambiguous
       const raceText = (r.race_type || r.division || r.event || r.event_name || '').toLowerCase();
       if (raceText.includes('girl') || raceText.includes('female') || raceText.includes('women')) return 'F';
       if (raceText.includes('boy') || raceText.includes('male') || raceText.includes('men')) return 'M';
-
       return 'M';
     }
 
@@ -420,16 +449,8 @@
       if (typeof raw !== 'string') return 'Varsity 5K';
       raw = raw.trim();
       if (!raw) return 'Varsity 5K';
-
-      // Clean up common abbreviations
-      return raw
-        .split(/\s+/)
-        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-        .join(' ')
-        .replace(/\b5k\b/i, '5K')
-        .replace(/\b3k\b/i, '3K')
-        .replace(/\bJv\b/g, 'JV')
-        .replace(/\bMs\b/g, 'Middle School');
+      return raw.split(/\s+/).map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ')
+        .replace(/\b5k\b/i, '5K').replace(/\b3k\b/i, '3K').replace(/\bJv\b/g, 'JV').replace(/\bMs\b/g, 'Middle School');
     }
 
     // ==========================================
@@ -453,7 +474,6 @@
       const errorDiv = document.getElementById("error");
       const metaDiv = document.getElementById("meet-meta");
       const selectorDiv = document.getElementById("selector");
-      const controlsBar = document.getElementById("controls-bar");
 
       if (!slug) {
         errorDiv.style.display = "block";
@@ -467,53 +487,13 @@
         if (!currentMeetData) throw new Error("Meet not found.");
 
         document.getElementById("meet-title").textContent = currentMeetData.name;
-        
-        const formattedDate = currentMeetData.date 
-          ? new Date(currentMeetData.date).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) 
-          : 'Date TBA';
-        metaDiv.innerHTML = `<strong>${formattedDate}</strong> &nbsp;•&nbsp; ${currentMeetData.location || 'Location Unknown'}`;
+        metaDiv.innerHTML = `<strong>${formatMeetDate(currentMeetData.date)}</strong> &nbsp;•&nbsp; ${currentMeetData.location || 'Location Unknown'}`;
 
-        // Course Viewer Link Logic
-        let courseSlug = currentMeetData.course_slug || null;
-        if (!courseSlug) {
-            const courseMap = {
-                'cabell midland': 'cabell-midland',
-                'mineral wells': 'chick-fil-a',
-                'meadowood': 'meadowood-park',
-                'pipestem': 'pipestem-state-park',
-                'south harrison': 'south-harrison',
-                'glen oak': 'glen-oak',
-                'holmdel': 'holmdel-park'
-            };
-            const locLower = (currentMeetData.location || '').toLowerCase();
-            for (const [key, cSlug] of Object.entries(courseMap)) {
-                if (locLower.includes(key)) {
-                    courseSlug = cSlug;
-                    break;
-                }
-            }
-        }
-
-        if (courseSlug) {
-            document.getElementById('course-btn-container').innerHTML = `
-                <a href="CrossCountry/courses/course viewer.html?course=${courseSlug}" class="btn-pill course-btn">
-                    ▶️ View 3D Course & Flyover Map
-                </a>
-            `;
-        }
-
-        if (currentMeetData.location && currentMeetData.date) {
-          loadWeatherForMeet(currentMeetData.location, currentMeetData.date);
-        }
-
-        // Fetch schools for logos and names
         const schools = await window.getAllSchools();
         const schoolSlugToName = {};
         if (schools && schools.length) {
           schools.forEach(s => { schoolSlugToName[s.slug || ''] = s.name || s.slug; });
         }
-
-        renderExpectedTeams(currentMeetData, schoolSlugToName);
 
         allResults = await window.getResultsByMeet(slug);
         
@@ -541,7 +521,6 @@
         document.getElementById('meet-stats').style.display = 'flex';
 
         selectorDiv.style.display = "block";
-        controlsBar.style.display = "flex";
 
         setupSearchAndControls();
         setupGenderTabs();
@@ -556,162 +535,18 @@
       }
     });
 
-    // ==========================================
-    // 3.4 TEAMS COMING TO THIS MEET
-    // ==========================================
-
-    function renderExpectedTeams(meet, schoolSlugToName) {
-      const teams = Array.isArray(meet.expected_teams) ? meet.expected_teams.filter(Boolean) : [];
-      if (teams.length === 0) return;
-
-      const metaDiv = document.getElementById("meet-meta");
-      const chipStyle = "display:inline-flex;align-items:center;gap:6px;padding:5px 12px;margin:4px 4px 0 0;border-radius:20px;background:var(--bg-secondary);border:1px solid var(--border);text-decoration:none;color:var(--text-primary);font-size:0.85rem;font-weight:600;transition:transform 0.2s,box-shadow 0.2s;";
-      const imgStyle = "width:25px;height:25px;border-radius:50%;object-fit:contain;";
-
-      const chipsHtml = teams.map(function (slug) {
-        const name = schoolSlugToName[slug] || slug.replace(/-/g, ' ');
-        const logoUrl = "/assets/team logos/" + slug + ".png";
-        return '<a href="school.html?slug=' + slug + '" class="team-chip" style="' + chipStyle + '" onmouseover="this.style.transform=\'translateY(-2px)\';this.style.boxShadow=\'0 4px 10px rgba(0,0,0,0.1)\';" onmouseout="this.style.transform=\'none\';this.style.boxShadow=\'none\';">' +
-          '<img src="' + logoUrl + '" alt="" style="' + imgStyle + '" onerror="this.src=\'/assets/images/logob.png\';">' +
-          name +
-          '</a>';
-      }).join('');
-
-      const wrapper = document.createElement('div');
-      wrapper.style.marginTop = '16px';
-      wrapper.innerHTML =
-        '<div style="font-size:0.75rem;text-transform:uppercase;letter-spacing:0.04em;color:var(--text-tertiary);margin-bottom:8px;font-weight:700;">Participating Teams</div>' +
-        '<div style="display:flex;flex-wrap:wrap;justify-content:center;">' + chipsHtml + '</div>';
-      metaDiv.appendChild(wrapper);
-    }
-
-    // ==========================================
-    // 3.5 HISTORICAL WEATHER WIDGET
-    // ==========================================
-
-    const locationCoordinatesMap = {
-      'cabell midland': { lat: 38.41, lon: -82.20 },
-      'mineral wells': { lat: 39.18, lon: -81.51 },
-      'chick-fil-a': { lat: 39.18, lon: -81.51 },
-      'meadowood': { lat: 38.60, lon: -81.93 },
-      'pipestem': { lat: 37.52, lon: -80.99 },
-      'south harrison': { lat: 39.18, lon: -80.40 },
-      'glen oak': { lat: 37.95, lon: -81.12 },
-      'holmdel': { lat: 40.36, lon: -74.17 },
-      'preston': { lat: 39.46, lon: -79.71 },
-      'morgantown': { lat: 39.63, lon: -79.95 },
-      'bridgeport': { lat: 39.28, lon: -80.25 },
-      'parkersburg': { lat: 39.27, lon: -81.55 },
-      'huntington': { lat: 38.41, lon: -82.44 },
-      'wheeling park': { lat: 40.06, lon: -80.68 },
-      'woodrow wilson': { lat: 37.78, lon: -81.18 },
-      'charleston': { lat: 38.35, lon: -81.63 }
-    };
-
-    function getCoordinatesForLocation(location) {
-      if (!location) return { lat: 38.80, lon: -80.50 }; // Default WV central
-      const normalized = location.toLowerCase().trim();
-      for (const [key, coords] of Object.entries(locationCoordinatesMap)) {
-        if (normalized.includes(key)) return coords;
+    function formatMeetDate(dateStr) {
+      if (!dateStr) return "Date TBD";
+      const parts = String(dateStr).split("T")[0].split("-");
+      if (parts.length === 3) {
+        const year = parseInt(parts[0], 10);
+        const month = parseInt(parts[1], 10) - 1;
+        const day = parseInt(parts[2], 10);
+        return new Date(year, month, day).toLocaleDateString(undefined, {
+          weekday: "short", month: "short", day: "numeric", year: "numeric",
+        });
       }
-      return { lat: 38.80, lon: -80.50 };
-    }
-
-    async function loadWeatherForMeet(location, meetDate) {
-      try {
-        const weatherWidget = document.getElementById('weather-widget');
-        const coordinates = getCoordinatesForLocation(location);
-        const weather = await fetchWeatherData(coordinates.lat, coordinates.lon, meetDate);
-        if (weather) {
-          weatherWidget.style.display = 'block';
-          renderWeatherWidget(weather, location, weather.weatherType);
-        }
-      } catch (err) {
-        console.error('Error loading weather:', err);
-      }
-    }
-
-    async function fetchWeatherData(lat, lon, dateStr) {
-      try {
-        const targetDate = new Date(dateStr);
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const daysDiff = (today - targetDate) / (1000 * 60 * 60 * 24);
-        let apiUrl = '';
-        let weatherType = 'forecast';
-
-        if (daysDiff > 5) {
-            apiUrl = `https://archive-api.open-meteo.com/v1/archive?latitude=${lat}&longitude=${lon}&start_date=${dateStr}&end_date=${dateStr}&daily=temperature_2m_max,temperature_2m_min,weather_code,precipitation_sum,wind_speed_10m_max&temperature_unit=fahrenheit&timezone=auto`;
-            weatherType = 'historical';
-        } else {
-            apiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,temperature_2m_min,weather_code,precipitation_sum,wind_speed_10m_max&temperature_unit=fahrenheit&timezone=auto`;
-            if (daysDiff === 0) weatherType = 'current';
-        }
-        
-        const response = await fetch(apiUrl);
-        const data = await response.json();
-        
-        if (data.daily && data.daily.time) {
-          let weatherIndex = data.daily.time.indexOf(dateStr);
-          if (weatherIndex === -1) weatherIndex = 0; 
-          return {
-            date: dateStr, maxTemp: data.daily.temperature_2m_max[weatherIndex],
-            minTemp: data.daily.temperature_2m_min[weatherIndex], weatherCode: data.daily.weather_code[weatherIndex],
-            precipitation: data.daily.precipitation_sum[weatherIndex], windSpeed: data.daily.wind_speed_10m_max[weatherIndex],
-            timezone: data.timezone, weatherType: weatherType
-          };
-        }
-        return null;
-      } catch (err) {
-        console.error('Weather fetch error:', err);
-        return null;
-      }
-    }
-
-    function getWeatherDetails(code) {
-      const weatherMap = {
-        0: { icon: '☀️', description: 'Clear' }, 1: { icon: '🌤️', description: 'Mostly Clear' },
-        2: { icon: '⛅', description: 'Partly Cloudy' }, 3: { icon: '☁️', description: 'Overcast' },
-        45: { icon: '🌫️', description: 'Foggy' }, 48: { icon: '🌫️', description: 'Foggy' },
-        51: { icon: '🌦️', description: 'Light Drizzle' }, 53: { icon: '🌧️', description: 'Drizzle' },
-        55: { icon: '🌧️', description: 'Heavy Drizzle' }, 61: { icon: '🌧️', description: 'Light Rain' },
-        63: { icon: '🌧️', description: 'Rain' }, 65: { icon: '⛈️', description: 'Heavy Rain' },
-        71: { icon: '❄️', description: 'Light Snow' }, 73: { icon: '❄️', description: 'Snow' },
-        75: { icon: '❄️', description: 'Heavy Snow' }, 77: { icon: '❄️', description: 'Snow' },
-        80: { icon: '🌧️', description: 'Light Showers' }, 81: { icon: '⛈️', description: 'Showers' },
-        82: { icon: '⛈️', description: 'Heavy Showers' }, 85: { icon: '🌨️', description: 'Snow Showers' },
-        86: { icon: '🌨️', description: 'Heavy Snow Showers' }, 95: { icon: '⛈️', description: 'Thunderstorm' },
-        96: { icon: '⛈️', description: 'Hail Thunderstorm' }, 99: { icon: '⛈️', description: 'Hail Thunderstorm' }
-      };
-      return weatherMap[code] || { icon: '🌤️', description: 'Fair' };
-    }
-
-    function renderWeatherWidget(weather, location, weatherType) {
-      const widget = document.getElementById('weather-widget');
-      const { icon, description } = getWeatherDetails(weather.weatherCode);
-      
-      const maxTemp = Math.round(weather.maxTemp || 70);
-      const minTemp = Math.round(weather.minTemp || 50);
-      const windSpeed = Math.round(weather.windSpeed || 5);
-      const precipitation = Math.round((weather.precipitation || 0) * 100) / 100;
-      
-      let weatherLabel = '⛅ Meet Day Weather';
-      if (weatherType === 'historical') weatherLabel = '🌤️ Historical Meet Weather';
-      if (weatherType === 'current') weatherLabel = '📍 Current Weather';
-      
-      widget.innerHTML = `
-        <div class="weather-card">
-          <div style="font-size: 38px; line-height: 1;">${icon}</div>
-          <div style="text-align: left;">
-            <div style="font-size: 0.7rem; text-transform: uppercase; color: var(--text-tertiary); font-weight: 700; letter-spacing: 0.05em;">${weatherLabel}</div>
-            <div style="font-weight: 700; font-size: 1.1rem; color: var(--text-primary); margin: 2px 0;">${description} &nbsp;•&nbsp; ${maxTemp}°F <span style="color:var(--text-tertiary); font-weight: 500;">/ ${minTemp}°F</span></div>
-            <div style="font-size: 0.82rem; color: var(--text-secondary); font-weight: 500;">
-              <span>💨 Wind: ${windSpeed} mph</span> &nbsp;|&nbsp; 
-              <span>💧 Precip: ${precipitation}"</span>
-            </div>
-          </div>
-        </div>
-      `;
+      return new Date(dateStr).toLocaleDateString();
     }
 
     // ==========================================
@@ -721,9 +556,7 @@
     function setupSearchAndControls() {
       const searchInput = document.getElementById('search-input');
       if (searchInput) {
-        searchInput.addEventListener('input', () => {
-          renderTableForSelection();
-        });
+        searchInput.addEventListener('input', renderTableForSelection);
       }
 
       const btnAll = document.getElementById('view-all-btn');
@@ -758,24 +591,18 @@
         document.getElementById('results-box').innerHTML = '';
 
         const relevantResults = allResults.filter(r => r.normalizedGender === activeGender);
-        if (relevantResults.length === 0) {
-            container.innerHTML = `<div style="color:var(--text-tertiary); text-align:center;">No results found for this category.</div>`;
-            return;
-        }
+        if (relevantResults.length === 0) return;
 
         const raceTypes = [...new Set(relevantResults.map(r => r.normalizedRaceType))].sort();
 
         raceTypes.forEach((type, index) => {
             const btn = document.createElement('button');
-            btn.className = 'race-button secondary'; 
+            btn.className = 'chip'; 
             btn.textContent = type;
 
             btn.onclick = () => {
-                Array.from(container.children).forEach(c => {
-                    c.classList.remove('primary'); c.classList.add('secondary');
-                });
-                btn.classList.remove('secondary'); btn.classList.add('primary');
-
+                Array.from(container.children).forEach(c => c.classList.remove('active'));
+                btn.classList.add('active');
                 activeRaceType = type;
                 renderTableForSelection();
             };
@@ -805,19 +632,22 @@
         });
 
         currentFilteredResults = filteredData;
-
         const distance = filteredData.length > 0 ? parseFloat(filteredData[0].distance) : 5000;
         const teamScores = calculateTeamScores(filteredData);
-
+        
         const resultsBox = document.getElementById('results-box');
         resultsBox.innerHTML = '';
 
         if (activeViewMode === 'all' || activeViewMode === 'teams') {
-          renderTeamResults(teamScores);
+          const teamSection = document.createElement('div');
+          teamSection.innerHTML = renderTeamResultsHTML(teamScores);
+          resultsBox.appendChild(teamSection);
         }
 
         if (activeViewMode === 'all' || activeViewMode === 'indiv') {
-          renderResultsTable(filteredData, distance);
+          const indivSection = document.createElement('div');
+          indivSection.innerHTML = renderResultsTableHTML(filteredData, distance);
+          resultsBox.appendChild(indivSection);
         }
     }
 
@@ -831,8 +661,7 @@
     function calculateTeamScores(results) {
         const teamMap = {};
         results.forEach(result => {
-            const rawSchool = result.school_name || result.school || 'Unknown';
-            const school = normalizeSchoolName(rawSchool);
+            const school = normalizeSchoolName(result.school_name || result.school || 'Unknown');
             if (!teamMap[school]) teamMap[school] = [];
             teamMap[school].push(result);
         });
@@ -855,19 +684,20 @@
         const scores = [];
         Object.entries(teamMap).forEach(([school, athletes]) => {
             if (athletes.length < 5) return;
-            
             const sorted = athletes.slice().sort((a, b) => (a.scoringPlace || 999) - (b.scoringPlace || 999));
             const topFive = sorted.slice(0, 5);
             const score = topFive.reduce((sum, a) => sum + (a.scoringPlace || 999), 0);
-            const sixthPlace = sorted[5]?.scoringPlace ?? 999;
-            const seventhPlace = sorted[6]?.scoringPlace ?? 999;
-
+            
             const top5Times = topFive.map(a => parseFloat(a.time)).filter(t => !isNaN(t) && t > 0);
-            const totalTime = top5Times.reduce((sum, t) => sum + t, 0);
-            const teamAvg = top5Times.length === 5 ? totalTime / 5 : 0;
+            const teamAvg = top5Times.length === 5 ? top5Times.reduce((s, t) => s + t, 0) / 5 : 0;
             const teamSplit = top5Times.length === 5 ? top5Times[4] - top5Times[0] : 0;
 
-            scores.push({ school, score, sixthPlace, seventhPlace, teamAvg, teamSplit, athletes: topFive, finishersCount: 5, totalAthletes: sorted.length, allAthletes: sorted });
+            scores.push({ 
+              school, score, teamAvg, teamSplit, 
+              sixthPlace: sorted[5]?.scoringPlace ?? 999, 
+              seventhPlace: sorted[6]?.scoringPlace ?? 999, 
+              athletes: topFive 
+            });
         });
 
         return scores.sort((a, b) => {
@@ -877,167 +707,124 @@
         });
     }
 
-    function renderTeamResults(teamScores) {
-        const resultsBox = document.getElementById('results-box');
+    // ==========================================
+    // APP-STYLE RENDERING HTML GENERATORS
+    // ==========================================
+
+    function renderTeamResultsHTML(teamScores) {
         if (!teamScores || teamScores.length === 0) {
-          if (activeViewMode === 'teams') {
-            resultsBox.innerHTML = '<section class="results-table-container"><p style="padding:20px; text-align:center;">No team scores available for this selection (minimum 5 finishers required).</p></section>';
-          }
-          return;
+          return activeViewMode === 'teams' ? '<div style="text-align:center; padding:20px; color:var(--text-secondary);">No team scores available (minimum 5 finishers required).</div>' : '';
         }
 
-        const teamHTML = `
-            <section class="results-table-container" style="margin-bottom:30px;">
-                <h3 style="color: var(--text-primary); margin-bottom: 20px; font-size: 1.5rem; font-family: var(--font-display);">🏆 Team Standings</h3>
-                <table class="results-table">
-                    <thead>
-                        <tr>
-                            <th>Place</th>
-                            <th>School</th>
-                            <th>Score</th>
-                            <th>Stats (Avg / Split)</th>
-                            <th>Scoring Top 5</th>
-                            <th style="font-size: 0.85rem; text-align:center;">Tiebreaker<br/>(6th, 7th)</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${teamScores.map((team, index) => {
-                            const tiebreaker = team.sixthPlace !== 999 || team.seventhPlace !== 999
-                                ? `${team.sixthPlace !== 999 ? team.sixthPlace : '-'}, ${team.seventhPlace !== 999 ? team.seventhPlace : '-'}`
-                                : '—';
-                            
-                            return `
-                            <tr>
-                                <td data-label="Place" style="font-weight: 700;">${index + 1}</td>
-                                <td data-label="School" style="font-weight: 600;">${team.school}</td>
-                                <td data-label="Score" style="font-weight: 700; color: var(--primary); font-size: 1.15rem;">${team.score}</td>
-                                <td data-label="Stats" style="font-size: 0.88rem; color: var(--text-secondary);">
-                                    <div style="margin-bottom: 2px;"><strong>Avg:</strong> ${formatTime(team.teamAvg)}</div>
-                                    <div><strong>Split:</strong> ${formatTime(team.teamSplit)}</div>
-                                </td>
-                                <td data-label="Scoring Top 5">
-                                    <div style="display:flex; flex-wrap:wrap; gap:6px;">
-                                      ${team.athletes.map(a => `
-                                          <span style="font-size: 0.82rem; padding: 2px 8px; background:var(--bg-secondary); border-radius:12px; border:1px solid var(--border);">
-                                              <strong>#${a.scoringPlace != null ? a.scoringPlace : a.place}</strong> ${a.athlete_name || a.name || 'Runner'}
-                                          </span>
-                                      `).join('')}
-                                    </div>
-                                </td>
-                                <td data-label="Tiebreaker" style="font-size: 0.88rem; text-align: center; color: var(--text-tertiary);">${tiebreaker}</td>
-                            </tr>
-                            `;
-                        }).join('')}
-                    </tbody>
-                </table>
-            </section>
-        `;
-
-        resultsBox.innerHTML += teamHTML;
-    }
-
-    function renderResultsTable(results, distanceMeters) {
-        const resultsBox = document.getElementById('results-box');
+        let html = `<div class="app-list">
+                      <div class="list-header">Team Standings</div>`;
         
+        teamScores.forEach((team, index) => {
+            const schoolSlug = slugify(team.school);
+            const logoUrl = `/assets/team logos/${schoolSlug}.png`;
+
+            const scorersHtml = team.athletes.map(a => 
+              `<span class="scorer-badge">#${a.scoringPlace != null ? a.scoringPlace : a.place}</span>`
+            ).join('');
+
+            html += `
+            <div class="list-item">
+                <div class="item-place">${index + 1}</div>
+                <div class="item-avatar">
+                    <img src="${logoUrl}" alt="${team.school}" onerror="this.src='/assets/images/logob.png'" />
+                </div>
+                <div class="item-details">
+                    <div class="item-name">${team.school}</div>
+                    <div class="item-meta" style="margin-bottom:4px;">Avg: ${formatTime(team.teamAvg)} • Split: ${formatTime(team.teamSplit)}</div>
+                    <div>${scorersHtml}</div>
+                </div>
+                <div class="item-score">${team.score}</div>
+            </div>`;
+        });
+        
+        return html + `</div>`;
+    }
+
+    function renderResultsTableHTML(results, distanceMeters) {
         if (!results || results.length === 0) {
-            resultsBox.innerHTML += '<section class="results-table-container"><p style="padding:20px; text-align:center;">No individual results found.</p></section>';
-            return;
+            return '<div style="text-align:center; padding:20px; color:var(--text-secondary);">No individual results found.</div>';
         }
 
-        const tableHTML = `
-            <section class="results-table-container">
-                <h3 style="color: var(--text-primary); margin-bottom: 20px; font-size: 1.5rem; font-family: var(--font-display);">🏃 Individual Results</h3>
-                <table class="results-table">
-                    <thead>
-                        <tr>
-                            <th>Place</th>
-                            <th>Name</th>
-                            <th>Grade</th>
-                            <th>School</th>
-                            <th>Time</th>
-                            <th>Pace/Mile</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${results.map(runner => {
-                            const timeSeconds = runner.time ? parseFloat(runner.time) : 0; 
-                            const athleteName = runner.athlete_name || runner.name || 'Unknown';
-                            const rawSchool = runner.school_name || runner.school || runner.school_slug || 'Unknown';
-                            const schoolSlug = runner.school_slug || slugify(normalizeSchoolName(rawSchool));
-                            const athleteHref = `athlete.html?name=${encodeURIComponent(athleteName)}&school=${encodeURIComponent(schoolSlug)}`;
+        let html = `<div class="app-list">
+                      <div class="list-header">Individual Results</div>`;
 
-                            return `
-                            <tr>
-                                <td data-label="Place" style="font-weight:700;">${runner.place || '-'}</td>
-                                <td data-label="Name">
-                                    <a href="${athleteHref}" style="font-weight:700; color:var(--text-primary); text-decoration:none;">
-                                        ${athleteName}
-                                    </a>
-                                </td>
-                                <td data-label="Grade">${formatGrade(runner.gradYear || runner.grade)}</td>
-                                <td data-label="School">
-                                    <a href="school.html?slug=${schoolSlug}" style="color:var(--text-secondary); text-decoration:none;">
-                                        ${rawSchool}
-                                    </a>
-                                </td>
-                                <td data-label="Time" style="font-weight:700; color:var(--primary);">${formatTime(timeSeconds)}</td>
-                                <td data-label="Pace/Mile" style="color:var(--text-tertiary);">${calculatePacePerMile(timeSeconds, distanceMeters)}</td>
-                            </tr>
-                        `}).join('')}
-                    </tbody>
-                </table>
-            </section>
-        `;
-        resultsBox.innerHTML += tableHTML;
+        results.forEach((runner, index) => {
+            const timeSeconds = runner.time ? parseFloat(runner.time) : 0; 
+            const athleteName = runner.athlete_name || runner.name || 'Unknown';
+            const rawSchool = runner.school_name || runner.school || runner.school_slug || 'Unknown';
+            const schoolSlug = runner.school_slug || slugify(normalizeSchoolName(rawSchool));
+            const athleteHref = `athlete.html?name=${encodeURIComponent(athleteName)}&school=${encodeURIComponent(schoolSlug)}`;
+            
+            const logoUrl = `/assets/team logos/${schoolSlug}.png`;
+            const grade = formatGrade(runner.gradYear || runner.grade);
+            const pace = calculatePacePerMile(timeSeconds, distanceMeters);
+            
+            // Build the meta string (e.g., "+1pts • Yr: 10 • Pace: 5:45")
+            let metaParts = [];
+            if (runner.scoringPlace) metaParts.push(`+${runner.scoringPlace}pts`);
+            if (grade) metaParts.push(`Yr: ${grade}`);
+            metaParts.push(`Pace: ${pace}`);
+
+            html += `
+            <div class="list-item">
+                <div class="item-place">${runner.place || (index + 1)}</div>
+                <div class="item-avatar">
+                    <img src="${logoUrl}" alt="${rawSchool}" onerror="this.src='/assets/images/logob.png'" />
+                </div>
+                <div class="item-details">
+                    <a href="${athleteHref}" class="item-name">${athleteName}</a>
+                    <a href="school.html?slug=${schoolSlug}" class="item-school">${rawSchool}</a>
+                    <div class="item-meta">${metaParts.join(' • ')}</div>
+                </div>
+                <div class="item-score">${formatTime(timeSeconds)}</div>
+            </div>`;
+        });
+        
+        return html + `</div>`;
     }
 
     // ==========================================
-    // 5. EXPORT UTILITY (CSV EXPORT)
+    // EXPORT UTILITIES (CSV/PDF)
     // ==========================================
-
     function exportToCSV() {
-      if (!currentFilteredResults || currentFilteredResults.length === 0) {
-        alert("No results available to export.");
-        return;
-      }
-
+      if (!currentFilteredResults || currentFilteredResults.length === 0) return alert("No results to export.");
       const meetName = currentMeetData ? currentMeetData.name : "Meet_Results";
-      const genderLabel = activeGender === 'M' ? 'Boys' : 'Girls';
-      const divisionLabel = activeRaceType || 'Division';
-      const filename = `${slugify(meetName)}_${slugify(genderLabel)}_${slugify(divisionLabel)}.csv`;
-
-      let csvRows = [
-        ["Place", "Athlete Name", "Grade", "School", "Time", "Pace Per Mile"]
-      ];
-
+      const filename = `${slugify(meetName)}_${slugify(activeGender)}_${slugify(activeRaceType)}.csv`;
+      let csvRows = [["Place", "Athlete Name", "Grade", "School", "Time", "Pace Per Mile"]];
       const distance = currentFilteredResults.length > 0 ? parseFloat(currentFilteredResults[0].distance) : 5000;
-
       currentFilteredResults.forEach(r => {
-        const timeSec = r.time ? parseFloat(r.time) : 0;
-        const timeFormatted = formatTime(timeSec);
-        const paceFormatted = calculatePacePerMile(timeSec, distance);
-        const athleteName = r.athlete_name || r.name || 'Unknown';
-        const schoolName = r.school_name || r.school || 'Unknown';
-        const grade = formatGrade(r.gradYear || r.grade);
-
-        csvRows.push([
-          r.place || '',
-          `"${athleteName.replace(/"/g, '""')}"`,
-          `"${grade}"`,
-          `"${schoolName.replace(/"/g, '""')}"`,
-          `"${timeFormatted}"`,
-          `"${paceFormatted}"`
-        ]);
+        const t = r.time ? parseFloat(r.time) : 0;
+        csvRows.push([ r.place || '', `"${r.athlete_name || r.name || ''}"`, `"${formatGrade(r.gradYear || r.grade)}"`, `"${r.school_name || r.school || ''}"`, `"${formatTime(t)}"`, `"${calculatePacePerMile(t, distance)}"` ]);
       });
-
-      const csvContent = "data:text/csv;charset=utf-8," + csvRows.map(e => e.join(",")).join("\n");
-      const encodedUri = encodeURI(csvContent);
       const link = document.createElement("a");
-      link.setAttribute("href", encodedUri);
-      link.setAttribute("download", filename);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      link.href = encodeURI("data:text/csv;charset=utf-8," + csvRows.map(e => e.join(",")).join("\n"));
+      link.download = filename;
+      document.body.appendChild(link); link.click(); document.body.removeChild(link);
+    }
+    
+    // PDF export logic kept exactly identical to preserve existing jspdf implementation
+    function getBrandColorRgbArray() { try { const r = getComputedStyle(document.documentElement).getPropertyValue('--primary'); const m = r.match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i); if(m) { let h = m[1]; if(h.length===3) h = h.split('').map(c=>c+c).join(''); const n = parseInt(h,16); return [(n>>16)&255, (n>>8)&255, n&255]; } return [26, 95, 76]; } catch(e) { return [26, 95, 76]; } }
+    async function exportResultsPDF() {
+      if (!currentFilteredResults || currentFilteredResults.length === 0) return alert("No results to export.");
+      if (typeof window.jspdf === 'undefined') return alert("PDF library loading.");
+      const { jsPDF } = window.jspdf; const doc = new jsPDF({ orientation: 'landscape' }); const bc = getBrandColorRgbArray();
+      const meetName = currentMeetData ? currentMeetData.name : "Meet Results";
+      
+      const drawHeader = () => { doc.setFillColor(bc[0], bc[1], bc[2]); doc.rect(0, 0, doc.internal.pageSize.getWidth(), 5, 'F'); doc.setFontSize(16); doc.setFont('helvetica', 'bold'); doc.setTextColor(0, 0, 0); doc.text(meetName, 14, 17); };
+      
+      const teamScores = calculateTeamScores(currentFilteredResults);
+      if (teamScores.length > 0) {
+        doc.autoTable({ head: [['Place', 'School', 'Score', 'Avg / Split', 'Scoring Top 5']], body: teamScores.map((t, i) => [i + 1, t.school, t.score, `${formatTime(t.teamAvg)} / ${formatTime(t.teamSplit)}`, t.athletes.map(a => `#${a.scoringPlace||a.place} ${a.athlete_name||a.name}`).join(', ')]), startY: 24, margin: { top: 24 }, styles: { fontSize: 8 }, headStyles: { fillColor: bc, textColor: [255, 255, 255] }, didDrawPage: drawHeader });
+        doc.addPage();
+      }
+      const distance = currentFilteredResults.length > 0 ? parseFloat(currentFilteredResults[0].distance) : 5000;
+      doc.autoTable({ head: [['Place', 'Name', 'Grade', 'School', 'Time', 'Pace/Mile']], body: currentFilteredResults.map(r => [r.place || '-', r.athlete_name || r.name || '', formatGrade(r.gradYear || r.grade), r.school_name || r.school || '', formatTime(r.time ? parseFloat(r.time) : 0), calculatePacePerMile(r.time ? parseFloat(r.time) : 0, distance)]), startY: 24, margin: { top: 24 }, styles: { fontSize: 8 }, headStyles: { fillColor: bc, textColor: [255, 255, 255] }, didDrawPage: drawHeader });
+      doc.save(`${slugify(meetName)}_results.pdf`);
     }
   </script>
 
