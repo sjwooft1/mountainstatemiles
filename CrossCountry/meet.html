@@ -470,11 +470,11 @@
     window.addEventListener("DOMContentLoaded", async () => {
       const params = new URLSearchParams(window.location.search);
       const slug = params.get("slug");
-
+    
       const errorDiv = document.getElementById("error");
       const metaDiv = document.getElementById("meet-meta");
       const selectorDiv = document.getElementById("selector");
-
+    
       if (!slug) {
         errorDiv.style.display = "block";
         errorDiv.textContent = "No meet specified. Please return to the Meets page.";
@@ -485,9 +485,19 @@
       try {
         currentMeetData = await window.getMeetBySlug(slug);
         if (!currentMeetData) throw new Error("Meet not found.");
-
-        document.getElementById("meet-title").textContent = currentMeetData.name;
+    
+        // --- UPDATE TITLE AND HEADER HERE ---
+        const meetName = currentMeetData.name || "Meet Results";
+        
+        // Set browser tab title
+        document.title = `${meetName} | Mountain State Miles`;
+        
+        // Set main page header
+        document.getElementById("meet-title").textContent = meetName;
+        // ------------------------------------
+    
         metaDiv.innerHTML = `<strong>${formatMeetDate(currentMeetData.date)}</strong> &nbsp;•&nbsp; ${currentMeetData.location || 'Location Unknown'}`;
+    
 
         const schools = await window.getAllSchools();
         const schoolSlugToName = {};
