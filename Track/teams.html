@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Track Teams — Mountain State Miles</title>
+  <title>Track Teams | Mountain State Miles</title>
   <link rel="icon" type="image/png" href="../assets/Favicon Generator/favicon-96x96.png" sizes="96x96" />
   <link rel="icon" type="image/svg+xml" href="../assets/Favicon Generator/favicon.svg" />
   <link rel="shortcut icon" href="../assets/Favicon Generator/favicon.ico" />
@@ -13,64 +13,112 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="/assets/main.css" />
 
-
-  
   <script src="/assets/theme-toggle.js" defer></script>
   <script src="/assets/components.js" defer></script>
 </head>
 <body>
 
   <div id="global-header"></div>
+  <script src="/assets/msm-loader.js"></script>
 
-<script src="/assets/msm-loader.js"></script>
-<div class="content-wrapper">
+  <div class="content-wrapper">
     <div class="page-background"></div>
     <img src="../assets/run.jpg" alt="" class="page-background-image" />
-  
+
     <main class="content-section">
       <h1>West Virginia Track Teams</h1>
       <p>Select a team below to view their roster and results.</p>
-      
+
       <div class="search-bar">
         <input type="text" id="search" placeholder="Search for a team...">
       </div>
-      
+
       <div class="teams-grid" id="teams-list">
         <div class="empty-state">Loading teams...</div>
       </div>
     </main>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-<script src="firebase-config.js"></script>
+  <script src="firebase-config.js"></script>
+
   <script>
+    // Wait for Firebase to finish initializing (config.js sets window.firebaseDatabase)
+    async function waitForFirebase() {
+      let attempts = 0;
+      while (typeof window.firebaseDatabase === 'undefined' && attempts < 50) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        attempts++;
+      }
+      if (typeof window.firebaseDatabase === 'undefined') {
+        throw new Error('Firebase database not initialized');
+      }
+    }
+
+    // Extract a representative brand color from a team logo (used for card gradient)
+    function extractMainColor(logoUrl) {
+      return new Promise(resolve => {
+        const img = new window.Image();
+        img.crossOrigin = 'Anonymous';
+        img.src = logoUrl;
+        img.onload = () => {
+          try {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.naturalWidth; canvas.height = img.naturalHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0);
+            const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+            const hist = {};
+            for (let i = 0; i < data.length; i += 4) {
+              const r = data[i], g = data[i + 1], b = data[i + 2], a = data[i + 3];
+              if (a < 120) continue;
+              if (r > 230 && g > 230 && b > 230) continue;   // skip near-white
+              if (r < 28 && g < 28 && b < 28) continue;        // skip near-black
+              if (Math.max(r, g, b) - Math.min(r, g, b) < 18) continue; // skip grayish
+              const key = `${Math.round(r / 12) * 12},${Math.round(g / 12) * 12},${Math.round(b / 12) * 12}`;
+              hist[key] = (hist[key] || 0) + 1;
+            }
+            let maxCount = 0, bestColors = [];
+            Object.entries(hist).forEach(([k, v]) => {
+              if (v > maxCount) { maxCount = v; bestColors = [k.split(',').map(Number)]; }
+              else if (v === maxCount) bestColors.push(k.split(',').map(Number));
+            });
+            let col = [44, 95, 125];
+            if (bestColors.length && maxCount > 0) {
+              if (bestColors.length === 1) col = bestColors[0];
+              else {
+                col = [0, 0, 0];
+                bestColors.forEach(c => { col[0] += c[0]; col[1] += c[1]; col[2] += c[2]; });
+                col = col.map(v => Math.round(v / bestColors.length));
+              }
+            }
+            resolve(`rgb(${col.join(',')})`);
+          } catch (e) { resolve('#295085'); }
+        };
+        img.onerror = () => resolve('#295085');
+      });
+    }
+
     async function loadTeams() {
       const grid = document.getElementById('teams-list');
       const search = document.getElementById('search');
       let teams = [];
-      
+
       try {
         await waitForFirebase();
         const snapshot = await window.firebaseDatabase.ref('Track/athletes').once('value');
-        const athletes = [];
+        const schoolSet = new Set();
         snapshot.forEach(child => {
           const athlete = child.val();
-          if (athlete && athlete.school) {
-            athletes.push(athlete);
-          }
+          if (athlete && athlete.school) schoolSet.add(athlete.school);
         });
-        
-        // Get unique schools and create team objects with slugs
-        const schoolSet = new Set();
-        athletes.forEach(a => {
-          if (a.school) schoolSet.add(a.school);
-        });
-        
+
         teams = Array.from(schoolSet).map(school => {
-          // Create slug from school name (lowercase, replace spaces with hyphens)
           const slug = school.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-          return { name: school, slug: slug };
+          return { name: school, slug };
         }).sort((a, b) => a.name.localeCompare(b.name));
-        
+
         if (!teams.length) {
           grid.innerHTML = '<div class="empty-state">No teams found.</div>';
           return;
@@ -78,86 +126,34 @@
       } catch (error) {
         console.error('Error loading teams:', error);
         grid.innerHTML = '<div class="empty-state">Error loading teams. Please try again later.</div>';
-        document.dispatchEvent(new Event("MSMDataLoaded"));
         return;
       }
-      
-      async function waitForFirebase() {
-        let attempts = 0;
-        while (typeof window.firebaseDatabase === 'undefined' && attempts < 50) {
-          await new Promise(resolve => setTimeout(resolve, 100));
-          attempts++;
-        }
-        if (typeof window.firebaseDatabase === 'undefined') {
-          throw new Error('Firebase database not initialized');
-        }
-      }
-      
-      async function extractMainColor(logoUrl) {
-        return new Promise(resolve=>{
-          const img = new window.Image();
-          img.crossOrigin = 'Anonymous';
-          img.src = logoUrl;
-          img.onload = () => {
-            try {
-              const canvas = document.createElement('canvas');
-              canvas.width = img.naturalWidth; canvas.height = img.naturalHeight;
-              const ctx = canvas.getContext('2d');
-              ctx.drawImage(img,0,0);
-              const data = ctx.getImageData(0,0,canvas.width,canvas.height).data;
-              const hist = {};
-              for (let i = 0; i < data.length; i += 4) {
-                const r = data[i],g = data[i+1],b = data[i+2],a = data[i+3];
-                if(a<120) continue;
-                if(r>230&&g>230&&b>230) continue; // skip near-white
-                if(r<28 && g<28 && b<28) continue; // skip near-black
-                const max = Math.max(r,g,b), min = Math.min(r,g,b);
-                if(max-min<18) continue; // skip grayish
-                const key = `${Math.round(r/12)*12},${Math.round(g/12)*12},${Math.round(b/12)*12}`;
-                hist[key] = (hist[key]||0)+1;
-              }
-              // find most-used color(s)
-              let maxCount = 0, bestColors = [];
-              Object.entries(hist).forEach(([k,v])=>{
-                if(v>maxCount) { maxCount=v; bestColors=[k.split(',').map(Number)]; }
-                else if(v===maxCount) bestColors.push(k.split(',').map(Number));
-              });
-              let col = [44, 95, 125];
-              if(bestColors.length && maxCount>0){
-                if(bestColors.length===1) col=bestColors[0];
-                else {
-                  col=[0,0,0]; bestColors.forEach(c=>{col[0]+=c[0];col[1]+=c[1];col[2]+=c[2];});
-                  col=col.map(v=>Math.round(v/bestColors.length));
-                }
-              }
-              resolve(`rgb(${col.join(',')})`);
-            } catch(e){ resolve('#295085'); }
-          };
-          img.onerror = ()=>resolve('#295085');
-        });
-      }
-      
+
       function renderList(filter = "") {
         grid.innerHTML = "";
-        for (const team of teams.filter(t => t.name.toLowerCase().includes(filter.toLowerCase()))) {
+        const matches = teams.filter(t => t.name.toLowerCase().includes(filter.toLowerCase()));
+        if (!matches.length) {
+          grid.innerHTML = '<div class="empty-state">No teams match your search.</div>';
+          return;
+        }
+        for (const team of matches) {
           const card = document.createElement("div");
           card.className = "team-card";
           const logoUrl = `../assets/team logos/${team.slug}.png`;
-          const fallbackLogo = `../assets/Wvruns Logo.png`;
+          const fallbackLogo = `../assets/images/logo.svg`;
           card.innerHTML = `
             <img src="${logoUrl}" alt="${team.name} Logo" onerror="this.onerror=null; this.src='${fallbackLogo}';">
             <h3>${team.name}</h3>
           `;
-          // apply coloring after logo is loaded
-          extractMainColor(logoUrl).then(col=>{
+          extractMainColor(logoUrl).then(col => {
             card.style.setProperty('--team-main', col);
             card.style.background = `linear-gradient(127deg, var(--team-main, #295085) 18%, #e8f4ff 100%)`;
             card.style.boxShadow = `0 4px 26px var(--team-main, #29508538)`;
-            card.onmouseover = ()=>{
+            card.onmouseover = () => {
               card.style.boxShadow = `0 8px 48px var(--team-main, #29508549)`;
               card.style.transform = 'translateY(-8px) scale(1.04)';
             };
-            card.onmouseleave = ()=>{
+            card.onmouseleave = () => {
               card.style.boxShadow = `0 4px 26px var(--team-main, #29508538)`;
               card.style.transform = '';
             };
@@ -168,31 +164,18 @@
           grid.appendChild(card);
         }
       }
-      
+
       renderList();
-      
-      search.addEventListener("input", e => {
-        renderList(e.target.value);
-      });
-
-      document.dispatchEvent(new Event("MSMDataLoaded"));
+      search.addEventListener("input", e => renderList(e.target.value));
     }
-    
-    document.addEventListener('DOMContentLoaded', () => {
-      loadTeams();
-      
-      // Mobile menu toggle
 
-);
-        
-        document.addEventListener('click', (e) => {
-          if (!navMenu.contains(e.target) && !menuToggle.contains(e.target)) {
-            navMenu.classList.remove('mobile-open');
-          }
-        });
-      }
+    document.addEventListener('DOMContentLoaded', () => {
+      loadTeams().finally(() => {
+        document.dispatchEvent(new Event("MSMDataLoaded"));
+      });
     });
   </script>
+
   <script src="track-coach-auth.js"></script>
   <script src="track-coach-toolbar.js"></script>
 

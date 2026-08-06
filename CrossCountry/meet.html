@@ -27,6 +27,8 @@
       }
     });
   </script>
+  <script src="meet-analytics.js" defer></script>
+
 
   <style>
     /* ============================================
@@ -102,6 +104,7 @@
     /* --- App-Style Tabs (Gender & Views) --- */
     .app-tabs-container {
       margin-bottom: 24px;
+      align-items: center;
     }
     .app-tabs {
       display: flex;
@@ -109,6 +112,7 @@
       border-bottom: 2px solid var(--border);
       -webkit-overflow-scrolling: touch;
       scrollbar-width: none; /* Firefox */
+      align-items: center;
     }
     .app-tabs::-webkit-scrollbar { display: none; } /* Chrome/Safari */
     
@@ -369,7 +373,7 @@
           <div class="app-tabs">
             <button class="app-tab active" id="view-all-btn">All Results</button>
             <button class="app-tab" id="view-teams-btn">Team Scores</button>
-            <button class="app-tab" id="view-indiv-btn">Individual Grid</button>
+            <button class="app-tab" id="view-indiv-btn">Individual</button>
           </div>
         </div>
 
@@ -386,6 +390,9 @@
             <i>🔍</i>
             <input type="text" id="search-input" placeholder="Search athlete or school..." />
           </div>
+          <select id="team-export-select" class="action-btn" onchange="renderTableForSelection()" style="outline: none;">
+              <option value="all">All Teams</option>
+          </select>
           <button class="action-btn" onclick="exportToCSV()">📊 CSV</button>
           <button class="action-btn" onclick="exportResultsPDF()">📄 PDF</button>
         </div>
@@ -450,7 +457,8 @@
       raw = raw.trim();
       if (!raw) return 'Varsity 5K';
       return raw.split(/\s+/).map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ')
-        .replace(/\b5k\b/i, '5K').replace(/\b3k\b/i, '3K').replace(/\bJv\b/g, 'JV').replace(/\bMs\b/g, 'Middle School');
+        .replace(/\b5k\b/i, '5K').replace(/\b3k\b/i, '3K').replace(/\bJv\b/g, 'JV').replace(/\bMs\b/g, 'Middle School')
+        .replace(/\bAaaa\b/g, 'AAAA').replace(/\bAaa\b/g, 'AAA').replace(/\bAa\b/g, 'AA'); 
     }
 
     // ==========================================
@@ -487,7 +495,7 @@
         if (!currentMeetData) throw new Error("Meet not found.");
     
         // --- UPDATE TITLE AND HEADER HERE ---
-        const meetName = currentMeetData.name || "Meet Results";
+        const meetName = currentMeetData.name || `${slug.replace(/-/g, " ")} – Meet Results`;
         
         // Set browser tab title
         document.title = `${meetName} | Mountain State Miles`;
@@ -623,11 +631,28 @@
 
     function renderTableForSelection() {
         const query = (document.getElementById('search-input')?.value || '').toLowerCase().trim();
-
-        let filteredData = allResults.filter(r => 
+        const exportSelect = document.getElementById('team-export-select')?.value || 'all';
+    
+        // 1. Grab the full race data (DO NOT filter by search yet)
+        let raceData = allResults.filter(r => 
             r.normalizedGender === activeGender && r.normalizedRaceType === activeRaceType
         );
-
+    
+        // 2. Sort by actual place/time
+        raceData.sort((a, b) => {
+            if (a.place && b.place) return parseInt(a.place) - parseInt(b.place);
+            return parseFloat(a.time) - parseFloat(b.time); 
+        });
+    
+        // 3. Calculate team scores & scoring places based on the ENTIRE field
+        const teamScores = calculateTeamScores(raceData);
+        const distance = raceData.length > 0 ? parseFloat(raceData[0].distance) : 5000;
+    
+        // 4. Update the Export Dropdown with the teams in this race
+        updateExportDropdown(teamScores);
+    
+        // 5. NOW apply search and team filters for what is displayed and exported
+        let filteredData = raceData;
         if (query) {
           filteredData = filteredData.filter(r => {
             const name = (r.athlete_name || r.name || '').toLowerCase();
@@ -635,29 +660,49 @@
             return name.includes(query) || school.includes(query);
           });
         }
-
-        filteredData.sort((a, b) => {
-            if (a.place && b.place) return parseInt(a.place) - parseInt(b.place);
-            return parseFloat(a.time) - parseFloat(b.time); 
-        });
-
-        currentFilteredResults = filteredData;
-        const distance = filteredData.length > 0 ? parseFloat(filteredData[0].distance) : 5000;
-        const teamScores = calculateTeamScores(filteredData);
+        if (exportSelect !== 'all') {
+            filteredData = filteredData.filter(r => normalizeSchoolName(r.school_name || r.school || 'Unknown') === exportSelect);
+        }
+    
+        currentFilteredResults = filteredData; 
         
         const resultsBox = document.getElementById('results-box');
         resultsBox.innerHTML = '';
-
+    
         if (activeViewMode === 'all' || activeViewMode === 'teams') {
+          let displayScores = teamScores;
+          if (exportSelect !== 'all') {
+              displayScores = teamScores.filter(t => t.school === exportSelect);
+          }
           const teamSection = document.createElement('div');
-          teamSection.innerHTML = renderTeamResultsHTML(teamScores);
+          teamSection.innerHTML = renderTeamResultsHTML(displayScores);
           resultsBox.appendChild(teamSection);
         }
-
+    
         if (activeViewMode === 'all' || activeViewMode === 'indiv') {
           const indivSection = document.createElement('div');
           indivSection.innerHTML = renderResultsTableHTML(filteredData, distance);
           resultsBox.appendChild(indivSection);
+        }
+    }
+    
+    function updateExportDropdown(teamScores) {
+        const select = document.getElementById('team-export-select');
+        if (!select) return;
+        const currentVal = select.value;
+        select.innerHTML = '<option value="all">All Teams</option>';
+        
+        const sortedTeams = teamScores.map(t => t.school).sort();
+        sortedTeams.forEach(team => {
+            const opt = document.createElement('option');
+            opt.value = team;
+            opt.textContent = team;
+            select.appendChild(opt);
+        });
+        
+        // Retain selection if they switch tabs but the team is still present
+        if (sortedTeams.includes(currentVal)) {
+            select.value = currentVal;
         }
     }
 
@@ -741,7 +786,7 @@
             <div class="list-item">
                 <div class="item-place">${index + 1}</div>
                 <div class="item-avatar">
-                    <img src="${logoUrl}" alt="${team.school}" onerror="this.src='/assets/images/logob.png'" />
+                    <img src="${logoUrl}" alt="${team.school}" onerror="this.src='/assets/images/logob.svg'" />
                 </div>
                 <div class="item-details">
                     <div class="item-name">${team.school}</div>
@@ -784,7 +829,7 @@
             <div class="list-item">
                 <div class="item-place">${runner.place || (index + 1)}</div>
                 <div class="item-avatar">
-                    <img src="${logoUrl}" alt="${rawSchool}" onerror="this.src='/assets/images/logob.png'" />
+                    <img src="${logoUrl}" alt="${rawSchool}" onerror="this.src='/assets/images/logob.svg'" />
                 </div>
                 <div class="item-details">
                     <a href="${athleteHref}" class="item-name">${athleteName}</a>
@@ -817,24 +862,109 @@
       document.body.appendChild(link); link.click(); document.body.removeChild(link);
     }
     
-    // PDF export logic kept exactly identical to preserve existing jspdf implementation
-    function getBrandColorRgbArray() { try { const r = getComputedStyle(document.documentElement).getPropertyValue('--primary'); const m = r.match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i); if(m) { let h = m[1]; if(h.length===3) h = h.split('').map(c=>c+c).join(''); const n = parseInt(h,16); return [(n>>16)&255, (n>>8)&255, n&255]; } return [26, 95, 76]; } catch(e) { return [26, 95, 76]; } }
     async function exportResultsPDF() {
       if (!currentFilteredResults || currentFilteredResults.length === 0) return alert("No results to export.");
-      if (typeof window.jspdf === 'undefined') return alert("PDF library loading.");
-      const { jsPDF } = window.jspdf; const doc = new jsPDF({ orientation: 'landscape' }); const bc = getBrandColorRgbArray();
-      const meetName = currentMeetData ? currentMeetData.name : "Meet Results";
+      if (typeof window.jspdf === 'undefined') return alert("PDF library is still loading. Please try again in a second.");
       
-      const drawHeader = () => { doc.setFillColor(bc[0], bc[1], bc[2]); doc.rect(0, 0, doc.internal.pageSize.getWidth(), 5, 'F'); doc.setFontSize(16); doc.setFont('helvetica', 'bold'); doc.setTextColor(0, 0, 0); doc.text(meetName, 14, 17); };
+      const { jsPDF } = window.jspdf; 
+      const doc = new jsPDF({ orientation: 'landscape' }); 
+      const bc = getBrandColorRgbArray();
       
-      const teamScores = calculateTeamScores(currentFilteredResults);
-      if (teamScores.length > 0) {
-        doc.autoTable({ head: [['Place', 'School', 'Score', 'Avg / Split', 'Scoring Top 5']], body: teamScores.map((t, i) => [i + 1, t.school, t.score, `${formatTime(t.teamAvg)} / ${formatTime(t.teamSplit)}`, t.athletes.map(a => `#${a.scoringPlace||a.place} ${a.athlete_name||a.name}`).join(', ')]), startY: 24, margin: { top: 24 }, styles: { fontSize: 8 }, headStyles: { fillColor: bc, textColor: [255, 255, 255] }, didDrawPage: drawHeader });
-        doc.addPage();
+      // 1. Build the Detailed Context Title
+      const meetName = currentMeetData?.name || document.getElementById("meet-title")?.textContent || "Meet Results";
+      const distance = currentFilteredResults.length > 0 ? (currentFilteredResults[0].distance || 5000) : 5000;
+      const genderText = activeGender === 'M' ? 'Boys' : 'Girls';
+      const raceTitle = `${meetName} - ${genderText} ${activeRaceType} ${distance}m`;
+      
+      const exportSelect = document.getElementById('team-export-select')?.value;
+      const subtitle = exportSelect && exportSelect !== 'all' ? `Filtered by Team: ${exportSelect}` : '';
+    
+      // 2. Safely load the site logo using Fetch & FileReader (Bypasses Canvas CORS issues)
+      const getBase64Image = async (url) => {
+        try {
+            const response = await fetch(url);
+            const blob = await response.blob();
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result);
+                reader.onerror = () => resolve(null);
+                reader.readAsDataURL(blob);
+            });
+        } catch (e) {
+            console.warn("Could not load logo for PDF:", e);
+            return null;
+        }
+      };
+      
+      const logoBase64 = await getBase64Image('assets/images/logo.png');
+    
+      // 3. Custom PDF Header with Logo and Titles
+      const drawHeader = () => { 
+        // Draw Header Background
+        doc.setFillColor(bc[0], bc[1], bc[2]); 
+        doc.rect(0, 0, doc.internal.pageSize.getWidth(), 24, 'F'); 
+        
+        let textX = 14;
+        if (logoBase64) {
+          try {
+            // Add Logo (Image Data, Format, X, Y, Width, Height)
+            doc.addImage(logoBase64, 'PNG', 14, 4, 16, 16);
+            textX = 36; // Shift text over to make room for the logo
+          } catch (e) {
+            console.warn("Failed to draw image to PDF", e);
+          }
+        }
+        
+        // Draw Main Title
+        doc.setFontSize(15); 
+        doc.setFont('helvetica', 'bold'); 
+        doc.setTextColor(255, 255, 255); // White text
+        
+        // If there is a subtitle, shift the main title up slightly
+        const titleY = subtitle ? 11 : 14; 
+        doc.text(raceTitle, textX, titleY); 
+        
+        // Draw Subtitle (if a specific team is selected)
+        if (subtitle) {
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(220, 220, 220); // Light Gray text
+            doc.text(subtitle, textX, 18); 
+        }
+      };
+      
+      // 4. Generate the Tables
+      const teamScores = calculateTeamScores(currentFilteredResults); 
+      let startY = 30; // Push table down to clear the new 24px header
+      
+      // Draw Team Scores Table (if applicable and not hidden)
+      if (teamScores.length > 0 && activeViewMode !== 'indiv') {
+        doc.autoTable({ 
+            head: [['Place', 'School', 'Score', 'Avg / Split', 'Scoring Top 5']], 
+            body: teamScores.map((t, i) => [i + 1, t.school, t.score, `${formatTime(t.teamAvg)} / ${formatTime(t.teamSplit)}`, t.athletes.map(a => `#${a.scoringPlace||a.place} ${a.athlete_name||a.name}`).join(', ')]), 
+            startY: startY, 
+            margin: { top: 30 }, 
+            styles: { fontSize: 8 }, 
+            headStyles: { fillColor: bc, textColor: [255, 255, 255] }, 
+            didDrawPage: drawHeader 
+        });
+        startY = doc.lastAutoTable.finalY + 10;
       }
-      const distance = currentFilteredResults.length > 0 ? parseFloat(currentFilteredResults[0].distance) : 5000;
-      doc.autoTable({ head: [['Place', 'Name', 'Grade', 'School', 'Time', 'Pace/Mile']], body: currentFilteredResults.map(r => [r.place || '-', r.athlete_name || r.name || '', formatGrade(r.gradYear || r.grade), r.school_name || r.school || '', formatTime(r.time ? parseFloat(r.time) : 0), calculatePacePerMile(r.time ? parseFloat(r.time) : 0, distance)]), startY: 24, margin: { top: 24 }, styles: { fontSize: 8 }, headStyles: { fillColor: bc, textColor: [255, 255, 255] }, didDrawPage: drawHeader });
-      doc.save(`${slugify(meetName)}_results.pdf`);
+      
+      // Draw Individual Results Table (if not hidden)
+      if(activeViewMode !== 'teams') {
+          doc.autoTable({ 
+              head: [['Place', 'Name', 'Grade', 'School', 'Time', 'Pace/Mile']], 
+              body: currentFilteredResults.map(r => [r.place || '-', r.athlete_name || r.name || '', formatGrade(r.gradYear || r.grade), r.school_name || r.school || '', formatTime(r.time ? parseFloat(r.time) : 0), calculatePacePerMile(r.time ? parseFloat(r.time) : 0, distance)]), 
+              startY: startY, 
+              margin: { top: 30 }, 
+              styles: { fontSize: 8 }, 
+              headStyles: { fillColor: bc, textColor: [255, 255, 255] }, 
+              didDrawPage: drawHeader 
+          });
+      }
+      
+      doc.save(`${slugify(raceTitle)}.pdf`);
     }
   </script>
 

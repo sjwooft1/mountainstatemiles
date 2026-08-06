@@ -52,11 +52,11 @@
             <div class="hero-section">
                 <div class="hero-content">
                     <img
-                        src="/assets/images/logo.png"
+                        src="/assets/images/logo.svg"
                         alt="Mountain State Miles Logo"
                         class="hero-logo"
-                        data-theme-light-src="/assets/images/logo.png"
-                        data-theme-dark-src="/assets/images/logob.png"
+                        data-theme-light-src="/assets/images/logo.svg"
+                        data-theme-dark-src="/assets/images/logob.svg"
                     />
                     <h1 class="hero-title">Track & Field</h1>
                     <p class="hero-subtitle">
@@ -83,9 +83,7 @@
             </section>
 
             <section>
-                <h2 class="section-title" id="meet-section-title">
-                    Today's Track Meets
-                </h2>
+                <h2 class="section-title" id="meet-section-title">Upcoming Track Meets</h2>
                 <div class="meet-grid" id="meet-list">
                     <p>Loading today's meets...</p>
                 </div>
@@ -93,7 +91,8 @@
         </main>
 
         <div id="global-footer"></div>
-
+        
+        <script src="firebase-helpers.js"></script>
         <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
         <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
         <script>
@@ -119,79 +118,73 @@
                 return `${y}-${m}-${day}`;
             }
 
-            async function loadRecentMeets() {
-                const container = document.getElementById("meet-list");
-                const titleEl = document.getElementById("meet-section-title");
-                try {
-                    await waitForFirebase();
-                    const snapshot = await window.firebaseDatabase
-                        .ref("Track/meets")
-                        .once("value");
-                    const meetsSnapshotAlt = await window.firebaseDatabase
-                        .ref("meets")
-                        .once("value");
-
-                    const meets = [];
-                    if (snapshot.exists()) {
-                        snapshot.forEach((child) => {
-                            meets.push({ id: child.key, ...child.val() });
-                        });
-                    } else if (meetsSnapshotAlt.exists()) {
-                        meetsSnapshotAlt.forEach((child) => {
-                            meets.push({ id: child.key, ...child.val() });
-                        });
-                    }
-
-                    const today = todayString();
-                    const todaysMeets = meets.filter(
-                        (m) => (m.date || "").split("T")[0] === today,
-                    );
-                    todaysMeets.sort((a, b) => {
-                        const dateA = a.date || "";
-                        const dateB = b.date || "";
-                        return dateB.localeCompare(dateA);
-                    });
-
-                    if (titleEl) titleEl.textContent = "Today's Track Meets";
-
-                    if (!todaysMeets.length) {
-                        container.innerHTML =
-                            '<p>No track meets scheduled for today. <a href="meets.html">View all meets</a>.</p>';
-                        return;
-                    }
-
-                    function formatDate(str) {
-                        if (!str) return "Date TBD";
-                        const [y, m, d] = (str.split("T")[0] || str).split("-");
-                        return new Date(y, m - 1, d).toLocaleDateString();
-                    }
-
-                    container.innerHTML = todaysMeets
-                        .map(
-                            (meet) => `
-          <a href="meet.html?slug=${encodeURIComponent(meet.slug || meet.id)}" class="meet-card">
-            <h3 class="meet-card-title">${meet.name || "Unnamed Meet"}</h3>
-            <p class="meet-card-date">📅 ${formatDate(meet.date)}</p>
-            ${meet.location ? `<p class="meet-card-location">📍 ${meet.location}</p>` : ""}
-          </a>
-        `,
-                        )
-                        .join("");
-                } catch (error) {
-                    console.error("Error loading meets:", error);
-                    if (titleEl) titleEl.textContent = "Today's Track Meets";
-                    container.innerHTML =
-                        '<p style="color: #dc3545; padding: 20px; text-align: center;">No meets scheduled for today.</p>';
-                } finally {
-                    document.dispatchEvent(new Event("MSMDataLoaded"));
-                }
-            }
-
-            document.addEventListener("DOMContentLoaded", () => {
-                setTimeout(loadRecentMeets, 100);
-            });
+async function loadClosestFutureMeets() {
+   const container = document.getElementById("meet-list");
+   try {
+     // 1. Fetch all meets from your API helper
+     const meets = await getAllMeets(); 
+     
+     if (!meets || !meets.length) {
+       container.innerHTML = "<p>No meets found.</p>";
+       return;
+     }
+ 
+     // 2. Get the start of today's date for accurate comparisons
+     const today = new Date();
+     today.setHours(0, 0, 0, 0);
+ 
+     // 3. Filter for future dates, sort chronologically, and take the top 10
+     const upcomingMeets = meets
+       .filter((meet) => {
+         if (!meet.date) return false;
+         const meetDate = new Date(meet.date);
+         return meetDate >= today; // Keep only today or future dates
+       })
+       .sort((a, b) => new Date(a.date) - new Date(b.date)) // Closest date first
+       .slice(0, 9); // Take the top 10 closest future events
+ 
+     if (!upcomingMeets.length) {
+       container.innerHTML = "<p>No upcoming meets scheduled.</p>";
+       return;
+     }
+ 
+     function formatDate(dateString) {
+       if (!dateString) return "Date TBD";
+       const parts = dateString.split("-");
+       if (parts.length === 3) {
+         const year = parseInt(parts[0], 10);
+         const month = parseInt(parts[1], 10) - 1;
+         const day = parseInt(parts[2], 10);
+         const date = new Date(year, month, day);
+         return date.toLocaleDateString();
+       }
+       return new Date(dateString).toLocaleDateString();
+     }
+ 
+     container.innerHTML = upcomingMeets
+       .map((meet) => {
+         const date = formatDate(meet.date);
+         const location = meet.location || "";
+         return `
+           <a href="meet.html?slug=${meet.slug}" class="meet-card">
+             <h5 class="meet-card-title">${meet.name}</h5>
+             <h6 class="meet-card-date">📅 ${date}</h6>
+             ${location ? `<h6 class="meet-card-location">📍 ${location}</h6>` : ""}
+           </a>
+         `;
+       })
+       .join("");
+   } catch (e) {
+     console.error("Error loading meets:", e);
+     container.innerHTML = "<p>Error loading upcoming meets.</p>";
+   } finally {
+     document.dispatchEvent(new Event("MSMDataLoaded"));
+   }
+ }
+ 
+ document.addEventListener("DOMContentLoaded", () => {
+   loadClosestFutureMeets();
+ });
         </script>
-        <script src="track-coach-auth.js"></script>
-        <script src="track-coach-toolbar.js"></script>
     </body>
 </html>

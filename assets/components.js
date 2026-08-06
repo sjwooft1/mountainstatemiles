@@ -25,7 +25,7 @@ const BASE_LINKS = [
       { name: 'Teams', url: 'Track/teams.html' },
       { name: 'Events', url: 'Track/events.html' },
       { name: 'Analytics', url: 'Track/analytics.html'},
-      { name: 'Athlete', url: 'Track/athlete.html' },
+      { name: 'Athlete', url: '/Track/athlete.html' },
       { name: 'Cross Country', url: '/CrossCountry/xc.html' },
     ],
     default: [
@@ -82,7 +82,7 @@ const BASE_LINKS = [
       <header class="site-header">
         <div class="header-container">
           <a href="${prefix || 'index.html'}" class="brand-logo">
-            <span class="brand-bold">MOUNTAIN STATE</span> MILES
+            <span class="brand-bold">MS</span> M
             ${context !== 'default' ? `<span class="sport-badge">${context === 'track' ? 'TRACK' : 'XC'}</span>` : ''}
           </a>
           

@@ -24,6 +24,7 @@
 
   <script src="/assets/theme-toggle.js" defer></script>
   <script src="/assets/components.js" defer></script>
+  <script src="school-analytics.js" defer></script>
 
   <style>
     /* ================================================
@@ -310,7 +311,7 @@
     <header class="school-hero" id="school-hero">
       <div class="school-hero-logo-wrap">
         <img id="school-logo" class="school-hero-logo" src="" alt="School Logo" style="display: none;"
-             onerror="this.onerror=null; this.src='/assets/images/logob.png'; this.style.display='block';">
+             onerror="this.onerror=null; this.src='/assets/images/logob.svg'; this.style.display='block';">
       </div>
       <h1 id="school-name" class="school-hero-name">School Profile</h1>
       <p id="school-info" class="school-hero-sub">Loading school information...</p>
@@ -579,7 +580,7 @@
       const logoPath = `/assets/team logos/${schoolSlug}.png`;
       logoEl.onerror = function () {
         this.onerror = null;
-        this.src = '/assets/images/logob.png';
+        this.src = '/assets/images/logob.svg';
         this.style.display = 'block';
       };
       logoEl.src = logoPath;
