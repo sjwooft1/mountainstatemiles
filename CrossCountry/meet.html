@@ -100,6 +100,105 @@
       color: var(--text-tertiary);
       letter-spacing: 0.05em;
     }
+    
+    /* --- Expected Teams Dropdown --- */
+    .expected-teams-details {
+      margin-top: 20px;
+      background: var(--bg-secondary);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+      text-align: left;
+    }
+    .expected-teams-details summary {
+      padding: 12px 16px;
+      font-weight: 700;
+      color: var(--text-primary);
+      cursor: pointer;
+      list-style: none;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .expected-teams-details summary::-webkit-details-marker {
+      display: none;
+    }
+    .expected-teams-details summary::after {
+      content: '▼';
+      font-size: 0.8em;
+      transition: transform 0.2s;
+    }
+    .expected-teams-details[open] summary::after {
+      transform: rotate(180deg);
+    }
+    .expected-teams-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 0 16px 16px;
+    }
+    .expected-team-chip {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      text-decoration: none;
+      transition: background 0.2s, border-color 0.2s;
+    }
+    .expected-team-chip:hover {
+      background: var(--bg-secondary);
+      border-color: var(--text-primary);
+    }
+    .expected-team-chip img {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      object-fit: contain;
+      background: #fff;
+    }
+
+    /* --- Empty States (Upcoming/Past meets) --- */
+    .empty-state-container {
+      text-align: center;
+      padding: 40px 20px;
+      background: var(--bg-primary);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border);
+      margin-bottom: 24px;
+    }
+    .empty-state-title {
+      font-family: var(--font-display);
+      font-size: 1.8rem;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+    }
+    .empty-state-text {
+      color: var(--text-secondary);
+      font-size: 1rem;
+    }
+    .empty-state-image {
+      max-width: 200px;
+      margin: 0 auto 20px;
+    }
+    
+    /* Theme logic for the runner image */
+    .runner-light { display: block; margin: 0 auto 20px; }
+    .runner-dark { display: none; margin: 0 auto 20px; }
+    
+    html[data-theme='dark'] .runner-light, 
+    body.dark-theme .runner-light { display: none; }
+    html[data-theme='dark'] .runner-dark, 
+    body.dark-theme .runner-dark { display: block; }
+
+    @media (prefers-color-scheme: dark) {
+      html:not([data-theme="light"]):not(.light-theme) .runner-light { display: none; }
+      html:not([data-theme="light"]):not(.light-theme) .runner-dark { display: block; }
+    }
 
     /* --- App-Style Tabs (Gender & Views) --- */
     .app-tabs-container {
@@ -340,7 +439,7 @@
     /* Print Stylesheet */
     @media print {
       body { background: #fff !important; color: #000 !important; }
-      #global-header, #global-footer, .app-tabs-container, .utility-bar { display: none !important; }
+      #global-header, #global-footer, .app-tabs-container, .utility-bar, #expected-teams-container { display: none !important; }
       .app-list { box-shadow: none; border: 1px solid #ccc; }
       .item-place { background: #eee !important; color: #000 !important; -webkit-print-color-adjust: exact; }
     }
@@ -363,9 +462,19 @@
           <div class="stat-item"><span class="stat-value" id="stat-teams">-</span><span class="stat-label">Teams</span></div>
           <div class="stat-item"><span class="stat-value" id="stat-athletes">-</span><span class="stat-label">Athletes</span></div>
         </div>
+        
+        <!-- Expected Teams Dropdown -->
+        <div id="expected-teams-container" style="display:none;">
+          <details class="expected-teams-details">
+            <summary>Expected Teams</summary>
+            <div class="expected-teams-list" id="expected-teams-list"></div>
+          </details>
+        </div>
       </div>
 
       <div id="error" class="error-message" style="display:none; text-align: center; color: var(--danger); padding: 20px; background: rgba(239, 68, 68, 0.1); border-radius: 8px; margin-bottom: 20px;"></div>
+      
+      <div id="empty-state" style="display:none;"></div>
 
       <div id="selector" style="display:none;">
         
@@ -480,6 +589,7 @@
       const slug = params.get("slug");
     
       const errorDiv = document.getElementById("error");
+      const emptyStateDiv = document.getElementById("empty-state");
       const metaDiv = document.getElementById("meet-meta");
       const selectorDiv = document.getElementById("selector");
     
@@ -505,7 +615,29 @@
         // ------------------------------------
     
         metaDiv.innerHTML = `<strong>${formatMeetDate(currentMeetData.date)}</strong> &nbsp;•&nbsp; ${currentMeetData.location || 'Location Unknown'}`;
-    
+        
+        // --- POPULATE EXPECTED TEAMS ---
+        const teamsList = currentMeetData.teams || currentMeetData.expected_teams || [];
+        if (teamsList.length > 0) {
+            const etContainer = document.getElementById("expected-teams-container");
+            const etList = document.getElementById("expected-teams-list");
+            etContainer.style.display = "block";
+            
+            teamsList.forEach(team => {
+                const teamName = typeof team === 'object' ? (team.name || team.school) : team;
+                const teamSlug = typeof team === 'object' && team.slug ? team.slug : slugify(teamName);
+                const logoUrl = `/assets/team logos/${teamSlug}.png`;
+                
+                const chip = document.createElement("a");
+                chip.className = "expected-team-chip";
+                chip.href = `school.html?slug=${teamSlug}`;
+                chip.innerHTML = `
+                    <img src="${logoUrl}" alt="${teamName}" onerror="this.src='/assets/images/logob.svg'" />
+                    ${teamName}
+                `;
+                etList.appendChild(chip);
+            });
+        }
 
         const schools = await window.getAllSchools();
         const schoolSlugToName = {};
@@ -515,9 +647,32 @@
 
         allResults = await window.getResultsByMeet(slug);
         
+        // --- HANDLE NO RESULTS (UPCOMING / PAST LOGIC) ---
         if (!allResults || allResults.length === 0) {
-            errorDiv.style.display = "block";
-            errorDiv.textContent = "Results have not been uploaded for this meet yet.";
+            const meetDateObj = new Date(currentMeetData.date);
+            const todayObj = new Date();
+            
+            emptyStateDiv.style.display = "block";
+            
+            if (meetDateObj > todayObj) {
+                // Meet is in the future
+                emptyStateDiv.innerHTML = `
+                  <div class="empty-state-container">
+                    <h3 class="empty-state-title">Upcoming on ${formatMeetDate(currentMeetData.date)}</h3>
+                    <p class="empty-state-text">Results will be posted here as soon as the meet concludes.</p>
+                  </div>
+                `;
+            } else {
+                // Meet is in the past
+                emptyStateDiv.innerHTML = `
+                  <div class="empty-state-container">
+                    <img src="assets/images/MSM runner.svg" alt="Running around" class="empty-state-image runner-light" />
+                    <img src="assets/images/msmrunner.svg" alt="Running around" class="empty-state-image runner-dark" />
+                    <h3 class="empty-state-title">We are running around to get these results!</h3>
+                    <p class="empty-state-text">Check back soon, our team is working on uploading the data.</p>
+                  </div>
+                `;
+            }
             return;
         }
 

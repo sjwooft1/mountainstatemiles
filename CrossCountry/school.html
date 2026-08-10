@@ -575,19 +575,25 @@
       document.getElementById('school-name').textContent = school.name;
       document.getElementById('school-info').textContent = `School in ${school.city || 'West Virginia'}`;
       document.title = `${school.name} Profile – Mountain State Miles`;
-
+    
       const logoEl = document.getElementById('school-logo');
-      const logoPath = `/assets/team logos/${schoolSlug}.png`;
+      const svgPath = `/assets/team logos/${schoolSlug}.svg`;
+      const pngPath = `/assets/team logos/${schoolSlug}.png`;
+    
       logoEl.onerror = function () {
-        this.onerror = null;
-        this.src = '/assets/images/logob.svg';
-        this.style.display = 'block';
+        this.onerror = function () {
+          this.onerror = null;
+          this.src = '/assets/images/logob.svg';
+        };
+        this.src = pngPath;
       };
-      logoEl.src = logoPath;
+    
+      logoEl.src = svgPath;
       logoEl.style.display = 'block';
-
-      extractMainColor(logoPath).then(applyTeamColor);
+    
+      extractMainColor(svgPath).then(applyTeamColor);
     }
+
 
     function renderHeroChips(roster, upcomingCount) {
       const chipsEl = document.getElementById('school-hero-chips');
@@ -781,7 +787,7 @@
         const teamsChips = teams.map(sl => {
           const isSelf = sl === schoolSlug;
           const name = allSchoolsMap[sl] || sl.replace(/-/g, ' ');
-          const logoUrl = `/assets/team logos/${sl}.png`;
+          const logoUrl = `/assets/team logos/${sl}.svg`;
           return `<a href="school.html?slug=${sl}" class="team-chip ${isSelf ? 'self' : ''}">
             <img src="${logoUrl}" alt="" onerror="this.style.display='none';">${escapeHtml(name)}${isSelf ? ' <i class="fa-solid fa-check" style="font-size:0.65rem;"></i>' : ''}
           </a>`;

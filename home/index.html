@@ -4,12 +4,12 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Mountain State Miles &mdash; Track &amp; Cross Country</title>
-    
+
     <meta property="og:image" content="/assets/images/logo.svg" />
     <link rel="icon" type="image/png" href="/assets/images/favicon/favicon-96x96.png" sizes="96x96" />
     <link rel="icon" type="image/svg+xml" href="/assets/images/favicon/favicon.svg" />
     <link rel="shortcut icon" href="/assets/images/favicon/favicon.ico" />
-    <link rel="apple-touch-icon" sizes="180x180" href="/assets/images/favicon/apple-touch-icon.png" />
+    <link rel="apple-touch-icon"s sizes="180x180" href="/assets/images/favicon/apple-touch-icon.png" />
     <meta name="apple-mobile-web-app-title" content="MSM" />
     <link rel="manifest" href="/assets/images/favicon/site.webmanifest" />
 
@@ -56,7 +56,7 @@
             font-family: inherit;
             border: 1.5px solid var(--border-color, #dcdcdc);
             border-radius: 10px;
-            background: var(--card-bg, #fff);
+            background: var(--card-bg,);
             color: inherit;
             outline: none;
             transition: border-color 0.15s;
@@ -71,6 +71,84 @@
             transform: translateY(-50%);
             color: var(--text-secondary);
             pointer-events: none;
+        }
+
+        /* --- Search Dropdown --- */
+        .search-results {
+            display: none;
+            position: absolute;
+            top: calc(100% + 6px);
+            left: 0;
+            right: 0;
+            z-index: 900;
+            max-height: 420px;
+            overflow-y: auto;
+            background: var(--card-bg, #fff);
+            border: 1.5px solid var(--border-color, #dcdcdc);
+            border-radius: 10px;
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.16);
+            text-align: left;
+        }
+        .search-results.open {
+            display: block;
+        }
+        .search-group-label {
+            padding: 8px 14px 4px;
+            font-size: 0.66rem;
+            font-weight: 800;
+            letter-spacing: 0.09em;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            background: var(--card-bg, #fff);
+            position: sticky;
+            top: 0;
+        }
+        .search-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 14px;
+            cursor: pointer;
+            border-top: 1px solid var(--border-color, #eee);
+        }
+        .search-item:first-of-type {
+            border-top: none;
+        }
+        .search-item:hover,
+        .search-item.active {
+            background: var(--border-color, #f2f2f2);
+        }
+        .search-item-icon {
+            flex: none;
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--accent, #c07f1e);
+            color: #fff;
+            font-size: 0.8rem;
+        }
+        .search-item-body {
+            min-width: 0;
+        }
+        .search-item-title {
+            font-weight: 700;
+            font-size: 0.92rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .search-item-sub {
+            font-size: 0.76rem;
+            color: var(--text-secondary);
+        }
+        .search-empty {
+            padding: 18px 14px;
+            text-align: center;
+            font-size: 0.88rem;
+            color: var(--text-secondary);
         }
 
         /* --- Layout Grid --- */
@@ -216,7 +294,7 @@
             .sport-cards {
                 grid-template-columns: 1fr;
             }
-        }   
+        }
     </style>
 
     <script src="/assets/theme-toggle.js" defer></script>
@@ -231,13 +309,15 @@
             <div class="hero home-hero">
                 <img src="/assets/images/logo.svg" alt="Mountain State Miles Logo" class="hero-logo"
                      data-theme-light-src="/assets/images/logo.svg"
-                     data-theme-dark-src="/assets/images/logob.svg" />      
+                     data-theme-dark-src="/assets/images/logob.svg" />
                 <p>Your source for West Virginia track &amp; cross country results, rankings, and records</p>
 
                 <div class="home-search">
                     <i class="fa-solid fa-magnifying-glass search-icon"></i>
-                    <input id="home-search-input" type="search"
-                           placeholder="Search athletes, schools, or meets&hellip;" aria-label="Search" />
+                    <input id="home-search-input" type="search" autocomplete="off"
+                           placeholder="Search athletes, schools, or meets&hellip;" aria-label="Search"
+                           role="combobox" aria-expanded="false" aria-controls="search-results-list" />
+                    <div id="search-results-list" class="search-results" role="listbox"></div>
                 </div>
             </div>
 
@@ -294,7 +374,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-analytics-compat.js"></script>
-    
+
     <script>
         // --- Firebase Configuration ---
         const firebaseConfig = {
@@ -351,9 +431,9 @@
                             database.ref("crosscountry/meets").once("value"),
                             database.ref("Track/meets").once("value"),
                         ]);
-                        
+
                         const now = Date.now();
-        
+
                         const meets = [
                             ...snapshotToArray(ccMeetsSnap).map((m) => ({ ...m, _tree: "crosscountry" })),
                             ...snapshotToArray(trkMeetsSnap).map((m) => ({ ...m, _tree: "Track" })),
@@ -368,25 +448,25 @@
                             const diffB = Math.abs(now - new Date(b.date).getTime());
                             return diffA - diffB;
                         });
-        
+
                         if (!meets.length) {
                             body.innerHTML = '<div class="loading-state">No past meets posted yet.</div>';
                             return;
                         }
-                        
+
                         const latest = meets[0];
                         const snap = await database.ref(`${latest._tree}/results`)
                             .orderByChild("meet_slug").equalTo(latest.slug).once("value");
-                            
+
                         let results = snapshotToArray(snap)
                             .sort((a, b) => (a.time ?? Infinity) - (b.time ?? Infinity))
                             .slice(0, 8);
-        
+
                         if (!results.length) {
                             body.innerHTML = `<div class="loading-state">Latest meet: ${esc(latest.name)} &mdash; results coming soon.</div>`;
                             return;
                         }
-        
+
                         // Render Results
                         let html = `
                             <p style="font-size:0.82rem; color:var(--text-secondary); margin:0 0 10px;">
@@ -395,13 +475,13 @@
                             <table class="results-table">
                                 <tbody>
                         `;
-                        
+
                         results.forEach((r, i) => {
                             const place = r.place || r.placement || i + 1;
                             const name = r.athlete_name || "&mdash;";
                             const school = r.school_slug || "";
                             const genderStr = r.gender ? " &middot; " + r.gender : "";
-                            
+
                             html += `
                                 <tr>
                                     <td class="res-place">${place}</td>
@@ -413,10 +493,10 @@
                                 </tr>
                             `;
                         });
-                        
+
                         html += `</tbody></table>`;
                         body.innerHTML = html;
-        
+
                     } catch (err) {
                         console.error("Error loading results:", err);
                         body.innerHTML = '<div class="loading-state">Results feed unavailable.</div>';
@@ -430,17 +510,17 @@
                 const articles = snapshotToArray(snap)
                     .sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0))
                     .slice(0, 3);
-                    
+
                 if (!articles.length) {
                     grid.innerHTML = '<div class="loading-state">No articles yet. Check back soon!</div>';
                     return;
                 }
-                
+
                 let html = "";
                 articles.forEach((a) => {
                     const locationHtml = a.category ? `<p class="meet-card-location">${esc(a.category)}</p>` : "";
                     const snippet = (a.content || "").substring(0, 100) + "&hellip;";
-                    
+
                     html += `
                         <div class="meet-card" style="cursor:default;">
                             <h3 class="meet-card-title">${esc(a.title)}</h3>
@@ -450,9 +530,9 @@
                         </div>
                     `;
                 });
-                
+
                 grid.innerHTML = html;
-                
+
             } catch (err) {
                 console.error("Error loading news:", err);
                 grid.innerHTML = '<div class="loading-state">Error loading articles.</div>';
@@ -468,40 +548,40 @@
                     database.ref("crosscountry/meets").once("value"),
                     database.ref("Track/meets").once("value"),
                 ]);
-        
+
                 const now = Date.now();
-        
+
                 const meets = [
                     ...snapshotToArray(ccSnap).map((m) => ({ ...m, _sport: "XC" })),
                     ...snapshotToArray(trkSnap).map((m) => ({ ...m, _sport: "TF" })),
                 ]
-                .filter((m) => m.date && !isNaN(new Date(m.date).getTime())) 
+                .filter((m) => m.date && !isNaN(new Date(m.date).getTime()))
                 .sort((a, b) => {
                     const diffA = Math.abs(new Date(a.date).getTime() - now);
                     const diffB = Math.abs(new Date(b.date).getTime() - now);
                     return diffA - diffB; // Sort ascending by closest time distance to today
                 })
                 .slice(0, 5);
-        
+
                 if (!meets.length) {
                     body.innerHTML = '<div class="loading-state">No meets scheduled.</div>';
                     return;
                 }
-                
+
                 let html = "";
                 meets.forEach((m) => {
                     const d = new Date(m.date);
                     const mon = isNaN(d) ? "" : d.toLocaleDateString("en-US", { month: "short" });
                     const day = isNaN(d) ? "" : d.getDate();
-                    
+
                     const divs = (m.divisions ? String(m.divisions).split(/[,|]/) : [])
                         .map((x) => x.trim())
                         .filter(Boolean);
-                        
+
                     const badges = [m._sport, ...divs]
                         .map((b) => `<span class="div-badge">${esc(b)}</span>`)
                         .join("");
-                        
+
                     html += `
                         <div class="meet-row">
                             <div class="meet-cal">
@@ -515,33 +595,255 @@
                         </div>
                     `;
                 });
-                
+
                 body.innerHTML = html;
-                
+
             } catch (err) {
                 console.error("Error loading meets:", err);
                 body.innerHTML = '<div class="loading-state">Schedule unavailable.</div>';
             }
         }
 
-        // --- Init Functionality ---
-        function initSearch() {
-            const input = document.getElementById("home-search-input");
-            if (!input) return;
-            input.addEventListener("keydown", (e) => {
-                if (e.key === "Enter") {
-                    const q = input.value.trim();
-                    if (q) window.location.href = "/CrossCountry/xc?q=" + encodeURIComponent(q);
+        // ============================================================
+        //  GLOBAL SEARCH
+        //  Loads athletes / schools / meets (XC + Track) once, builds
+        //  an in-memory index, and filters client-side on every
+        //  keystroke. snapshotToArray() iterates via Object.keys(), so
+        //  it is immune to Firebase's forEach "truthy return stops
+        //  iteration" pitfall.
+        // ============================================================
+        const MSMSearch = {
+            index: [],       // [{ type, title, sub, url, key, hay }]
+            ready: false,
+            input: null,
+            box: null,
+            items: [],       // currently rendered <a> nodes
+            activeIdx: -1,
+
+            norm(s) {
+                return String(s == null ? "" : s).trim().toLowerCase();
+            },
+
+            slugToName(slug) {
+                // "spring-mills" -> "Spring Mills" (readable fallback when no name field)
+                return String(slug || "")
+                    .split(/[-_]/)
+                    .filter(Boolean)
+                    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+                    .join(" ");
+            },
+
+            async build() {
+                try {
+                    const [athSnap, schoolSnap, ccMeetSnap, trkMeetSnap] = await Promise.all([
+                        database.ref("crosscountry/athletes").once("value"),
+                        database.ref("crosscountry/schools").once("value"),
+                        database.ref("crosscountry/meets").once("value"),
+                        database.ref("Track/meets").once("value"),
+                    ]);
+
+                    const idx = [];
+
+                    // Athletes -> athlete.html?id=<key> (id resolves reliably)
+                    snapshotToArray(athSnap).forEach((a) => {
+                        const name = a.name || "";
+                        if (!name) return;
+                        const schoolLabel = a.school_slug ? this.slugToName(a.school_slug) : "";
+                        const gender = a.gender === "M" ? "Boys" : a.gender === "F" ? "Girls" : "";
+                        const subBits = [schoolLabel, gender, a.grade ? "Class of " + a.grade : ""].filter(Boolean);
+                        idx.push({
+                            type: "athlete",
+                            title: name,
+                            sub: subBits.join(" · ") || "Athlete",
+                            url: "/CrossCountry/athlete.html?id=" + encodeURIComponent(a.id),
+                            hay: this.norm(name + " " + schoolLabel),
+                        });
+                    });
+
+                    // Schools -> school.html?slug=<slug>
+                    snapshotToArray(schoolSnap).forEach((s) => {
+                        const slug = s.slug || s.id;
+                        const name = s.name || this.slugToName(slug);
+                        if (!name) return;
+                        idx.push({
+                            type: "school",
+                            title: name,
+                            sub: [s.classification || s.division || "", s.county ? s.county + " County" : ""]
+                                .filter(Boolean).join(" · ") || "School",
+                            url: "/CrossCountry/school.html?slug=" + encodeURIComponent(slug),
+                            hay: this.norm(name + " " + slug),
+                        });
+                    });
+
+                    // Meets (XC + Track) -> meet.html?slug=<slug>
+                    const addMeets = (arr, sport) => {
+                        arr.forEach((m) => {
+                            const slug = m.slug || m.id;
+                            const name = m.name || this.slugToName(slug);
+                            if (!name) return;
+                            const dateLabel = m.date ? fmtShort(m.date) : "";
+                            idx.push({
+                                type: "meet",
+                                title: name,
+                                sub: [sport, dateLabel].filter(Boolean).join(" · ") || "Meet",
+                                url: "/CrossCountry/meet.html?slug=" + encodeURIComponent(slug),
+                                hay: this.norm(name + " " + slug),
+                            });
+                        });
+                    };
+                    addMeets(snapshotToArray(ccMeetSnap), "Cross Country");
+                    addMeets(snapshotToArray(trkMeetSnap), "Track & Field");
+
+                    this.index = idx;
+                    this.ready = true;
+                } catch (err) {
+                    console.error("Search index build failed:", err);
+                    this.ready = false;
                 }
-            });
-        }
+            },
+
+            query(qRaw) {
+                const q = this.norm(qRaw);
+                if (q.length < 2) return { athlete: [], school: [], meet: [] };
+
+                const scored = [];
+                for (const rec of this.index) {
+                    const pos = rec.hay.indexOf(q);
+                    if (pos === -1) continue;
+                    // Prefix / word-start matches rank higher than mid-string matches.
+                    const wordStart = pos === 0 || rec.hay[pos - 1] === " ";
+                    const score = (pos === 0 ? 0 : wordStart ? 1 : 2) + pos * 0.001;
+                    scored.push({ rec, score });
+                }
+                scored.sort((a, b) => a.score - b.score || a.rec.title.localeCompare(b.rec.title));
+
+                const out = { athlete: [], school: [], meet: [] };
+                for (const { rec } of scored) {
+                    if (out[rec.type].length < 6) out[rec.type].push(rec);
+                }
+                return out;
+            },
+
+            render(qRaw) {
+                const q = qRaw.trim();
+                this.activeIdx = -1;
+
+                if (q.length < 2) {
+                    this.close();
+                    return;
+                }
+
+                if (!this.ready) {
+                    this.box.innerHTML = '<div class="search-empty">Loading search&hellip;</div>';
+                    this.open();
+                    return;
+                }
+
+                const groups = this.query(q);
+                const total = groups.athlete.length + groups.school.length + groups.meet.length;
+
+                if (!total) {
+                    this.box.innerHTML = '<div class="search-empty">No matches for &ldquo;' + esc(q) + '&rdquo;</div>';
+                    this.open();
+                    return;
+                }
+
+                const icon = { athlete: "fa-person-running", school: "fa-school", meet: "fa-flag-checkered" };
+                const label = { athlete: "Athletes", school: "Schools", meet: "Meets" };
+                let html = "";
+                ["athlete", "school", "meet"].forEach((type) => {
+                    if (!groups[type].length) return;
+                    html += '<div class="search-group-label">' + label[type] + "</div>";
+                    groups[type].forEach((rec) => {
+                        html +=
+                            '<a class="search-item" role="option" href="' + rec.url + '">' +
+                                '<span class="search-item-icon"><i class="fa-solid ' + icon[type] + '"></i></span>' +
+                                '<span class="search-item-body">' +
+                                    '<span class="search-item-title">' + esc(rec.title) + "</span>" +
+                                    '<span class="search-item-sub">' + esc(rec.sub) + "</span>" +
+                                "</span>" +
+                            "</a>";
+                    });
+                });
+
+                this.box.innerHTML = html;
+                this.items = Array.from(this.box.querySelectorAll(".search-item"));
+                this.open();
+            },
+
+            open() {
+                this.box.classList.add("open");
+                this.input.setAttribute("aria-expanded", "true");
+            },
+
+            close() {
+                this.box.classList.remove("open");
+                this.input.setAttribute("aria-expanded", "false");
+                this.items = [];
+                this.activeIdx = -1;
+            },
+
+            move(delta) {
+                if (!this.items.length) return;
+                if (this.activeIdx >= 0) this.items[this.activeIdx].classList.remove("active");
+                this.activeIdx = (this.activeIdx + delta + this.items.length) % this.items.length;
+                const el = this.items[this.activeIdx];
+                el.classList.add("active");
+                el.scrollIntoView({ block: "nearest" });
+            },
+
+            init() {
+                this.input = document.getElementById("home-search-input");
+                this.box = document.getElementById("search-results-list");
+                if (!this.input || !this.box) return;
+
+                this.build();
+
+                let t;
+                this.input.addEventListener("input", () => {
+                    clearTimeout(t);
+                    const v = this.input.value;
+                    t = setTimeout(() => this.render(v), 120);
+                });
+
+                this.input.addEventListener("keydown", (e) => {
+                    const open = this.box.classList.contains("open");
+                    if (e.key === "ArrowDown") { e.preventDefault(); this.move(1); }
+                    else if (e.key === "ArrowUp") { e.preventDefault(); this.move(-1); }
+                    else if (e.key === "Enter") {
+                        if (open && this.activeIdx >= 0) {
+                            e.preventDefault();
+                            window.location.href = this.items[this.activeIdx].getAttribute("href");
+                        } else if (open && this.items.length) {
+                            e.preventDefault();
+                            window.location.href = this.items[0].getAttribute("href");
+                        } else {
+                            // No index match — fall back to a name search on the athlete page.
+                            const q = this.input.value.trim();
+                            if (q) window.location.href = "/CrossCountry/athlete.html?name=" + encodeURIComponent(q);
+                        }
+                    } else if (e.key === "Escape") {
+                        this.close();
+                        this.input.blur();
+                    }
+                });
+
+                this.input.addEventListener("focus", () => {
+                    if (this.input.value.trim().length >= 2) this.render(this.input.value);
+                });
+
+                document.addEventListener("click", (e) => {
+                    if (!e.target.closest(".home-search")) this.close();
+                });
+            },
+        };
 
         // Run on load
         document.addEventListener("DOMContentLoaded", () => {
             loadLatestResults();
             loadRecentNews();
             loadMeets();
-            initSearch();
+            MSMSearch.init();
         });
     </script>
 </body>

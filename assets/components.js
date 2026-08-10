@@ -17,7 +17,7 @@ const BASE_LINKS = [
       { name: 'Schools', url: 'CrossCountry/schools.html' },
       { name: 'Courses', url: 'CrossCountry/courses/course%20viewer.html' },
       { name: 'Athlete', url: 'CrossCountry/athlete.html' },
-      { name: 'Track Home', url: '/Track/' },
+      { name: 'Track Home', url: '/Track/index.html' },
     ],
     track: [
       { name: 'Track Meets', url: 'Track/meets.html' },
@@ -31,7 +31,7 @@ const BASE_LINKS = [
     default: [
       { name: 'About', url:'/home/about.html'},
       { name: 'Weather', url:'/weather.html'},
-      { name: 'Track', url: '/Track/' },
+      { name: 'Track', url: '/Track/index.html' },
       { name: 'Cross Country', url: '/CrossCountry/xc.html' },
     ]
   };
@@ -82,9 +82,9 @@ const BASE_LINKS = [
       <header class="site-header">
         <div class="header-container">
           <a href="${prefix || 'index.html'}" class="brand-logo">
-            <span class="brand-bold">MS</span> M
-            ${context !== 'default' ? `<span class="sport-badge">${context === 'track' ? 'TRACK' : 'XC'}</span>` : ''}
+          <img src="/assets/images/msm.svg" alt="Mountain State Miles Logo" class="brand-logo">
           </a>
+          ${context !== 'default' ? `<span class="sport-badge">${context === 'track' ? 'TRACK' : 'XC'}</span>` : ''}
           
           <nav class="desktop-nav">
             ${linksHtml}
@@ -129,10 +129,15 @@ const BASE_LINKS = [
     footerContainer.innerHTML = `
       <footer class="site-footer">
         <div class="footer-container">
-          <div class="footer-brand">
+        <div class="footer-brand">
+          <img src="/assets/images/MSM runner.svg" alt="Mountain State Miles Logo" class="footer-logo">
+          
+          <div class="brand-text">
             <h3>MOUNTAIN STATE MILES</h3>
             <p>The premier hub for West Virginia Track & Cross Country data.</p>
           </div>
+        </div>
+
           <div class="footer-links">
             <h4>Navigation (${context === 'default' ? 'General' : context === 'track' ? 'Track & Field' : 'Cross Country'})</h4>
             <ul>
@@ -146,6 +151,7 @@ const BASE_LINKS = [
       </footer>
     `;
   }
+
   
   function setupMobileMenu() {
     const toggleBtn = document.querySelector('.mobile-menu-toggle');

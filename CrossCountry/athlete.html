@@ -711,7 +711,23 @@ async function waitForFirebase() {
     i++;
   }
   if (!window.firebaseDatabase) throw new Error('Firebase not ready');
+
+  // Wait for a live server connection so once('value') doesn't resolve
+  // against an empty/partial local cache (the "only 1 result" bug).
+  await new Promise((resolve) => {
+    const connRef = window.firebaseDatabase.ref('.info/connected');
+    const timeout = setTimeout(() => { connRef.off('value', cb); resolve(); }, 5000);
+    function cb(snap) {
+      if (snap.val() === true) {
+        clearTimeout(timeout);
+        connRef.off('value', cb);
+        resolve();
+      }
+    }
+    connRef.on('value', cb);
+  });
 }
+
 
 function norm(s) { return (s || '').toString().trim().toLowerCase(); }
 
@@ -776,7 +792,7 @@ async function loadAthlete() {
     return;
   }
 
-  try {
+ try {
     await waitForFirebase();
     const db = window.firebaseDatabase;
 
@@ -817,7 +833,7 @@ async function loadAthlete() {
 
     const normName = norm(athleteName);
     const rawResults = [];
-    resultsSnap.forEach(c => rawResults.push({ id: c.key, ...c.val() }));
+    resultsSnap.forEach(c => { rawResults.push({ id: c.key, ...c.val() }); });
 
     // Name match is required; school match only narrows things down when both the
     // known schoolSlug and the individual result actually carry a school_slug, so
@@ -826,6 +842,11 @@ async function loadAthlete() {
     if (schoolSlug) {
       matched = matched.filter(r => !r.school_slug || r.school_slug === schoolSlug);
     }
+    console.log('[DBG] connected?', (await db.ref('.info/connected').once('value')).val());
+    console.log('[DBG] resultsSnap.numChildren:', resultsSnap.numChildren());
+    console.log('[DBG] rawResults.length:', rawResults.length);
+    console.log('[DBG] athleteName:', JSON.stringify(athleteName), '| normName:', JSON.stringify(normName), '| matched:', matched.length);
+
 
     // If we still don't have an athletes-roster record, try to find one by name(+school)
     // to enrich gender/grad-year - many athletes only exist "virtually" via their results.
@@ -1394,6 +1415,7 @@ function exportChartPNG() {
 document.addEventListener('DOMContentLoaded', () => {
   loadAthlete();
 });
+
 </script>
 
 

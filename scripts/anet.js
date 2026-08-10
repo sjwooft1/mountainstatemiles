@@ -12,8 +12,8 @@ javascript:(async function(){
         return mark
             .replace(/\s*\([+-]?\d+\.\d+\)/g, "")
             .replace(/[aAsS]+$/g, "")
-            .replace(/\b(?:PB|SB|PR|NR|CR|MR|FR|WL|EL)\b/gi, "")
-            .replace(/(?:a|s)?(?:PB|SB|PR|NR|CR|MR|FR|WL|EL)$/gi, "")
+            .replace(/\b(?:PB|SB|PR|NR|CR|MR|FR|WL|EL| - A)\b/gi, "")
+            .replace(/(?:a|s)?(?:PB|SB|PR|NR|CR|MR|FR|WL|EL| - A)$/gi, "")
             .replace(/\s+/g, " ")
             .trim();
     }
