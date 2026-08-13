@@ -502,6 +502,14 @@
                 .replace(/>/g, "&gt;");
         }
 
+        function slugToName(slug) {
+            return String(slug || "")
+                .split(/[-_]/)
+                .filter(Boolean)
+                .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+                .join(" ");
+        }
+
         function fmtShort(dateString) {
             const d = new Date(dateString);
             return isNaN(d) ? "" : d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
@@ -562,9 +570,15 @@
                         }
 
                         // Render Results
+                        const headerMeetHref = latest.slug
+                            ? "/CrossCountry/meet.html?slug=" + encodeURIComponent(latest.slug)
+                            : "";
+                        const headerMeet = headerMeetHref
+                            ? `<a href="${headerMeetHref}" style="color:inherit;">${esc(latest.name)}</a>`
+                            : esc(latest.name);
                         let html = `
                             <p style="background: var(--bg-secondary);padding: 12px 16px;font-size: 0.8rem;font-weight: 700;color: var(--text-secondary);text-transform: uppercase;letter-spacing: 0.05em;border-bottom: 1px solid var(--border);">
-                                ${esc(latest.name)} &middot; ${esc(fmtShort(latest.date))}
+                                ${headerMeet} &middot; ${esc(fmtShort(latest.date))}
                             </p>
                             <table class="results-table">
                                 <tbody>
@@ -572,19 +586,38 @@
 
                         results.forEach((r, i) => {
                             const place = r.place || r.placement || i + 1;
-                            const name = r.athlete_name || "&mdash;";
-                            const school = r.school_slug || "";
-                            const genderStr = r.gender ? " &middot; " + r.gender : "";
+                            const name = r.athlete_name || "";
+                            const schoolSlug = r.school_slug || "";
+                            const schoolLabel = schoolSlug ? slugToName(schoolSlug) : "";
+                            const genderLabel = r.gender === "M" ? "Boys" : r.gender === "F" ? "Girls" : "";
+                            const genderStr = genderLabel ? " &middot; " + genderLabel : "";
+
+                            const athleteHref = r.athlete_name
+                                ? "/CrossCountry/athlete.html?name=" + encodeURIComponent(r.athlete_name) +
+                                  (schoolSlug ? "&school=" + encodeURIComponent(schoolSlug) : "")
+                                : "";
+                            const schoolHref = schoolSlug
+                                ? "/CrossCountry/school.html?slug=" + encodeURIComponent(schoolSlug)
+                                : "";
+
+                            const nameCell = athleteHref
+                                ? `<a class="item-name" href="${athleteHref}">${esc(name)}</a>`
+                                : `<span class="item-name">${name ? esc(name) : "&mdash;"}</span>`;
+                            const schoolCell = schoolLabel
+                                ? (schoolHref
+                                    ? `<a class="item-school" href="${schoolHref}">${esc(schoolLabel)}</a>`
+                                    : `<span class="item-school">${esc(schoolLabel)}</span>`)
+                                : "";
 
                             html += `
                                 <div class="list-item">
                                     <div class="item-place">${place}</div>
                                     <div class="item-details">
-                                        <a class="item-name">${name}</a>
-                                        <a class="item-school">${school}</a>
+                                        ${nameCell}
+                                        ${schoolCell}
                                         <div class="item-meta">${genderStr}</div>
                                     </div>
-                                    <div class="item-score">${(fmtTime(r.time))}</div>                                    
+                                    <div class="item-score">${(fmtTime(r.time))}</div>
                                 </div>
                             `;
                         });
@@ -665,31 +698,47 @@
 
                 let html = "";
                 meets.forEach((m) => {
-                    const d = new Date(m.date);
-                    const mon = isNaN(d) ? "" : d.toLocaleDateString("en-US", { month: "short" });
-                    const day = isNaN(d) ? "" : d.getDate();
+                  // Parse string components as local numbers (Month is 0-indexed in JS)
+                  const parts = m.date ? m.date.split("-").map(Number) : [];
+                  const d = parts.length === 3 ? new Date(parts[0], parts[1] - 1, parts[2]) : new Date(NaN);
+                
+                  const mon = isNaN(d) ? "" : d.toLocaleDateString("en-US", { month: "short" });
+                  const day = isNaN(d) ? "" : d.getDate();
+                  
+                  const divs = (m.divisions ? String(m.divisions).split(/[,|]/) : [])
+                    .map((x) => x.trim())
+                    .filter(Boolean);
+                    
+                  const badges = [m._sport, ...divs]
+                    .map((b) => `<span class="div-badge">${esc(b)}</span>`)
+                    .join("");
 
-                    const divs = (m.divisions ? String(m.divisions).split(/[,|]/) : [])
-                        .map((x) => x.trim())
-                        .filter(Boolean);
+                  const meetSlug = m.slug || m.id || "";
+                  const meetHref = meetSlug
+                    ? "/CrossCountry/meet.html?slug=" + encodeURIComponent(meetSlug)
+                    : "";
+                  const nameHtml = esc(m.name || "Meet");
+                  const info = meetHref
+                    ? `<a class="meet-info" href="${meetHref}" style="color:inherit;text-decoration:none;">
+                        <h3>${nameHtml}</h3>
+                        <div class="badges">${badges}</div>
+                      </a>`
+                    : `<div class="meet-info">
+                        <h3>${nameHtml}</h3>
+                        <div class="badges">${badges}</div>
+                      </div>`;
 
-                    const badges = [m._sport, ...divs]
-                        .map((b) => `<span class="div-badge">${esc(b)}</span>`)
-                        .join("");
-
-                    html += `
-                        <div class="meet-row">
-                            <div class="meet-cal">
-                                <div class="m">${mon}</div>
-                                <div class="d">${day}</div>
-                            </div>
-                            <div class="meet-info">
-                                <h3>${esc(m.name || "Meet")}</h3>
-                                <div class="badges">${badges}</div>
-                            </div>
-                        </div>
-                    `;
+                  html += `
+                    <div class="meet-row">
+                      <div class="meet-cal">
+                        <div class="m">${mon}</div>
+                        <div class="d">${day}</div>
+                      </div>
+                      ${info}
+                    </div>
+                  `;
                 });
+
 
                 body.innerHTML = html;
 
@@ -730,30 +779,47 @@
 
             async build() {
                 try {
-                    const [athSnap, schoolSnap, ccMeetSnap, trkMeetSnap] = await Promise.all([
+                    const [athSnap, trkAthSnap, schoolSnap, ccMeetSnap, trkMeetSnap] = await Promise.all([
                         database.ref("crosscountry/athletes").once("value"),
+                        database.ref("Track/athletes").once("value"),
                         database.ref("crosscountry/schools").once("value"),
                         database.ref("crosscountry/meets").once("value"),
                         database.ref("Track/meets").once("value"),
                     ]);
 
                     const idx = [];
+                    const seenAthletes = new Set();
 
-                    // Athletes -> athlete.html?id=<key> (id resolves reliably)
-                    snapshotToArray(athSnap).forEach((a) => {
-                        const name = a.name || "";
-                        if (!name) return;
-                        const schoolLabel = a.school_slug ? this.slugToName(a.school_slug) : "";
-                        const gender = a.gender === "M" ? "Boys" : a.gender === "F" ? "Girls" : "";
-                        const subBits = [schoolLabel, gender, a.grade ? "Class of " + a.grade : ""].filter(Boolean);
-                        idx.push({
-                            type: "athlete",
-                            title: name,
-                            sub: subBits.join(" · ") || "Athlete",
-                            url: "/CrossCountry/athlete.html?id=" + encodeURIComponent(a.id),
-                            hay: this.norm(name + " " + schoolLabel),
+                    // Athletes (XC + Track). XC ids resolve directly; Track/dup
+                    // entries fall back to ?name=&school= which athlete.html
+                    // matches against results.
+                    const addAthletes = (arr, useId) => {
+                        arr.forEach((a) => {
+                            const name = a.name || "";
+                            if (!name) return;
+                            const schoolSlug = a.school_slug || "";
+                            const dedupeKey = this.norm(name + "|" + schoolSlug);
+                            if (seenAthletes.has(dedupeKey)) return;
+                            seenAthletes.add(dedupeKey);
+
+                            const schoolLabel = schoolSlug ? this.slugToName(schoolSlug) : "";
+                            const gender = a.gender === "M" ? "Boys" : a.gender === "F" ? "Girls" : "";
+                            const subBits = [schoolLabel, gender, a.grade ? "Class of " + a.grade : ""].filter(Boolean);
+                            const url = (useId && a.id)
+                                ? "/CrossCountry/athlete.html?id=" + encodeURIComponent(a.id)
+                                : "/CrossCountry/athlete.html?name=" + encodeURIComponent(name) +
+                                  (schoolSlug ? "&school=" + encodeURIComponent(schoolSlug) : "");
+                            idx.push({
+                                type: "athlete",
+                                title: name,
+                                sub: subBits.join(" · ") || "Athlete",
+                                url,
+                                hay: this.norm(name + " " + schoolLabel),
+                            });
                         });
-                    });
+                    };
+                    addAthletes(snapshotToArray(athSnap), true);
+                    addAthletes(snapshotToArray(trkAthSnap), false);
 
                     // Schools -> school.html?slug=<slug>
                     snapshotToArray(schoolSnap).forEach((s) => {

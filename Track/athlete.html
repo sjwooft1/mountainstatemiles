@@ -165,6 +165,7 @@ html:not([data-theme="dark"]) .logo-dark  { display: none; }
   line-height: 1;
   color: var(--text-primary);
   margin-bottom: 0.75rem;
+  margin-top:5vw;
 }
 .hero-chips {
   display: flex; gap: 10px; flex-wrap: wrap;
@@ -694,18 +695,21 @@ const themeIcon   = document.getElementById('themeIcon');
 
 function setTheme(t) {
   document.documentElement.setAttribute('data-theme', t);
-  themeIcon.className = t === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+  if (themeIcon) themeIcon.className = t === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
   localStorage.setItem('msm-theme', t);
   if (window._chartsReady) rebuildCharts();
 }
-themeToggle.addEventListener('click', () => {
-  setTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
-});
+if (themeToggle) {
+  themeToggle.addEventListener('click', () => {
+    setTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+  });
+}
 (function initTheme() {
   const saved = localStorage.getItem('msm-theme');
   const sys   = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   setTheme(saved || sys);
 })();
+
 
 function toast(msg) {
   const el = document.createElement('div');
@@ -761,25 +765,27 @@ async function loadAthleteList() {
 const searchInput    = document.getElementById('searchInput');
 const searchDropdown = document.getElementById('searchDropdown');
 
-searchInput.addEventListener('input', () => {
-  clearTimeout(searchTimer);
-  searchTimer = setTimeout(runSearch, 150);
-});
-searchInput.addEventListener('keydown', e => {
-  const items = [...searchDropdown.querySelectorAll('.search-drop-item')];
-  let idx = items.findIndex(i => i.classList.contains('hl'));
-  if (e.key === 'ArrowDown') { e.preventDefault(); items.forEach(i=>i.classList.remove('hl')); if(items[++idx]) items[idx].classList.add('hl'); }
-  else if (e.key === 'ArrowUp') { e.preventDefault(); items.forEach(i=>i.classList.remove('hl')); if(items[Math.max(0,--idx)]) items[Math.max(0,idx)].classList.add('hl'); }
-  else if (e.key === 'Enter') { const hl = searchDropdown.querySelector('.hl'); if(hl) hl.click(); }
-  else if (e.key === 'Escape') { searchDropdown.classList.remove('open'); }
-});
-document.addEventListener('click', e => {
-  if (!e.target.closest('#searchWrap')) searchDropdown.classList.remove('open');
-});
+if (searchInput && searchDropdown) {
+  searchInput.addEventListener('input', () => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(runSearch, 150);
+  });
+  searchInput.addEventListener('keydown', e => {
+    const items = [...searchDropdown.querySelectorAll('.search-drop-item')];
+    let idx = items.findIndex(i => i.classList.contains('hl'));
+    if (e.key === 'ArrowDown') { e.preventDefault(); items.forEach(i=>i.classList.remove('hl')); if(items[++idx]) items[idx].classList.add('hl'); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); items.forEach(i=>i.classList.remove('hl')); if(items[Math.max(0,--idx)]) items[Math.max(0,idx)].classList.add('hl'); }
+    else if (e.key === 'Enter') { const hl = searchDropdown.querySelector('.hl'); if(hl) hl.click(); }
+    else if (e.key === 'Escape') { searchDropdown.classList.remove('open'); }
+  });
+  document.addEventListener('click', e => {
+    if (!e.target.closest('#searchWrap')) searchDropdown.classList.remove('open');
+  });
+}
 
 function runSearch() {
+  if (!searchInput || !searchDropdown) return;
   const queryText = searchInput.value.trim().toLowerCase();
-  if (!queryText) { searchDropdown.classList.remove('open'); return; }
   
   const terms = queryText.split(/\s+/);
   const hits = allAthletes.filter(a => {
