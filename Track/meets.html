@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cross Country Meets — Mountain State Miles</title>
+  <title>Track Meets — Mountain State Miles</title>
   <link rel="icon" type="image/png" href="../assets/Favicon Generator/favicon-96x96.png" sizes="96x96" />
   <link rel="icon" type="image/svg+xml" href="../assets/Favicon Generator/favicon.svg" />
   <link rel="shortcut icon" href="../assets/Favicon Generator/favicon.ico" />
@@ -81,10 +81,6 @@
       margin: 0; padding: 0;
       font-family: var(--font-sans);
       color: var(--text-primary);
-      background-color: var(--msm-cream);
-      background-image:
-        radial-gradient(circle at 12% -10%, rgba(63,125,99,0.10), transparent 42%),
-        radial-gradient(circle at 92% 4%, rgba(224,121,79,0.10), transparent 40%);
       background-attachment: fixed;
     }
 
@@ -195,14 +191,7 @@
       animation: fadeUp 0.4s ease both; box-shadow: 0 10px 26px var(--msm-shadow-soft);
     }
     /* Rolling-hills motif at the top of every card */
-    .meet-card::before {
-      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 46px;
-      background:
-        radial-gradient(circle at 18% 130%, var(--msm-sky) 40%, transparent 42%),
-        radial-gradient(circle at 55% 150%, var(--msm-clay-soft) 46%, transparent 48%),
-        radial-gradient(circle at 88% 135%, var(--msm-sky) 40%, transparent 42%);
-      opacity: 0.6;
-    }
+    
     .meet-card:hover { transform: translateY(-8px); box-shadow: 0 20px 40px var(--msm-shadow); border-color: var(--msm-pine); }
     .meet-card-icon {
       width: 54px; height: 54px; border-radius: 18px; background: var(--msm-sky);
@@ -263,14 +252,16 @@
   <div id="global-header"></div>
 
   <script src="/assets/msm-loader.js"></script>
+  <img src="/assets/images/bg.png" alt="Background Image" class="page-background-image" />
 
   <main class="content-section" style="max-width: 1160px; margin: 0 auto; padding: 44px 20px;">
 
     <!-- Hero & Stats Area -->
     <section class="page-hero">
-      <span class="hero-badge"><span class="dot"></span> West Virginia Cross Country</span>
+      <span class="hero-badge"><span class="dot"></span> West Virginia Track</span>
       <h1 class="section-title">Every meet, <em>mile by mile</em></h1>
       <p class="page-hero-sub">Upcoming events, historical results, and full season schedules for every team across the Mountain State.</p>
+      
 
       <div class="stat-strip">
         <div class="mini-stat"><span class="mini-stat-num" id="stat-total">–</span><span class="mini-stat-lbl">Total Meets</span></div>
@@ -284,7 +275,6 @@
       </div>
     </section>
 
-    <div id="state-championship-section" hidden></div>
 
     <!-- Toolbar -->
     <div id="list-controls" class="toolbar">
@@ -353,7 +343,7 @@
         return;
       }
       try {
-        const snapshot = await window.firebaseDatabase.ref('crosscountry/meets').once('value');
+        const snapshot = await window.firebaseDatabase.ref('Track/meets').once('value');
         allMeets = [];
         snapshot.forEach(child => {
           allMeets.push({ id: child.key, ...child.val() });
@@ -449,7 +439,6 @@
         const isUpcoming = meet.date ? new Date(meet.date) >= today : false;
         return `
         <a href="meet.html?slug=${encodeURIComponent(meet.slug || meet.id)}" class="meet-card">
-          <div class="meet-card-icon">${isUpcoming ? '🌲' : '🏅'}</div>
           <h3 class="meet-card-title">${(meet.name || 'Unnamed Meet').replace(/</g, '&lt;')}</h3>
           <p class="meet-card-date">📅 ${formatMeetDate(meet.date)}</p>
           <p class="meet-card-location">${meet.location ? String(meet.location).replace(/</g, '&lt;') : 'Location TBD'}</p>
@@ -567,7 +556,7 @@
         const blob = new Blob([lines.join("\r\n")], { type: "text/calendar;charset=utf-8" });
         const a = document.createElement("a");
         a.href = URL.createObjectURL(blob);
-        a.download = "CrossCountry_Meets.ics";
+        a.download = "Track_Meets.ics";
         a.click();
         URL.revokeObjectURL(a.href);
         closeCalendarPopup();

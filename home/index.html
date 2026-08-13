@@ -226,7 +226,92 @@
             white-space: nowrap;
             font-variant-numeric: tabular-nums;
         }
-
+        .list-item {
+          display: flex;
+          align-items: stretch; /* Stretches the place box to full height */
+          border-bottom: 1px solid var(--border);
+          background: var(--bg-primary);
+          transition: background 0.2s;
+        }
+        .list-item:last-child {
+          border-bottom: none;
+        }
+        .list-item:hover {
+          background: var(--bg-secondary);
+        }
+    
+        /* Placement Block */
+        .item-place {
+          width: 48px;
+          flex-shrink: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: var(--text-primary);
+          color: var(--bg-primary);
+          font-weight: 800;
+          font-size: 1.15rem;
+        }
+    
+        /* Avatar / Logo */
+        .item-avatar {
+          display: flex;
+          align-items: center;
+          padding-left: 12px;
+        }
+        .item-avatar img {
+          width: 40px;
+          height: 40px;
+          border-radius: 50%;
+          object-fit: contain;
+          background: #fff; /* Keep white bg for logos to pop */
+          padding: 2px;
+          border: 1px solid var(--border);
+        }
+    
+        /* Middle Details */
+        .item-details {
+          flex: 1;
+          padding: 12px;
+          min-width: 0; /* Prevents flex blowout on long names */
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+        }
+        .item-name {
+          font-weight: 700;
+          font-size: 1.05rem;
+          color: var(--text-primary);
+          text-decoration: none;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        .item-school {
+          font-size: 0.85rem;
+          color: var(--text-secondary);
+          text-decoration: none;
+          margin: 2px 0 4px;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        .item-meta {
+          font-size: 0.75rem;
+          color: var(--text-tertiary);
+          font-weight: 600;
+        }
+        .item-score {
+          padding: 12px 16px 12px 8px;
+          display: flex;
+          align-items: center;
+          justify-content: flex-end;
+          font-weight: 800;
+          font-size: 1.15rem;
+          color: var(--text-primary);
+          font-variant-numeric: tabular-nums;
+        }
+    
         /* --- Meets List --- */
         .meet-row {
             display: flex;
@@ -268,6 +353,7 @@
             gap: 5px;
             flex-wrap: wrap;
         }
+        
         .div-badge {
             font-size: 0.62rem;
             font-weight: 800;
@@ -276,6 +362,13 @@
             border-radius: 4px;
             background: var(--border-color, #eee);
             color: var(--text-secondary);
+        }
+        #results-body {
+            margin-top: 1.5rem;
+            background: var(--bg-primary);
+            border-radius: var(--radius-xl);
+            overflow: hidden;
+            border: 1.5px solid var(--border);
         }
 
         /* --- Utilities & Cards --- */
@@ -303,6 +396,7 @@
 <body class="home-page">
     <div id="global-header"></div>
     <script src="/assets/msm-loader.js"></script>
+    <img src="/assets/images/bg.png" alt="Background Image" class="page-background-image" />
 
     <main class="content-section">
         <div class="content-wrapper">
@@ -469,7 +563,7 @@
 
                         // Render Results
                         let html = `
-                            <p style="font-size:0.82rem; color:var(--text-secondary); margin:0 0 10px;">
+                            <p style="background: var(--bg-secondary);padding: 12px 16px;font-size: 0.8rem;font-weight: 700;color: var(--text-secondary);text-transform: uppercase;letter-spacing: 0.05em;border-bottom: 1px solid var(--border);">
                                 ${esc(latest.name)} &middot; ${esc(fmtShort(latest.date))}
                             </p>
                             <table class="results-table">
@@ -483,14 +577,15 @@
                             const genderStr = r.gender ? " &middot; " + r.gender : "";
 
                             html += `
-                                <tr>
-                                    <td class="res-place">${place}</td>
-                                    <td>
-                                        <div class="res-name">${esc(name)}</div>
-                                        <div class="res-sub">${esc(school)}${esc(genderStr)}</div>
-                                    </td>
-                                    <td class="res-mark">${esc(fmtTime(r.time))}</td>
-                                </tr>
+                                <div class="list-item">
+                                    <div class="item-place">${place}</div>
+                                    <div class="item-details">
+                                        <a class="item-name">${name}</a>
+                                        <a class="item-school">${school}</a>
+                                        <div class="item-meta">${genderStr}</div>
+                                    </div>
+                                    <div class="item-score">${(fmtTime(r.time))}</div>                                    
+                                </div>
                             `;
                         });
 

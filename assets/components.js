@@ -20,11 +20,11 @@ const BASE_LINKS = [
       { name: 'Track Home', url: '/Track/index.html' },
     ],
     track: [
-      { name: 'Track Meets', url: 'Track/meets.html' },
-      { name: 'Track Rankings', url: 'Track/rankings.html' },
-      { name: 'Teams', url: 'Track/teams.html' },
-      { name: 'Events', url: 'Track/events.html' },
-      { name: 'Analytics', url: 'Track/analytics.html'},
+      { name: 'Track Meets', url: '/Track/meets.html' },
+      { name: 'Track Rankings', url: '/Track/rankings.html' },
+      { name: 'Teams', url: '/Track/teams.html' },
+      { name: 'Events', url: '/Track/events.html' },
+      { name: 'Analytics', url: '/Track/analytics.html'},
       { name: 'Athlete', url: '/Track/athlete.html' },
       { name: 'Cross Country', url: '/CrossCountry/xc.html' },
     ],
@@ -82,7 +82,9 @@ const BASE_LINKS = [
       <header class="site-header">
         <div class="header-container">
           <a href="${prefix || 'index.html'}" class="brand-logo">
-          <img src="/assets/images/msm.svg" alt="Mountain State Miles Logo" class="brand-logo">
+          <img src="/assets/images/msmb.svg" alt="Mountain State Miles Logo" class="brand-logo"
+               data-theme-light-src="/assets/images/msm.svg"
+               data-theme-dark-src="/assets/images/msmb.svg" />
           </a>
           ${context !== 'default' ? `<span class="sport-badge">${context === 'track' ? 'TRACK' : 'XC'}</span>` : ''}
           
@@ -112,6 +114,7 @@ const BASE_LINKS = [
           </nav>
         </div>
       </div>
+      <img src="/assets/images/background.jpeg" alt="Background Image" class="page-background-image" />
     `;
   
     setupMobileMenu();

@@ -439,7 +439,7 @@ main {
 }
 
 .content-section {
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
   padding: 80px 20px;
   position: relative;
@@ -469,11 +469,7 @@ main {
   box-shadow: 0 8px 22px var(--shadow-light);
 }
 
-.card:hover {
-  border-color: var(--primary);
-  box-shadow: 0 16px 34px var(--shadow-medium);
-  transform: translateY(-4px);
-}
+
 
 .meet-grid {
   display: grid;
@@ -1063,17 +1059,7 @@ body.home-page {
   overflow: hidden;
 }
 
-.school-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 5px;
-  background: linear-gradient(90deg, var(--msm-pine), var(--msm-clay));
-  transform: scaleX(0);
-  transition: transform 0.3s ease;
-}
+
 
 .school-card:hover::before {
   transform: scaleX(1);
@@ -1282,7 +1268,7 @@ body.home-page {
   height: 100%;
   object-fit: cover;
   z-index: -1;
-  opacity: 0.03;
+  opacity: .5;
 }
 
 /* ============================================
@@ -2303,7 +2289,7 @@ main.content-section {
 }
 
 /* Responsive Breakpoints */
-@media (max-width: 768px) {
+@media (max-width: 900px) {
   .desktop-nav {
     display: none;
   }
@@ -2325,5 +2311,4 @@ main.content-section {
   border-radius: 999px;
   margin-top: 1px;
 }
-main.css
-Displaying main.css.
+
