@@ -11,10 +11,76 @@
   <link rel="manifest" href="assets/Favicon Generator/site.webmanifest" />
   <link rel="stylesheet" href="/assets/main.css" />
 
-
-  
   <script src="/assets/theme-toggle.js" defer></script>
   <script src="/assets/components.js" defer></script>
+
+  <style>
+    /* --- Ranking-mode toggle --- */
+    .rank-mode-tabs {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin: 0 auto 8px;
+      max-width: 420px;
+    }
+    .rank-mode-tab {
+      flex: 1;
+      padding: 10px 14px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--bg-secondary);
+      color: var(--text-secondary);
+      font-weight: 700;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .rank-mode-tab.active {
+      background: var(--text-primary);
+      color: var(--bg-primary);
+      border-color: var(--text-primary);
+    }
+    .rank-mode-note {
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--text-tertiary);
+      margin-bottom: 20px;
+    }
+    .rank-mode-note a { color: var(--xc-primary); font-weight: 600; }
+
+    /* Score / prediction pill inside item-score column */
+    .score-stack { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.2; }
+    .score-rating { font-weight: 800; font-size: 1.15rem; color: var(--text-primary); font-variant-numeric: tabular-nums; }
+    .score-predicted { font-size: 0.72rem; color: var(--text-tertiary); font-weight: 600; }
+
+    .adj-badge {
+      display: inline-block;
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-size: 0.62rem;
+      font-weight: 700;
+      margin-left: 4px;
+    }
+    .adj-up   { background: rgba(34,197,94,0.15);  color: #16a34a; }
+    .adj-down { background: rgba(239,68,68,0.15);  color: #dc2626; }
+
+    .view-tabs {
+      display: flex; justify-content: center; gap: 8px; margin-bottom: 16px;
+    }
+    .view-tab {
+      padding: 8px 16px; border-radius: 20px; font-size: 0.85rem; font-weight: 600;
+      background: var(--bg-secondary); color: var(--text-secondary);
+      border: 1px solid var(--border); cursor: pointer; transition: all 0.2s;
+    }
+    .view-tab.active { background: var(--text-primary); color: var(--bg-primary); border-color: var(--text-primary); }
+
+    .weather-status {
+      text-align: center; font-size: 0.75rem; color: var(--text-tertiary); margin-bottom: 12px;
+    }
+    #meet-filter {
+        max-width:100px;
+    }
+  </style>
 </head>
 <body>
 
@@ -30,10 +96,24 @@
     </div>
   </div>
 
-  
-    <!-- Filter Control Panel (Gender, Distance, Meet) -->
+    <!-- Ranking Mode Toggle: Raw Time vs. Dynamic MSM Rating -->
+    <div class="rank-mode-tabs">
+      <button id="mode-raw" class="rank-mode-tab active" onclick="setRankMode('raw')">Raw Time</button>
+      <button id="mode-dynamic" class="rank-mode-tab" onclick="setRankMode('dynamic')">MSM Rating</button>
+    </div>
+    <div class="rank-mode-note" id="rank-mode-note">
+      Fastest raw times, exactly as run. <a href="rankings-explained.html">How does MSM Rating work?</a>
+    </div>
+
+    <!-- View toggle: Individual vs. Team (only meaningful for a single meet/course, but always available) -->
+    <div class="view-tabs">
+      <button id="view-indiv" class="view-tab active" onclick="setViewMode('indiv')">Individual</button>
+      <button id="view-teams" class="view-tab" onclick="setViewMode('teams')">Teams</button>
+    </div>
+
+    <!-- Filter Control Panel (Gender, Distance, Meet, Course, Season, Limit) -->
     <section id="filter-control-panel" class="p-4 bg-white rounded-xl shadow-lg mb-8">
-      <div class="flex flex-col md:flex-row md:space-x-4 space-y-4 md:space-y-0 items-center justify-center">
+      <div class="flex flex-col md:flex-row md:space-x-4 space-y-4 md:space-y-0 items-center justify-center flex-wrap gap-y-4">
 
         <!-- 1. Gender Filter (Required: Male/Female toggle) -->
         <div class="filter-group">
@@ -41,7 +121,14 @@
           <button class="filter-btn" data-filter-type="gender" data-value="F" onclick="setFilter('gender', 'F', event)">Female</button>
         </div>
 
-        <!-- 2. Distance Filter -->
+        <!-- 2. Season Filter -->
+        <div class="filter-group">
+            <select id="season-filter" onchange="setFilter('season', this.value)" class="p-2 border rounded-lg shadow-sm text-gray-700 focus:ring-xc-primary focus:border-xc-primary cursor-pointer">
+                <!-- Dynamically populated. Defaults to current year -->
+            </select>
+        </div>
+
+        <!-- 3. Distance Filter -->
         <div class="filter-group">
           <select id="distance-filter" onchange="setFilter('distance', this.value)">
             <option value="all">All Distances</option>
@@ -53,26 +140,37 @@
           </select>
         </div>
 
-        <!-- 3. Meet Filter -->
+        <!-- 4. Meet Filter -->
         <div class="filter-group">
             <select id="meet-filter" onchange="setFilter('meet', this.value)" class="p-2 border rounded-lg shadow-sm text-gray-700 focus:ring-xc-primary focus:border-xc-primary cursor-pointer">
                 <option value="all">All Meets</option>
-                <!-- Options populated by JS -->
             </select>
         </div>
 
-        <!-- 4. Course Filter -->
+        <!-- 5. Course Filter -->
         <div class="filter-group">
             <select id="course-filter" onchange="setFilter('course', this.value)" class="p-2 border rounded-lg shadow-sm text-gray-700 focus:ring-xc-primary focus:border-xc-primary cursor-pointer">
                 <option value="all">All Courses</option>
-                <!-- Options populated by JS -->
+            </select>
+        </div>
+
+        <!-- 6. Display Count Filter (how many rows to show) -->
+        <div class="filter-group">
+            <select id="limit-filter" onchange="setFilter('limit', this.value)" class="p-2 border rounded-lg shadow-sm text-gray-700 focus:ring-xc-primary focus:border-xc-primary cursor-pointer">
+                <option value="50">Top 50</option>
+                <option value="100">Top 100</option>
+                <option value="250">Top 250</option>
+                <option value="500">Top 500</option>
+                <option value="all">All</option>
             </select>
         </div>
 
       </div>
     </section>
 
-    <!-- Male Rankings Container (Initially Visible/Hidden based on default filter) -->
+    <div class="weather-status" id="weather-status"></div>
+
+    <!-- Male Rankings Container -->
     <section id="male-rankings" class="my-10">
       <h2 class="text-3xl font-semibold mb-6 text-xc-primary border-b-2 border-xc-primary pb-2">Male Rankings</h2>
       <div id="male-results-box" class="results-box">
@@ -80,7 +178,7 @@
       </div>
     </section>
 
-    <!-- Female Rankings Container (Initially Hidden) -->
+    <!-- Female Rankings Container -->
     <section id="female-rankings" class="my-10 hidden">
       <h2 class="text-3xl font-semibold mb-6 text-xc-primary border-b-2 border-xc-primary pb-2">Female Rankings</h2>
       <div id="female-results-box" class="results-box">
@@ -88,7 +186,6 @@
       </div>
     </section>
 
-    <!-- No Data Message (Only visible if the selected combination yields no results) -->
     <section id="no-rankings-message" class="text-center my-10 hidden">
         <p class="text-xl text-red-500">No results found for the selected filters.</p>
     </section>
@@ -97,419 +194,688 @@
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
   <script src="firebase-config.js"></script>
-  <script src="firebase-helpers.js"></script>
+  <script src="/scripts/results-filter.js"></script>
+<script src="firebase-helpers.js"></script>
+  <script src="results-cutoff.js"></script>
 
   <script>
     // Global variables
-    let allResults = []; // The raw data store (all records)
-    let schoolsMap = {}; // slug -> name
-    let meetsMap = {}; // slug -> name
-    let maleResults = []; // Full list of ALL male times (for sorting/filtering)
-    let femaleResults = []; // Full list of ALL female times (for sorting/filtering)
+    let allResults = [];
+    let schoolsMap = {};
+    let meetsMap = {};
+    let meetsData = {};   
+    let coursesData = {}; 
+    let maleResults = [];
+    let femaleResults = [];
 
-    // State variables for filtering
-    let currentGender = 'M'; // Default to Male
-    let currentDistance = 'all'; 
-    // currentYear and currentGrade removed
-    let currentMeetSlug = 'all'; 
+    // State
+    let currentGender = 'M';
+    let currentDistance = 'all';
+    let currentMeetSlug = 'all';
     let currentCourseSlug = 'all';
-    let coursesMap = {}; // slug -> name
-    
+    let currentSeason = new Date().getFullYear().toString(); // Default to current year
+    let currentLimit = 50;   
+    let coursesMap = {};
+
+    let rankMode = 'raw';    
+    let viewMode = 'indiv';  
+
+    // =========================================
+    // OUT OF SEASON / NON-COMPETITIVE CONFIG
+    // =========================================
+    // Add slugs here for meets that have unusually slow average times 
+    // due to being out of season, fun-runs, alumni races, etc.
+    const OUT_OF_SEASON_MEETS = [
+      'chick-fil-a-5k',
+      'st-marys-5k',
+      'ymca-kennedy-center'
+      // Add other non-competitive meet slugs here
+    ];
+
+    function isNonCompetitive(meetSlug) {
+      return OUT_OF_SEASON_MEETS.includes(meetSlug);
+    }
+
+    // =========================================
+    // COURSE COORDINATES 
+    // =========================================
+    const COURSE_COORDS = {
+      'holmdel-park':        { lat: 40.3418, lon: -74.1735 }, 
+      'cabell-midland':      { lat: 38.4126, lon: -82.2543 }, 
+      'glen-oak':            { lat: 39.4390, lon: -80.1420 }, 
+      'pipestem-state-park': { lat: 37.5382, lon: -80.9865 }, 
+      'meadowood-park':      { lat: 39.6295, lon: -79.9559 }, 
+      'preston-high':        { lat: 39.4767, lon: -79.6640 }, 
+      'south-harrison':      { lat: 39.2065, lon: -80.6390 }, 
+      'st-marys-5k':         { lat: 39.3906, lon: -81.2043 }, 
+      'chick-fil-a-5k':      { lat: 38.3498, lon: -81.6326 }, 
+      'frankfort-5k':        { lat: 39.5001, lon: -78.9600 }, 
+      'ymca-kennedy-center': { lat: 38.3400, lon: -81.7300 }  
+    };
+    const WV_DEFAULT_COORDS = { lat: 38.6409, lon: -80.6227 };
+
     // =========================================
     // HELPER FUNCTIONS (Formatting)
     // =========================================
-
-    /**
-     * Converts a time string (MM:SS.ms, H:MM:SS.ms, or "seconds") into total seconds (number).
-     * @param {string|number} timeString Time string (e.g., "18:30.45", "976") or number.
-     * @returns {number|null} Total seconds as a number, or null if invalid.
-     */
     function formatTimeInSeconds(timeString) {
         if (typeof timeString === 'number' && !isNaN(timeString)) return timeString;
         if (!timeString || typeof timeString !== 'string') return null;
-
         if (timeString.includes(':')) {
             const parts = timeString.split(':').map(Number);
             let seconds = 0;
-            if (parts.length === 3) { // H:MM:SS.ms
-                seconds += parts[0] * 3600;
-                seconds += parts[1] * 60;
-                seconds += parts[2];
-            } else if (parts.length === 2) { // MM:SS.ms
-                seconds += parts[0] * 60;
-                seconds += parts[1];
-            }
+            if (parts.length === 3) { seconds += parts[0]*3600; seconds += parts[1]*60; seconds += parts[2]; }
+            else if (parts.length === 2) { seconds += parts[0]*60; seconds += parts[1]; }
             return seconds > 0 ? seconds : null;
         } else {
-            // If it's a number string (like "976"), parse it directly
             const numSeconds = parseFloat(timeString);
             return !isNaN(numSeconds) && numSeconds > 0 ? numSeconds : null;
         }
     }
 
-    /**
-     * Converts seconds (number) to HH:MM:SS.ms string.
-     * @param {number|object} timeSeconds Input time in seconds or result object with time_in_seconds property.
-     * @returns {string} Formatted time string (e.g., "18:30.45" or "1:10:05.00").
-     */
     function formatTime(timeInput) {
-        const time = timeInput.time_in_seconds !== undefined ? timeInput.time_in_seconds : formatTimeInSeconds(timeInput);
-
+        const time = (timeInput && timeInput.time_in_seconds !== undefined) ? timeInput.time_in_seconds : formatTimeInSeconds(timeInput);
         if (typeof time !== 'number' || isNaN(time) || time <= 0) return '';
-
         const totalSeconds = time;
         const minutes = Math.floor(totalSeconds / 60);
         const seconds = totalSeconds % 60;
         const secondsPart = seconds.toFixed(2);
-
         let timeStr = `${minutes}:${secondsPart.padStart(5, '0')}`;
-
         if (minutes >= 60) {
             const hours = Math.floor(minutes / 60);
             const remainingMinutes = minutes % 60;
             timeStr = `${hours}:${String(remainingMinutes).padStart(2, '0')}:${secondsPart.padStart(5, '0')}`;
         }
-
         return timeStr;
     }
 
-    /**
-     * Calculates pace per mile.
-     * @param {number} totalSeconds Total time in seconds.
-     * @param {number} distanceMeters Distance in meters.
-     * @returns {string} Pace per mile in MM:SS format.
-     */
     function calculatePacePerMile(totalSeconds, distanceMeters = 5000) {
         if (!totalSeconds || totalSeconds <= 0 || !distanceMeters || distanceMeters <= 0) return '';
         const metersPerMile = 1609.34;
         const paceSeconds = (totalSeconds / distanceMeters) * metersPerMile;
-
         const minutes = Math.floor(paceSeconds / 60);
         const seconds = Math.round(paceSeconds % 60);
-
         return `${minutes}:${String(seconds).padStart(2, '0')}`;
     }
 
-    /**
-     * Formats the graduation year into a typical high school grade level string ('Fr', 'So', 'Jr', 'Sr').
-     * The calculation adjusts for the current academic season (starting in August).
-     * @param {number|string} gradYear The year the athlete graduates (e.g., 2026).
-     * @returns {string} Grade level (e.g., 'Sr', 'Jr', 'So', 'Fr', or '').
-     */
     function formatGrade(gradYear) {
         if (!gradYear) return '';
         const currentYear = new Date().getFullYear();
-        const currentMonth = new Date().getMonth(); // 0-11 (January is 0)
+        const currentMonth = new Date().getMonth();
         const grad = parseInt(gradYear, 10);
-
-        // Determine the academic year based on the current date.
-        // If it's August (7) or later (the start of the new academic year), 
-        // the grade calculation uses the *next* calendar year.
         const academicYearStart = currentMonth >= 7 ? currentYear + 1 : currentYear;
-
-        // Years until graduation from the start of the current academic year 
         const yearsUntilGraduation = grad - academicYearStart;
-
-        // Mapping:
-        // Grad Year - Academic Year Start = Years Until Graduation (YUG)
-        // YUG = 0: Senior (e.g., 2026 - 2026)
-        // YUG = 1: Junior (e.g., 2027 - 2026)
-        // YUG = 2: Sophomore (e.g., 2028 - 2026)
-        // YUG = 3: Freshman (e.g., 2029 - 2026)
-        
-        if (yearsUntilGraduation === 0) return 'Sr'; 
-        if (yearsUntilGraduation === 1) return 'Jr'; 
-        if (yearsUntilGraduation === 2) return 'So'; 
-        if (yearsUntilGraduation === 3) return 'Fr'; 
-        
-        return ''; // Default or if graduated
+        if (yearsUntilGraduation === 0) return 'Sr';
+        if (yearsUntilGraduation === 1) return 'Jr';
+        if (yearsUntilGraduation === 2) return 'So';
+        if (yearsUntilGraduation === 3) return 'Fr';
+        return '';
     }
 
+    function slugify(name) {
+        if (!name) return '';
+        return name.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+    }
 
     // =========================================
-    // TABLE RENDERING FUNCTION
+    // DYNAMIC MODEL — MSM RATING
     // =========================================
+    const RATING_REF = {
+      M: (16 * 60) / 5000,   
+      F: (18.5 * 60) / 5000  
+    };
+    const RATING_SPREAD = 350; 
 
-    /**
-     * Renders results data into a standard responsive HTML table.
-     */
+    // ---- Weather scoring ----
+    function weatherDifficultyFactor(wx) {
+      if (!wx) return 1.0;
+      let f = 1.0;
+      if (typeof wx.tempMaxC === 'number' && wx.tempMaxC > 18) {
+        f += Math.min((wx.tempMaxC - 18) * 0.006, 0.09); 
+      }
+      if (typeof wx.tempMaxC === 'number' && wx.tempMaxC < -5) {
+        f += Math.min((-5 - wx.tempMaxC) * 0.004, 0.04);
+      }
+      if (typeof wx.windMaxKmh === 'number' && wx.windMaxKmh > 15) {
+        f += Math.min((wx.windMaxKmh - 15) * 0.0025, 0.05); 
+      }
+      if (typeof wx.precipMm === 'number' && wx.precipMm > 1) {
+        f += Math.min(wx.precipMm * 0.004, 0.06); 
+      }
+      return f;
+    }
+
+    const weatherCache = {};
+
+    function meetCoords(meet) {
+      if (!meet) return WV_DEFAULT_COORDS;
+      if (typeof meet.lat === 'number' && typeof meet.lon === 'number') return { lat: meet.lat, lon: meet.lon };
+      const cSlug = meet.course_slug || meet.course || '';
+      if (cSlug && COURSE_COORDS[cSlug]) return COURSE_COORDS[cSlug];
+      return WV_DEFAULT_COORDS;
+    }
+
+    function meetDateISO(meet) {
+      if (!meet || !meet.date) return null;
+      const d = String(meet.date).split('T')[0];
+      return /^\d{4}-\d{2}-\d{2}$/.test(d) ? d : null;
+    }
+
+    async function fetchWeatherForMeet(meetSlug) {
+      if (meetSlug in weatherCache) return weatherCache[meetSlug];
+
+      const ssKey = `msm_wx_${meetSlug}`;
+      const cached = sessionStorage.getItem(ssKey);
+      if (cached !== null) {
+        weatherCache[meetSlug] = JSON.parse(cached);
+        return weatherCache[meetSlug];
+      }
+
+      const meet = meetsData[meetSlug];
+      const iso = meetDateISO(meet);
+      if (!iso) { weatherCache[meetSlug] = null; sessionStorage.setItem(ssKey, 'null'); return null; }
+
+      const { lat, lon } = meetCoords(meet);
+      const url = `https://archive-api.open-meteo.com/v1/archive?latitude=${lat}&longitude=${lon}`
+                + `&start_date=${iso}&end_date=${iso}`
+                + `&daily=temperature_2m_max,wind_speed_10m_max,precipitation_sum`
+                + `&temperature_unit=celsius&wind_speed_unit=kmh&timezone=America%2FNew_York`;
+      try {
+        const res = await fetch(url);
+        const json = await res.json();
+        const daily = json && json.daily;
+        const wx = daily ? {
+          tempMaxC:   Array.isArray(daily.temperature_2m_max)  ? daily.temperature_2m_max[0]  : null,
+          windMaxKmh: Array.isArray(daily.wind_speed_10m_max)  ? daily.wind_speed_10m_max[0]  : null,
+          precipMm:   Array.isArray(daily.precipitation_sum)   ? daily.precipitation_sum[0]   : null
+        } : null;
+        weatherCache[meetSlug] = wx;
+        sessionStorage.setItem(ssKey, JSON.stringify(wx));
+        return wx;
+      } catch (e) {
+        console.warn('Open-Meteo fetch failed for', meetSlug, e);
+        weatherCache[meetSlug] = null;
+        sessionStorage.setItem(ssKey, 'null');
+        return null;
+      }
+    }
+
+    // ---- Course difficulty ----
+    let courseFactor = {};   
+    let globalMedianPace = { M: null, F: null }; 
+
+    function median(arr) {
+      if (!arr.length) return null;
+      const s = arr.slice().sort((a,b)=>a-b);
+      const mid = Math.floor(s.length/2);
+      return s.length % 2 ? s[mid] : (s[mid-1]+s[mid])/2;
+    }
+
+    function buildDerivedFactors() {
+      courseFactor = {};
+      const pacesByGender = { M: [], F: [] };
+      const pacesByCourse = {}; 
+
+      allResults.forEach(r => {
+        // Skip non-competitive meets so they don't skew the baseline medians
+        if (isNonCompetitive(r.meet_slug)) return;
+
+        const dist = r.distance ? parseInt(r.distance,10) : 5000;
+        if (!dist || !r.time_in_seconds) return;
+        const pace = r.time_in_seconds / dist; 
+        const g = r.gender;
+        if (g !== 'M' && g !== 'F') return;
+        
+        pacesByGender[g].push(pace);
+        
+        const cs = r.course_slug || (meetsData[r.meet_slug] && meetsData[r.meet_slug].course_slug) || 'unknown';
+        if (!pacesByCourse[cs]) pacesByCourse[cs] = { M: [], F: [] };
+        pacesByCourse[cs][g].push(pace);
+      });
+
+      globalMedianPace.M = median(pacesByGender.M);
+      globalMedianPace.F = median(pacesByGender.F);
+
+      Object.keys(pacesByCourse).forEach(cs => {
+        const parts = [];
+        ['M','F'].forEach(g => {
+          const cm = median(pacesByCourse[cs][g]);
+          if (cm && globalMedianPace[g]) parts.push(cm / globalMedianPace[g]);
+        });
+        let f = parts.length ? parts.reduce((a,b)=>a+b,0)/parts.length : 1.0;
+        f = Math.max(0.90, Math.min(1.12, f));
+        courseFactor[cs] = f;
+      });
+    }
+
+    // ---- Field strength ----
+    let fieldFactor = {};
+    function buildFieldFactors() {
+      fieldFactor = {};
+      const groups = {}; 
+      allResults.forEach(r => {
+        // Skip non-competitive meets so they don't skew the field strength metric
+        if (isNonCompetitive(r.meet_slug)) return;
+
+        const dist = r.distance ? parseInt(r.distance,10) : 5000;
+        if (!dist || !r.time_in_seconds) return;
+        const key = `${r.meet_slug}|${r.gender}|${dist}`;
+        if (!groups[key]) groups[key] = [];
+        groups[key].push(r.time_in_seconds / dist);
+      });
+
+      Object.keys(groups).forEach(key => {
+        const paces = groups[key];
+        const g = key.split('|')[1];
+        const gm = globalMedianPace[g];
+        if (!gm || paces.length === 0) { fieldFactor[key] = 1.0; return; }
+        const fieldMed = median(paces);
+        
+        const speedRatio = gm / fieldMed;            
+        const depth = Math.min(paces.length / 40, 1); 
+        let f = 1 + (speedRatio - 1) * 0.5 * (0.5 + 0.5*depth);
+        f = Math.max(0.96, Math.min(1.08, f)); 
+        fieldFactor[key] = f;
+      });
+    }
+
+    function fieldFactorFor(r) {
+      if (isNonCompetitive(r.meet_slug)) return 1.0; // Force neutral field strength
+      const dist = r.distance ? parseInt(r.distance,10) : 5000;
+      return fieldFactor[`${r.meet_slug}|${r.gender}|${dist}`] || 1.0;
+    }
+
+    function courseFactorFor(r) {
+      if (isNonCompetitive(r.meet_slug)) return 1.0; // Force neutral course difficulty
+      const cs = r.course_slug || (meetsData[r.meet_slug] && meetsData[r.meet_slug].course_slug) || 'unknown';
+      return courseFactor[cs] || 1.0;
+    }
+
+    function paceToRating(adjPaceSecPerM, gender) {
+      const ref = RATING_REF[gender] || RATING_REF.M;
+      const pctFaster = (ref - adjPaceSecPerM) / ref; 
+      const rating = 1000 + pctFaster * (RATING_SPREAD * 10);
+      return Math.max(0, Math.round(rating));
+    }
+
+    function ratingToPredicted5K(rating, gender) {
+      const ref = RATING_REF[gender] || RATING_REF.M;
+      const pctFaster = (rating - 1000) / (RATING_SPREAD * 10);
+      const neutralPace = ref * (1 - pctFaster);
+      return Math.max(1, neutralPace * 5000);
+    }
+
+    function computeRating(r, weatherFactorOverride) {
+      const dist = r.distance ? parseInt(r.distance,10) : 5000;
+      if (!dist || !r.time_in_seconds) return null;
+      const rawPace = r.time_in_seconds / dist; 
+
+      const cF = courseFactorFor(r);   
+      const fF = fieldFactorFor(r);    
+      const wF = (typeof weatherFactorOverride === 'number')
+                    ? weatherFactorOverride
+                    : weatherDifficultyFactor(weatherCache[r.meet_slug]);
+
+      const adjPace = rawPace / (cF * fF * wF);
+      const rating = paceToRating(adjPace, r.gender);
+      return { rating, cF, fF, wF, adjPace };
+    }
+
+    // =========================================
+    // RENDERING
+    // =========================================
     function renderRankings(gender, containerId, results) {
         const resultsBox = document.getElementById(containerId);
         if (!resultsBox) return;
-
         if (results.length === 0) {
             resultsBox.innerHTML = `<p class="text-center p-8 text-gray-500">No rankings available for the selected filters.</p>`;
             return;
         }
+        if (viewMode === 'teams') { renderTeamRankings(containerId, results); return; }
 
-        // The distance is guaranteed to be the same for all results in a filtered set (or 5000 if 'all' distance filter is selected)
-        // If the distance filter is 'all', use the distance of the top result, otherwise use 5000 as a default.
         const distanceMeters = currentDistance !== 'all' ? parseInt(currentDistance, 10) : (results[0]?.distance ? parseInt(results[0].distance, 10) : 5000);
 
-        // Generate HTML Table structure
         const tableHTML = `
-            <table class="results-table">
-                <thead>
-                    <tr>
-                        <th>Rank</th>
-                        <th>Athlete Name</th>
-                        <th>Grade</th>
-                        <th>School</th>
-                        <th>Meet (Year)</th>
-                        <th>Time</th>
-                        <th>Pace/Mile</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${results.map((runner, index) => {
-                        const timeInSeconds = runner.time_in_seconds; 
-                        const resultYear = runner.date ? new Date(runner.date).getFullYear() : 'N/A';
-                        return `
-                            <tr>
-                                <td data-label="Rank">${index + 1}</td>
-                                <td data-label="Athlete">
-                                    <!-- Link uses athlete_name + school_slug (results have no athlete_id foreign key) -->
-                                    <a href="athlete.html?name=${encodeURIComponent(runner.athlete_name || '')}&school=${encodeURIComponent(runner.school_slug || '')}" style="color: var(--xc-primary); text-decoration: none; font-weight: 600;">${runner.athlete_name || ''}</a>
-                                </td>
-                                <td data-label="Grade">${formatGrade(runner.grad_year) || ''}</td>
-                                <td data-label="School">${runner.school_name || runner.school_slug || ''}</td>
-                                <td data-label="Meet">
-                                    <a href="meet.html?slug=${runner.meet_slug}" style="color: var(--xc-primary); text-decoration: none;">${runner.meet_name || runner.meet_slug || ''}</a> 
-                                    (${resultYear})
-                                </td>
-                                <td data-label="Time">${formatTime(runner.time) || ''}</td>
-                                <td data-label="Pace/Mile">${calculatePacePerMile(timeInSeconds, distanceMeters) || ''}</td>
-                            </tr>
-                        `;
-                    }).join('')}
-                </tbody>
-            </table>
+            <div class="app-list">
+                <div class="list-header">${rankMode === 'dynamic' ? 'Individual — MSM Rating' : 'Individual Rankings'}</div>
+                ${results.map((runner, index) => {
+                    const timeInSeconds = runner.time_in_seconds;
+                    const resultYear = runner.date ? new Date(runner.date).getFullYear() : 'N/A';
+                    const grade = formatGrade(runner.grad_year);
+                    const pace = calculatePacePerMile(timeInSeconds, distanceMeters);
+                    const athleteName = runner.athlete_name || '';
+                    const schoolName = runner.school_name || runner.school_slug || '';
+                    const schoolSlug = runner.school_slug || '';
+                    const logoUrl = `/assets/team logos/${schoolSlug}.png`;
+
+                    let metaParts = [];
+                    if (grade) metaParts.push(`Yr: ${grade}`);
+                    metaParts.push(`<a href="meet.html?slug=${runner.meet_slug}" style="color:inherit; text-decoration:none;">${runner.meet_name || runner.meet_slug || ''} (${resultYear})</a>`);
+                    if (pace) metaParts.push(`Pace: ${pace}`);
+
+                    let scoreCell;
+                    if (rankMode === 'dynamic' && runner._msm) {
+                      const predicted = formatTime(ratingToPredicted5K(runner._msm.rating, runner.gender));
+                      const boost = runner._msm.cF * runner._msm.fF * runner._msm.wF;
+                      const pct = Math.round((boost - 1) * 100);
+                      const badge = pct !== 0
+                        ? `<span class="adj-badge ${pct>0?'adj-up':'adj-down'}">${pct>0?'+':''}${pct}%</span>`
+                        : '';
+                      metaParts.push(`Raw: ${formatTime(timeInSeconds)}`);
+                      scoreCell = `<div class="score-stack">
+                            <span class="score-rating">${runner._msm.rating}${badge}</span>
+                            <span class="score-predicted">proj 5K ${predicted}</span>
+                        </div>`;
+                    } else {
+                      scoreCell = `${formatTime(timeInSeconds) || ''}`;
+                    }
+
+                    return `
+                        <div class="list-item">
+                            <div class="item-place">${index + 1}</div>
+                            <div class="item-avatar">
+                                <img src="${logoUrl}" alt="${schoolName}" onerror="this.src='/assets/images/logob.svg'" />
+                            </div>
+                            <div class="item-details">
+                                <a href="athlete.html?name=${encodeURIComponent(athleteName)}&school=${encodeURIComponent(schoolSlug)}" class="item-name">${athleteName}</a>
+                                <a href="school.html?slug=${schoolSlug}" class="item-school">${schoolName}</a>
+                                <div class="item-meta">${metaParts.join(' • ')}</div>
+                            </div>
+                            <div class="item-score">${scoreCell}</div>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
         `;
         resultsBox.innerHTML = tableHTML;
+    }
+
+    function normalizeSchoolName(schoolName) {
+        if (!schoolName) return 'Unknown';
+        let n = schoolName.toLowerCase().trim();
+        n = n.replace(/\s+(high\s+)?school\s*$/i, '').replace(/\s+hs\s*$/i, '').trim();
+        return n.split(/\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+    }
+
+    function renderTeamRankings(containerId, results) {
+        const resultsBox = document.getElementById(containerId);
+        const teams = {};
+        results.forEach(r => {
+            const school = normalizeSchoolName(r.school_name || r.school_slug || 'Unknown');
+            if (!teams[school]) teams[school] = { school, slug: r.school_slug || slugify(school), runners: [] };
+            teams[school].runners.push(r);
+        });
+
+        const scored = Object.values(teams).map(t => {
+            const sorted = t.runners.slice().sort((a,b) => {
+                if (rankMode === 'dynamic') return (b._msm?.rating||0) - (a._msm?.rating||0);
+                return a.time_in_seconds - b.time_in_seconds;
+            });
+            const top5 = sorted.slice(0,5);
+            if (rankMode === 'dynamic') {
+                const teamRating = top5.reduce((s,r)=>s+(r._msm?.rating||0),0);
+                return { ...t, top5, metric: teamRating, complete: top5.length===5 };
+            } else {
+                return { ...t, top5, metric: null, complete: top5.length===5 };
+            }
+        }).filter(t => t.top5.length > 0);
+
+        if (rankMode !== 'dynamic') {
+            const scoringField = results.slice().sort((a,b)=>a.time_in_seconds-b.time_in_seconds);
+            const placeOf = new Map();
+            let p = 1; scoringField.forEach(r => { placeOf.set(r, p++); });
+            scored.forEach(t => {
+                t.metric = t.top5.reduce((s,r)=> s + (placeOf.get(r)||999), 0);
+            });
+        }
+
+        scored.sort((a,b) => rankMode === 'dynamic' ? b.metric - a.metric : a.metric - b.metric);
+
+        const teamsToShow = (currentLimit === Infinity) ? scored : scored.slice(0, currentLimit);
+
+        const header = rankMode === 'dynamic' ? 'Team Standings — MSM Rating (Top-5 sum)' : 'Team Standings — Raw Place Score';
+        let html = `<div class="app-list"><div class="list-header">${header}</div>`;
+        teamsToShow.forEach((t, i) => {
+            const logoUrl = `/assets/team logos/${t.slug}.png`;
+            const metricDisplay = `<span class="score-rating">${t.metric}</span>`;
+            const detail = t.top5.map(r => {
+                const v = rankMode === 'dynamic' ? (r._msm?.rating||'') : formatTime(r.time_in_seconds);
+                return `<span class="scorer-badge">${(r.athlete_name||'').split(' ').slice(-1)[0]} ${v}</span>`;
+            }).join(' ');
+            html += `
+                <div class="list-item">
+                    <div class="item-place">${i+1}</div>
+                    <div class="item-avatar"><img src="${logoUrl}" alt="${t.school}" onerror="this.src='/assets/images/logob.svg'" /></div>
+                    <div class="item-details">
+                        <div class="item-name">${t.school}${t.complete?'':' <span style="font-size:0.7rem;color:var(--text-tertiary)">(incomplete)</span>'}</div>
+                        <div class="item-meta">${detail}</div>
+                    </div>
+                    <div class="item-score">${metricDisplay}</div>
+                </div>`;
+        });
+        html += `</div>`;
+        resultsBox.innerHTML = html;
+    }
+
+    // =========================================
+    // MODE + VIEW TOGGLES
+    // =========================================
+    function setRankMode(mode) {
+        rankMode = mode;
+        document.getElementById('mode-raw').classList.toggle('active', mode==='raw');
+        document.getElementById('mode-dynamic').classList.toggle('active', mode==='dynamic');
+        document.getElementById('rank-mode-note').innerHTML = mode==='dynamic'
+            ? `Adjusted for course, field strength & race-day weather. <a href="rankings-explained.html">How does MSM Rating work?</a>`
+            : `Fastest raw times, exactly as run. <a href="rankings-explained.html">How does MSM Rating work?</a>`;
+        filterAndRender();
+    }
+    function setViewMode(mode) {
+        viewMode = mode;
+        document.getElementById('view-indiv').classList.toggle('active', mode==='indiv');
+        document.getElementById('view-teams').classList.toggle('active', mode==='teams');
+        filterAndRender();
     }
 
     // =========================================
     // FILTER SETTERS AND POPULATORS
     // =========================================
-    
-    /**
-     * Generalized function to set a filter state and update UI buttons.
-     */
     function setFilter(type, value, event = null) {
-        // 1. Update internal state
         if (type === 'gender') currentGender = value;
         if (type === 'distance') currentDistance = value;
-        // currentYear and currentGrade handlers removed
+        if (type === 'season') currentSeason = value;
         if (type === 'meet') currentMeetSlug = value;
         if (type === 'course') currentCourseSlug = value;
-
-        // 2. Update button active/inactive states (only for buttons)
+        if (type === 'limit') currentLimit = (value === 'all') ? Infinity : parseInt(value, 10);
         if (event && event.target.tagName === 'BUTTON') {
-            document.querySelectorAll(`.filter-btn[data-filter-type="${type}"]`).forEach(btn => {
-                btn.classList.remove('active');
-            });
+            document.querySelectorAll(`.filter-btn[data-filter-type="${type}"]`).forEach(btn => btn.classList.remove('active'));
             event.target.classList.add('active');
         }
-
-        // 3. Trigger re-render
         filterAndRender();
     }
-    
-    /**
-     * Finds unique meets and courses in the data and populates the dropdowns.
-     */
-    function populateFilters() {
-        // --- Populate Meet Filter ---
-        // meetsMap is populated in loadInitialData
-        const meetSelect = document.getElementById('meet-filter');
-        meetSelect.innerHTML = '<option value="all">All Meets</option>';
-        
-        // Convert map to array and sort by meet name
-        const sortedMeets = Object.keys(meetsMap).map(slug => ({
-            slug: slug,
-            name: meetsMap[slug]
-        })).sort((a, b) => a.name.localeCompare(b.name));
 
-        sortedMeets.forEach(meet => {
-            const option = document.createElement('option');
-            option.value = meet.slug;
-            option.textContent = meet.name;
-            meetSelect.appendChild(option);
+    function populateFilters() {
+        // Populate Seasons
+        const seasonSelect = document.getElementById('season-filter');
+        const uniqueYears = [...new Set(allResults.map(r => r.date ? new Date(r.date).getFullYear() : null))]
+            .filter(y => y !== null && !isNaN(y))
+            .sort((a,b) => b - a);
+
+        let seasonHtml = `<option value="all">All-Time</option>`;
+        uniqueYears.forEach(year => {
+            const selected = year.toString() === currentSeason ? 'selected' : '';
+            seasonHtml += `<option value="${year}" ${selected}>${year} Season</option>`;
         });
 
-        // --- Populate Course Filter ---
+        // Ensure current year is in dropdown even if no results yet
+        if (!uniqueYears.includes(parseInt(currentSeason))) {
+            seasonHtml = `<option value="${currentSeason}" selected>${currentSeason} Season</option>` + seasonHtml;
+        }
+        seasonSelect.innerHTML = seasonHtml;
+
+        // Populate Meets
+        const meetSelect = document.getElementById('meet-filter');
+        meetSelect.innerHTML = '<option value="all">All Meets</option>';
+        const sortedMeets = Object.keys(meetsMap).map(slug => ({ slug, name: meetsMap[slug] })).sort((a,b)=>a.name.localeCompare(b.name));
+        sortedMeets.forEach(meet => {
+            const option = document.createElement('option');
+            option.value = meet.slug; option.textContent = meet.name; meetSelect.appendChild(option);
+        });
+
+        // Populate Courses
         const courseSelect = document.getElementById('course-filter');
         courseSelect.innerHTML = '<option value="all">All Courses</option>';
-        
-        // Convert map to array and sort by course name
-        const sortedCourses = Object.keys(coursesMap).map(slug => ({
-            slug: slug,
-            name: coursesMap[slug]
-        })).sort((a, b) => a.name.localeCompare(b.name));
-
+        const sortedCourses = Object.keys(coursesMap).map(slug => ({ slug, name: coursesMap[slug] })).sort((a,b)=>a.name.localeCompare(b.name));
         sortedCourses.forEach(course => {
             const option = document.createElement('option');
-            option.value = course.slug;
-            option.textContent = course.name;
-            courseSelect.appendChild(option);
+            option.value = course.slug; option.textContent = course.name; courseSelect.appendChild(option);
         });
     }
 
     // =========================================
     // DATA FETCHING & FILTERING
     // =========================================
-
-    /**
-     * Loads schools and meets data before loading results.
-     */
     async function loadInitialData() {
       try {
-        // 1. Load Schools
-        const schools = await getAllSchools(); 
-        schools.forEach(school => {
-          schoolsMap[school.slug] = school.name;
-        });
-        
-        // 2. Load Meets
-        const meets = await getMeets(); 
-        meets.forEach(meet => {
-          meetsMap[meet.slug] = meet.name;
-        });
+        const schools = await getAllSchools();
+        schools.forEach(school => { schoolsMap[school.slug] = school.name; });
 
-        // 3. Load Courses
+        const meets = await getMeets();
+        meets.forEach(meet => { meetsMap[meet.slug] = meet.name; meetsData[meet.slug] = meet; });
+
         try {
           const coursesSnapshot = await firebaseDatabase.ref('crosscountry/courses').once('value');
           const coursesArray = snapshotToArray(coursesSnapshot);
-          coursesArray.forEach(course => {
-            coursesMap[course.slug] = course.name;
-          });
-        } catch (e) {
-          console.warn("Courses not available:", e);
-        }
+          coursesArray.forEach(course => { coursesMap[course.slug] = course.name; coursesData[course.slug] = course; });
+        } catch (e) { console.warn("Courses not available:", e); }
 
         await loadRankingsData();
       } catch (error) {
-        console.error("Error loading initial data (schools/meets/courses):", error);
+        console.error("Error loading initial data:", error);
       } finally {
         document.dispatchEvent(new Event("MSMDataLoaded"));
       }
     }
 
     async function loadRankingsData() {
-      try {
-        // Load raw results
-        const snapshot = await firebaseDatabase.ref('crosscountry/results').once('value');
-        const allResultsArray = snapshotToArray(snapshot); 
-
-        // Clear previous data
-        allResults = [];
-        maleResults = [];
-        femaleResults = [];
-
-        if (allResultsArray.length === 0) {
-             console.warn("No results found at 'crosscountry/results'. Stopping ranking calculation.");
-             document.getElementById('male-results-box').innerHTML = `<p class="text-center p-8 text-red-500">No results found in the database.</p>`;
-             document.getElementById('female-results-box').innerHTML = `<p class="text-center p-8 text-red-500">No results found in the database.</p>`;
-             return;
+          try {
+            const snapshot = await firebaseDatabase.ref('crosscountry/results').once('value');
+            const allResultsArray = snapshotToArray(snapshot);
+            allResults = []; maleResults = []; femaleResults = [];
+    
+            if (allResultsArray.length === 0) {
+                 document.getElementById('male-results-box').innerHTML = `<p class="text-center p-8 text-red-500">No results found in the database.</p>`;
+                 document.getElementById('female-results-box').innerHTML = `<p class="text-center p-8 text-red-500">No results found in the database.</p>`;
+                 return;
+            }
+    
+            allResultsArray.forEach(result => {
+                const timeInSeconds = formatTimeInSeconds(result.time);
+                if (!result.gender || timeInSeconds === null) return;
+                const meet = meetsData[result.meet_slug];
+                
+                const resultWithExtras = {
+                    ...result,
+                    time_in_seconds: timeInSeconds,
+                    school_name: schoolsMap[result.school_slug] || result.school_slug,
+                    meet_name: meetsMap[result.meet_slug] || result.meet_slug,
+                    course_slug: result.course_slug || (meet && meet.course_slug) || '',
+                    // FIX: Inherit the date from the meet if it's not on the result
+                    date: result.date || (meet && meet.date) || null,
+                    grade_string: formatGrade(result.grad_year)
+                };
+                
+                allResults.push(resultWithExtras);
+                if (result.gender === 'M') maleResults.push(resultWithExtras);
+                else if (result.gender === 'F') femaleResults.push(resultWithExtras);
+            });
+    
+            buildDerivedFactors();
+            buildFieldFactors();
+    
+            populateFilters();
+            maleResults.sort((a,b)=>a.time_in_seconds-b.time_in_seconds);
+            femaleResults.sort((a,b)=>a.time_in_seconds-b.time_in_seconds);
+    
+            filterAndRender();
+          } catch (error) {
+            console.error("Critical Error:", error);
+            document.getElementById('male-results-box').innerHTML = `<p class="text-center p-8 text-red-500">Failed to load rankings: ${error.message}</p>`;
+            document.getElementById('female-results-box').innerHTML = `<p class="text-center p-8 text-red-500">Failed to load rankings: ${error.message}</p>`;
+          }
         }
 
-        // Process and categorize results
-        allResultsArray.forEach(result => {
-            const timeInSeconds = formatTimeInSeconds(result.time);
-            
-            if (!result.gender || timeInSeconds === null) return;
-
-            const resultWithExtras = {
-                ...result,
-                time_in_seconds: timeInSeconds,
-                school_name: schoolsMap[result.school_slug] || result.school_slug,
-                meet_name: meetsMap[result.meet_slug] || result.meet_slug,
-                // Add the calculated grade string to the object for filtering
-                grade_string: formatGrade(result.grad_year) 
-            };
-            
-            allResults.push(resultWithExtras); // Store a copy of all results
-
-            if (result.gender === 'M') {
-                maleResults.push(resultWithExtras);
-            } else if (result.gender === 'F') {
-                femaleResults.push(resultWithExtras);
-            }
-        });
-
-        // Populate all filter dropdowns
-        populateFilters();
-
-        // Sort the full lists by time_in_seconds (fastest first). 
-        maleResults.sort((a, b) => a.time_in_seconds - b.time_in_seconds);
-        femaleResults.sort((a, b) => a.time_in_seconds - b.time_in_seconds);
-
-        // Initial render: Male, All Distances, All Meets
-        filterAndRender();
-
-      } catch (error) {
-        console.error("Critical Error loading and processing raw results for rankings:", error);
-        document.getElementById('male-results-box').innerHTML = `<p class="text-center p-8 text-red-500">Failed to load and process rankings data: ${error.message}</p>`;
-        document.getElementById('female-results-box').innerHTML = `<p class="text-center p-8 text-red-500">Failed to load and process rankings data: ${error.message}</p>`;
-      }
-    }
-
-    /**
-     * Central function that filters data based on current filters and renders the visible table.
-     */
-    function filterAndRender() {
+    async function filterAndRender() {
         const isMale = currentGender === 'M';
         const rawResults = isMale ? maleResults : femaleResults;
         const targetSectionId = isMale ? 'male-rankings' : 'female-rankings';
         const targetBoxId = isMale ? 'male-results-box' : 'female-results-box';
-        
-        // 1. Manage visibility
+
         document.getElementById(isMale ? 'female-rankings' : 'male-rankings').classList.add('hidden');
         document.getElementById(targetSectionId).classList.remove('hidden');
         document.getElementById('no-rankings-message').classList.add('hidden');
 
-        // 2. Start Filtering the selected gender's full list
         let filteredResults = rawResults;
+        
+        // 1. Season Cutoff Filter
+        if (currentSeason !== 'all') {
+            filteredResults = filteredResults.filter(r => {
+                if (!r.date) return false;
+                return new Date(r.date).getFullYear().toString() === currentSeason;
+            });
+        }
 
-        // Filter A: Distance
         if (currentDistance !== 'all') {
             const distanceNum = parseInt(currentDistance, 10);
-            filteredResults = filteredResults.filter(r => {
-                const resultDistance = r.distance ? parseInt(r.distance, 10) : 0; 
-                return resultDistance === distanceNum;
-            });
+            filteredResults = filteredResults.filter(r => (r.distance ? parseInt(r.distance,10):0) === distanceNum);
         }
-        
-        // Filter B: Meet Slug
-        if (currentMeetSlug !== 'all') {
-            filteredResults = filteredResults.filter(r => {
-                return r.meet_slug === currentMeetSlug;
-            });
-        }
-        
-        // Filter C: Course Slug (filter by the course associated with the meet)
-        if (currentCourseSlug !== 'all') {
-            filteredResults = filteredResults.filter(r => {
-                return r.course_slug === currentCourseSlug;
-            });
-        }
-        
-        // 3. Render the top 50 results
-        if (filteredResults.length > 0) {
-            // Note: Since rawResults is already sorted, the filtered list is also sorted.
-            renderRankings(currentGender, targetBoxId, filteredResults.slice(0, 50));
-        } else {
-            // Display 'No data' message in the specific box
+        if (currentMeetSlug !== 'all') filteredResults = filteredResults.filter(r => r.meet_slug === currentMeetSlug);
+        if (currentCourseSlug !== 'all') filteredResults = filteredResults.filter(r => r.course_slug === currentCourseSlug);
+
+        const wxStatus = document.getElementById('weather-status');
+
+        if (filteredResults.length === 0) {
             document.getElementById(targetBoxId).innerHTML = `<p class="text-center p-8 text-gray-500">No rankings found for the selected filters.</p>`;
+            wxStatus.textContent = '';
+            return;
+        }
+
+        const displayLimit = (viewMode === 'teams' || currentLimit === Infinity)
+            ? filteredResults.length
+            : currentLimit;
+
+        if (rankMode === 'dynamic') {
+            const scoringSet = (viewMode === 'teams')
+                ? filteredResults
+                : filteredResults.slice(0, displayLimit);
+
+            const uniqueMeets = [...new Set(scoringSet.map(r => r.meet_slug))];
+            wxStatus.textContent = `Fetching race-day weather for ${uniqueMeets.length} meet(s)…`;
+
+            await Promise.all(uniqueMeets.map(slug => fetchWeatherForMeet(slug)));
+
+            scoringSet.forEach(r => { r._msm = computeRating(r); });
+            const withRatings = scoringSet.filter(r => r._msm);
+            withRatings.sort((a,b) => b._msm.rating - a._msm.rating);
+
+            const weatheredCount = uniqueMeets.filter(s => weatherCache[s]).length;
+            wxStatus.innerHTML = `MSM Rating active · weather applied to ${weatheredCount}/${uniqueMeets.length} meets · course & field-strength always applied.`;
+
+            if (viewMode === 'teams') {
+                renderRankings(currentGender, targetBoxId, withRatings);
+            } else {
+                renderRankings(currentGender, targetBoxId, withRatings.slice(0, displayLimit));
+            }
+        } else {
+            wxStatus.textContent = '';
+            if (viewMode === 'teams') {
+                renderRankings(currentGender, targetBoxId, filteredResults);
+            } else {
+                renderRankings(currentGender, targetBoxId, filteredResults.slice(0, displayLimit));
+            }
         }
     }
 
-    // Initialize on page load
-    window.onload = loadInitialData; 
+    window.onload = loadInitialData;
   </script>
-
-  
-  </main>
 
 <div id="global-footer"></div>
 
