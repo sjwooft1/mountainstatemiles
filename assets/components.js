@@ -30,7 +30,6 @@ const BASE_LINKS = [
     ],
     default: [
       { name: 'About', url:'/home/about.html'},
-      { name: 'Weather', url:'/weather.html'},
       { name: 'Track', url: '/Track/index.html' },
       { name: 'Cross Country', url: '/CrossCountry/xc.html' },
     ]

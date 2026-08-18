@@ -14,279 +14,134 @@
   <link rel="stylesheet" href="/assets/main.css" />
 
 <style>
-  /* Match Live Results page styling */
+  :root { --radius-lg: 14px; --radius-md: 10px; }
+
+  /* --- Ranking-mode toggle (Raw vs MSM) --- */
+  .rank-mode-tabs {
+    display: flex; justify-content: center; gap: 8px;
+    margin: 0 auto 8px; max-width: 420px;
+  }
+  .rank-mode-tab {
+    flex: 1; padding: 10px 14px; border-radius: 12px;
+    border: 1px solid var(--border); background: var(--bg-secondary);
+    color: var(--text-secondary); font-weight: 700; font-size: 0.9rem;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .rank-mode-tab.active { background: var(--text-primary); color: var(--bg-primary); border-color: var(--text-primary); }
+  .rank-mode-note { text-align: center; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 18px; }
+  .rank-mode-note a { color: var(--text-primary); font-weight: 600; }
+
   .filter-bar {
     background: var(--bg-secondary);
     border: 1px solid var(--border);
-    border-radius: 12px;
+    border-radius: var(--radius-lg);
     padding: 16px 20px;
     margin-bottom: 20px;
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
     gap: 12px;
     align-items: flex-end;
   }
-
-  .filter-group {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
-
+  .filter-group { display: flex; flex-direction: column; gap: 6px; }
   .filter-label {
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: var(--text-secondary);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+    font-size: 0.8rem; font-weight: 600; color: var(--text-secondary);
+    text-transform: uppercase; letter-spacing: 0.5px;
   }
-
   .filter-input {
-    padding: 10px 12px;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    background: var(--bg-primary);
-    color: var(--text-primary);
-    font-weight: 500;
-    font-size: 0.9rem;
-    cursor: pointer;
-    transition: all 0.2s;
+    padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px;
+    background: var(--bg-primary); color: var(--text-primary);
+    font-weight: 500; font-size: 0.9rem; cursor: pointer; transition: all 0.2s;
   }
-
-  .filter-input:hover {
-    border-color: var(--text-primary);
-    background: var(--bg-secondary);
-  }
-
-  .filter-input:focus {
-    outline: none;
-    border-color: var(--text-primary);
-    box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
-  }
-
+  .filter-input:hover { border-color: var(--text-primary); }
+  .filter-input:focus { outline: none; border-color: var(--text-primary); box-shadow: 0 0 0 2px rgba(0,0,0,0.08); }
   .filter-input.btn-load {
-    cursor: pointer;
-    font-weight: 600;
-    background: var(--text-primary);
-    color: var(--bg-primary);
-    border-color: var(--text-primary);
+    cursor: pointer; font-weight: 700; background: var(--text-primary);
+    color: var(--bg-primary); border-color: var(--text-primary);
   }
+  .filter-input.btn-load:hover { opacity: 0.9; }
 
-  .filter-input.btn-load:hover {
-    background: var(--primary-light);
-    border-color: var(--primary-light);
-    color: var(--bg-primary);
-  }
+  .weather-status { text-align: center; font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 12px; min-height: 1em; }
 
-  .results-container {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-  }
+  .results-container { display: flex; flex-direction: column; gap: 12px; }
 
   .result-card {
     background: var(--bg-primary);
-    border: 2px solid var(--border);
-    border-radius: 12px;
-    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
     overflow: hidden;
-    transition: all 0.3s;
+    transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
     display: grid;
-    grid-template-columns: 80px 1fr 120px;
+    grid-template-columns: 64px 1fr 140px;
+    align-items: stretch;
   }
+  .result-card:hover { border-color: var(--text-primary); box-shadow: 0 6px 18px var(--shadow-light); transform: translateY(-2px); }
 
-  .result-card:hover {
-    border-color: var(--text-primary);
-    box-shadow: 0 8px 24px var(--shadow-medium);
-    transform: translateY(-4px);
-  }
+  /* Top-3 accent */
+  .result-card.rank-1 { border-color: #d4af37; }
+  .result-card.rank-2 { border-color: #b0b7c0; }
+  .result-card.rank-3 { border-color: #cd7f32; }
 
   .result-rank {
-    background: linear-gradient(135deg, var(--text-primary) 0%, var(--primary-light) 100%);
+    background: var(--text-primary);
     color: var(--bg-primary);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.75rem;
-    font-weight: 800;
-    padding: 20px;
-    text-align: center;
-    min-height: 100%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.3rem; font-weight: 800; padding: 12px; text-align: center;
   }
+  .result-rank-number { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .result-rank-medal { font-size: 1.25rem; }
 
-  .result-rank-number {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-  }
-
-  .result-rank-medal {
-    font-size: 1.5rem;
-  }
-
-  .result-content {
-    padding: 16px 20px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    gap: 8px;
-  }
-
-  .result-title {
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: var(--text-primary);
-    margin: 0;
-  }
-
-  .result-info {
-    display: flex;
-    gap: 16px;
-    font-size: 0.9rem;
-    color: var(--text-secondary);
-    flex-wrap: wrap;
-  }
-
-  .result-info-item {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
+  .result-content { padding: 12px 16px; display: flex; flex-direction: column; justify-content: center; gap: 6px; min-width: 0; }
+  .result-title { font-size: 1.05rem; font-weight: 700; color: var(--text-primary); margin: 0; }
+  .result-info { display: flex; gap: 14px; font-size: 0.85rem; color: var(--text-secondary); flex-wrap: wrap; }
+  .result-info-item { display: flex; align-items: center; gap: 6px; }
 
   .result-time {
-    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-    color: white;
-    padding: 16px 24px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    font-weight: 700;
-    min-height: 100%;
-    text-align: center;
-    gap: 4px;
-  }
-
-  .result-time-label {
-    font-size: 0.7rem;
-    opacity: 0.9;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-
-  .result-time-value {
-    font-size: 1.3rem;
-  }
-
-  .athlete-link {
+    background: var(--bg-secondary);
     color: var(--text-primary);
-    text-decoration: none;
-    font-weight: 600;
-    border-bottom: 2px solid var(--border);
-    transition: all 0.2s;
+    padding: 12px 16px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    font-weight: 800; text-align: center; gap: 2px;
+    border-left: 1px solid var(--border);
   }
+  .result-time-label { font-size: 0.65rem; opacity: 0.8; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; }
+  .result-time-value { font-size: 1.25rem; font-variant-numeric: tabular-nums; }
+  .result-time-sub { font-size: 0.7rem; color: var(--text-secondary); font-weight: 600; }
 
-  .athlete-link:hover {
-    border-bottom-color: var(--text-primary);
+  .adj-badge { display:inline-block; padding:1px 5px; border-radius:4px; font-size:0.6rem; font-weight:700; margin-top:2px; }
+  .adj-up { background: rgba(34,197,94,0.15); color:#16a34a; }
+  .adj-down { background: rgba(239,68,68,0.15); color:#dc2626; }
+
+  .athlete-link { color: var(--text-primary); text-decoration: none; font-weight: 700; border-bottom: 2px solid var(--border); transition: all 0.2s; }
+  .athlete-link:hover { border-bottom-color: var(--text-primary); }
+
+  /* Team view */
+  .team-scorers { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+  .team-scorer {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 8px; border-radius: 6px;
+    background: var(--bg-secondary); border: 1px solid var(--border);
+    font-size: 0.75rem; color: var(--text-secondary); font-weight: 600;
   }
+  .team-scorer b { color: var(--text-primary); font-weight: 700; }
 
   @media (max-width: 768px) {
-    .result-card {
-      grid-template-columns: 60px 1fr;
-    }
-
-    .result-time {
-      grid-column: 1 / -1;
-      padding: 12px;
-      border-top: 1px solid var(--border);
-    }
-
-    .result-rank {
-      padding: 12px;
-      font-size: 1.3rem;
-    }
-
-    .result-title {
-      font-size: 1rem;
-    }
-
-    .result-info {
-      font-size: 0.85rem;
-    }
-
-    .filter-bar {
-      grid-template-columns: 1fr 1fr;
-    }
-
-    .filter-input.btn-load {
-      grid-column: 1 / -1;
-    }
+    .result-card { grid-template-columns: 52px 1fr; }
+    .result-time { grid-column: 1 / -1; border-left: none; border-top: 1px solid var(--border); flex-direction: row; gap: 10px; }
+    .filter-bar { grid-template-columns: 1fr 1fr; }
+    .filter-input.btn-load { grid-column: 1 / -1; }
   }
 
-  .loading-state {
-    text-align: center;
-    padding: 60px 20px;
-    color: var(--text-secondary);
-  }
+  .loading-state, .empty-state { text-align: center; padding: 56px 20px; color: var(--text-secondary); }
+  .loading-spinner { display:inline-block; width:40px; height:40px; border:4px solid var(--border); border-top-color: var(--text-primary); border-radius:50%; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .empty-state-icon { font-size: 3rem; margin-bottom: 12px; opacity: 0.5; }
 
-  .loading-spinner {
-    display: inline-block;
-    width: 40px;
-    height: 40px;
-    border: 4px solid var(--border);
-    border-top-color: var(--text-primary);
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-  }
-
-  @keyframes spin {
-    to { transform: rotate(360deg); }
-  }
-
-  .empty-state {
-    text-align: center;
-    padding: 60px 20px;
-    color: var(--text-secondary);
-  }
-
-  .empty-state-icon {
-    font-size: 3rem;
-    margin-bottom: 16px;
-    opacity: 0.5;
-  }
-
-  .stats-bar {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 12px;
-    margin-bottom: 20px;
-  }
-
-  .stat-item {
-    background: var(--bg-secondary);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 12px 16px;
-    text-align: center;
-  }
-
-  .stat-value {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: var(--text-primary);
-  }
-
-  .stat-label {
-    font-size: 0.8rem;
-    color: var(--text-secondary);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-top: 4px;
-  }
+  .stats-bar { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 20px; }
+  .stat-item { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 12px 16px; text-align: center; }
+  .stat-value { font-size: 1.5rem; font-weight: 800; color: var(--text-primary); }
+  .stat-label { font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px; }
 </style>
 
-  
   <script src="/assets/theme-toggle.js" defer></script>
   <script src="/assets/components.js" defer></script>
 </head>
@@ -298,14 +153,29 @@
 <main class="content-section">
     <h1 class="section-title">Rankings</h1>
 
+    <!-- Ranking Mode Toggle -->
+    <div class="rank-mode-tabs">
+      <button id="mode-raw" class="rank-mode-tab active" onclick="setRankMode('raw')">Raw Mark</button>
+      <button id="mode-dynamic" class="rank-mode-tab" onclick="setRankMode('dynamic')">MSM Rating</button>
+    </div>
+    <div class="rank-mode-note" id="rank-mode-note">
+      Best marks, exactly as recorded. <a href="../CrossCountry/rankings-explained.html#track">How does MSM Rating work?</a>
+    </div>
+
+    <!-- Individual vs Team view -->
+    <div class="rank-mode-tabs" style="max-width:360px;">
+      <button id="view-indiv" class="rank-mode-tab active" onclick="setViewMode('indiv')">Individual</button>
+      <button id="view-teams" class="rank-mode-tab" onclick="setViewMode('teams')">Teams</button>
+    </div>
+
     <div class="filter-bar">
       <div class="filter-group">
         <label class="filter-label" for="select-event">Event</label>
-        <select id="select-event" class="filter-input" onclick="loadRankings()"><option>Loading events…</option></select>
+        <select id="select-event" class="filter-input" onlcick="loadRankings()"><option>Loading events…</option></select>
       </div>
       <div class="filter-group">
         <label class="filter-label" for="select-season">Season</label>
-        <select id="select-season" class="filter-input" onclick="loadRankings()">
+        <select id="select-season" class="filter-input">
           <option value="">All seasons</option>
           <option value="indoor">Indoor</option>
           <option value="outdoor">Outdoor</option>
@@ -313,10 +183,20 @@
       </div>
       <div class="filter-group">
         <label class="filter-label" for="select-gender">Gender</label>
-        <select id="select-gender" class="filter-input" onclick="loadRankings()">
+        <select id="select-gender" class="filter-input">
           <option value="">All genders</option>
           <option value="M">Boys / M</option>
           <option value="W">Girls / F</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label class="filter-label" for="select-limit">Show</label>
+        <select id="select-limit" class="filter-input">
+          <option value="50">Top 50</option>
+          <option value="100">Top 100</option>
+          <option value="250">Top 250</option>
+          <option value="500">Top 500</option>
+          <option value="all">All</option>
         </select>
       </div>
       <div class="filter-group">
@@ -325,15 +205,16 @@
       </div>
       <div class="filter-group">
         <label class="filter-label">&nbsp;</label>
-        <li><a href="export.html">Export</a></li>
+        <a href="export.html" class="filter-input" style="text-align:center; text-decoration:none;">Export</a>
       </div>
     </div>
 
+    <div class="weather-status" id="weather-status"></div>
+
     <div id="stats-bar" class="stats-bar" style="display: none;">
-      <div class="stat-item">
-        <div class="stat-value" id="stat-count">0</div>
-        <div class="stat-label">Results</div>
-      </div>
+      <div class="stat-item"><div class="stat-value" id="stat-count">0</div><div class="stat-label">Results</div></div>
+      <div class="stat-item"><div class="stat-value" id="stat-best">—</div><div class="stat-label" id="stat-best-label">Top Mark</div></div>
+      <div class="stat-item"><div class="stat-value" id="stat-schools">0</div><div class="stat-label">Schools</div></div>
     </div>
 
     <div id="rankings-container" class="results-container">
@@ -354,18 +235,71 @@
       await new Promise(resolve => setTimeout(resolve, 100));
       attempts++;
     }
-    if (typeof window.firebaseDatabase === 'undefined') {
-      throw new Error('Firebase database not initialized');
-    }
+    if (typeof window.firebaseDatabase === 'undefined') throw new Error('Firebase database not initialized');
   }
 
   const selectEvent = document.getElementById('select-event');
   const selectSeason = document.getElementById('select-season');
   const selectGender = document.getElementById('select-gender');
+  const selectLimit = document.getElementById('select-limit');
   const btnLoad = document.getElementById('btn-load');
   const rankingsContainer = document.getElementById('rankings-container');
 
   const FIELD_EVENTS = ['long jump', 'high jump', 'triple jump', 'pole vault', 'shot put', 'discus', 'javelin', 'hammer'];
+
+  let rankMode = 'raw';   // 'raw' | 'dynamic'
+  let viewMode = 'indiv'; // 'indiv' | 'teams'
+  let lastLoad = null;    // cache of the last loaded {filteredResults, eventName, eventData, allEvents}
+  let eventsMap = {};     // event_id -> event object (name/category)
+
+  // =========================================
+  // ELITE STANDARDS (per event, seconds for runs / meters for field)
+  // The "1000-point" benchmark: roughly an elite HS state-champion mark.
+  // Keys are matched by substring against the event name (lowercased).
+  // Tune freely — these set where ratings land.
+  // =========================================
+  const ELITE_STANDARDS = {
+    // running (time in seconds) — [Boys, Girls]
+    '100':        { M: 10.6,  W: 12.0 },
+    '200':        { M: 21.5,  W: 24.8 },
+    '400':        { M: 48.5,  W: 56.5 },
+    '800':        { M: 115,   W: 135 },   // 1:55 / 2:15
+    '1600':       { M: 250,   W: 295 },   // 4:10 / 4:55
+    'mile':       { M: 252,   W: 297 },
+    '3200':       { M: 555,   W: 640 },   // 9:15 / 10:40
+    '3000':       { M: 510,   W: 600 },
+    '110 hurdles':{ M: 14.5,  W: 15.5 },
+    '100 hurdles':{ M: 14.5,  W: 14.8 },
+    '300 hurdles':{ M: 38.5,  W: 44.5 },
+    '400 hurdles':{ M: 54.0,  W: 62.0 },
+    '4x100':      { M: 43.0,  W: 49.0 },
+    '4x200':      { M: 91.0,  W: 104 },
+    '4x400':      { M: 205,   W: 240 },
+    '4x800':      { M: 490,   W: 570 },
+    // field (distance in meters; larger is better) — [Boys, Girls]
+    'long jump':  { M: 7.0,   W: 5.7,  field: true },
+    'triple jump':{ M: 14.5,  W: 12.0, field: true },
+    'high jump':  { M: 2.05,  W: 1.70, field: true },
+    'pole vault': { M: 4.80,  W: 3.70, field: true },
+    'shot put':   { M: 17.5,  W: 13.5, field: true },
+    'discus':     { M: 52.0,  W: 42.0, field: true },
+    'javelin':    { M: 58.0,  W: 40.0, field: true },
+    'hammer':     { M: 55.0,  W: 45.0, field: true }
+  };
+  const RATING_SPREAD = 1000; // points per 100% deviation from the standard
+
+  function eventStandard(eventName, gender) {
+    if (!eventName) return null;
+    const n = eventName.toLowerCase();
+    // Longest key match wins (so "100 hurdles" beats "100")
+    let best = null, bestLen = 0;
+    Object.keys(ELITE_STANDARDS).forEach(key => {
+      if (n.includes(key) && key.length > bestLen) { best = ELITE_STANDARDS[key]; bestLen = key.length; }
+    });
+    if (!best) return null;
+    const g = (gender === 'W' || gender === 'F') ? 'W' : 'M';
+    return { value: best[g], field: !!best.field };
+  }
 
   function applyUrlParams() {
     const params = new URLSearchParams(window.location.search);
@@ -396,50 +330,155 @@
   }
 
   function normalizeResultGender(value) {
-    const token = String(value || '').trim().toUpperCase();
-    if (token === 'W' || token === 'F' || token === 'GIRLS' || token === 'FEMALE') return 'W';
-    if (token === 'M' || token === 'BOYS' || token === 'MALE') return 'M';
-    return token;
+    const t = String(value || '').trim().toUpperCase();
+    if (t==='W'||t==='F'||t==='GIRLS'||t==='FEMALE') return 'W';
+    if (t==='M'||t==='BOYS'||t==='MALE') return 'M';
+    return t;
   }
-
   function isFieldEvent(eventName) {
     if (!eventName) return false;
-    const normalized = eventName.toLowerCase();
-    return FIELD_EVENTS.some(fe => normalized.includes(fe));
+    const n = eventName.toLowerCase();
+    return FIELD_EVENTS.some(fe => n.includes(fe));
   }
-
   function parseMarkValue(mark, eventName) {
     if (!mark) return Infinity;
-    if (['DNS', 'SCR', 'NH', 'ND', 'DQ'].includes(mark.toString().toUpperCase())) return Infinity;
-    
-    const markStr = mark.toString();
+    if (['DNS','SCR','NH','ND','DQ'].includes(mark.toString().toUpperCase())) return Infinity;
+    const s = mark.toString();
     if (isFieldEvent(eventName)) {
-      const match = markStr.match(/(\d+)[^\d]*(\d+(?:\.\d+)?)/);
-      if (match) {
-        const feet = parseFloat(match[1]);
-        const inches = parseFloat(match[2]);
-        return feet + (inches / 12);
-      }
+      const m = s.match(/(\d+)[^\d]*(\d+(?:\.\d+)?)/);
+      if (m) { return parseFloat(m[1]) + parseFloat(m[2]) / 12; } // feet + inches -> feet
     }
-    
-    if (markStr.includes(':')) {
-      const parts = markStr.split(':');
-      if (parts.length === 2) {
-        const minutes = parseFloat(parts[0]) || 0;
-        const seconds = parseFloat(parts[1]) || 0;
-        return minutes * 60 + seconds;
-      }
+    if (s.includes(':')) {
+      const parts = s.split(':');
+      if (parts.length === 2) return (parseFloat(parts[0])||0)*60 + (parseFloat(parts[1])||0);
     }
-    return parseFloat(markStr) || Infinity;
+    return parseFloat(s) || Infinity;
   }
-
+  // Field marks parse to FEET above; convert to meters for standard comparison.
+  function markInMeters(mark, eventName) {
+    const feet = parseMarkValue(mark, eventName);
+    if (feet === Infinity) return Infinity;
+    return feet * 0.3048;
+  }
   function formatMarkForDisplay(mark, eventName) {
     if (!mark) return '—';
     if (isFieldEvent(eventName)) {
-      const match = mark.toString().match(/(\d+)[^\d]*(\d+(?:\.\d+)?)/);
-      if (match) return `${match[1]}ft ${match[2]}in`;
+      const m = mark.toString().match(/(\d+)[^\d]*(\d+(?:\.\d+)?)/);
+      if (m) return `${m[1]}ft ${m[2]}in`;
     }
     return mark;
+  }
+
+  // =========================================
+  // WEATHER (outdoor meets only) — Open-Meteo historical
+  // =========================================
+  const weatherCache = {};
+  function meetDateISO(meet) {
+    const d = meet && (meet.date || meet.meet_date);
+    if (!d) return null;
+    const iso = String(d).split('T')[0];
+    return /^\d{4}-\d{2}-\d{2}$/.test(iso) ? iso : null;
+  }
+  function meetCoords(meet) {
+    if (meet && typeof meet.lat === 'number' && typeof meet.lon === 'number') return { lat: meet.lat, lon: meet.lon };
+    return { lat: 38.6409, lon: -80.6227 }; // WV centroid fallback
+  }
+  async function fetchWeatherForMeet(meetId, meet) {
+    if (meetId in weatherCache) return weatherCache[meetId];
+    const ssKey = `msm_trk_wx_${meetId}`;
+    const cached = sessionStorage.getItem(ssKey);
+    if (cached !== null) { weatherCache[meetId] = JSON.parse(cached); return weatherCache[meetId]; }
+    // Only outdoor meets get a weather term.
+    if (!meet || meet.season !== 'outdoor') { weatherCache[meetId] = null; sessionStorage.setItem(ssKey,'null'); return null; }
+    const iso = meetDateISO(meet);
+    if (!iso) { weatherCache[meetId] = null; sessionStorage.setItem(ssKey,'null'); return null; }
+    const { lat, lon } = meetCoords(meet);
+    const url = `https://archive-api.open-meteo.com/v1/archive?latitude=${lat}&longitude=${lon}`
+              + `&start_date=${iso}&end_date=${iso}`
+              + `&daily=temperature_2m_max,wind_speed_10m_max,precipitation_sum`
+              + `&temperature_unit=celsius&wind_speed_unit=kmh&timezone=America%2FNew_York`;
+    try {
+      const res = await fetch(url); const json = await res.json();
+      const d = json && json.daily;
+      const wx = d ? { tempMaxC: d.temperature_2m_max?.[0] ?? null, windMaxKmh: d.wind_speed_10m_max?.[0] ?? null, precipMm: d.precipitation_sum?.[0] ?? null } : null;
+      weatherCache[meetId] = wx; sessionStorage.setItem(ssKey, JSON.stringify(wx)); return wx;
+    } catch (e) { weatherCache[meetId] = null; sessionStorage.setItem(ssKey,'null'); return null; }
+  }
+  function weatherDifficultyFactor(wx, isField) {
+    if (!wx) return 1.0;
+    let f = 1.0;
+    // Heat hurts distance runners most; light effect on sprints/field.
+    if (typeof wx.tempMaxC === 'number' && wx.tempMaxC > 20) f += Math.min((wx.tempMaxC-20)*0.004, 0.06);
+    // Wind: hurts sprints/throws; headwind assumption.
+    if (typeof wx.windMaxKmh === 'number' && wx.windMaxKmh > 15) f += Math.min((wx.windMaxKmh-15)*0.002, 0.04);
+    // Rain: slick track / heavy implements.
+    if (typeof wx.precipMm === 'number' && wx.precipMm > 1) f += Math.min(wx.precipMm*0.003, 0.04);
+    return f;
+  }
+
+  // =========================================
+  // FIELD STRENGTH (per event/gender/meet within this result set)
+  // =========================================
+  function buildFieldFactors(results, eventName) {
+    const groups = {}; // meet_id -> [perfValues comparable to standard]
+    results.forEach(r => {
+      const key = r.meet_id || 'unknown';
+      const val = isFieldEvent(eventName) ? markInMeters(r.mark, eventName) : parseMarkValue(r.mark, eventName);
+      if (val === Infinity) return;
+      (groups[key] = groups[key] || []).push(val);
+    });
+    const factor = {};
+    // Global median across the whole result set for this event.
+    const allVals = [];
+    Object.values(groups).forEach(arr => arr.forEach(v => allVals.push(v)));
+    const gMed = median(allVals);
+    Object.keys(groups).forEach(key => {
+      const med = median(groups[key]);
+      if (!gMed || !med) { factor[key] = 1.0; return; }
+      // Field events: higher is better, so strong field => med > gMed.
+      const ratio = isFieldEvent(eventName) ? (med / gMed) : (gMed / med);
+      const depth = Math.min(groups[key].length / 24, 1);
+      let f = 1 + (ratio - 1) * 0.4 * (0.5 + 0.5*depth);
+      f = Math.max(0.96, Math.min(1.06, f));
+      factor[key] = f;
+    });
+    return factor;
+  }
+  function median(arr) {
+    if (!arr.length) return null;
+    const s = arr.slice().sort((a,b)=>a-b);
+    const mid = Math.floor(s.length/2);
+    return s.length % 2 ? s[mid] : (s[mid-1]+s[mid])/2;
+  }
+
+  // =========================================
+  // RATING
+  // =========================================
+  function computeRating(result, eventName, gender, fieldFactorMap) {
+    const std = eventStandard(eventName, gender);
+    if (!std || !std.value) return null;
+    const isField = isFieldEvent(eventName);
+    const perf = isField ? markInMeters(result.mark, eventName) : parseMarkValue(result.mark, eventName);
+    if (perf === Infinity || perf <= 0) return null;
+
+    // Adjustments (>1 => conditions/field made it harder => credit up)
+    const fF = (fieldFactorMap && fieldFactorMap[result.meet_id]) || 1.0;
+    const wF = weatherDifficultyFactor(weatherCache[result.meet_id], isField);
+
+    // pctVsStandard: +0.05 means 5% BETTER than the elite standard.
+    let pct;
+    if (isField) {
+      // larger is better; credit harder conditions by scaling perf UP
+      const adjPerf = perf * (fF * wF);
+      pct = (adjPerf - std.value) / std.value;
+    } else {
+      // smaller (faster) is better; credit harder conditions by scaling time DOWN
+      const adjPerf = perf / (fF * wF);
+      pct = (std.value - adjPerf) / std.value;
+    }
+    const rating = Math.max(0, Math.round(1000 + pct * RATING_SPREAD));
+    const boost = fF * wF;
+    return { rating, boost, fF, wF };
   }
 
   async function initEvents() {
@@ -467,11 +506,101 @@
     }
   }
 
-  function getMedalIcon(rank) {
-    if (rank === 1) return '🥇';
-    if (rank === 2) return '🥈';
-    if (rank === 3) return '🥉';
-    return '';
+  function getMedalIcon(rank) { return rank===1?'🥇':rank===2?'🥈':rank===3?'🥉':''; }
+
+  function setRankMode(mode) {
+    rankMode = mode;
+    document.getElementById('mode-raw').classList.toggle('active', mode==='raw');
+    document.getElementById('mode-dynamic').classList.toggle('active', mode==='dynamic');
+    document.getElementById('rank-mode-note').innerHTML = mode==='dynamic'
+      ? `Each mark scored vs. the elite standard, adjusted for field strength & (outdoor) weather. <a href="../CrossCountry/rankings-explained.html#track">How does MSM Rating work?</a>`
+      : `Best marks, exactly as recorded. <a href="../CrossCountry/rankings-explained.html#track">How does MSM Rating work?</a>`;
+    if (lastLoad) renderRankingsTable(lastLoad.filteredResults, lastLoad.eventName);
+  }
+
+  function setViewMode(mode) {
+    viewMode = mode;
+    document.getElementById('view-indiv').classList.toggle('active', mode==='indiv');
+    document.getElementById('view-teams').classList.toggle('active', mode==='teams');
+    if (mode === 'teams') {
+      document.getElementById('rank-mode-note').innerHTML =
+        `Team score = sum of each school's top ${TEAM_SCORERS} athlete ratings, across <b>all events</b>. <a href="../CrossCountry/rankings-explained.html#track">How does it work?</a>`;
+    }
+    if (lastLoad) renderRankingsTable(lastLoad.filteredResults, lastLoad.eventName);
+  }
+
+  function getLimit() {
+    const v = selectLimit.value;
+    return v === 'all' ? Infinity : parseInt(v, 10);
+  }
+
+  // Resolve the event name for a single result (handles multi-event "All events" mode).
+  function resultEventName(result, fallbackName) {
+    if (fallbackName && fallbackName !== '__ALL__') return fallbackName;
+    const ev = eventsMap[result.event_id];
+    return (ev && ev.name) || 'Unknown Event';
+  }
+
+  // Attach a ._msm rating to every result. Field-strength factors are computed
+  // per event group so cross-event "All events" data is scored correctly.
+  function attachRatings(results, fallbackEventName) {
+    const gender = selectGender.value;
+    // Group by event so field-strength is measured within the same event.
+    const byEvent = {};
+    results.forEach(r => {
+      const en = resultEventName(r, fallbackEventName);
+      (byEvent[en] = byEvent[en] || []).push(r);
+    });
+    Object.keys(byEvent).forEach(en => {
+      const grp = byEvent[en];
+      const fieldFactorMap = buildFieldFactors(grp, en);
+      grp.forEach(r => { r._msm = computeRating(r, en, normalizeResultGender(r.gender) || gender, fieldFactorMap); });
+    });
+  }
+
+  // Hydrate a set of results with their meet + athlete records.
+  async function hydrateResults(results) {
+    const meetIds = [...new Set(results.map(r => r.meet_id).filter(Boolean))];
+    const athleteIds = [...new Set(results.map(r => r.athlete_id).filter(Boolean))];
+    const meetsMap = {}, athletesMap = {};
+    if (meetIds.length > 0) {
+      const meetsSnapshot = await window.firebaseDatabase.ref('Track/meets').once('value');
+      meetsSnapshot.forEach(child => { if (meetIds.includes(child.key)) meetsMap[child.key] = child.val(); });
+    }
+    if (athleteIds.length > 0) {
+      const athletesSnapshot = await window.firebaseDatabase.ref('Track/athletes').once('value');
+      athletesSnapshot.forEach(child => { if (athleteIds.includes(child.key)) athletesMap[child.key] = child.val(); });
+    }
+    results.forEach(r => { r.meet = meetsMap[r.meet_id] || {}; r.athlete = athletesMap[r.athlete_id] || {}; });
+    return { meetsMap, athletesMap };
+  }
+
+  // Cache of every result across all events (hydrated). Used by team mode so team
+  // scores factor in ALL events, not just the currently selected one.
+  let fullDatasetCache = null;
+  async function getFullDataset() {
+    if (fullDatasetCache) return fullDatasetCache;
+    const snap = await window.firebaseDatabase.ref('Track/results').once('value');
+    const all = [];
+    snap.forEach(child => {
+      const val = child.val();
+      if (val.exclude_from_rankings === true) return;
+      all.push({ id: child.key, ...val });
+    });
+    await hydrateResults(all);
+    fullDatasetCache = all;
+    return all;
+  }
+
+  // Team scoring pulls from the full (all-events) dataset, applying only the
+  // season & gender filters — never the single-event filter.
+  async function getTeamScoringResults() {
+    const season = selectSeason.value;
+    const gender = selectGender.value;
+    let data = (await getFullDataset()).slice();
+    if (season) data = data.filter(r => r.meet && r.meet.season === season);
+    if (gender) data = data.filter(r => normalizeResultGender(r.gender) === gender);
+    return data;
   }
 
   function renderRankingsTable(filteredResults, eventName) {
@@ -481,21 +610,82 @@
       return;
     }
 
-    document.getElementById('stats-bar').style.display = 'grid';
-    document.getElementById('stat-count').textContent = filteredResults.length;
+    const isAllEvents = (eventName === '__ALL__');
+    const gender = selectGender.value;
+    const isField = isFieldEvent(eventName);
 
-    rankingsContainer.innerHTML = filteredResults.map((result, index) => {
+    // Team mode, and cross-event individual mode, both require MSM Rating
+    // because raw marks aren't comparable across different events.
+    const forceDynamic = (viewMode === 'teams') || isAllEvents;
+    const effectiveMode = (rankMode === 'dynamic' || forceDynamic) ? 'dynamic' : 'raw';
+
+    // Team mode scores from the full all-events dataset, so skip rating the
+    // single-event set here and hand off immediately.
+    if (viewMode === 'teams') { renderTeamRankingsAllEvents(); return; }
+
+    if (effectiveMode === 'dynamic') attachRatings(filteredResults, eventName);
+
+    // ---- Individual view ----
+    let ordered = filteredResults.slice();
+    if (effectiveMode === 'dynamic') {
+      ordered = ordered.filter(r => r._msm);
+      ordered.sort((a,b) => b._msm.rating - a._msm.rating);
+    } else {
+      ordered.sort((a,b) => {
+        const ma = parseMarkValue(a.mark, eventName), mb = parseMarkValue(b.mark, eventName);
+        if (ma===Infinity && mb===Infinity) return 0;
+        if (ma===Infinity) return 1;
+        if (mb===Infinity) return -1;
+        return isField ? mb - ma : ma - mb;
+      });
+    }
+
+    // Stats
+    document.getElementById('stats-bar').style.display = 'grid';
+    document.getElementById('stat-count').textContent = ordered.length;
+    document.getElementById('stat-schools').textContent = new Set(ordered.map(r => r.athlete?.school).filter(Boolean)).size;
+    if (effectiveMode === 'dynamic') {
+      document.getElementById('stat-best-label').textContent = 'Top Rating';
+      document.getElementById('stat-best').textContent = ordered[0]?._msm?.rating ?? '—';
+    } else {
+      document.getElementById('stat-best-label').textContent = 'Top Mark';
+      document.getElementById('stat-best').textContent = formatMarkForDisplay(ordered[0]?.mark, eventName);
+    }
+
+    const limit = getLimit();
+    const shown = limit === Infinity ? ordered : ordered.slice(0, limit);
+
+    rankingsContainer.innerHTML = shown.map((result, index) => {
       const rank = index + 1;
       const medal = getMedalIcon(rank);
-      const mark = formatMarkForDisplay(result.mark, eventName);
-      
-      // RELAY NAMES LOGIC INTEGRATED HERE
-      const titleContent = result.relay_names 
+      const enForRow = resultEventName(result, eventName);
+      const mark = formatMarkForDisplay(result.mark, enForRow);
+      const rankClass = rank <= 3 ? ` rank-${rank}` : '';
+
+      const titleContent = result.relay_names
         ? `<div>${result.athlete?.school || 'Relay Team'}</div><div style="font-size:0.8rem; color:var(--text-secondary); font-weight:normal; margin-top:2px;">${result.relay_names}</div>`
-        : `<a href="athlete.html?id=${result.athlete_id || ''}" class="athlete-link">${((result.athlete?.first_name || '') + ' ' + (result.athlete?.last_name || '')).trim() || '—'}</a>`;
+        : `<a href="athlete.html?id=${result.athlete_id || ''}" class="athlete-link">${((result.athlete?.first_name||'')+' '+(result.athlete?.last_name||'')).trim() || '—'}</a>`;
+
+      // In All-events mode, show which event this row is for.
+      const eventTag = isAllEvents ? `<div class="result-info-item"><i class="fas fa-stopwatch"></i><span>${enForRow}</span></div>` : '';
+
+      let scoreBlock;
+      if (effectiveMode === 'dynamic' && result._msm) {
+        const pct = Math.round((result._msm.boost - 1) * 100);
+        const badge = pct !== 0 ? `<span class="adj-badge ${pct>0?'adj-up':'adj-down'}">${pct>0?'+':''}${pct}%</span>` : '';
+        scoreBlock = `
+          <div class="result-time-label">MSM Rating</div>
+          <div class="result-time-value">${result._msm.rating}</div>
+          <div class="result-time-sub">mark ${mark}</div>
+          ${badge}`;
+      } else {
+        scoreBlock = `
+          <div class="result-time-label">Mark</div>
+          <div class="result-time-value">${mark}</div>`;
+      }
 
       return `
-        <div class="result-card">
+        <div class="result-card${rankClass}">
           <div class="result-rank">
             <div class="result-rank-number">
               ${medal ? `<div class="result-rank-medal">${medal}</div>` : ''}
@@ -503,17 +693,117 @@
             </div>
           </div>
           <div class="result-content">
-            <div class="result-title">
-              ${titleContent}
-            </div>
+            <div class="result-title">${titleContent}</div>
             <div class="result-info">
               <div class="result-info-item"><i class="fas fa-school"></i><span>${result.athlete?.school || '—'}</span></div>
               <div class="result-info-item"><i class="fas fa-flag"></i><span>${result.meet?.name || '—'}</span></div>
+              ${eventTag}
             </div>
           </div>
+          <div class="result-time">${scoreBlock}</div>
+        </div>`;
+    }).join('');
+  }
+
+  // ---- Team rankings: sum each school's best MSM ratings ----
+  // Uses each athlete's single best rating (across events) to avoid one athlete
+  // being counted many times; sums the school's top N athletes.
+  const TEAM_SCORERS = 5;
+
+  // Loads the FULL all-events dataset, rates it, and renders team standings so
+  // every event contributes — regardless of which event is selected above.
+  async function renderTeamRankingsAllEvents() {
+    rankingsContainer.innerHTML = `<div class="loading-state"><div class="loading-spinner"></div><p>Scoring teams across all events…</p></div>`;
+    try {
+      const data = await getTeamScoringResults();
+      if (!data.length) {
+        rankingsContainer.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📊</div><h3>No team scores</h3><p>No results found for the selected season/gender.</p></div>`;
+        document.getElementById('stats-bar').style.display = 'none';
+        return;
+      }
+      // Prefetch outdoor weather across all events' meets so ratings are complete.
+      const outdoorMeetIds = [...new Set(data.filter(r => r.meet && r.meet.season === 'outdoor').map(r => r.meet_id).filter(Boolean))];
+      if (outdoorMeetIds.length) {
+        document.getElementById('weather-status').textContent = `Scoring teams: fetching weather for ${outdoorMeetIds.length} outdoor meet(s)…`;
+        await Promise.all(outdoorMeetIds.map(id => fetchWeatherForMeet(id, data.find(r => r.meet_id === id)?.meet)));
+      }
+      // Rate every result grouped by its own event (field-strength per event).
+      attachRatings(data, '__ALL__');
+      document.getElementById('weather-status').innerHTML = `Team scores factor in <b>all events</b> · top ${TEAM_SCORERS} athletes per school.`;
+      renderTeamRankings(data, '__ALL__', true);
+    } catch (err) {
+      console.error('[rankings] team scoring failed:', err);
+      rankingsContainer.innerHTML = `<div class="empty-state" style="color: var(--danger);"><div class="empty-state-icon">⚠️</div><h3>Error</h3><p>Could not score teams.</p></div>`;
+    }
+  }
+
+  function renderTeamRankings(filteredResults, eventName, isAllEvents) {
+    const rated = filteredResults.filter(r => r._msm);
+    if (rated.length === 0) {
+      rankingsContainer.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📊</div><h3>No team scores</h3><p>No rateable marks for the selected filters.</p></div>`;
+      document.getElementById('stats-bar').style.display = 'none';
+      return;
+    }
+
+    // Best rating per athlete per school (dedupe repeated marks / events).
+    const schools = {};
+    rated.forEach(r => {
+      const school = r.athlete?.school || '—';
+      const athleteKey = r.athlete_id || `${r.athlete?.first_name||''} ${r.athlete?.last_name||''}`.trim() || Math.random();
+      if (!schools[school]) schools[school] = { school, athletes: {} };
+      const cur = schools[school].athletes[athleteKey];
+      if (!cur || r._msm.rating > cur.rating) {
+        schools[school].athletes[athleteKey] = {
+          rating: r._msm.rating,
+          name: r.relay_names ? 'Relay' : `${r.athlete?.first_name||''} ${r.athlete?.last_name||''}`.trim() || '—',
+          event: resultEventName(r, eventName)
+        };
+      }
+    });
+
+    const teams = Object.values(schools).map(t => {
+      const scorers = Object.values(t.athletes).sort((a,b)=>b.rating-a.rating).slice(0, TEAM_SCORERS);
+      const total = scorers.reduce((s,a)=>s+a.rating, 0);
+      return { school: t.school, scorers, total, complete: scorers.length === TEAM_SCORERS };
+    }).filter(t => t.scorers.length > 0);
+
+    teams.sort((a,b)=>b.total - a.total);
+
+    // Stats
+    document.getElementById('stats-bar').style.display = 'grid';
+    document.getElementById('stat-count').textContent = teams.length;
+    document.getElementById('stat-schools').textContent = teams.length;
+    document.getElementById('stat-best-label').textContent = 'Top Team Score';
+    document.getElementById('stat-best').textContent = teams[0]?.total ?? '—';
+
+    const limit = getLimit();
+    const shown = limit === Infinity ? teams : teams.slice(0, limit);
+
+    rankingsContainer.innerHTML = shown.map((team, index) => {
+      const rank = index + 1;
+      const medal = getMedalIcon(rank);
+      const rankClass = rank <= 3 ? ` rank-${rank}` : '';
+      const scorerChips = team.scorers.map(s =>
+        `<span class="team-scorer"><b>${s.rating}</b> ${s.name}${isAllEvents ? ` · ${s.event}` : ''}</span>`
+      ).join('');
+      const incomplete = team.complete ? '' : ` <span style="font-size:0.72rem;color:var(--text-secondary);font-weight:600;">(${team.scorers.length}/${TEAM_SCORERS} scorers)</span>`;
+
+      return `
+        <div class="result-card${rankClass}">
+          <div class="result-rank">
+            <div class="result-rank-number">
+              ${medal ? `<div class="result-rank-medal">${medal}</div>` : ''}
+              <div>#${rank}</div>
+            </div>
+          </div>
+          <div class="result-content">
+            <div class="result-title">${team.school}${incomplete}</div>
+            <div class="team-scorers">${scorerChips}</div>
+          </div>
           <div class="result-time">
-            <div class="result-time-label">Mark</div>
-            <div class="result-time-value">${mark}</div>
+            <div class="result-time-label">Team Score</div>
+            <div class="result-time-value">${team.total}</div>
+            <div class="result-time-sub">top ${team.scorers.length}</div>
           </div>
         </div>`;
     }).join('');
@@ -524,71 +814,94 @@
     const season = selectSeason.value;
     const gender = selectGender.value;
 
-    if (!eventId) { 
+    if (!eventId) {
       rankingsContainer.innerHTML = `<div class="empty-state"><div class="empty-state-icon">⚠️</div><h3>Select an event</h3><p>Please select an event above, then click Load.</p></div>`;
       document.getElementById('stats-bar').style.display = 'none';
-      return; 
+      return;
     }
 
     rankingsContainer.innerHTML = `<div class="loading-state"><div class="loading-spinner"></div><p>Loading rankings...</p></div>`;
+    document.getElementById('weather-status').textContent = '';
+
+    const isAllEvents = (eventId === '__all__');
 
     try {
       await waitForFirebase();
-      const eventSnapshot = await window.firebaseDatabase.ref('Track/events').child(eventId).once('value');
-      const eventData = eventSnapshot.val() || {};
-      const eventName = eventData.name || 'Unknown Event';
 
-      const resultsSnapshot = await window.firebaseDatabase.ref('Track/results')
-        .orderByChild('event_id')
-        .equalTo(eventId)
-     
-        .once('value');
-      
-      const results = [];
-      resultsSnapshot.forEach(child => {
-        const val = child.val();
-        if (val.exclude_from_rankings === true) return;
-        results.push({ id: child.key, ...val });
-      });
-      
+      let eventName, eventData = {};
+      let results = [];
+      if (isAllEvents) {
+        eventName = '__ALL__'; // sentinel: render resolves per-row event names
+        const snap = await window.firebaseDatabase.ref('Track/results').once('value');
+        snap.forEach(child => {
+          const val = child.val();
+          if (val.exclude_from_rankings === true) return;
+          results.push({ id: child.key, ...val });
+        });
+      } else {
+        const eventSnapshot = await window.firebaseDatabase.ref('Track/events').child(eventId).once('value');
+        eventData = eventSnapshot.val() || {};
+        eventName = eventData.name || 'Unknown Event';
+
+        // Results may store event_id as the Firebase push key OR the event slug.
+        // Query both keys and merge so either storage scheme works.
+        const selectedOpt = selectEvent.options[selectEvent.selectedIndex];
+        const eventSlug = eventData.slug || (selectedOpt && selectedOpt.getAttribute('data-slug')) || eventId;
+        const keysToTry = [...new Set([eventId, eventSlug].filter(Boolean))];
+
+        const seen = new Set();
+        for (const key of keysToTry) {
+          const snap = await window.firebaseDatabase.ref('Track/results')
+            .orderByChild('event_id').equalTo(key).once('value');
+          snap.forEach(child => {
+            if (seen.has(child.key)) return;
+            const val = child.val();
+            if (val.exclude_from_rankings === true) return;
+            seen.add(child.key);
+            results.push({ id: child.key, ...val });
+          });
+        }
+
+        // One-time diagnostic: if the indexed queries found nothing, show what a
+        // sample record's event_id actually looks like so we can match it.
+        if (results.length === 0) {
+          console.warn(`[rankings] 0 results for event "${eventName}" trying keys:`, keysToTry);
+          const sampleSnap = await window.firebaseDatabase.ref('Track/results').limitToFirst(1).once('value');
+          sampleSnap.forEach(c => console.log('[rankings] Sample Track/results record:', c.val()));
+        }
+      }
+
       const meetIds = [...new Set(results.map(r => r.meet_id).filter(Boolean))];
       const athleteIds = [...new Set(results.map(r => r.athlete_id).filter(Boolean))];
-      
-      const meetsMap = {};
-      const athletesMap = {};
-      
+      const meetsMap = {}, athletesMap = {};
+
       if (meetIds.length > 0) {
         const meetsSnapshot = await window.firebaseDatabase.ref('Track/meets').once('value');
         meetsSnapshot.forEach(child => { if (meetIds.includes(child.key)) meetsMap[child.key] = child.val(); });
       }
-      
       if (athleteIds.length > 0) {
         const athletesSnapshot = await window.firebaseDatabase.ref('Track/athletes').once('value');
         athletesSnapshot.forEach(child => { if (athleteIds.includes(child.key)) athletesMap[child.key] = child.val(); });
       }
-      
-      results.forEach(r => {
-        r.meet = meetsMap[r.meet_id] || {};
-        r.athlete = athletesMap[r.athlete_id] || {};
-      });
-      
+      results.forEach(r => { r.meet = meetsMap[r.meet_id] || {}; r.athlete = athletesMap[r.athlete_id] || {}; });
+
       let filteredResults = results;
       if (season) filteredResults = filteredResults.filter(r => r.meet && r.meet.season === season);
       if (gender) filteredResults = filteredResults.filter(r => normalizeResultGender(r.gender) === gender);
-      
-      filteredResults.sort((a, b) => {
-        const markA = parseMarkValue(a.mark, eventName);
-        const markB = parseMarkValue(b.mark, eventName);
-        
-        // Prevent NaN when comparing two invalid marks
-        if (markA === Infinity && markB === Infinity) return 0;
-        // Push invalid marks to the bottom of the list
-        if (markA === Infinity) return 1;
-        if (markB === Infinity) return -1;
-        
-        return isFieldEvent(eventName) ? markB - markA : markA - markB;
-      });
-      
+
+      lastLoad = { filteredResults, eventName, eventData };
+
+      // Prefetch outdoor weather so dynamic mode is instant on toggle.
+      const outdoorMeetIds = [...new Set(filteredResults.map(r => r.meet_id).filter(id => meetsMap[id] && meetsMap[id].season === 'outdoor'))];
+      if (outdoorMeetIds.length) {
+        document.getElementById('weather-status').textContent = `Fetching race-day weather for ${outdoorMeetIds.length} outdoor meet(s)…`;
+        await Promise.all(outdoorMeetIds.map(id => fetchWeatherForMeet(id, meetsMap[id])));
+        const got = outdoorMeetIds.filter(id => weatherCache[id]).length;
+        document.getElementById('weather-status').textContent = `Weather available for ${got}/${outdoorMeetIds.length} outdoor meets (indoor meets need no weather).`;
+      } else {
+        document.getElementById('weather-status').textContent = '';
+      }
+
       renderRankingsTable(filteredResults, eventName);
     } catch (error) {
       console.error('Error loading rankings:', error);
@@ -597,11 +910,12 @@
   }
 
   btnLoad.addEventListener('click', loadRankings);
+  selectEvent.addEventListener('change', loadRankings);
+  selectSeason.addEventListener('change', loadRankings);
+  selectGender.addEventListener('change', loadRankings);
+  selectLimit.addEventListener('change', () => { if (lastLoad) renderRankingsTable(lastLoad.filteredResults, lastLoad.eventName); });
 
-  document.addEventListener('DOMContentLoaded', () => {
-    setTimeout(initEvents, 100);
-
-});
+  document.addEventListener('DOMContentLoaded', () => { setTimeout(initEvents, 100); });
 </script>
 <script src="track-coach-auth.js"></script>
 <script src="track-coach-toolbar.js"></script>

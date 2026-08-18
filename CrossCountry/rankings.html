@@ -14,6 +14,10 @@
   <script src="/assets/theme-toggle.js" defer></script>
   <script src="/assets/components.js" defer></script>
 
+  <!-- Required for PDF Export (matches meet.html) -->
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.7.1/jspdf.plugin.autotable.min.js"></script>
+
   <style>
     /* --- Ranking-mode toggle --- */
     .rank-mode-tabs {
@@ -77,9 +81,98 @@
     .weather-status {
       text-align: center; font-size: 0.75rem; color: var(--text-tertiary); margin-bottom: 12px;
     }
-    #meet-filter {
-        max-width:100px;
+
+    /* --- Filter Panel Redesign --- */
+    #filter-control-panel {
+        background: var(--bg-secondary, #f8fafc);
+        border: 1px solid var(--border, #e2e8f0);
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 30px;
     }
+    .filter-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+        align-items: end;
+    }
+    @media (min-width: 768px) {
+        .filter-grid {
+            grid-template-columns: repeat(4, 1fr);
+        }
+    }
+    .filter-item {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+    .filter-item label {
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: var(--text-secondary, #64748b);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    .filter-item select {
+        width: 100%;
+        padding: 10px 12px;
+        border-radius: 8px;
+        border: 1px solid var(--border, #cbd5e1);
+        background-color: var(--bg-primary, #ffffff);
+        color: var(--text-primary, #0f172a);
+        font-size: 0.9rem;
+        cursor: pointer;
+        outline: none;
+        transition: border-color 0.2s;
+    }
+    .filter-item select:focus {
+        border-color: var(--xc-primary, #0284c7);
+    }
+    .gender-toggles {
+        display: flex;
+        background: var(--bg-primary, #ffffff);
+        border: 1px solid var(--border, #cbd5e1);
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    .gender-toggles button {
+        flex: 1;
+        padding: 10px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        background: transparent;
+        color: var(--text-secondary, #64748b);
+        border: none;
+        cursor: pointer;
+        transition: background 0.2s, color 0.2s;
+    }
+    .gender-toggles button.active {
+        background: var(--xc-primary, #0284c7);
+        color: #ffffff;
+    }
+    .export-actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 16px;
+        justify-content: center;
+        width: 100%;
+    }
+    .action-btn {
+        padding: 10px 16px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        border: none;
+        cursor: pointer;
+        transition: opacity 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .btn-csv { background: #10b981; color: #fff; }
+    .btn-pdf { background: #ef4444; color: #fff; }
+    .action-btn:hover { opacity: 0.9; }
+
   </style>
 </head>
 <body>
@@ -105,58 +198,67 @@
       Fastest raw times, exactly as run. <a href="rankings-explained.html">How does MSM Rating work?</a>
     </div>
 
-    <!-- View toggle: Individual vs. Team (only meaningful for a single meet/course, but always available) -->
+    <!-- View toggle: Individual vs. Team -->
     <div class="view-tabs">
       <button id="view-indiv" class="view-tab active" onclick="setViewMode('indiv')">Individual</button>
       <button id="view-teams" class="view-tab" onclick="setViewMode('teams')">Teams</button>
     </div>
 
-    <!-- Filter Control Panel (Gender, Distance, Meet, Course, Season, Limit) -->
-    <section id="filter-control-panel" class="p-4 bg-white rounded-xl shadow-lg mb-8">
-      <div class="flex flex-col md:flex-row md:space-x-4 space-y-4 md:space-y-0 items-center justify-center flex-wrap gap-y-4">
+    <!-- Redesigned Filter Control Panel -->
+    <section id="filter-control-panel">
+      <div class="filter-grid">
 
-        <!-- 1. Gender Filter (Required: Male/Female toggle) -->
-        <div class="filter-group">
-          <button class="filter-btn active" data-filter-type="gender" data-value="M" onclick="setFilter('gender', 'M', event)">Male</button>
-          <button class="filter-btn" data-filter-type="gender" data-value="F" onclick="setFilter('gender', 'F', event)">Female</button>
+        <div class="filter-item">
+            <label>Gender</label>
+            <div class="gender-toggles">
+                <button class="active" data-filter-type="gender" data-value="M" onclick="setFilter('gender', 'M', event)">Boys</button>
+                <button data-filter-type="gender" data-value="F" onclick="setFilter('gender', 'F', event)">Girls</button>
+            </div>
         </div>
 
-        <!-- 2. Season Filter -->
-        <div class="filter-group">
-            <select id="season-filter" onchange="setFilter('season', this.value)" class="p-2 border rounded-lg shadow-sm text-gray-700 focus:ring-xc-primary focus:border-xc-primary cursor-pointer">
-                <!-- Dynamically populated. Defaults to current year -->
-            </select>
+        <div class="filter-item">
+            <label>Season</label>
+            <select id="season-filter" onchange="setFilter('season', this.value)"></select>
         </div>
 
-        <!-- 3. Distance Filter -->
-        <div class="filter-group">
-          <select id="distance-filter" onchange="setFilter('distance', this.value)">
-            <option value="all">All Distances</option>
-            <option value="5000">5K (5000m)</option>
-            <option value="3200">3200m</option>
-            <option value="3000">3K (3000m)</option>
-            <option value="1600">1 Mile (1600m)</option>
-            <option value="2000">2000m</option>
-          </select>
-        </div>
-
-        <!-- 4. Meet Filter -->
-        <div class="filter-group">
-            <select id="meet-filter" onchange="setFilter('meet', this.value)" class="p-2 border rounded-lg shadow-sm text-gray-700 focus:ring-xc-primary focus:border-xc-primary cursor-pointer">
+        <div class="filter-item">
+            <label>Meet Type</label>
+            <select id="meet-type-filter" onchange="setFilter('meetType', this.value)">
+                <option value="in_season">In-Season Only</option>
+                <option value="out_of_season">Out-of-Season / Non-Comp</option>
                 <option value="all">All Meets</option>
             </select>
         </div>
 
-        <!-- 5. Course Filter -->
-        <div class="filter-group">
-            <select id="course-filter" onchange="setFilter('course', this.value)" class="p-2 border rounded-lg shadow-sm text-gray-700 focus:ring-xc-primary focus:border-xc-primary cursor-pointer">
+        <div class="filter-item">
+            <label>Distance</label>
+            <select id="distance-filter" onchange="setFilter('distance', this.value)">
+                <option value="all">All Distances</option>
+                <option value="5000">5K (5000m)</option>
+                <option value="3200">3200m</option>
+                <option value="3000">3K (3000m)</option>
+                <option value="1600">1 Mile (1600m)</option>
+                <option value="2000">2000m</option>
+            </select>
+        </div>
+
+        <div class="filter-item">
+            <label>Meet</label>
+            <select id="meet-filter" onchange="setFilter('meet', this.value)">
+                <option value="all">All Meets</option>
+            </select>
+        </div>
+
+        <div class="filter-item">
+            <label>Course</label>
+            <select id="course-filter" onchange="setFilter('course', this.value)">
                 <option value="all">All Courses</option>
             </select>
         </div>
 
-        <!-- 6. Display Count Filter (how many rows to show) -->
-        <div class="filter-group">
-            <select id="limit-filter" onchange="setFilter('limit', this.value)" class="p-2 border rounded-lg shadow-sm text-gray-700 focus:ring-xc-primary focus:border-xc-primary cursor-pointer">
+        <div class="filter-item">
+            <label>Display Count</label>
+            <select id="limit-filter" onchange="setFilter('limit', this.value)">
                 <option value="50">Top 50</option>
                 <option value="100">Top 100</option>
                 <option value="250">Top 250</option>
@@ -166,23 +268,36 @@
         </div>
 
       </div>
+
+      <!-- Export Actions -->
+      <div class="export-actions">
+          <button onclick="exportCSV()" class="action-btn btn-csv">
+            <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/></svg>
+            Export CSV
+          </button>
+          <button onclick="exportPDF()" class="action-btn btn-pdf">
+            <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M4 0h5.293A1 1 0 0 1 10 .293L13.707 4a1 1 0 0 1 .293.707V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2zm5.5 1.5v2a1 1 0 0 0 1 1h2l-3-3zM4.5 12a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5h-1zM4 10.5A1.5 1.5 0 0 1 5.5 9h1A1.5 1.5 0 0 1 8 10.5v3A1.5 1.5 0 0 1 6.5 15h-1A1.5 1.5 0 0 1 4 13.5v-3z"/></svg>
+            Export PDF
+          </button>
+      </div>
+
     </section>
 
     <div class="weather-status" id="weather-status"></div>
 
     <!-- Male Rankings Container -->
     <section id="male-rankings" class="my-10">
-      <h2 class="text-3xl font-semibold mb-6 text-xc-primary border-b-2 border-xc-primary pb-2">Male Rankings</h2>
+      <h2 class="text-3xl font-semibold mb-6 text-xc-primary border-b-2 border-xc-primary pb-2">Boys Rankings</h2>
       <div id="male-results-box" class="results-box">
-        <div class="loading-state text-center p-8 text-gray-500">Loading male rankings...</div>
+        <div class="loading-state text-center p-8 text-gray-500">Loading rankings...</div>
       </div>
     </section>
 
     <!-- Female Rankings Container -->
     <section id="female-rankings" class="my-10 hidden">
-      <h2 class="text-3xl font-semibold mb-6 text-xc-primary border-b-2 border-xc-primary pb-2">Female Rankings</h2>
+      <h2 class="text-3xl font-semibold mb-6 text-xc-primary border-b-2 border-xc-primary pb-2">Girls Rankings</h2>
       <div id="female-results-box" class="results-box">
-        <div class="loading-state text-center p-8 text-gray-500">Loading female rankings...</div>
+        <div class="loading-state text-center p-8 text-gray-500">Loading rankings...</div>
       </div>
     </section>
 
@@ -203,10 +318,13 @@
     let allResults = [];
     let schoolsMap = {};
     let meetsMap = {};
-    let meetsData = {};   
-    let coursesData = {}; 
+    let meetsData = {};
+    let coursesData = {};
     let maleResults = [];
     let femaleResults = [];
+
+    // Currently rendered data for export
+    let activeExportData = [];
 
     // State
     let currentGender = 'M';
@@ -214,16 +332,17 @@
     let currentMeetSlug = 'all';
     let currentCourseSlug = 'all';
     let currentSeason = new Date().getFullYear().toString(); // Default to current year
-    let currentLimit = 50;   
+    let currentMeetType = 'in_season';
+    let currentLimit = 50;
     let coursesMap = {};
 
-    let rankMode = 'raw';    
-    let viewMode = 'indiv';  
+    let rankMode = 'raw';
+    let viewMode = 'indiv';
 
     // =========================================
     // OUT OF SEASON / NON-COMPETITIVE CONFIG
     // =========================================
-    // Add slugs here for meets that have unusually slow average times 
+    // Add slugs here for meets that have unusually slow average times
     // due to being out of season, fun-runs, alumni races, etc.
     const OUT_OF_SEASON_MEETS = [
       'chick-fil-a-5k',
@@ -233,24 +352,40 @@
     ];
 
     function isNonCompetitive(meetSlug) {
-      return OUT_OF_SEASON_MEETS.includes(meetSlug);
+      if (OUT_OF_SEASON_MEETS.includes(meetSlug)) return true;
+
+      const meet = meetsData[meetSlug];
+      if (meet && meet.date) {
+          const dateString = String(meet.date).split('T')[0];
+          const parts = dateString.split('-');
+
+          if (parts.length >= 3) {
+              const month = parseInt(parts[1], 10);
+              const day = parseInt(parts[2], 10);
+
+              if (month < 8 || (month === 8 && day < 22)) return true;
+              if (month > 11 || (month === 11 && day > 1)) return true;
+          }
+      }
+
+      return false;
     }
 
     // =========================================
-    // COURSE COORDINATES 
+    // COURSE COORDINATES
     // =========================================
     const COURSE_COORDS = {
-      'holmdel-park':        { lat: 40.3418, lon: -74.1735 }, 
-      'cabell-midland':      { lat: 38.4126, lon: -82.2543 }, 
-      'glen-oak':            { lat: 39.4390, lon: -80.1420 }, 
-      'pipestem-state-park': { lat: 37.5382, lon: -80.9865 }, 
-      'meadowood-park':      { lat: 39.6295, lon: -79.9559 }, 
-      'preston-high':        { lat: 39.4767, lon: -79.6640 }, 
-      'south-harrison':      { lat: 39.2065, lon: -80.6390 }, 
-      'st-marys-5k':         { lat: 39.3906, lon: -81.2043 }, 
-      'chick-fil-a-5k':      { lat: 38.3498, lon: -81.6326 }, 
-      'frankfort-5k':        { lat: 39.5001, lon: -78.9600 }, 
-      'ymca-kennedy-center': { lat: 38.3400, lon: -81.7300 }  
+      'holmdel-park':        { lat: 40.3418, lon: -74.1735 },
+      'cabell-midland':      { lat: 38.4126, lon: -82.2543 },
+      'glen-oak':            { lat: 39.4390, lon: -80.1420 },
+      'pipestem-state-park': { lat: 37.5382, lon: -80.9865 },
+      'meadowood-park':      { lat: 39.6295, lon: -79.9559 },
+      'preston-high':        { lat: 39.4767, lon: -79.6640 },
+      'south-harrison':      { lat: 39.2065, lon: -80.6390 },
+      'st-marys-5k':         { lat: 39.3906, lon: -81.2043 },
+      'chick-fil-a-5k':      { lat: 38.3498, lon: -81.6326 },
+      'frankfort-5k':        { lat: 39.5001, lon: -78.9600 },
+      'ymca-kennedy-center': { lat: 38.3400, lon: -81.7300 }
     };
     const WV_DEFAULT_COORDS = { lat: 38.6409, lon: -80.6227 };
 
@@ -320,26 +455,26 @@
     // DYNAMIC MODEL — MSM RATING
     // =========================================
     const RATING_REF = {
-      M: (16 * 60) / 5000,   
-      F: (18.5 * 60) / 5000  
+      M: (16 * 60) / 5000,
+      F: (18.5 * 60) / 5000
     };
-    const RATING_SPREAD = 350; 
+    const RATING_SPREAD = 350;
 
     // ---- Weather scoring ----
     function weatherDifficultyFactor(wx) {
       if (!wx) return 1.0;
       let f = 1.0;
       if (typeof wx.tempMaxC === 'number' && wx.tempMaxC > 18) {
-        f += Math.min((wx.tempMaxC - 18) * 0.006, 0.09); 
+        f += Math.min((wx.tempMaxC - 18) * 0.006, 0.09);
       }
       if (typeof wx.tempMaxC === 'number' && wx.tempMaxC < -5) {
         f += Math.min((-5 - wx.tempMaxC) * 0.004, 0.04);
       }
       if (typeof wx.windMaxKmh === 'number' && wx.windMaxKmh > 15) {
-        f += Math.min((wx.windMaxKmh - 15) * 0.0025, 0.05); 
+        f += Math.min((wx.windMaxKmh - 15) * 0.0025, 0.05);
       }
       if (typeof wx.precipMm === 'number' && wx.precipMm > 1) {
-        f += Math.min(wx.precipMm * 0.004, 0.06); 
+        f += Math.min(wx.precipMm * 0.004, 0.06);
       }
       return f;
     }
@@ -400,8 +535,8 @@
     }
 
     // ---- Course difficulty ----
-    let courseFactor = {};   
-    let globalMedianPace = { M: null, F: null }; 
+    let courseFactor = {};
+    let globalMedianPace = { M: null, F: null };
 
     function median(arr) {
       if (!arr.length) return null;
@@ -413,20 +548,23 @@
     function buildDerivedFactors() {
       courseFactor = {};
       const pacesByGender = { M: [], F: [] };
-      const pacesByCourse = {}; 
+      const pacesByCourse = {};
 
       allResults.forEach(r => {
-        // Skip non-competitive meets so they don't skew the baseline medians
-        if (isNonCompetitive(r.meet_slug)) return;
-
         const dist = r.distance ? parseInt(r.distance,10) : 5000;
         if (!dist || !r.time_in_seconds) return;
-        const pace = r.time_in_seconds / dist; 
+        const pace = r.time_in_seconds / dist;
         const g = r.gender;
         if (g !== 'M' && g !== 'F') return;
-        
+
+        // Out-of-season races are excluded from BOTH the global baseline and the
+        // per-course medians, so a summer fun-run can't make its course look "fast"
+        // (which was inflating out-of-season ratings). Terrain difficulty for such
+        // courses comes from the GPX hill factor instead.
+        const oos = isNonCompetitive(r.meet_slug);
+        if (oos) return;
         pacesByGender[g].push(pace);
-        
+
         const cs = r.course_slug || (meetsData[r.meet_slug] && meetsData[r.meet_slug].course_slug) || 'unknown';
         if (!pacesByCourse[cs]) pacesByCourse[cs] = { M: [], F: [] };
         pacesByCourse[cs][g].push(pace);
@@ -451,11 +589,8 @@
     let fieldFactor = {};
     function buildFieldFactors() {
       fieldFactor = {};
-      const groups = {}; 
+      const groups = {};
       allResults.forEach(r => {
-        // Skip non-competitive meets so they don't skew the field strength metric
-        if (isNonCompetitive(r.meet_slug)) return;
-
         const dist = r.distance ? parseInt(r.distance,10) : 5000;
         if (!dist || !r.time_in_seconds) return;
         const key = `${r.meet_slug}|${r.gender}|${dist}`;
@@ -469,30 +604,139 @@
         const gm = globalMedianPace[g];
         if (!gm || paces.length === 0) { fieldFactor[key] = 1.0; return; }
         const fieldMed = median(paces);
-        
-        const speedRatio = gm / fieldMed;            
-        const depth = Math.min(paces.length / 40, 1); 
+
+        const speedRatio = gm / fieldMed;
+        const depth = Math.min(paces.length / 40, 1);
         let f = 1 + (speedRatio - 1) * 0.5 * (0.5 + 0.5*depth);
-        f = Math.max(0.96, Math.min(1.08, f)); 
+        f = Math.max(0.96, Math.min(1.08, f));
         fieldFactor[key] = f;
       });
     }
 
     function fieldFactorFor(r) {
-      if (isNonCompetitive(r.meet_slug)) return 1.0; // Force neutral field strength
       const dist = r.distance ? parseInt(r.distance,10) : 5000;
       return fieldFactor[`${r.meet_slug}|${r.gender}|${dist}`] || 1.0;
     }
 
+    // ---- Terrain (hill) difficulty from CrossCountry/courses GPX tracks ----
+    // courseHillFactor[courseSlug] is a >1 multiplier for hilly courses, <1 for flat/fast ones.
+    let courseHillFactor = {};
+
+    // Haversine distance in meters between two lat/lon points.
+    function haversineMeters(lat1, lon1, lat2, lon2) {
+      const R = 6371000;
+      const toRad = d => d * Math.PI / 180;
+      const dLat = toRad(lat2 - lat1);
+      const dLon = toRad(lon2 - lon1);
+      const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon/2)**2;
+      return 2 * R * Math.asin(Math.sqrt(a));
+    }
+
+    // Parse a GPX string -> total climb (m) and horizontal distance (m).
+    function parseGpxClimb(gpxText) {
+      try {
+        const doc = new DOMParser().parseFromString(gpxText, 'application/xml');
+        const pts = Array.from(doc.getElementsByTagName('trkpt'));
+        if (pts.length < 2) return null;
+        let climb = 0, dist = 0, prevEle = null, prevLat = null, prevLon = null;
+        pts.forEach(pt => {
+          const lat = parseFloat(pt.getAttribute('lat'));
+          const lon = parseFloat(pt.getAttribute('lon'));
+          const eleNode = pt.getElementsByTagName('ele')[0];
+          const ele = eleNode ? parseFloat(eleNode.textContent) : null;
+          if (prevEle !== null && ele !== null) {
+            const d = ele - prevEle;
+            if (d > 0.3) climb += d; // ignore GPS jitter under 0.3 m
+          }
+          if (prevLat !== null) dist += haversineMeters(prevLat, prevLon, lat, lon);
+          if (ele !== null) prevEle = ele;
+          prevLat = lat; prevLon = lon;
+        });
+        return { climb, dist };
+      } catch (e) {
+        console.warn('GPX parse failed', e);
+        return null;
+      }
+    }
+
+    // Convert climb-per-km (m gain / km) into a course multiplier.
+    // ~15 m/km is treated as neutral WV terrain; steeper climbs push the factor up.
+    function climbToFactor(mPerKm) {
+      const NEUTRAL = 15;
+      const f = 1 + (mPerKm - NEUTRAL) * 0.004; // ~ +/-0.4% per m/km off neutral
+      return Math.max(0.94, Math.min(1.14, f));
+    }
+
+    // Fallback multiplier from the admin-set difficulty label when no GPX exists.
+    function difficultyLabelFactor(label) {
+      switch ((label || '').toLowerCase()) {
+        case 'hard':   return 1.06;
+        case 'medium': return 1.00;
+        case 'easy':   return 0.96;
+        default:       return 1.00;
+      }
+    }
+
+    async function buildHillFactors() {
+      courseHillFactor = {};
+      const slugs = Object.keys(coursesData || {});
+      await Promise.all(slugs.map(async (slug) => {
+        const course = coursesData[slug];
+        if (!course) return;
+
+        // 1) Try GPX-derived climb (cached in sessionStorage across visits).
+        if (course.gpx_url) {
+          const ssKey = `msm_hill_${slug}`;
+          const cached = sessionStorage.getItem(ssKey);
+          if (cached !== null) {
+            courseHillFactor[slug] = parseFloat(cached);
+            return;
+          }
+          try {
+            const res = await fetch(course.gpx_url);
+            if (res.ok) {
+              const text = await res.text();
+              const parsed = parseGpxClimb(text);
+              if (parsed && parsed.dist > 100) {
+                const mPerKm = parsed.climb / (parsed.dist / 1000);
+                const f = climbToFactor(mPerKm);
+                courseHillFactor[slug] = f;
+                sessionStorage.setItem(ssKey, String(f));
+                return;
+              }
+            }
+          } catch (e) {
+            console.warn('GPX fetch failed for', slug, e);
+          }
+        }
+
+        // 2) Fall back to the admin difficulty label.
+        courseHillFactor[slug] = difficultyLabelFactor(course.difficulty);
+      }));
+    }
+
     function courseFactorFor(r) {
-      if (isNonCompetitive(r.meet_slug)) return 1.0; // Force neutral course difficulty
       const cs = r.course_slug || (meetsData[r.meet_slug] && meetsData[r.meet_slug].course_slug) || 'unknown';
-      return courseFactor[cs] || 1.0;
+      const dataF = courseFactor[cs];          // median-derived (may be undefined)
+      const hillF = courseHillFactor[cs];      // terrain-derived (may be undefined)
+
+      // Blend 50/50 when both exist; otherwise use whichever is available.
+      let f;
+      if (typeof dataF === 'number' && typeof hillF === 'number') {
+        f = 0.5 * dataF + 0.5 * hillF;
+      } else if (typeof hillF === 'number') {
+        f = hillF;
+      } else if (typeof dataF === 'number') {
+        f = dataF;
+      } else {
+        f = 1.0;
+      }
+      return Math.max(0.90, Math.min(1.14, f));
     }
 
     function paceToRating(adjPaceSecPerM, gender) {
       const ref = RATING_REF[gender] || RATING_REF.M;
-      const pctFaster = (ref - adjPaceSecPerM) / ref; 
+      const pctFaster = (ref - adjPaceSecPerM) / ref;
       const rating = 1000 + pctFaster * (RATING_SPREAD * 10);
       return Math.max(0, Math.round(rating));
     }
@@ -507,10 +751,10 @@
     function computeRating(r, weatherFactorOverride) {
       const dist = r.distance ? parseInt(r.distance,10) : 5000;
       if (!dist || !r.time_in_seconds) return null;
-      const rawPace = r.time_in_seconds / dist; 
+      const rawPace = r.time_in_seconds / dist;
 
-      const cF = courseFactorFor(r);   
-      const fF = fieldFactorFor(r);    
+      const cF = courseFactorFor(r);
+      const fF = fieldFactorFor(r);
       const wF = (typeof weatherFactorOverride === 'number')
                     ? weatherFactorOverride
                     : weatherDifficultyFactor(weatherCache[r.meet_slug]);
@@ -521,11 +765,213 @@
     }
 
     // =========================================
+    // EXPORT TO CSV & PDF
+    // =========================================
+    function exportCSV() {
+        if (!activeExportData || activeExportData.length === 0) {
+            alert('No data available to export.');
+            return;
+        }
+
+        let csvContent = '';
+        const timestamp = new Date().toISOString().split('T')[0];
+
+        if (viewMode === 'indiv') {
+            const headers = rankMode === 'dynamic'
+                ? ['Rank', 'Athlete', 'School', 'Year', 'Meet', 'Date', 'Time', 'Pace', 'MSM Rating', 'Projected 5K']
+                : ['Rank', 'Athlete', 'School', 'Year', 'Meet', 'Date', 'Time', 'Pace'];
+
+            csvContent += headers.join(',') + '\n';
+
+            activeExportData.forEach((r, idx) => {
+                const dist = r.distance ? parseInt(r.distance, 10) : 5000;
+                const row = [
+                    idx + 1,
+                    `"${r.athlete_name || ''}"`,
+                    `"${r.school_name || ''}"`,
+                    `"${formatGrade(r.grad_year)}"`,
+                    `"${r.meet_name || ''}"`,
+                    `"${r.date ? String(r.date).split('T')[0] : ''}"`,
+                    `"${formatTime(r.time_in_seconds)}"`,
+                    `"${calculatePacePerMile(r.time_in_seconds, dist)}"`
+                ];
+
+                if (rankMode === 'dynamic' && r._msm) {
+                    row.push(r._msm.rating);
+                    row.push(`"${formatTime(ratingToPredicted5K(r._msm.rating, r.gender))}"`);
+                }
+
+                csvContent += row.join(',') + '\n';
+            });
+        } else {
+            const headers = rankMode === 'dynamic'
+                ? ['Rank', 'School', 'MSM Team Rating', 'Scorers']
+                : ['Rank', 'School', 'Place Score', 'Scorers'];
+            csvContent += headers.join(',') + '\n';
+            activeExportData.forEach((t, idx) => {
+                const scorersStr = t.top5.map(r => `${r.athlete_name} (${rankMode === 'dynamic' ? r._msm?.rating : formatTime(r.time_in_seconds)})`).join('; ');
+                const row = [idx + 1, `"${t.school}"`, t.metric, `"${scorersStr}"`];
+                csvContent += row.join(',') + '\n';
+            });
+        }
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.setAttribute('href', url);
+        link.setAttribute('download', `msm_rankings_${currentGender}_${rankMode}_${viewMode}_${timestamp}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    // Brand color for PDF header. Reuses the site-wide helper if present, else falls back to MSM blue.
+    function getBrandColorRgbArrayLocal() {
+        try {
+            if (typeof getBrandColorRgbArray === 'function') {
+                const c = getBrandColorRgbArray();
+                if (Array.isArray(c) && c.length === 3) return c;
+            }
+        } catch (e) { /* fall through to default */ }
+        return [2, 132, 199]; // #0284c7
+    }
+
+    async function exportPDF() {
+        if (!activeExportData || activeExportData.length === 0) {
+            alert('No data available to export.');
+            return;
+        }
+        if (typeof window.jspdf === 'undefined') {
+            alert('PDF library is still loading. Please try again in a second.');
+            return;
+        }
+
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({ orientation: 'landscape' });
+        const bc = getBrandColorRgbArrayLocal();
+
+        // Build the detailed context title
+        const genderText = currentGender === 'M' ? 'Boys' : 'Girls';
+        let modeText = rankMode === 'dynamic' ? 'MSM Rating' : 'Raw Time';
+        let viewText = viewMode === 'teams' ? 'Team Standings' : 'Individual Rankings';
+        const seasonText = currentSeason === 'all' ? 'All-Time' : `${currentSeason} Season`;
+        const mainTitle = `WV State Rankings — ${genderText} ${viewText}`;
+
+        const subParts = [`${modeText}`, seasonText];
+        if (currentDistance !== 'all') subParts.push(`${currentDistance}m`);
+        if (currentMeetSlug !== 'all') subParts.push(meetsMap[currentMeetSlug] || currentMeetSlug);
+        if (currentCourseSlug !== 'all') subParts.push(coursesMap[currentCourseSlug] || currentCourseSlug);
+        const subtitle = subParts.join('  •  ');
+
+        // Safely load the site logo (fetch -> base64 to bypass canvas CORS)
+        const getBase64Image = async (url) => {
+            try {
+                const response = await fetch(url);
+                const blob = await response.blob();
+                return new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => resolve(reader.result);
+                    reader.onerror = () => resolve(null);
+                    reader.readAsDataURL(blob);
+                });
+            } catch (e) {
+                console.warn('Could not load logo for PDF:', e);
+                return null;
+            }
+        };
+        const logoBase64 = await getBase64Image('assets/images/logo.png');
+
+        // Custom PDF header with logo + titles
+        const drawHeader = () => {
+            doc.setFillColor(bc[0], bc[1], bc[2]);
+            doc.rect(0, 0, doc.internal.pageSize.getWidth(), 24, 'F');
+
+            let textX = 14;
+            if (logoBase64) {
+                try {
+                    doc.addImage(logoBase64, 'PNG', 14, 4, 16, 16);
+                    textX = 36;
+                } catch (e) {
+                    console.warn('Failed to draw image to PDF', e);
+                }
+            }
+
+            doc.setFontSize(15);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(255, 255, 255);
+            doc.text(mainTitle, textX, subtitle ? 11 : 14);
+
+            if (subtitle) {
+                doc.setFontSize(10);
+                doc.setFont('helvetica', 'normal');
+                doc.setTextColor(220, 220, 220);
+                doc.text(subtitle, textX, 18);
+            }
+        };
+
+        const startY = 30;
+
+        if (viewMode === 'indiv') {
+            const head = rankMode === 'dynamic'
+                ? [['Rank', 'Athlete', 'Yr', 'School', 'Meet', 'Time', 'Pace', 'Rating', 'Proj 5K']]
+                : [['Rank', 'Athlete', 'Yr', 'School', 'Meet', 'Time', 'Pace']];
+
+            const body = activeExportData.map((r, idx) => {
+                const dist = r.distance ? parseInt(r.distance, 10) : 5000;
+                const row = [
+                    idx + 1,
+                    r.athlete_name || '',
+                    formatGrade(r.grad_year) || '',
+                    r.school_name || '',
+                    r.meet_name || r.meet_slug || '',
+                    formatTime(r.time_in_seconds),
+                    calculatePacePerMile(r.time_in_seconds, dist)
+                ];
+                if (rankMode === 'dynamic' && r._msm) {
+                    row.push(r._msm.rating);
+                    row.push(formatTime(ratingToPredicted5K(r._msm.rating, r.gender)));
+                }
+                return row;
+            });
+
+            doc.autoTable({
+                head, body, startY,
+                margin: { top: 30 },
+                styles: { fontSize: 8 },
+                headStyles: { fillColor: bc, textColor: [255, 255, 255] },
+                didDrawPage: drawHeader
+            });
+        } else {
+            const head = rankMode === 'dynamic'
+                ? [['Rank', 'School', 'Team Rating', 'Scoring Top 5']]
+                : [['Rank', 'School', 'Place Score', 'Scoring Top 5']];
+
+            const body = activeExportData.map((t, idx) => {
+                const scorersStr = t.top5.map(r => `${(r.athlete_name || '').split(' ').slice(-1)[0]} (${rankMode === 'dynamic' ? (r._msm?.rating ?? '') : formatTime(r.time_in_seconds)})`).join(', ');
+                return [idx + 1, t.school, t.metric, scorersStr];
+            });
+
+            doc.autoTable({
+                head, body, startY,
+                margin: { top: 30 },
+                styles: { fontSize: 8 },
+                headStyles: { fillColor: bc, textColor: [255, 255, 255] },
+                didDrawPage: drawHeader
+            });
+        }
+
+        doc.save(`${slugify(mainTitle)}_${rankMode}_${currentSeason}.pdf`);
+    }
+
+    // =========================================
     // RENDERING
     // =========================================
     function renderRankings(gender, containerId, results) {
         const resultsBox = document.getElementById(containerId);
         if (!resultsBox) return;
+
+        activeExportData = results;
+
         if (results.length === 0) {
             resultsBox.innerHTML = `<p class="text-center p-8 text-gray-500">No rankings available for the selected filters.</p>`;
             return;
@@ -566,7 +1012,7 @@
                             <span class="score-predicted">proj 5K ${predicted}</span>
                         </div>`;
                     } else {
-                      scoreCell = `${formatTime(timeInSeconds) || ''}`;
+                      scoreCell = `<span class="score-rating">${formatTime(timeInSeconds) || ''}</span>`;
                     }
 
                     return `
@@ -631,6 +1077,7 @@
         scored.sort((a,b) => rankMode === 'dynamic' ? b.metric - a.metric : a.metric - b.metric);
 
         const teamsToShow = (currentLimit === Infinity) ? scored : scored.slice(0, currentLimit);
+        activeExportData = teamsToShow;
 
         const header = rankMode === 'dynamic' ? 'Team Standings — MSM Rating (Top-5 sum)' : 'Team Standings — Raw Place Score';
         let html = `<div class="app-list"><div class="list-header">${header}</div>`;
@@ -646,7 +1093,7 @@
                     <div class="item-place">${i+1}</div>
                     <div class="item-avatar"><img src="${logoUrl}" alt="${t.school}" onerror="this.src='/assets/images/logob.svg'" /></div>
                     <div class="item-details">
-                        <div class="item-name">${t.school}${t.complete?'':' <span style="font-size:0.7rem;color:var(--text-tertiary)">(incomplete)</span>'}</div>
+                        <a href="school.html?slug=${t.slug}" class="item-name">${t.school}${t.complete?'':' <span style="font-size:0.7rem;color:var(--text-tertiary)">(incomplete)</span>'}</a>
                         <div class="item-meta">${detail}</div>
                     </div>
                     <div class="item-score">${metricDisplay}</div>
@@ -664,7 +1111,7 @@
         document.getElementById('mode-raw').classList.toggle('active', mode==='raw');
         document.getElementById('mode-dynamic').classList.toggle('active', mode==='dynamic');
         document.getElementById('rank-mode-note').innerHTML = mode==='dynamic'
-            ? `Adjusted for course, field strength & race-day weather. <a href="rankings-explained.html">How does MSM Rating work?</a>`
+            ? `Adjusted for course terrain (hills), field strength & race-day weather. <a href="rankings-explained.html">How does MSM Rating work?</a>`
             : `Fastest raw times, exactly as run. <a href="rankings-explained.html">How does MSM Rating work?</a>`;
         filterAndRender();
     }
@@ -682,12 +1129,13 @@
         if (type === 'gender') currentGender = value;
         if (type === 'distance') currentDistance = value;
         if (type === 'season') currentSeason = value;
+        if (type === 'meetType') currentMeetType = value;
         if (type === 'meet') currentMeetSlug = value;
         if (type === 'course') currentCourseSlug = value;
         if (type === 'limit') currentLimit = (value === 'all') ? Infinity : parseInt(value, 10);
-        if (event && event.target.tagName === 'BUTTON') {
-            document.querySelectorAll(`.filter-btn[data-filter-type="${type}"]`).forEach(btn => btn.classList.remove('active'));
-            event.target.classList.add('active');
+        if (type === 'gender' && event && event.currentTarget) {
+            document.querySelectorAll(`[data-filter-type="gender"]`).forEach(btn => btn.classList.remove('active'));
+            event.currentTarget.classList.add('active');
         }
         filterAndRender();
     }
@@ -710,6 +1158,7 @@
             seasonHtml = `<option value="${currentSeason}" selected>${currentSeason} Season</option>` + seasonHtml;
         }
         seasonSelect.innerHTML = seasonHtml;
+        seasonSelect.value = currentSeason;
 
         // Populate Meets
         const meetSelect = document.getElementById('meet-filter');
@@ -747,6 +1196,11 @@
           coursesArray.forEach(course => { coursesMap[course.slug] = course.name; coursesData[course.slug] = course; });
         } catch (e) { console.warn("Courses not available:", e); }
 
+        // Derive per-course hill difficulty from the GPX tracks (with admin-label fallback).
+        try {
+          await buildHillFactors();
+        } catch (e) { console.warn("Hill factors unavailable:", e); }
+
         await loadRankingsData();
       } catch (error) {
         console.error("Error loading initial data:", error);
@@ -760,18 +1214,18 @@
             const snapshot = await firebaseDatabase.ref('crosscountry/results').once('value');
             const allResultsArray = snapshotToArray(snapshot);
             allResults = []; maleResults = []; femaleResults = [];
-    
+
             if (allResultsArray.length === 0) {
                  document.getElementById('male-results-box').innerHTML = `<p class="text-center p-8 text-red-500">No results found in the database.</p>`;
                  document.getElementById('female-results-box').innerHTML = `<p class="text-center p-8 text-red-500">No results found in the database.</p>`;
                  return;
             }
-    
+
             allResultsArray.forEach(result => {
                 const timeInSeconds = formatTimeInSeconds(result.time);
                 if (!result.gender || timeInSeconds === null) return;
                 const meet = meetsData[result.meet_slug];
-                
+
                 const resultWithExtras = {
                     ...result,
                     time_in_seconds: timeInSeconds,
@@ -782,19 +1236,19 @@
                     date: result.date || (meet && meet.date) || null,
                     grade_string: formatGrade(result.grad_year)
                 };
-                
+
                 allResults.push(resultWithExtras);
                 if (result.gender === 'M') maleResults.push(resultWithExtras);
                 else if (result.gender === 'F') femaleResults.push(resultWithExtras);
             });
-    
+
             buildDerivedFactors();
             buildFieldFactors();
-    
+
             populateFilters();
             maleResults.sort((a,b)=>a.time_in_seconds-b.time_in_seconds);
             femaleResults.sort((a,b)=>a.time_in_seconds-b.time_in_seconds);
-    
+
             filterAndRender();
           } catch (error) {
             console.error("Critical Error:", error);
@@ -814,13 +1268,20 @@
         document.getElementById('no-rankings-message').classList.add('hidden');
 
         let filteredResults = rawResults;
-        
+
         // 1. Season Cutoff Filter
         if (currentSeason !== 'all') {
             filteredResults = filteredResults.filter(r => {
                 if (!r.date) return false;
                 return new Date(r.date).getFullYear().toString() === currentSeason;
             });
+        }
+
+        // 2. Meet Type Filter (In-Season / Out-of-Season / All)
+        if (currentMeetType === 'in_season') {
+            filteredResults = filteredResults.filter(r => !isNonCompetitive(r.meet_slug));
+        } else if (currentMeetType === 'out_of_season') {
+            filteredResults = filteredResults.filter(r => isNonCompetitive(r.meet_slug));
         }
 
         if (currentDistance !== 'all') {
@@ -835,6 +1296,7 @@
         if (filteredResults.length === 0) {
             document.getElementById(targetBoxId).innerHTML = `<p class="text-center p-8 text-gray-500">No rankings found for the selected filters.</p>`;
             wxStatus.textContent = '';
+            activeExportData = [];
             return;
         }
 
@@ -843,9 +1305,7 @@
             : currentLimit;
 
         if (rankMode === 'dynamic') {
-            const scoringSet = (viewMode === 'teams')
-                ? filteredResults
-                : filteredResults.slice(0, displayLimit);
+            const scoringSet = filteredResults.slice();
 
             const uniqueMeets = [...new Set(scoringSet.map(r => r.meet_slug))];
             wxStatus.textContent = `Fetching race-day weather for ${uniqueMeets.length} meet(s)…`;
@@ -853,7 +1313,7 @@
             await Promise.all(uniqueMeets.map(slug => fetchWeatherForMeet(slug)));
 
             scoringSet.forEach(r => { r._msm = computeRating(r); });
-            const withRatings = scoringSet.filter(r => r._msm);
+            let withRatings = scoringSet.filter(r => r._msm);
             withRatings.sort((a,b) => b._msm.rating - a._msm.rating);
 
             const weatheredCount = uniqueMeets.filter(s => weatherCache[s]).length;
@@ -862,6 +1322,7 @@
             if (viewMode === 'teams') {
                 renderRankings(currentGender, targetBoxId, withRatings);
             } else {
+                withRatings = dedupeBestPerAthlete(withRatings);
                 renderRankings(currentGender, targetBoxId, withRatings.slice(0, displayLimit));
             }
         } else {
@@ -869,9 +1330,33 @@
             if (viewMode === 'teams') {
                 renderRankings(currentGender, targetBoxId, filteredResults);
             } else {
-                renderRankings(currentGender, targetBoxId, filteredResults.slice(0, displayLimit));
+                const deduped = dedupeBestPerAthlete(filteredResults);
+                renderRankings(currentGender, targetBoxId, deduped.slice(0, displayLimit));
             }
         }
+    }
+
+    // Keep only each athlete's single best result (by rating in dynamic mode, else fastest time)
+    function dedupeBestPerAthlete(results) {
+        const bestMap = new Map();
+        results.forEach(r => {
+            const athleteKey = (r.athlete_name || '').toLowerCase().trim();
+            if (!athleteKey) return;
+            if (!bestMap.has(athleteKey)) {
+                bestMap.set(athleteKey, r);
+            } else {
+                const existing = bestMap.get(athleteKey);
+                if (rankMode === 'dynamic') {
+                    if ((r._msm?.rating||0) > (existing._msm?.rating||0)) bestMap.set(athleteKey, r);
+                } else {
+                    if (r.time_in_seconds < existing.time_in_seconds) bestMap.set(athleteKey, r);
+                }
+            }
+        });
+        const deduped = Array.from(bestMap.values());
+        if (rankMode === 'dynamic') deduped.sort((a,b) => (b._msm?.rating||0) - (a._msm?.rating||0));
+        else deduped.sort((a,b) => a.time_in_seconds - b.time_in_seconds);
+        return deduped;
     }
 
     window.onload = loadInitialData;

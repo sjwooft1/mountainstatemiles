@@ -4,1102 +4,820 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Meet Results | Mountain State Miles</title>
-
-  <link rel="icon" type="image/png" href="assets/Favicon Generator/favicon-96x96.png" sizes="96x96" />
-  <link rel="icon" type="image/svg+xml" href="assets/Favicon Generator/favicon.svg" />
-  <link rel="shortcut icon" href="assets/Favicon Generator/favicon.ico" />
-  <link rel="apple-touch-icon" sizes="180x180" href="assets/Favicon Generator/apple-touch-icon.png" />
-  <link rel="manifest" href="assets/Favicon Generator/site.webmanifest" />
-
-  <meta name="description" content="WV cross country running results, rankings, team scores, and meet data — Mountain State Miles." />
-  <meta name="keywords" content="WVXC, WV Track, West Virginia Running, Cross Country Results, WV HS Running, Mountain State Miles" />
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/png" href="../assets/Favicon Generator/favicon-96x96.png" sizes="96x96" />
+  <link rel="icon" type="image/svg+xml" href="../assets/Favicon Generator/favicon.svg" />
+  <link rel="shortcut icon" href="../assets/Favicon Generator/favicon.ico" />
+  <link rel="apple-touch-icon" sizes="180x180" href="../assets/Favicon Generator/apple-touch-icon.png" />
+  <link rel="manifest" href="../assets/Favicon Generator/site.webmanifest" />
   <link rel="stylesheet" href="/assets/main.css" />
-  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.7.1/jspdf.plugin.autotable.min.js"></script>
-  <script src="/assets/components.js" defer></script>
-  <script src="/assets/theme-toggle.js" defer></script>
-  <script>
-    window.addEventListener("DOMContentLoaded", () => {
-      const params = new URLSearchParams(window.location.search);
-      const slug = params.get("slug");
-      if (slug) {
-        document.title = `${slug.replace(/-/g, " ")} – Meet Results | Mountain State Miles`;
-      }
-    });
-  </script>
-  <script src="meet-analytics.js" defer></script>
-
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 
   <style>
-    /* ============================================
-       Soft & Friendly Meet Page — new palette.
-       Warm cream paper, pine + clay accents, rounded shapes.
-       ============================================ */
-    @font-face {
-      font-family: 'Aqeon Demo';
-      src: url('../assets/Aqeon Demo Font.ttf') format('truetype');
-    }
+    /* ─── DESIGN TOKENS ─── */
     :root {
-      --msm-cream: #fbf7ef;
-      --msm-cream-2: #f4ecdd;
-      --msm-paper: #fffdf8;
-      --msm-ink: #2f2a24;
-      --msm-ink-soft: #6b6154;
-      --msm-ink-faint: #a89c8a;
-      --msm-pine: #3f7d63;
-      --msm-pine-deep: #2c5a47;
-      --msm-clay: #e0794f;
-      --msm-clay-soft: #f2c9ab;
-      --msm-gold: #e0a63f;
-      --msm-sky: #cfe3dd;
-      --msm-line: #e6dcc8;
-      --msm-shadow: rgba(63, 55, 40, 0.10);
-      --msm-shadow-soft: rgba(63, 55, 40, 0.06);
+      --bg:#0a0c10; --bg-card:#121416; --bg-raised:#1a2030;
+      --border:#252d3d; --border-glow:#2a5cff44;
+      --text-hi:#f0f4ff; --text-mid:#8899bb; --text-lo:#48566e;
+      --accent:#37373f; --accent-glow:rgba(42,92,255,0.15);
+      --gold:#f5b731; --silver:#a8b8c8; --bronze:#c47a38;
+      --gold-bg:rgba(245,183,49,0.10); --silver-bg:rgba(168,184,200,0.07); --bronze-bg:rgba(196,122,56,0.07);
+      --success:#22c55e; --warning:#f59e0b; --danger:#ef4444;
+      --font-display:"Barlow Condensed",sans-serif;
+      --font-body:"Barlow",sans-serif;
+      --font-mono:"JetBrains Mono",monospace;
+      --radius:10px; --t:0.18s ease;
+    }
+    *,*::before,*::after{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{margin:0;font-family:var(--font-body);background:var(--bg);color:var(--text-hi);min-height:100vh;overflow-x:hidden}
+    body::before{content:"";position:fixed;inset:0;background:radial-gradient(ellipse 60% 50% at 80% 10%,rgba(42,92,255,.06) 0%,transparent 70%),radial-gradient(ellipse 40% 60% at 10% 80%,rgba(42,92,255,.03) 0%,transparent 70%);pointer-events:none;z-index:0}
 
-      --primary: var(--msm-pine);
-      --accent: var(--msm-clay);
-      --border: var(--msm-line);
-      --text-primary: var(--msm-ink);
-      --text-secondary: var(--msm-ink-soft);
-      --text-tertiary: var(--msm-ink-faint);
-      --bg-primary: var(--msm-paper);
-      --bg-secondary: var(--msm-cream-2);
-      --shadow-light: var(--msm-shadow);
-      --danger: #c65b46;
+    /* NAVBAR */
+    .navbar{position:sticky;top:0;z-index:100;background:rgba(10,12,16,.88);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);padding:0 24px}
+    .navbar-content{max-width:1340px;margin:0 auto;display:flex;align-items:center;gap:32px;height:58px}
+    .navbar-brand{font-family:var(--font-display);font-size:1.3rem;font-weight:900;letter-spacing:.04em;text-transform:uppercase;text-decoration:none;color:var(--text-hi);display:flex;align-items:center;gap:10px}
+    .navbar-brand .msm-logo{height:30px;width:auto;object-fit:contain;border-radius:4px}
+    .navbar-brand .accent{color:var(--accent)}
+    .navbar-nav{list-style:none;display:flex;gap:4px;margin:0 0 0 auto;padding:0}
+    .navbar-link{text-decoration:none;color:var(--text-mid);font-weight:600;font-size:.85rem;letter-spacing:.06em;text-transform:uppercase;padding:6px 14px;border-radius:6px;transition:color var(--t),background var(--t)}
+    .navbar-link:hover{color:var(--text-hi);background:var(--bg-raised)}
+    .navbar-link.active{color:var(--accent);background:var(--accent-glow)}
 
-      --font-display: 'Fraunces', 'Aqeon Demo', Georgia, serif;
-      --font-sans: 'Nunito', system-ui, sans-serif;
-      --radius-lg: 24px;
-      --radius-md: 16px;
-    }
+    /* PAGE */
+    .page-wrap{position:relative;z-index:1;max-width:1340px;margin:0 auto;padding:28px 24px 60px}
+    .back-link{display:inline-flex;align-items:center;gap:6px;color:var(--text-mid);text-decoration:none;font-size:.85rem;font-weight:600;margin-bottom:20px;transition:color var(--t)}
+    .back-link:hover{color:var(--text-hi)}
 
-    html[data-theme="dark"] {
-      --msm-cream: #211d17;
-      --msm-cream-2: #2a251d;
-      --msm-paper: #26221b;
-      --msm-ink: #f6efe1;
-      --msm-ink-soft: #cbbfa9;
-      --msm-ink-faint: #8f8474;
-      --msm-pine: #6db894;
-      --msm-pine-deep: #4f9a78;
-      --msm-clay: #ef9268;
-      --msm-clay-soft: #6e4632;
-      --msm-gold: #e5b968;
-      --msm-sky: #33463f;
-      --msm-line: #3c352a;
-      --msm-shadow: rgba(0, 0, 0, 0.35);
-      --msm-shadow-soft: rgba(0, 0, 0, 0.22);
-    }
+    /* MEET HEADER */
+    .meet-header{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:24px}
+    .meet-header-inner{padding:24px 28px;display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start;justify-content:space-between}
+    .meet-title-block{}
+    .meet-title{font-family:var(--font-display);font-size:clamp(1.8rem,4vw,2.8rem);font-weight:900;text-transform:uppercase;letter-spacing:-.01em;line-height:1;margin:0 0 10px;color:var(--text-hi)}
+    .meet-meta-row{display:flex;gap:16px;flex-wrap:wrap;align-items:center}
+    .meta-chip{display:inline-flex;align-items:center;gap:7px;font-size:.84rem;font-weight:600;color:var(--text-mid);background:var(--bg-raised);border:1px solid var(--border);border-radius:999px;padding:5px 12px}
+    .meta-chip i{color:var(--accent);font-size:.75rem}
 
-    *, *::before, *::after { box-sizing: border-box; }
+    /* ─── WEATHER WIDGET (improved) ─── */
+    .weather-bar{border-top:1px solid var(--border);padding:18px 28px;background:linear-gradient(90deg,rgba(42,92,255,.04) 0%,transparent 60%)}
+    .weather-loading{display:flex;align-items:center;gap:10px;color:var(--text-mid);font-size:.88rem}
+    .weather-main{display:flex;flex-wrap:wrap;gap:24px;align-items:center}
+    .weather-icon-block{display:flex;align-items:center;gap:14px}
+    .weather-icon{font-size:3rem;line-height:1;filter:drop-shadow(0 2px 8px rgba(0,0,0,.4))}
+    .weather-temp{font-family:var(--font-display);font-size:2.6rem;font-weight:900;line-height:1;color:var(--text-hi)}
+    .weather-temp-unit{font-size:1.2rem;color:var(--text-mid)}
+    .weather-desc{font-size:.88rem;color:var(--text-mid);margin-top:2px;font-weight:500;text-transform:capitalize}
+    .weather-details{display:flex;gap:16px;flex-wrap:wrap;align-items:center}
+    .weather-stat{display:flex;flex-direction:column;align-items:center;background:var(--bg-raised);border:1px solid var(--border);border-radius:8px;padding:8px 14px;min-width:72px;text-align:center}
+    .weather-stat-val{font-family:var(--font-mono);font-size:.95rem;font-weight:600;color:var(--text-hi)}
+    .weather-stat-lbl{font-size:.65rem;font-weight:700;color:var(--text-lo);text-transform:uppercase;letter-spacing:.08em;margin-top:2px}
+    .weather-alert{display:inline-flex;align-items:center;gap:6px;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);border-radius:6px;padding:4px 10px;font-size:.78rem;font-weight:700;color:var(--warning)}
+    .weather-good{display:inline-flex;align-items:center;gap:6px;background:rgba(34,197,94,.10);border:1px solid rgba(34,197,94,.25);border-radius:6px;padding:4px 10px;font-size:.78rem;font-weight:700;color:var(--success)}
+    .weather-hourly{display:flex;gap:8px;overflow-x:auto;padding-top:14px;scrollbar-width:none}
+    .weather-hourly::-webkit-scrollbar{display:none}
+    .hourly-slot{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:52px;background:var(--bg-raised);border:1px solid var(--border);border-radius:8px;padding:8px 6px;flex-shrink:0}
+    .hourly-slot.now{border-color:var(--accent);background:var(--accent-glow)}
+    .hourly-time{font-size:.65rem;font-weight:700;color:var(--text-lo);text-transform:uppercase}
+    .hourly-icon{font-size:1.1rem;line-height:1}
+    .hourly-temp{font-family:var(--font-mono);font-size:.82rem;font-weight:600;color:var(--text-hi)}
+    .hourly-wind{font-size:.62rem;color:var(--text-lo)}
 
-    html, body {
-      font-family: var(--font-sans);
-      color: var(--text-primary);
-      background-color: var(--msm-cream);
-      background-image:
-        radial-gradient(circle at 8% -8%, rgba(63,125,99,0.10), transparent 40%),
-        radial-gradient(circle at 96% 2%, rgba(224,121,79,0.10), transparent 38%);
-      background-attachment: fixed;
-      margin: 0;
-    }
+    /* TABS */
+    .gender-tabs{display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:24px}
+    .gender-tab{padding:12px 28px;background:transparent;border:none;font-family:var(--font-display);font-size:1rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-lo);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;transition:all var(--t)}
+    .gender-tab:hover{color:var(--text-mid)}
+    .gender-tab.active{color:var(--accent);border-bottom-color:var(--accent)}
 
-    .content-section {
-      max-width: 1000px;
-      margin: 0 auto;
-      padding: 36px 18px;
-    }
+    /* DIVISION TABS */
+    .division-tabs{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+    .division-tab{padding:8px 18px;background:var(--bg-card);border:1px solid var(--border);border-radius:999px;font-family:var(--font-display);font-size:.88rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-mid);cursor:pointer;transition:all var(--t)}
+    .division-tab:hover{border-color:var(--accent);color:var(--text-hi)}
+    .division-tab.active{background:var(--accent);color:#fff;border-color:var(--accent);box-shadow:0 2px 8px rgba(42,92,255,.35)}
 
-    /* --- Hero Header --- */
-    .meet-header {
-      position: relative;
-      background: var(--bg-primary);
-      padding: 34px 24px 26px;
-      text-align: center;
-      border-radius: var(--radius-lg);
-      border: 1.5px solid var(--border);
-      margin-bottom: 26px;
-      box-shadow: 0 14px 34px var(--msm-shadow-soft);
-      overflow: hidden;
-    }
-    /* Rolling hills band across the header top */
-    .meet-header::before {
-      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 60px;
-      background:
-        radial-gradient(circle at 15% 140%, var(--msm-sky) 42%, transparent 44%),
-        radial-gradient(circle at 42% 160%, var(--msm-clay-soft) 48%, transparent 50%),
-        radial-gradient(circle at 70% 145%, var(--msm-sky) 42%, transparent 44%),
-        radial-gradient(circle at 93% 160%, var(--msm-clay-soft) 46%, transparent 48%);
-      opacity: 0.55;
-    }
-    .meet-eyebrow {
-      position: relative; z-index: 1;
-      display: inline-flex; align-items: center; gap: 7px;
-      padding: 6px 15px; border-radius: 999px; margin-bottom: 12px;
-      background: var(--msm-sky); color: var(--msm-pine-deep);
-      font-weight: 800; font-size: 0.68rem; letter-spacing: 0.12em; text-transform: uppercase;
-    }
-    .meet-title {
-      position: relative; z-index: 1;
-      font-family: var(--font-display);
-      font-size: clamp(2rem, 6vw, 3.1rem);
-      font-weight: 600;
-      color: var(--text-primary);
-      margin: 0 0 8px;
-      line-height: 1.05;
-      letter-spacing: -0.015em;
-    }
-    .meet-subtitle {
-      position: relative; z-index: 1;
-      font-size: 1rem;
-      color: var(--text-secondary);
-      font-weight: 600;
-    }
-    .meet-stats {
-      position: relative; z-index: 1;
-      display: flex;
-      justify-content: center;
-      gap: 12px;
-      margin-top: 24px;
-      padding-top: 0;
-      border-top: none;
-      flex-wrap: wrap;
-    }
-    .stat-item {
-      text-align: center;
-      padding: 12px 22px;
-      background: var(--bg-secondary);
-      border: 1.5px solid var(--border);
-      border-radius: var(--radius-md);
-      min-width: 92px;
-    }
-    .stat-value {
-      display: block;
-      font-family: var(--font-display);
-      font-size: 1.6rem;
-      font-weight: 700;
-      color: var(--msm-pine);
-      line-height: 1;
-    }
-    .stat-item:nth-child(2) .stat-value { color: var(--msm-clay); }
-    .stat-item:nth-child(3) .stat-value { color: var(--msm-gold); }
-    .stat-label {
-      font-size: 0.66rem;
-      text-transform: uppercase;
-      font-weight: 800;
-      color: var(--text-tertiary);
-      letter-spacing: 0.06em;
-      margin-top: 5px;
-      display: block;
-    }
+    /* VIEW CONTROLS */
+    .view-controls{display:flex;background:var(--bg-raised);border:1px solid var(--border);border-radius:8px;padding:4px;width:fit-content;margin-bottom:24px;gap:2px}
+    .view-btn{padding:8px 18px;border:none;background:transparent;border-radius:6px;font-weight:600;font-size:.85rem;color:var(--text-mid);cursor:pointer;transition:all var(--t);letter-spacing:.02em}
+    .view-btn.active{background:var(--accent);color:white;box-shadow:0 2px 8px rgba(42,92,255,.4)}
 
-    /* --- Tabs (Gender & Views) --- */
-    .app-tabs-container {
-      margin-bottom: 18px;
-      align-items: center;
-    }
-    .app-tabs {
-      display: inline-flex;
-      overflow-x: auto;
-      background: var(--bg-primary);
-      border: 1.5px solid var(--border);
-      border-radius: 999px;
-      padding: 5px;
-      -webkit-overflow-scrolling: touch;
-      scrollbar-width: none;
-      align-items: center;
-      box-shadow: 0 6px 16px var(--msm-shadow-soft);
-      max-width: 100%;
-    }
-    .app-tabs::-webkit-scrollbar { display: none; }
+    /* EVENTS GRID */
+    .events-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;margin-bottom:20px}
+    .event-btn{background:var(--bg-card);border:1px solid var(--border);padding:10px 8px;border-radius:8px;font-weight:600;font-size:.83rem;color:var(--text-mid);cursor:pointer;transition:all var(--t);text-align:center;line-height:1.3}
+    .event-btn:hover{border-color:var(--accent);color:var(--text-hi);transform:translateY(-1px)}
+    .event-btn.active{background:var(--accent);color:white;border-color:var(--accent);box-shadow:0 2px 10px rgba(42,92,255,.35)}
 
-    .app-tab {
-      padding: 10px 20px;
-      font-size: 0.92rem;
-      font-weight: 800;
-      color: var(--text-secondary);
-      background: transparent;
-      border: none;
-      white-space: nowrap;
-      cursor: pointer;
-      position: relative;
-      border-radius: 999px;
-      transition: color 0.2s, background 0.2s;
-      font-family: var(--font-sans);
-    }
-    .app-tab.active {
-      color: #fff;
-      background: var(--msm-pine);
-      box-shadow: 0 4px 12px rgba(63,125,99,0.32);
-    }
+    /* HEAT CONTROLS */
+    .heat-filter-container{display:flex;justify-content:space-between;align-items:center;padding:14px 20px;border-bottom:1px solid var(--border);background:var(--bg-raised)}
+    .current-event-title{font-family:var(--font-display);font-size:1.15rem;font-weight:800;text-transform:uppercase;letter-spacing:.04em;margin:0}
+    .heat-pill-group{display:inline-flex;background:var(--bg);border:1px solid var(--border);border-radius:999px;padding:3px;gap:2px}
+    .heat-pill{padding:5px 16px;border:none;background:transparent;border-radius:999px;font-size:.82rem;font-weight:700;color:var(--text-mid);cursor:pointer;transition:.2s}
+    .heat-pill.active{background:var(--accent);color:white}
 
-    /* --- Division chips --- */
-    .division-chips {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      overflow-x: auto;
-      padding: 14px 0 4px;
-      -webkit-overflow-scrolling: touch;
-      scrollbar-width: none;
-    }
-    .division-chips::-webkit-scrollbar { display: none; }
+    /* TABLE CONTAINER */
+    .table-container{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+    .data-table{width:100%;border-collapse:collapse;text-align:left}
+    .data-table th{background:var(--bg-raised);padding:10px 20px;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-lo);border-bottom:1px solid var(--border)}
+    .data-table td{padding:12px 20px;border-bottom:1px solid var(--border);font-weight:500;font-size:.9rem}
+    .data-table tr:last-child td{border-bottom:none}
+    .data-table tbody tr:hover td{background:var(--bg-raised)}
+    .data-table a{color:var(--text-hi);text-decoration:none;font-weight:600}
+    .data-table a:hover{text-decoration:underline}
+    .school-cell{display:flex;align-items:center;gap:8px}
+    .school-logo-sm{width:22px;height:22px;border-radius:50%;object-fit:contain;background:white;padding:2px;flex-shrink:0}
+    .place-badge{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;font-family:var(--font-display);font-weight:800;font-size:.9rem;background:var(--bg-raised);color:var(--text-mid)}
+    .place-1{background:var(--gold);color:#1a1200} .place-2{background:var(--silver);color:#111820} .place-3{background:var(--bronze);color:#1a0e00}
+    .mark-cell{font-family:var(--font-mono);font-weight:600;color:var(--text-hi)}
 
-    .chip {
-      padding: 8px 16px;
-      border-radius: 999px;
-      font-size: 0.83rem;
-      font-weight: 800;
-      background: var(--bg-primary);
-      color: var(--text-secondary);
-      border: 1.5px solid var(--border);
-      cursor: pointer;
-      white-space: nowrap;
-      transition: all 0.2s;
-      font-family: var(--font-sans);
-    }
-    .chip:hover { border-color: var(--msm-clay); color: var(--msm-clay); }
-    .chip.active {
-      background: var(--msm-clay);
-      color: #fff;
-      border-color: var(--msm-clay);
-    }
+    /* TEAM STANDINGS */
+    .standings-logo{width:32px;height:32px;border-radius:50%;object-fit:contain;background:white;padding:3px;flex-shrink:0}
+    .team-pts{font-family:var(--font-mono);font-size:1.1rem;font-weight:700;color:var(--text-hi)}
+    .rank-num{font-family:var(--font-display);font-size:1.4rem;font-weight:900;color:var(--text-lo);width:36px}
+    .rank-1{color:var(--gold)} .rank-2{color:var(--silver)} .rank-3{color:var(--bronze)}
 
-    /* --- Search & Actions --- */
-    .utility-bar {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 24px;
-      flex-wrap: wrap;
-    }
-    .search-box {
-      flex: 1;
-      min-width: 200px;
-      position: relative;
-    }
-    .search-box input {
-      width: 100%;
-      padding: 13px 16px 13px 42px;
-      border-radius: 999px;
-      border: 1.5px solid var(--border);
-      background: var(--bg-primary);
-      color: var(--text-primary);
-      font-size: 0.95rem;
-      outline: none;
-      font-family: var(--font-sans);
-      transition: border-color 0.2s, box-shadow 0.2s;
-    }
-    .search-box input:focus {
-      border-color: var(--msm-pine);
-      box-shadow: 0 0 0 4px rgba(63,125,99,0.14);
-    }
-    .search-box i {
-      position: absolute;
-      left: 15px;
-      top: 50%;
-      transform: translateY(-50%);
-      color: var(--text-tertiary);
-      font-style: normal;
-    }
-    .action-btn {
-      padding: 12px 16px;
-      border-radius: 999px;
-      border: 1.5px solid var(--border);
-      background: var(--bg-primary);
-      color: var(--text-primary);
-      font-weight: 800;
-      font-size: 0.85rem;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-family: var(--font-sans);
-      transition: border-color 0.2s, color 0.2s;
-    }
-    .action-btn:hover { border-color: var(--msm-pine); color: var(--msm-pine); }
-    select.action-btn { max-width: 200px; }
+    /* ─── HIGH POINT SECTION ─── */
+    .hp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr))}
+    .hp-athlete{padding:16px 18px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);position:relative;transition:background var(--t);background:var(--bg-card)}
+    .hp-athlete:hover{background:var(--bg-raised)}
+    .hp-medal{position:absolute;top:12px;right:14px;font-size:1.4rem;line-height:1}
+    .hp-school-row{display:flex;align-items:center;gap:7px;margin-bottom:5px}
+    .hp-logo{width:20px;height:20px;border-radius:50%;object-fit:contain;background:white;padding:2px;flex-shrink:0}
+    .hp-school-name{font-size:.72rem;font-weight:700;color:var(--text-mid);text-transform:uppercase;letter-spacing:.06em}
+    .hp-name{font-family:var(--font-display);font-size:1.1rem;font-weight:800;text-transform:uppercase;letter-spacing:.02em;line-height:1.2;margin-bottom:3px;padding-right:30px;color:var(--text-hi)}
+    .hp-pts{font-family:var(--font-mono);font-size:.95rem;font-weight:700;color:var(--accent);margin-bottom:7px}
+    .hp-pills{display:flex;flex-wrap:wrap;gap:4px}
+    .hp-pill{font-size:.62rem;font-weight:700;letter-spacing:.04em;padding:2px 7px;border-radius:999px;border:1px solid var(--border);color:var(--text-lo);background:var(--bg);white-space:nowrap}
+    .hp-pill.p1{border-color:rgba(245,183,49,.5);color:var(--gold);background:var(--gold-bg)}
+    .hp-pill.p2{border-color:rgba(168,184,200,.4);color:var(--silver);background:var(--silver-bg)}
+    .hp-pill.p3{border-color:rgba(196,122,56,.4);color:var(--bronze);background:var(--bronze-bg)}
 
-    /* --- App-style list --- */
-    .app-list {
-      background: var(--bg-primary);
-      border: 1.5px solid var(--border);
-      border-radius: var(--radius-lg);
-      overflow: hidden;
-      margin-bottom: 26px;
-      box-shadow: 0 12px 30px var(--msm-shadow-soft);
-    }
-    .list-header {
-      background: var(--bg-secondary);
-      padding: 15px 20px;
-      font-family: var(--font-display);
-      font-size: 1.05rem;
-      font-weight: 600;
-      color: var(--text-primary);
-      letter-spacing: -0.01em;
-      border-bottom: 1.5px solid var(--border);
-      display: flex;
-      align-items: center;
-      gap: 9px;
-    }
-    .list-header::before {
-      content: '';
-      width: 10px; height: 10px; border-radius: 50%;
-      background: var(--msm-clay);
-    }
-    .list-item {
-      display: flex;
-      align-items: stretch;
-      border-bottom: 1.5px solid var(--border);
-      background: var(--bg-primary);
-      transition: background 0.2s;
-    }
-    .list-item:last-child { border-bottom: none; }
-    .list-item:hover { background: var(--bg-secondary); }
+    /* SECTION HEADING */
+    .section-heading{font-family:var(--font-display);font-size:1.4rem;font-weight:800;text-transform:uppercase;letter-spacing:.04em;margin:0 0 14px;display:flex;align-items:center;gap:10px;color:var(--text-hi)}
+    .section-heading::after{content:"";flex:1;height:1px;background:var(--border)}
 
-    /* Placement — round race bib */
-    .item-place {
-      width: 64px;
-      flex-shrink: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: var(--text-secondary);
-      font-family: var(--font-display);
-      font-weight: 700;
-      font-size: 1.15rem;
-    }
-    .item-place > span {
-      display: flex; align-items: center; justify-content: center;
-      width: 40px; height: 40px; border-radius: 50%;
-      background: var(--bg-secondary);
-      border: 1.5px solid var(--border);
-      color: var(--text-primary);
-    }
-    /* Podium colors for top 3 */
-    .list-item:nth-child(2) .item-place > span { background: var(--msm-gold); border-color: var(--msm-gold); color: #fff; }
-    .list-item:nth-child(3) .item-place > span { background: #c9c2b0; border-color: #c9c2b0; color: #fff; }
-    .list-item:nth-child(4) .item-place > span { background: var(--msm-clay-soft); border-color: var(--msm-clay-soft); color: var(--msm-ink); }
-    html[data-theme="dark"] .list-item:nth-child(4) .item-place > span { color: #2f2a24; }
+    /* LOADING / ERROR */
+    .loading-state{text-align:center;padding:80px 20px;color:var(--text-mid)}
+    .loading-spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 16px}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .empty-state{text-align:center;padding:60px 20px;color:var(--text-mid);font-size:.95rem}
+    .error-msg{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.3);color:#fca5a5;padding:16px 20px;border-radius:var(--radius);margin-bottom:24px;display:none;font-weight:600}
 
-    /* Avatar / Logo */
-    .item-avatar {
-      display: flex;
-      align-items: center;
-      padding-left: 8px;
-    }
-    .item-avatar img {
-      width: 42px;
-      height: 42px;
-      border-radius: 50%;
-      object-fit: contain;
-      background: #fff;
-      padding: 3px;
-      border: 1.5px solid var(--border);
-    }
-
-    /* Details */
-    .item-details {
-      flex: 1;
-      padding: 14px 12px;
-      min-width: 0;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-    }
-    .item-name {
-      font-weight: 800;
-      font-size: 1.05rem;
-      color: var(--text-primary);
-      text-decoration: none;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .item-name:hover { color: var(--msm-pine); }
-    .item-school {
-      font-size: 0.85rem;
-      color: var(--text-secondary);
-      text-decoration: none;
-      margin: 2px 0 5px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      font-weight: 700;
-    }
-    .item-school:hover { color: var(--msm-clay); }
-    .item-meta {
-      font-size: 0.74rem;
-      color: var(--text-tertiary);
-      font-weight: 700;
-    }
-
-    /* Score / Time */
-    .item-score {
-      padding: 14px 18px 14px 8px;
-      display: flex;
-      align-items: center;
-      justify-content: flex-end;
-      font-family: var(--font-display);
-      font-weight: 700;
-      font-size: 1.2rem;
-      color: var(--msm-pine);
-      font-variant-numeric: tabular-nums;
-    }
-
-    /* Scorer badges */
-    .scorer-badge {
-      display: inline-block;
-      padding: 2px 8px;
-      background: var(--msm-sky);
-      border: 1.5px solid transparent;
-      border-radius: 999px;
-      font-size: 0.65rem;
-      font-weight: 800;
-      margin-right: 4px;
-      color: var(--msm-pine-deep);
-    }
-
-    /* Error message */
-    .error-message {
-      border: 1.5px solid var(--danger) !important;
-    }
-
-    /* Print */
-    @media print {
-      body { background: #fff !important; color: #000 !important; }
-      #global-header, #global-footer, .app-tabs-container, .utility-bar { display: none !important; }
-      .app-list { box-shadow: none; border: 1px solid #ccc; }
-      .item-place > span { background: #eee !important; color: #000 !important; -webkit-print-color-adjust: exact; }
-    }
-
-    @media (max-width: 600px) {
-      .stat-item { min-width: 78px; padding: 10px 14px; }
+    @media(max-width:768px){
+      .gender-tab{padding:10px 16px;flex:1;text-align:center}
+      .data-table th,.data-table td{padding:10px 12px;font-size:.85rem}
+      .events-grid{grid-template-columns:repeat(auto-fill,minmax(100px,1fr))}
+      .heat-filter-container{flex-direction:column;align-items:flex-start;gap:10px}
+      .weather-details{gap:8px}
+      .meet-header-inner{padding:18px}
+      .weather-bar{padding:14px 18px}
     }
   </style>
-</head>
 
+  
+  <script src="/assets/theme-toggle.js" defer></script>
+  <script src="/assets/components.js" defer></script>
+</head>
 <body>
 
   <div id="global-header"></div>
-  <script src="/assets/msm-loader.js"></script>
 
-  <main class="content-section">
+<script src="/assets/msm-loader.js"></script>
+<main class="content-section page-wrap">
+  <a href="meets.html" class="back-link"><i class="fas fa-arrow-left"></i> Back to Meets</a>
+  <div id="error-box" class="error-msg"></div>
 
-      <div class="meet-header">
-        <span class="meet-eyebrow">🌲 Cross Country Results</span>
-        <h1 class="meet-title" id="meet-title">Loading Meet...</h1>
-        <div id="meet-meta" class="meet-subtitle">Retrieving data...</div>
-
-        <div class="meet-stats" id="meet-stats" style="display:none;">
-          <div class="stat-item"><span class="stat-value" id="stat-races">-</span><span class="stat-label">Races</span></div>
-          <div class="stat-item"><span class="stat-value" id="stat-teams">-</span><span class="stat-label">Teams</span></div>
-          <div class="stat-item"><span class="stat-value" id="stat-athletes">-</span><span class="stat-label">Athletes</span></div>
-        </div>
+  <!-- MEET HEADER -->
+  <div id="meet-header" class="meet-header" style="display:none;">
+    <div class="meet-header-inner">
+      <div class="meet-title-block">
+        <h1 id="meet-title" class="meet-title">Loading...</h1>
+        <div id="meet-meta" class="meet-meta-row"></div>
       </div>
-
-      <div id="error" class="error-message" style="display:none; text-align: center; color: var(--danger); padding: 20px; background: rgba(198, 91, 70, 0.1); border-radius: 16px; margin-bottom: 20px; font-weight: 700;"></div>
-
-      <div id="selector" style="display:none;">
-
-        <div class="app-tabs-container">
-          <div class="app-tabs">
-            <button class="app-tab active" id="view-all-btn">All Results</button>
-            <button class="app-tab" id="view-teams-btn">Team Scores</button>
-            <button class="app-tab" id="view-indiv-btn">Individual</button>
-          </div>
-        </div>
-
-        <div class="app-tabs-container">
-          <div class="app-tabs">
-            <button id="tab-boys" class="app-tab active">Boys</button>
-            <button id="tab-girls" class="app-tab">Girls</button>
-          </div>
-          <div class="division-chips" id="race-button-wrap"></div>
-        </div>
-
-        <div class="utility-bar">
-          <div class="search-box">
-            <i>🔍</i>
-            <input type="text" id="search-input" placeholder="Search athlete or school..." />
-          </div>
-          <select id="team-export-select" class="action-btn" onchange="renderTableForSelection()" style="outline: none;">
-              <option value="all">All Teams</option>
-          </select>
-          <button class="action-btn" onclick="exportToCSV()">📊 CSV</button>
-          <button class="action-btn" onclick="exportResultsPDF()">📄 PDF</button>
-        </div>
-
+    </div>
+    <div id="weather-bar" class="weather-bar" style="display:none;">
+      <div id="weather-content">
+        <div class="weather-loading"><i class="fas fa-circle-notch fa-spin"></i> Loading forecast…</div>
       </div>
+    </div>
+  </div>
 
-    <div id="results-box"></div>
-  </main>
+  <!-- MAIN CONTENT -->
+  <div id="main-content" style="display:none;">
+    <div id="division-tabs" class="division-tabs" style="display:none;"></div>
+    <div class="gender-tabs">
+      <button id="tab-M" class="gender-tab active" onclick="setGender('M')">Men's Results</button>
+      <button id="tab-W" class="gender-tab" onclick="setGender('W')"> Women's Results</button>
+    </div>
 
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-  <script src="firebase-config.js"></script>
-  <script src="firebase-helpers.js"></script>
+    <div class="view-controls">
+      <button id="view-events" class="view-btn active" onclick="setView('events')"><i class="fas fa-list"></i> Results by Event</button>
+      <button id="view-teams" class="view-btn" onclick="setView('teams')"><i class="fas fa-trophy"></i> Team Standings</button>
+      <button id="view-highpoint" class="view-btn" onclick="setView('highpoint')"><i class="fas fa-star"></i> High Point</button>
+    </div>
 
-  <script>
-    // ==========================================
-    // 1. UTILITY & FORMATTING FUNCTIONS
-    // ==========================================
+    <!-- EVENTS VIEW -->
+    <div id="section-events">
+      <div id="event-buttons" class="events-grid"></div>
+      <div class="table-container">
+        <div id="heat-controls" class="heat-filter-container" style="display:none;">
+          <h3 id="current-event-title" class="current-event-title">Event Name</h3>
+          <div class="heat-pill-group">
+            <button id="heat-prelims" class="heat-pill" onclick="setHeat('Prelims')">Prelims</button>
+            <button id="heat-finals" class="heat-pill active" onclick="setHeat('Finals')">Finals</button>
+          </div>
+        </div>
+        <div id="results-table-wrapper"></div>
+      </div>
+    </div>
 
-    function formatTime(totalSeconds) {
-      if (typeof totalSeconds !== 'number' || isNaN(totalSeconds) || totalSeconds <= 0) {
-        return 'N/T';
-      }
-      const minutes = Math.floor(totalSeconds / 60);
-      const seconds = totalSeconds % 60;
-      return `${minutes}:${seconds.toFixed(2).padStart(5, '0')}`;
+    <!-- TEAMS VIEW -->
+    <div id="section-teams" style="display:none;">
+      <h2 class="section-heading"><i class="fas fa-trophy" style="color:var(--gold)"></i> Team Standings</h2>
+      <div class="table-container">
+        <table class="data-table">
+          <thead><tr><th style="width:60px">Rank</th><th>School</th><th style="text-align:right;padding-right:28px">Points</th></tr></thead>
+          <tbody id="team-standings-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- HIGH POINT VIEW -->
+    <div id="section-highpoint" style="display:none;">
+      <h2 class="section-heading"><i class="fas fa-star" style="color:var(--gold)"></i> High Point Athletes</h2>
+      <div class="table-container">
+        <div id="hp-grid-wrapper" class="hp-grid"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="loading" class="loading-state">
+    <div class="loading-spinner"></div>
+    Loading meet data…
+  </div>
+</main>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script src="/scripts/results-filter.js"></script>
+<script src="firebase-helpers.js"></script>
+
+<script>
+  /* ═══════════════════════════════════
+     DATA STORE & STATE
+  ═══════════════════════════════════ */
+  const FALLBACK_LOGO = "../assets/Wvruns Logo.png";
+
+  let meetInfo = null;
+  let rawResults = [];
+  let structuredData = { M:{}, W:{} };
+  let activeGender = 'M';
+  let activeView = 'events';
+  let activeEvent = null;
+  let activeHeat = 'Finals';
+  let meetDivisions = [];
+  let activeDivision = null;
+  let filteredResults = [];
+
+  /* ─── Logo helpers (same pattern as team.html) ─── */
+  function schoolSlug(name) {
+    return (name||"").toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
+  }
+  function logoSrc(school) {
+    return `../assets/team logos/${schoolSlug(school)}.png`;
+  }
+  function logoTag(school, cls) {
+    return `<img src="${logoSrc(school)}" class="${cls}" alt="" loading="lazy" onerror="this.onerror=null;this.src='${FALLBACK_LOGO}'">`;
+  }
+
+  /* ─── Firebase ─── */
+  async function waitForFirebase() {
+    let a = 0;
+    while (typeof window.firebaseDatabase === 'undefined' && a < 50) {
+      await new Promise(r => setTimeout(r, 100)); a++;
     }
+    if (!window.firebaseDatabase) throw new Error("Firebase unavailable.");
+  }
 
-    function calculatePacePerMile(totalSeconds, distanceMeters) {
-      if (!totalSeconds || !distanceMeters) return '-';
-      const MILE_IN_METERS = 1609.34;
-      const secondsPerMile = (totalSeconds / distanceMeters) * MILE_IN_METERS;
-      return formatTime(secondsPerMile);
-    }
+  /* ═══════════════════════════════════
+     INIT
+  ═══════════════════════════════════ */
+  async function init() {
+    const slug = new URLSearchParams(window.location.search).get("slug");
+    if (!slug) { showError("No meet specified in the URL."); return; }
 
-    function formatGrade(gradYear) {
-      if (!gradYear) return '';
-      const currentSeasonYear = 2025;
-      const diff = gradYear - (currentSeasonYear + 1);
-      const gradeMap = { 0: '12', 1: '11', 2: '10', 3: '9', 4: '8', 5: '7', 6: '6' };
-      return gradeMap[diff] || gradYear;
-    }
+    try {
+      await waitForFirebase();
 
-    function slugify(name) {
-      if (!name) return '';
-      return name.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-    }
+      // 1. Load meet info
+      const meetsSnap = await window.firebaseDatabase.ref('Track/meets').once('value');
+      meetsSnap.forEach(child => {
+        if (child.val().slug === slug || child.key === slug)
+          meetInfo = { id: child.key, ...child.val() };
+      });
+      if (!meetInfo) throw new Error("Meet not found.");
 
-    function normalizeGender(r) {
-      const g = String(r.gender || '').trim().toUpperCase();
-      if (['M', 'BOYS', 'BOY', 'MALE', 'B'].includes(g)) return 'M';
-      if (['F', 'GIRLS', 'GIRL', 'FEMALE', 'G'].includes(g)) return 'F';
-      const raceText = (r.race_type || r.division || r.event || r.event_name || '').toLowerCase();
-      if (raceText.includes('girl') || raceText.includes('female') || raceText.includes('women')) return 'F';
-      if (raceText.includes('boy') || raceText.includes('male') || raceText.includes('men')) return 'M';
-      return 'M';
-    }
+      document.title = `${meetInfo.name} – Meet Results`;
+      renderMeetHeader();
 
-    function normalizeRaceType(r) {
-      let raw = r.race_type || r.division || r.event || r.event_name || 'Varsity 5K';
-      if (typeof raw !== 'string') return 'Varsity 5K';
-      raw = raw.trim();
-      if (!raw) return 'Varsity 5K';
-      return raw.split(/\s+/).map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ')
-        .replace(/\b5k\b/i, '5K').replace(/\b3k\b/i, '3K').replace(/\bJv\b/g, 'JV').replace(/\bMs\b/g, 'Middle School')
-        .replace(/\bAaaa\b/g, 'AAAA').replace(/\bAaa\b/g, 'AAA').replace(/\bAa\b/g, 'AA');
-    }
+      // 2. Load athletes, events, results in parallel
+      const [athSnap, evSnap, resSnap] = await Promise.all([
+        window.firebaseDatabase.ref('Track/athletes').once('value'),
+        window.firebaseDatabase.ref('Track/events').once('value'),
+        window.firebaseDatabase.ref('Track/results').orderByChild('meet_id').equalTo(meetInfo.id).once('value')
+      ]);
 
-    // ==========================================
-    // 2. STATE MANAGEMENT
-    // ==========================================
-    let currentMeetData = null;
-    let allResults = [];
-    let activeGender = 'M';
-    let activeRaceType = null;
-    let currentFilteredResults = [];
-    let activeViewMode = 'all'; // 'all', 'teams', 'indiv'
+      const athletesMap = {}; athSnap.forEach(c => { athletesMap[c.key] = c.val(); });
+      const eventsMap = {};   evSnap.forEach(c => { eventsMap[c.key] = c.val(); });
 
-    // ==========================================
-    // 3. MAIN INITIALIZATION
-    // ==========================================
-
-    window.addEventListener("DOMContentLoaded", async () => {
-      const params = new URLSearchParams(window.location.search);
-      const slug = params.get("slug");
-
-      const errorDiv = document.getElementById("error");
-      const metaDiv = document.getElementById("meet-meta");
-      const selectorDiv = document.getElementById("selector");
-
-      if (!slug) {
-        errorDiv.style.display = "block";
-        errorDiv.textContent = "No meet specified. Please return to the Meets page.";
-        document.dispatchEvent(new Event("MSMDataLoaded"));
-        return;
-      }
-
-      try {
-        currentMeetData = await window.getMeetBySlug(slug);
-        if (!currentMeetData) throw new Error("Meet not found.");
-
-        // --- UPDATE TITLE AND HEADER HERE ---
-        const meetName = currentMeetData.name || `${slug.replace(/-/g, " ")} – Meet Results`;
-
-        // Set browser tab title
-        document.title = `${meetName} | Mountain State Miles`;
-
-        // Set main page header
-        document.getElementById("meet-title").textContent = meetName;
-        // ------------------------------------
-
-        metaDiv.innerHTML = `<strong>${formatMeetDate(currentMeetData.date)}</strong> &nbsp;•&nbsp; ${currentMeetData.location || 'Location Unknown'}`;
-
-
-        const schools = await window.getAllSchools();
-        const schoolSlugToName = {};
-        if (schools && schools.length) {
-          schools.forEach(s => { schoolSlugToName[s.slug || ''] = s.name || s.slug; });
-        }
-
-        allResults = await window.getResultsByMeet(slug);
-
-        if (!allResults || allResults.length === 0) {
-            errorDiv.style.display = "block";
-            errorDiv.textContent = "Results have not been uploaded for this meet yet.";
-            return;
-        }
-
-        allResults.forEach(r => {
-          r.normalizedGender = normalizeGender(r);
-          r.normalizedRaceType = normalizeRaceType(r);
-          if ((!r.school_name && !r.school) && r.school_slug) {
-            r.school_name = schoolSlugToName[r.school_slug] || r.school_slug;
-          }
+      resSnap.forEach(child => {
+        const r = child.val();
+        const athlete = athletesMap[r.athlete_id] || {};
+        const event = eventsMap[r.event_id] || {};
+        rawResults.push({
+          id: child.key,
+          athlete_id: r.athlete_id,
+          athlete_name: `${athlete.first_name||''} ${athlete.last_name||''}`.trim(),
+          school: athlete.school || 'Unattached',
+          mark: r.mark,
+          placement: parseInt(r.placement) || null,
+          gender: r.gender || event.gender || 'M',
+          event_name: event.name || 'Unknown Event',
+          heat: r.heat || 'Finals',
+          division: r.division || '',
+          relay_names: r.relay_names || null
         });
+      });
 
-        // Populate Top Stats
-        const uniqueRaces = new Set(allResults.map(r => r.normalizedRaceType)).size;
-        const uniqueTeams = new Set(allResults.map(r => r.school_slug || r.school_name || r.school)).size;
+      if (rawResults.length === 0) throw new Error("No results have been uploaded for this meet yet.");
 
-        document.getElementById('stat-races').textContent = uniqueRaces || '-';
-        document.getElementById('stat-teams').textContent = uniqueTeams || '-';
-        document.getElementById('stat-athletes').textContent = allResults.length || '-';
-        document.getElementById('meet-stats').style.display = 'flex';
-
-        selectorDiv.style.display = "block";
-
-        setupSearchAndControls();
-        setupGenderTabs();
-        document.getElementById("tab-boys").click();
-
-      } catch (err) {
-        console.error(err);
-        errorDiv.style.display = "block";
-        errorDiv.textContent = "Error loading meet data: " + err.message;
-      } finally {
-        document.dispatchEvent(new Event("MSMDataLoaded"));
+      meetDivisions = divisionsFromResults(rawResults, meetInfo.divisions);
+      if (meetDivisions.length > 1) {
+        activeDivision = meetDivisions[0];
+        renderDivisionTabs();
+      } else {
+        activeDivision = null;
+        document.getElementById('division-tabs').style.display = 'none';
       }
+      applyDivisionFilter();
+      buildStructuredData();
+
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('main-content').style.display = 'block';
+
+      window.__MSM_COACH_CTX = { kind:'meet', meetId:meetInfo.id, meetName:meetInfo.name||'' };
+      window.dispatchEvent(new CustomEvent('msm-coach-context-updated'));
+
+      setGender('M');
+
+      // Load weather after DOM is ready
+      if (meetInfo.location) {
+        document.getElementById('weather-bar').style.display = 'block';
+        loadWeather(meetInfo.location, meetInfo.date);
+      }
+    } catch(e) {
+      showError(e.message);
+    } finally {
+      document.dispatchEvent(new Event("MSMDataLoaded"));
+    }
+  }
+
+  function applyDivisionFilter() {
+    filteredResults = rawResults.filter(r => resultMatchesDivision(r.division, activeDivision));
+  }
+
+  function renderDivisionTabs() {
+    const container = document.getElementById('division-tabs');
+    if (!meetDivisions.length) {
+      container.style.display = 'none';
+      return;
+    }
+    container.style.display = 'flex';
+    const tabs = meetDivisions.map(div =>
+      `<button type="button" class="division-tab${div === activeDivision ? ' active' : ''}" onclick="setDivision('${div}')">${div}</button>`
+    ).join('');
+    container.innerHTML = tabs;
+  }
+
+  function setDivision(division) {
+    activeDivision = division;
+    renderDivisionTabs();
+    applyDivisionFilter();
+    buildStructuredData();
+    if (activeView === 'events') refreshEventsView();
+    if (activeView === 'teams') refreshTeamsView();
+    if (activeView === 'highpoint') refreshHighPointView();
+  }
+
+  /* ─── Build structured data ─── */
+  function buildStructuredData() {
+    structuredData = { M:{}, W:{} };
+    filteredResults.forEach(r => {
+      if (!structuredData[r.gender]) return;
+      if (!structuredData[r.gender][r.event_name]) structuredData[r.gender][r.event_name] = {};
+      if (!structuredData[r.gender][r.event_name][r.heat]) structuredData[r.gender][r.event_name][r.heat] = [];
+      structuredData[r.gender][r.event_name][r.heat].push(r);
+    });
+    ['M','W'].forEach(g => {
+      Object.keys(structuredData[g]).forEach(e => {
+        Object.keys(structuredData[g][e]).forEach(h => {
+          structuredData[g][e][h].sort((a,b) => {
+            if (a.placement && b.placement) return a.placement - b.placement;
+            if (a.placement) return -1; if (b.placement) return 1; return 0;
+          });
+        });
+      });
+    });
+  }
+
+  /* ─── Render meet header ─── */
+  function renderMeetHeader() {
+    document.getElementById('meet-title').textContent = meetInfo.name;
+    const chips = [
+      meetInfo.date ? `<span class="meta-chip"><i class="fas fa-calendar-days"></i>${meetInfo.date}</span>` : '',
+      meetInfo.location ? `<span class="meta-chip"><i class="fas fa-location-dot"></i>${meetInfo.location}</span>` : '',
+      meetInfo.season ? `<span class="meta-chip"><i class="fas fa-person-running"></i>${meetInfo.season.charAt(0).toUpperCase()+meetInfo.season.slice(1)}</span>` : '',
+      meetDivisions.length ? `<span class="meta-chip"><i class="fas fa-layer-group"></i>${meetDivisions.join(' · ')}</span>` : '',
+    ].filter(Boolean).join('');
+    document.getElementById('meet-meta').innerHTML = chips;
+    document.getElementById('meet-header').style.display = 'block';
+  }
+
+  /* ═══════════════════════════════════
+     WEATHER (IMPROVED)
+     Uses Open-Meteo hourly data to show
+     actual race-time conditions + full
+     forecast bar for meet day
+  ═══════════════════════════════════ */
+  const WMO_CODES = {
+    0:{label:"Clear sky",icon:"☀️"},
+    1:{label:"Mainly clear",icon:"🌤️"},
+    2:{label:"Partly cloudy",icon:"⛅"},
+    3:{label:"Overcast",icon:"☁️"},
+    45:{label:"Foggy",icon:"🌫️"},
+    48:{label:"Icy fog",icon:"🌫️"},
+    51:{label:"Light drizzle",icon:"🌦️"},
+    53:{label:"Drizzle",icon:"🌦️"},
+    55:{label:"Heavy drizzle",icon:"🌧️"},
+    61:{label:"Light rain",icon:"🌧️"},
+    63:{label:"Rain",icon:"🌧️"},
+    65:{label:"Heavy rain",icon:"🌧️"},
+    71:{label:"Light snow",icon:"🌨️"},
+    73:{label:"Snow",icon:"❄️"},
+    75:{label:"Heavy snow",icon:"❄️"},
+    80:{label:"Rain showers",icon:"🌦️"},
+    81:{label:"Showers",icon:"🌧️"},
+    82:{label:"Heavy showers",icon:"⛈️"},
+    95:{label:"Thunderstorm",icon:"⛈️"},
+    96:{label:"Thunderstorm + hail",icon:"⛈️"},
+    99:{label:"Severe thunderstorm",icon:"⛈️"},
+  };
+  function wmoInfo(code) {
+    return WMO_CODES[code] || WMO_CODES[Math.floor(code/10)*10] || {label:"Mixed conditions",icon:"🌡️"};
+  }
+
+  // Known WV venue coordinates
+  const VENUE_COORDS = {
+    'grafton': {lat:39.34,lon:-80.03},
+    'morgantown': {lat:39.64,lon:-79.96},
+    'parkersburg': {lat:39.27,lon:-81.56},
+    'charleston': {lat:38.35,lon:-81.63},
+    'huntington': {lat:38.42,lon:-82.45},
+    'fairmont': {lat:39.49,lon:-80.14},
+    'clarksburg': {lat:39.28,lon:-80.34},
+    'elkins': {lat:38.93,lon:-79.85},
+    'lewisburg': {lat:37.80,lon:-80.44},
+    'beckley': {lat:37.78,lon:-81.19},
+    'bluefield': {lat:37.27,lon:-81.22},
+    'weston': {lat:39.04,lon:-80.47},
+    'princeton': {lat:37.37,lon:-81.10},
+    'oak hill': {lat:37.98,lon:-81.15},
+    'ripley': {lat:38.82,lon:-81.71},
+    'point pleasant': {lat:38.85,lon:-82.14},
+    'williamstown': {lat:39.40,lon:-81.45},
+    'waverly': {lat:39.33,lon:-81.40},
+    'sissonville': {lat:38.53,lon:-81.64},
+    'nitro': {lat:38.41,lon:-81.84},
+    
+  };
+
+  function findCoords(location) {
+    if (!location) return null;
+    const low = location.toLowerCase();
+    for (const [key, coords] of Object.entries(VENUE_COORDS)) {
+      if (low.includes(key)) return coords;
+    }
+    return null;
+  }
+
+  async function geocodeLocation(location) {
+    try {
+      const res = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(location)}&count=1&language=en&format=json`);
+      const data = await res.json();
+      if (data.results?.[0]) return { lat: data.results[0].latitude, lon: data.results[0].longitude };
+    } catch(e) {}
+    return null;
+  }
+
+  async function loadWeather(location, meetDate) {
+    const container = document.getElementById('weather-content');
+    try {
+      // Find coords
+      let coords = findCoords(location);
+      if (!coords) coords = await geocodeLocation(location);
+      if (!coords) { document.getElementById('weather-bar').style.display = 'none'; return; }
+
+      // Fetch hourly + daily data
+      const url = `https://api.open-meteo.com/v1/forecast?latitude=${coords.lat}&longitude=${coords.lon}`
+        + `&hourly=temperature_2m,weathercode,windspeed_10m,precipitation_probability,relativehumidity_2m`
+        + `&daily=temperature_2m_max,temperature_2m_min,weathercode,windspeed_10m_max,precipitation_sum,sunrise,sunset`
+        + `&temperature_unit=fahrenheit&windspeed_unit=mph&timezone=auto&forecast_days=7`;
+
+      const res = await fetch(url);
+      const data = await res.json();
+
+      // Find the date index to use
+      const today = new Date().toISOString().split('T')[0];
+      let dayIdx = 0;
+      if (meetDate) {
+        const idx = data.daily.time.indexOf(meetDate);
+        if (idx >= 0) dayIdx = idx;
+      }
+
+      const maxTemp = Math.round(data.daily.temperature_2m_max[dayIdx]);
+      const minTemp = Math.round(data.daily.temperature_2m_min[dayIdx]);
+      const dayCode = data.daily.weathercode[dayIdx];
+      const maxWind = Math.round(data.daily.windspeed_10m_max[dayIdx]);
+      const precip = data.daily.precipitation_sum[dayIdx];
+      const sunrise = data.daily.sunrise[dayIdx]?.split('T')[1]?.slice(0,5) || '';
+      const sunset = data.daily.sunset[dayIdx]?.split('T')[1]?.slice(0,5) || '';
+      const wInfo = wmoInfo(dayCode);
+
+      // Humidity: average from hourly for that day
+      const dateStr = data.daily.time[dayIdx];
+      const hourlyIdxStart = data.hourly.time.findIndex(t => t.startsWith(dateStr));
+      let avgHumidity = 0;
+      if (hourlyIdxStart >= 0) {
+        const slice = data.hourly.relativehumidity_2m.slice(hourlyIdxStart, hourlyIdxStart+24);
+        avgHumidity = Math.round(slice.reduce((a,b)=>a+b,0)/slice.length);
+      }
+
+      // Running condition assessment
+      let condTag = '';
+      const isRaceDay = dateStr === today;
+      if (dayCode >= 95) condTag = `<span class="weather-alert"><i class="fas fa-triangle-exclamation"></i> Thunderstorm Risk</span>`;
+      else if (dayCode >= 61) condTag = `<span class="weather-alert"><i class="fas fa-cloud-rain"></i> Rain Expected</span>`;
+      else if (maxWind > 20) condTag = `<span class="weather-alert"><i class="fas fa-wind"></i> Windy Conditions</span>`;
+      else if (maxTemp > 90) condTag = `<span class="weather-alert"><i class="fas fa-temperature-high"></i> Heat Advisory</span>`;
+      else if (maxTemp < 35) condTag = `<span class="weather-alert"><i class="fas fa-snowflake"></i> Cold Conditions</span>`;
+      else condTag = `<span class="weather-good"><i class="fas fa-check-circle"></i> Good Running Conditions</span>`;
+
+      // Hourly forecast for meet day (show 8am–8pm range)
+      let hourlyHTML = '';
+      if (hourlyIdxStart >= 0) {
+        const nowHour = new Date().getHours();
+        const slots = [];
+        for (let i = 8; i <= 20; i++) {
+          const hIdx = hourlyIdxStart + i;
+          if (hIdx >= data.hourly.time.length) break;
+          const t = data.hourly.temperature_2m[hIdx];
+          const c = data.hourly.weathercode[hIdx];
+          const w = data.hourly.windspeed_10m[hIdx];
+          const pp = data.hourly.precipitation_probability[hIdx];
+          const isNow = isRaceDay && i === nowHour;
+          const label = i < 12 ? `${i}am` : i === 12 ? '12pm' : `${i-12}pm`;
+          slots.push(`<div class="hourly-slot${isNow?' now':''}">
+            <span class="hourly-time">${label}</span>
+            <span class="hourly-icon">${wmoInfo(c).icon}</span>
+            <span class="hourly-temp">${Math.round(t)}°</span>
+            <span class="hourly-wind">${Math.round(w)} mph</span>
+          </div>`);
+        }
+        if (slots.length) hourlyHTML = `<div class="weather-hourly">${slots.join('')}</div>`;
+      }
+
+      const isForecast = dateStr >= today;
+      const headerLabel = isForecast ? 'Meet Day Forecast' : 'Meet Day Conditions';
+
+      container.innerHTML = `
+        <div style="font-size:.72rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-lo);margin-bottom:12px">${headerLabel} · ${location}</div>
+        <div class="weather-main">
+          <div class="weather-icon-block">
+            <div class="weather-icon">${wInfo.icon}</div>
+            <div>
+              <div class="weather-temp">${maxTemp}<span class="weather-temp-unit">°F</span></div>
+              <div class="weather-desc">${wInfo.label} · Low ${minTemp}°</div>
+            </div>
+          </div>
+          <div class="weather-details">
+            <div class="weather-stat">
+              <span class="weather-stat-val">${maxWind}</span>
+              <span class="weather-stat-lbl">Wind mph</span>
+            </div>
+            <div class="weather-stat">
+              <span class="weather-stat-val">${avgHumidity}%</span>
+              <span class="weather-stat-lbl">Humidity</span>
+            </div>
+            <div class="weather-stat">
+              <span class="weather-stat-val">${precip > 0 ? precip.toFixed(1)+'"' : '0"'}</span>
+              <span class="weather-stat-lbl">Precip</span>
+            </div>
+            ${sunrise ? `<div class="weather-stat">
+              <span class="weather-stat-val">${sunrise}</span>
+              <span class="weather-stat-lbl">Sunrise</span>
+            </div>` : ''}
+            ${sunset ? `<div class="weather-stat">
+              <span class="weather-stat-val">${sunset}</span>
+              <span class="weather-stat-lbl">Sunset</span>
+            </div>` : ''}
+            ${condTag}
+          </div>
+        </div>
+        ${hourlyHTML}
+      `;
+    } catch(e) {
+      container.innerHTML = `<div style="color:var(--text-lo);font-size:.85rem;"><i class="fas fa-cloud-slash"></i> Weather unavailable</div>`;
+    }
+  }
+
+  /* ═══════════════════════════════════
+     INTERACTION
+  ═══════════════════════════════════ */
+  function setGender(gender) {
+    activeGender = gender;
+    document.getElementById('tab-M').classList.toggle('active', gender==='M');
+    document.getElementById('tab-W').classList.toggle('active', gender==='W');
+    if (activeView==='events') refreshEventsView();
+    if (activeView==='teams') refreshTeamsView();
+    if (activeView==='highpoint') refreshHighPointView();
+  }
+
+  function setView(view) {
+    activeView = view;
+    ['events','teams','highpoint'].forEach(v => {
+      document.getElementById(`view-${v}`).classList.toggle('active', v===view);
+      document.getElementById(`section-${v}`).style.display = v===view ? 'block' : 'none';
+    });
+    if (view==='events') refreshEventsView();
+    if (view==='teams') refreshTeamsView();
+    if (view==='highpoint') refreshHighPointView();
+  }
+
+  function refreshEventsView() {
+    const eventsContainer = document.getElementById('event-buttons');
+    const eventsList = Object.keys(structuredData[activeGender]).sort();
+    if (!eventsList.length) {
+      eventsContainer.innerHTML = '';
+      document.getElementById('results-table-wrapper').innerHTML = '<div class="empty-state">No events found.</div>';
+      document.getElementById('heat-controls').style.display = 'none';
+      return;
+    }
+    eventsContainer.innerHTML = eventsList.map(e =>
+      `<button class="event-btn${e===activeEvent?' active':''}" onclick="setEvent('${e.replace(/'/g,"\\'")}')">${e}</button>`
+    ).join('');
+    if (!eventsList.includes(activeEvent)) setEvent(eventsList[0]);
+    else setEvent(activeEvent);
+  }
+
+  function setEvent(eventName) {
+    activeEvent = eventName;
+    document.querySelectorAll('.event-btn').forEach(b =>
+      b.classList.toggle('active', b.textContent===eventName)
+    );
+    const heatsForEvent = structuredData[activeGender][eventName];
+    const hasPrelims = heatsForEvent['Prelims']?.length > 0;
+    const hasFinals = heatsForEvent['Finals']?.length > 0;
+    const heatControls = document.getElementById('heat-controls');
+    document.getElementById('current-event-title').textContent = eventName;
+    const pillGroup = document.querySelector('.heat-pill-group');
+    if (hasPrelims && hasFinals) {
+      heatControls.style.display = 'flex';
+      pillGroup.style.display = 'inline-flex';
+      setHeat(activeHeat === 'Prelims' ? 'Prelims' : 'Finals');
+    } else {
+      heatControls.style.display = 'flex';
+      pillGroup.style.display = 'none';
+      setHeat(hasFinals ? 'Finals' : 'Prelims');
+    }
+  }
+
+  function setHeat(heat) {
+    activeHeat = heat;
+    document.getElementById('heat-prelims').classList.toggle('active', heat==='Prelims');
+    document.getElementById('heat-finals').classList.toggle('active', heat==='Finals');
+    const wrapper = document.getElementById('results-table-wrapper');
+    const results = structuredData[activeGender][activeEvent]?.[heat];
+    if (!results?.length) { wrapper.innerHTML = '<div class="empty-state">No results for this round.</div>'; return; }
+
+    wrapper.innerHTML = `
+      <table class="data-table">
+        <thead><tr>
+          <th style="width:60px;text-align:center">#</th>
+          <th>Athlete</th>
+          <th>School</th>
+          <th style="text-align:right;padding-right:24px">Mark</th>
+        </tr></thead>
+        <tbody>${results.map(r => {
+          const nameDisplay = r.relay_names
+            ? `<div><strong>${r.school} Relay</strong><br><span style="font-size:.78rem;color:var(--text-mid)">${r.relay_names}</span></div>`
+            : `<a href="athlete.html?id=${r.athlete_id}">${r.athlete_name||'Unknown'}</a>`;
+          return `<tr>
+            <td style="text-align:center">${getPlaceBadge(r.placement)}</td>
+            <td>${nameDisplay}</td>
+            <td><div class="school-cell">${logoTag(r.school,'school-logo-sm')}${r.school}</div></td>
+            <td style="text-align:right;padding-right:24px" class="mark-cell">${r.mark||'—'}</td>
+          </tr>`;
+        }).join('')}</tbody>
+      </table>`;
+  }
+
+  function refreshTeamsView() {
+    const tbody = document.getElementById('team-standings-body');
+    const scores = {};
+    const events = structuredData[activeGender];
+    Object.keys(events).forEach(eventName => {
+      const finals = events[eventName]['Finals'] || [];
+      if (!finals.length) return;
+      const scored = applyNfhsScoringFromPlacements(finals.map((r) => ({ ...r })));
+      scored.forEach((r) => {
+        if (r.points > 0) {
+          if (!scores[r.school]) scores[r.school] = 0;
+          scores[r.school] += r.points;
+        }
+      });
+    });
+    const sorted = Object.entries(scores).map(([s,p])=>({school:s,pts:p})).sort((a,b)=>b.pts-a.pts);
+    if (!sorted.length) {
+      tbody.innerHTML = '<tr><td colspan="3" class="empty-state">No team scores yet.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = sorted.map((team,i) => {
+      const rankCls = i<3 ? ` rank-${i+1}` : '';
+      return `<tr>
+        <td><span class="rank-num${rankCls}">${i+1}</span></td>
+        <td><div class="school-cell">${logoTag(team.school,'standings-logo')}<span style="font-weight:600">${team.school}</span></div></td>
+        <td style="text-align:right;padding-right:24px"><span class="team-pts">${formatScorePoints(team.pts)}</span></td>
+      </tr>`;
+    }).join('');
+  }
+
+  function refreshHighPointView() {
+    const wrapper = document.getElementById('hp-grid-wrapper');
+    const athleteScores = {};
+    const events = structuredData[activeGender];
+
+    Object.keys(events).forEach(eventName => {
+      const isRel = eventName.toLowerCase().includes('relay') || eventName.toLowerCase().includes('4x') || eventName.toLowerCase().includes('medley');
+      if (isRel) return; // Skip relays for individual high point
+      const finals = events[eventName]['Finals'] || [];
+      if (!finals.length) return;
+      const scored = applyNfhsScoringFromPlacements(finals.map((r) => ({ ...r })));
+      scored.forEach(r => {
+        if (!r.points || !r.athlete_id) return;
+        const key = r.athlete_id;
+        if (!athleteScores[key]) athleteScores[key] = { name:r.athlete_name, school:r.school, pts:0, placements:[] };
+        athleteScores[key].pts += r.points;
+        athleteScores[key].placements.push({ event:eventName, place:r.place || r.placement, pts:r.points, tied:r.tied });
+      });
     });
 
-    function formatMeetDate(dateStr) {
-      if (!dateStr) return "Date TBD";
-      const parts = String(dateStr).split("T")[0].split("-");
-      if (parts.length === 3) {
-        const year = parseInt(parts[0], 10);
-        const month = parseInt(parts[1], 10) - 1;
-        const day = parseInt(parts[2], 10);
-        return new Date(year, month, day).toLocaleDateString(undefined, {
-          weekday: "short", month: "short", day: "numeric", year: "numeric",
-        });
-      }
-      return new Date(dateStr).toLocaleDateString();
-    }
-
-    // ==========================================
-    // 4. UI CONTROLS & SEARCH
-    // ==========================================
-
-    function setupSearchAndControls() {
-      const searchInput = document.getElementById('search-input');
-      if (searchInput) {
-        searchInput.addEventListener('input', renderTableForSelection);
-      }
-
-      const btnAll = document.getElementById('view-all-btn');
-      const btnTeams = document.getElementById('view-teams-btn');
-      const btnIndiv = document.getElementById('view-indiv-btn');
-
-      const resetViewBtns = () => [btnAll, btnTeams, btnIndiv].forEach(b => b.classList.remove('active'));
-
-      btnAll.addEventListener('click', () => { resetViewBtns(); btnAll.classList.add('active'); activeViewMode = 'all'; renderTableForSelection(); });
-      btnTeams.addEventListener('click', () => { resetViewBtns(); btnTeams.classList.add('active'); activeViewMode = 'teams'; renderTableForSelection(); });
-      btnIndiv.addEventListener('click', () => { resetViewBtns(); btnIndiv.classList.add('active'); activeViewMode = 'indiv'; renderTableForSelection(); });
-    }
-
-    function setupGenderTabs() {
-        const btnBoys = document.getElementById('tab-boys');
-        const btnGirls = document.getElementById('tab-girls');
-
-        const resetTabs = () => { [btnBoys, btnGirls].forEach(b => b.classList.remove('active')); };
-
-        btnBoys.addEventListener('click', () => {
-            resetTabs(); btnBoys.classList.add('active'); activeGender = 'M'; updateRaceButtons();
-        });
-
-        btnGirls.addEventListener('click', () => {
-            resetTabs(); btnGirls.classList.add('active'); activeGender = 'F'; updateRaceButtons();
-        });
-    }
-
-    function updateRaceButtons() {
-        const container = document.getElementById('race-button-wrap');
-        container.innerHTML = '';
-        document.getElementById('results-box').innerHTML = '';
-
-        const relevantResults = allResults.filter(r => r.normalizedGender === activeGender);
-        if (relevantResults.length === 0) return;
-
-        const raceTypes = [...new Set(relevantResults.map(r => r.normalizedRaceType))].sort();
-
-        raceTypes.forEach((type, index) => {
-            const btn = document.createElement('button');
-            btn.className = 'chip';
-            btn.textContent = type;
-
-            btn.onclick = () => {
-                Array.from(container.children).forEach(c => c.classList.remove('active'));
-                btn.classList.add('active');
-                activeRaceType = type;
-                renderTableForSelection();
-            };
-            container.appendChild(btn);
-            if (index === 0) btn.click();
-        });
-    }
-
-    function renderTableForSelection() {
-        const query = (document.getElementById('search-input')?.value || '').toLowerCase().trim();
-        const exportSelect = document.getElementById('team-export-select')?.value || 'all';
-
-        // 1. Grab the full race data (DO NOT filter by search yet)
-        let raceData = allResults.filter(r =>
-            r.normalizedGender === activeGender && r.normalizedRaceType === activeRaceType
-        );
-
-        // 2. Sort by actual place/time
-        raceData.sort((a, b) => {
-            if (a.place && b.place) return parseInt(a.place) - parseInt(b.place);
-            return parseFloat(a.time) - parseFloat(b.time);
-        });
-
-        // 3. Calculate team scores & scoring places based on the ENTIRE field
-        const teamScores = calculateTeamScores(raceData);
-        const distance = raceData.length > 0 ? parseFloat(raceData[0].distance) : 5000;
-
-        // 4. Update the Export Dropdown with the teams in this race
-        updateExportDropdown(teamScores);
-
-        // 5. NOW apply search and team filters for what is displayed and exported
-        let filteredData = raceData;
-        if (query) {
-          filteredData = filteredData.filter(r => {
-            const name = (r.athlete_name || r.name || '').toLowerCase();
-            const school = (r.school_name || r.school || '').toLowerCase();
-            return name.includes(query) || school.includes(query);
-          });
-        }
-        if (exportSelect !== 'all') {
-            filteredData = filteredData.filter(r => normalizeSchoolName(r.school_name || r.school || 'Unknown') === exportSelect);
-        }
-
-        currentFilteredResults = filteredData;
-
-        const resultsBox = document.getElementById('results-box');
-        resultsBox.innerHTML = '';
-
-        if (activeViewMode === 'all' || activeViewMode === 'teams') {
-          let displayScores = teamScores;
-          if (exportSelect !== 'all') {
-              displayScores = teamScores.filter(t => t.school === exportSelect);
-          }
-          const teamSection = document.createElement('div');
-          teamSection.innerHTML = renderTeamResultsHTML(displayScores);
-          resultsBox.appendChild(teamSection);
-        }
-
-        if (activeViewMode === 'all' || activeViewMode === 'indiv') {
-          const indivSection = document.createElement('div');
-          indivSection.innerHTML = renderResultsTableHTML(filteredData, distance);
-          resultsBox.appendChild(indivSection);
-        }
-    }
-
-    function updateExportDropdown(teamScores) {
-        const select = document.getElementById('team-export-select');
-        if (!select) return;
-        const currentVal = select.value;
-        select.innerHTML = '<option value="all">All Teams</option>';
-
-        const sortedTeams = teamScores.map(t => t.school).sort();
-        sortedTeams.forEach(team => {
-            const opt = document.createElement('option');
-            opt.value = team;
-            opt.textContent = team;
-            select.appendChild(opt);
-        });
-
-        // Retain selection if they switch tabs but the team is still present
-        if (sortedTeams.includes(currentVal)) {
-            select.value = currentVal;
-        }
-    }
-
-    function normalizeSchoolName(schoolName) {
-        if (!schoolName) return 'Unknown';
-        let normalized = schoolName.toLowerCase().trim();
-        normalized = normalized.replace(/\s+(high\s+)?school\s*$/i, '').replace(/\s+hs\s*$/i, '').trim();
-        return normalized.split(/\s+/).map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
-    }
-
-    function calculateTeamScores(results) {
-        const teamMap = {};
-        results.forEach(result => {
-            const school = normalizeSchoolName(result.school_name || result.school || 'Unknown');
-            if (!teamMap[school]) teamMap[school] = [];
-            teamMap[school].push(result);
-        });
-
-        const scoringTeamNames = new Set(
-            Object.entries(teamMap).filter(([, athletes]) => athletes.length >= 5).map(([s]) => s)
-        );
-
-        const scoringField = results
-            .filter(r => scoringTeamNames.has(normalizeSchoolName(r.school_name || r.school || 'Unknown')))
-            .sort((a, b) => {
-                const placeA = parseInt(a.place) || 999;
-                const placeB = parseInt(b.place) || 999;
-                if (placeA !== placeB) return placeA - placeB;
-                return (parseFloat(a.time) || 0) - (parseFloat(b.time) || 0);
-            });
-
-        scoringField.forEach((runner, index) => { runner.scoringPlace = index + 1; });
-
-        const scores = [];
-        Object.entries(teamMap).forEach(([school, athletes]) => {
-            if (athletes.length < 5) return;
-            const sorted = athletes.slice().sort((a, b) => (a.scoringPlace || 999) - (b.scoringPlace || 999));
-            const topFive = sorted.slice(0, 5);
-            const score = topFive.reduce((sum, a) => sum + (a.scoringPlace || 999), 0);
-
-            const top5Times = topFive.map(a => parseFloat(a.time)).filter(t => !isNaN(t) && t > 0);
-            const teamAvg = top5Times.length === 5 ? top5Times.reduce((s, t) => s + t, 0) / 5 : 0;
-            const teamSplit = top5Times.length === 5 ? top5Times[4] - top5Times[0] : 0;
-
-            scores.push({
-              school, score, teamAvg, teamSplit,
-              sixthPlace: sorted[5]?.scoringPlace ?? 999,
-              seventhPlace: sorted[6]?.scoringPlace ?? 999,
-              athletes: topFive
-            });
-        });
-
-        return scores.sort((a, b) => {
-            if (a.score !== b.score) return a.score - b.score;
-            if (a.sixthPlace !== b.sixthPlace) return a.sixthPlace - b.sixthPlace;
-            return a.seventhPlace - b.seventhPlace;
-        });
-    }
-
-    // ==========================================
-    // APP-STYLE RENDERING HTML GENERATORS
-    // ==========================================
-
-    function renderTeamResultsHTML(teamScores) {
-        if (!teamScores || teamScores.length === 0) {
-          return activeViewMode === 'teams' ? '<div style="text-align:center; padding:20px; color:var(--text-secondary);">No team scores available (minimum 5 finishers required).</div>' : '';
-        }
-
-        let html = `<div class="app-list">
-                      <div class="list-header">Team Standings</div>`;
-
-        teamScores.forEach((team, index) => {
-            const schoolSlug = slugify(team.school);
-            const logoUrl = `/assets/team logos/${schoolSlug}.png`;
-
-            const scorersHtml = team.athletes.map(a =>
-              `<span class="scorer-badge">#${a.scoringPlace != null ? a.scoringPlace : a.place}</span>`
-            ).join('');
-
-            html += `
-            <div class="list-item">
-                <div class="item-place"><span>${index + 1}</span></div>
-                <div class="item-avatar">
-                    <img src="${logoUrl}" alt="${team.school}" onerror="this.src='/assets/images/logob.svg'" />
-                </div>
-                <div class="item-details">
-                    <div class="item-name">${team.school}</div>
-                    <div class="item-meta" style="margin-bottom:5px;">Avg: ${formatTime(team.teamAvg)} • Split: ${formatTime(team.teamSplit)}</div>
-                    <div>${scorersHtml}</div>
-                </div>
-                <div class="item-score">${team.score}</div>
-            </div>`;
-        });
-
-        return html + `</div>`;
-    }
-
-    function renderResultsTableHTML(results, distanceMeters) {
-        if (!results || results.length === 0) {
-            return '<div style="text-align:center; padding:20px; color:var(--text-secondary);">No individual results found.</div>';
-        }
-
-        let html = `<div class="app-list">
-                      <div class="list-header">Individual Results</div>`;
-
-        results.forEach((runner, index) => {
-            const timeSeconds = runner.time ? parseFloat(runner.time) : 0;
-            const athleteName = runner.athlete_name || runner.name || 'Unknown';
-            const rawSchool = runner.school_name || runner.school || runner.school_slug || 'Unknown';
-            const schoolSlug = runner.school_slug || slugify(normalizeSchoolName(rawSchool));
-            const athleteHref = `athlete.html?name=${encodeURIComponent(athleteName)}&school=${encodeURIComponent(schoolSlug)}`;
-
-            const logoUrl = `/assets/team logos/${schoolSlug}.png`;
-            const grade = formatGrade(runner.gradYear || runner.grade);
-            const pace = calculatePacePerMile(timeSeconds, distanceMeters);
-
-            // Build the meta string (e.g., "+1pts • Yr: 10 • Pace: 5:45")
-            let metaParts = [];
-            if (runner.scoringPlace) metaParts.push(`+${runner.scoringPlace}pts`);
-            if (grade) metaParts.push(`Yr: ${grade}`);
-            metaParts.push(`Pace: ${pace}`);
-
-            html += `
-            <div class="list-item">
-                <div class="item-place"><span>${runner.place || (index + 1)}</span></div>
-                <div class="item-avatar">
-                    <img src="${logoUrl}" alt="${rawSchool}" onerror="this.src='/assets/images/logob.svg'" />
-                </div>
-                <div class="item-details">
-                    <a href="${athleteHref}" class="item-name">${athleteName}</a>
-                    <a href="school.html?slug=${schoolSlug}" class="item-school">${rawSchool}</a>
-                    <div class="item-meta">${metaParts.join(' • ')}</div>
-                </div>
-                <div class="item-score">${formatTime(timeSeconds)}</div>
-            </div>`;
-        });
-
-        return html + `</div>`;
-    }
-
-    // ==========================================
-    // EXPORT UTILITIES (CSV/PDF)
-    // ==========================================
-    function exportToCSV() {
-      if (!currentFilteredResults || currentFilteredResults.length === 0) return alert("No results to export.");
-      const meetName = currentMeetData ? currentMeetData.name : "Meet_Results";
-      const filename = `${slugify(meetName)}_${slugify(activeGender)}_${slugify(activeRaceType)}.csv`;
-      let csvRows = [["Place", "Athlete Name", "Grade", "School", "Time", "Pace Per Mile"]];
-      const distance = currentFilteredResults.length > 0 ? parseFloat(currentFilteredResults[0].distance) : 5000;
-      currentFilteredResults.forEach(r => {
-        const t = r.time ? parseFloat(r.time) : 0;
-        csvRows.push([ r.place || '', `"${r.athlete_name || r.name || ''}"`, `"${formatGrade(r.gradYear || r.grade)}"`, `"${r.school_name || r.school || ''}"`, `"${formatTime(t)}"`, `"${calculatePacePerMile(t, distance)}"` ]);
-      });
-      const link = document.createElement("a");
-      link.href = encodeURI("data:text/csv;charset=utf-8," + csvRows.map(e => e.join(",")).join("\n"));
-      link.download = filename;
-      document.body.appendChild(link); link.click(); document.body.removeChild(link);
-    }
-
-    async function exportResultsPDF() {
-      if (!currentFilteredResults || currentFilteredResults.length === 0) return alert("No results to export.");
-      if (typeof window.jspdf === 'undefined') return alert("PDF library is still loading. Please try again in a second.");
-
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF({ orientation: 'landscape' });
-      const bc = getBrandColorRgbArray();
-
-      // 1. Build the Detailed Context Title
-      const meetName = currentMeetData?.name || document.getElementById("meet-title")?.textContent || "Meet Results";
-      const distance = currentFilteredResults.length > 0 ? (currentFilteredResults[0].distance || 5000) : 5000;
-      const genderText = activeGender === 'M' ? 'Boys' : 'Girls';
-      const raceTitle = `${meetName} - ${genderText} ${activeRaceType} ${distance}m`;
-
-      const exportSelect = document.getElementById('team-export-select')?.value;
-      const subtitle = exportSelect && exportSelect !== 'all' ? `Filtered by Team: ${exportSelect}` : '';
-
-      // 2. Safely load the site logo using Fetch & FileReader (Bypasses Canvas CORS issues)
-      const getBase64Image = async (url) => {
-        try {
-            const response = await fetch(url);
-            const blob = await response.blob();
-            return new Promise((resolve) => {
-                const reader = new FileReader();
-                reader.onloadend = () => resolve(reader.result);
-                reader.onerror = () => resolve(null);
-                reader.readAsDataURL(blob);
-            });
-        } catch (e) {
-            console.warn("Could not load logo for PDF:", e);
-            return null;
-        }
-      };
-
-      const logoBase64 = await getBase64Image('assets/images/logo.png');
-
-      // 3. Custom PDF Header with Logo and Titles
-      const drawHeader = () => {
-        // Draw Header Background
-        doc.setFillColor(bc[0], bc[1], bc[2]);
-        doc.rect(0, 0, doc.internal.pageSize.getWidth(), 24, 'F');
-
-        let textX = 14;
-        if (logoBase64) {
-          try {
-            // Add Logo (Image Data, Format, X, Y, Width, Height)
-            doc.addImage(logoBase64, 'PNG', 14, 4, 16, 16);
-            textX = 36; // Shift text over to make room for the logo
-          } catch (e) {
-            console.warn("Failed to draw image to PDF", e);
-          }
-        }
-
-        // Draw Main Title
-        doc.setFontSize(15);
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(255, 255, 255); // White text
-
-        // If there is a subtitle, shift the main title up slightly
-        const titleY = subtitle ? 11 : 14;
-        doc.text(raceTitle, textX, titleY);
-
-        // Draw Subtitle (if a specific team is selected)
-        if (subtitle) {
-            doc.setFontSize(10);
-            doc.setFont('helvetica', 'normal');
-            doc.setTextColor(220, 220, 220); // Light Gray text
-            doc.text(subtitle, textX, 18);
-        }
-      };
-
-      // 4. Generate the Tables
-      const teamScores = calculateTeamScores(currentFilteredResults);
-      let startY = 30; // Push table down to clear the new 24px header
-
-      // Draw Team Scores Table (if applicable and not hidden)
-      if (teamScores.length > 0 && activeViewMode !== 'indiv') {
-        doc.autoTable({
-            head: [['Place', 'School', 'Score', 'Avg / Split', 'Scoring Top 5']],
-            body: teamScores.map((t, i) => [i + 1, t.school, t.score, `${formatTime(t.teamAvg)} / ${formatTime(t.teamSplit)}`, t.athletes.map(a => `#${a.scoringPlace||a.place} ${a.athlete_name||a.name}`).join(', ')]),
-            startY: startY,
-            margin: { top: 30 },
-            styles: { fontSize: 8 },
-            headStyles: { fillColor: bc, textColor: [255, 255, 255] },
-            didDrawPage: drawHeader
-        });
-        startY = doc.lastAutoTable.finalY + 10;
-      }
-
-      // Draw Individual Results Table (if not hidden)
-      if(activeViewMode !== 'teams') {
-          doc.autoTable({
-              head: [['Place', 'Name', 'Grade', 'School', 'Time', 'Pace/Mile']],
-              body: currentFilteredResults.map(r => [r.place || '-', r.athlete_name || r.name || '', formatGrade(r.gradYear || r.grade), r.school_name || r.school || '', formatTime(r.time ? parseFloat(r.time) : 0), calculatePacePerMile(r.time ? parseFloat(r.time) : 0, distance)]),
-              startY: startY,
-              margin: { top: 30 },
-              styles: { fontSize: 8 },
-              headStyles: { fillColor: bc, textColor: [255, 255, 255] },
-              didDrawPage: drawHeader
-          });
-      }
-
-      doc.save(`${slugify(raceTitle)}.pdf`);
-    }
-  </script>
+    const topAthletes = Object.values(athleteScores).sort((a,b)=>b.pts-a.pts).slice(0,12);
+    if (!topAthletes.length) { wrapper.innerHTML = '<div class="empty-state">No individual scores yet.</div>'; return; }
+
+    const medals = ['🥇','🥈','🥉'];
+    const pillCls = p => p<=3 ? `p${p}` : '';
+    const ordinal = p => p===1?'st':p===2?'nd':p===3?'rd':'th';
+
+    wrapper.innerHTML = topAthletes.map((ath, i) => {
+      const pills = ath.placements.slice().sort((a,b)=>a.place-b.place).map(pl =>
+        `<span class="hp-pill ${pillCls(pl.place)}">${pl.event} — ${pl.place}${ordinal(pl.place)} (+${formatScorePoints(pl.pts)}${pl.tied ? " tie" : ""})</span>`
+      ).join('');
+      return `<div class="hp-athlete">
+        <div class="hp-medal">${medals[i]||`#${i+1}`}</div>
+        <div class="hp-school-row">${logoTag(ath.school,'hp-logo')}<span class="hp-school-name">${ath.school}</span></div>
+        <div class="hp-name">${ath.name||'Unknown'}</div>
+        <div class="hp-pts">${formatScorePoints(ath.pts)} pts</div>
+        <div class="hp-pills">${pills}</div>
+      </div>`;
+    }).join('');
+  }
+
+  function getPlaceBadge(place) {
+    if (!place) return '—';
+    if (place <= 3) return `<span class="place-badge place-${place}">${place}</span>`;
+    return `<span class="place-badge">${place}</span>`;
+  }
+
+  function showError(msg) {
+    document.getElementById('loading').style.display = 'none';
+    const e = document.getElementById('error-box');
+    e.textContent = msg; e.style.display = 'block';
+  }
+
+  document.addEventListener('DOMContentLoaded', init);
+</script>
+<script src="track-coach-auth.js"></script>
+<script src="track-coach-toolbar.js"></script>
 
   <div id="global-footer"></div>
 
