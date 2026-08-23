@@ -4,13 +4,13 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Meet Results | Mountain State Miles</title>
-  
+
   <link rel="icon" type="image/png" href="assets/Favicon Generator/favicon-96x96.png" sizes="96x96" />
   <link rel="icon" type="image/svg+xml" href="assets/Favicon Generator/favicon.svg" />
   <link rel="shortcut icon" href="assets/Favicon Generator/favicon.ico" />
   <link rel="apple-touch-icon" sizes="180x180" href="assets/Favicon Generator/apple-touch-icon.png" />
   <link rel="manifest" href="assets/Favicon Generator/site.webmanifest" />
-  
+
   <meta name="description" content="WV cross country running results, rankings, team scores, and meet data — Mountain State Miles." />
   <meta name="keywords" content="WVXC, WV Track, West Virginia Running, Cross Country Results, WV HS Running, Mountain State Miles" />
   <link rel="stylesheet" href="/assets/main.css" />
@@ -100,7 +100,7 @@
       color: var(--text-tertiary);
       letter-spacing: 0.05em;
     }
-    
+
     /* --- Expected Teams Dropdown --- */
     .expected-teams-details {
       margin-top: 20px;
@@ -185,14 +185,14 @@
       max-width: 200px;
       margin: 0 auto 20px;
     }
-    
+
     /* Theme logic for the runner image */
     .runner-light { display: block; margin: 0 auto 20px; }
     .runner-dark { display: none; margin: 0 auto 20px; }
-    
-    html[data-theme='dark'] .runner-light, 
+
+    html[data-theme='dark'] .runner-light,
     body.dark-theme .runner-light { display: none; }
-    html[data-theme='dark'] .runner-dark, 
+    html[data-theme='dark'] .runner-dark,
     body.dark-theme .runner-dark { display: block; }
 
     @media (prefers-color-scheme: dark) {
@@ -214,7 +214,7 @@
       align-items: center;
     }
     .app-tabs::-webkit-scrollbar { display: none; } /* Chrome/Safari */
-    
+
     .app-tab {
       padding: 12px 20px;
       font-size: 0.95rem;
@@ -251,7 +251,7 @@
       scrollbar-width: none;
     }
     .division-chips::-webkit-scrollbar { display: none; }
-    
+
     .chip {
       padding: 8px 16px;
       border-radius: 20px;
@@ -315,6 +315,8 @@
       align-items: center;
       gap: 6px;
     }
+    .action-btn:hover { border-color: var(--text-primary); }
+    .action-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
     /* --- App-Style List Layout (The Core Update) --- */
     .app-list {
@@ -325,7 +327,7 @@
       margin-bottom: 32px;
       box-shadow: 0 2px 8px var(--shadow-light);
     }
-    
+
     .list-item {
       display: flex;
       align-items: stretch; /* Stretches the place box to full height */
@@ -443,17 +445,17 @@
   <script src="/assets/msm-loader.js"></script>
 
   <main class="content-section">
-      
+
       <div class="meet-header">
         <h1 class="meet-title" id="meet-title">Loading Meet...</h1>
         <div id="meet-meta" class="meet-subtitle">Retrieving data...</div>
-        
+
         <div class="meet-stats" id="meet-stats" style="display:none;">
           <div class="stat-item"><span class="stat-value" id="stat-races">-</span><span class="stat-label">Races</span></div>
           <div class="stat-item"><span class="stat-value" id="stat-teams">-</span><span class="stat-label">Teams</span></div>
           <div class="stat-item"><span class="stat-value" id="stat-athletes">-</span><span class="stat-label">Athletes</span></div>
         </div>
-        
+
         <!-- Expected Teams Dropdown -->
         <div id="expected-teams-container" style="display:none;">
           <details class="expected-teams-details">
@@ -464,11 +466,11 @@
       </div>
 
       <div id="error" class="error-message" style="display:none; text-align: center; color: var(--danger); padding: 20px; background: rgba(239, 68, 68, 0.1); border-radius: 8px; margin-bottom: 20px;"></div>
-      
+
       <div id="empty-state" style="display:none;"></div>
 
       <div id="selector" style="display:none;">
-        
+
         <div class="app-tabs-container">
           <div class="app-tabs">
             <button class="app-tab active" id="view-all-btn">All Results</button>
@@ -495,6 +497,7 @@
           </select>
           <button class="action-btn" onclick="exportToCSV()">📊 CSV</button>
           <button class="action-btn" onclick="exportResultsPDF()">📄 PDF</button>
+          <button class="action-btn" onclick="window.print()">🖨️ Print</button>
         </div>
 
       </div>
@@ -527,18 +530,56 @@
       const secondsPerMile = (totalSeconds / distanceMeters) * MILE_IN_METERS;
       return formatTime(secondsPerMile);
     }
-    
+
     function formatGrade(gradYear) {
       if (!gradYear) return '';
-      const currentSeasonYear = 2025; 
+      const currentSeasonYear = 2025;
       const diff = gradYear - (currentSeasonYear + 1);
       const gradeMap = { 0: '12', 1: '11', 2: '10', 3: '9', 4: '8', 5: '7', 6: '6' };
-      return gradeMap[diff] || gradYear; 
+      return gradeMap[diff] || gradYear;
     }
 
     function slugify(name) {
       if (!name) return '';
       return name.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+    }
+
+    // Brand color for PDF header. Reuses the site-wide helper if present, else
+    // falls back to MSM blue. (Previously this helper was called but never
+    // defined, which threw a ReferenceError and silently killed the PDF export.)
+    function getBrandColorRgbArray() {
+      try {
+        if (typeof window.getBrandColorRgbArray === 'function' && window.getBrandColorRgbArray !== getBrandColorRgbArray) {
+          const c = window.getBrandColorRgbArray();
+          if (Array.isArray(c) && c.length === 3) return c;
+        }
+        // Pull the site's primary color from CSS if it's defined as an rgb() value.
+        const cssVar = getComputedStyle(document.documentElement).getPropertyValue('--xc-primary').trim();
+        const match = cssVar.match(/\d+/g);
+        if (match && match.length >= 3) return [parseInt(match[0]), parseInt(match[1]), parseInt(match[2])];
+      } catch (e) { /* fall through to default */ }
+      return [2, 132, 199]; // #0284c7
+    }
+
+    // Quote a value for CSV: wrap in double quotes and escape embedded quotes.
+    function csvCell(value) {
+      const s = value == null ? '' : String(value);
+      return `"${s.replace(/"/g, '""')}"`;
+    }
+
+    // Trigger a client-side file download from an in-memory Blob. Using a Blob
+    // (instead of a data: URI) avoids truncation on '#' and mangled commas that
+    // broke the old encodeURI-based CSV export.
+    function downloadBlob(filename, mime, content) {
+      const blob = new Blob([content], { type: mime });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
     }
 
     function normalizeGender(r) {
@@ -558,7 +599,7 @@
       if (!raw) return 'Varsity 5K';
       return raw.split(/\s+/).map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ')
         .replace(/\b5k\b/i, '5K').replace(/\b3k\b/i, '3K').replace(/\bJv\b/g, 'JV').replace(/\bMs\b/g, 'Middle School')
-        .replace(/\bAaaa\b/g, 'AAAA').replace(/\bAaa\b/g, 'AAA').replace(/\bAa\b/g, 'AA'); 
+        .replace(/\bAaaa\b/g, 'AAAA').replace(/\bAaa\b/g, 'AAA').replace(/\bAa\b/g, 'AA');
     }
 
     // ==========================================
@@ -569,6 +610,7 @@
     let activeGender = 'M';
     let activeRaceType = null;
     let currentFilteredResults = [];
+    let currentTeamScores = [];   // team standings for the active race (post-filter)
     let activeViewMode = 'all'; // 'all', 'teams', 'indiv'
 
     // ==========================================
@@ -578,47 +620,47 @@
     window.addEventListener("DOMContentLoaded", async () => {
       const params = new URLSearchParams(window.location.search);
       const slug = params.get("slug");
-    
+
       const errorDiv = document.getElementById("error");
       const emptyStateDiv = document.getElementById("empty-state");
       const metaDiv = document.getElementById("meet-meta");
       const selectorDiv = document.getElementById("selector");
-    
+
       if (!slug) {
         errorDiv.style.display = "block";
         errorDiv.textContent = "No meet specified. Please return to the Meets page.";
         document.dispatchEvent(new Event("MSMDataLoaded"));
         return;
       }
-      
+
       try {
         currentMeetData = await window.getMeetBySlug(slug);
         if (!currentMeetData) throw new Error("Meet not found.");
-    
+
         // --- UPDATE TITLE AND HEADER HERE ---
         const meetName = currentMeetData.name || `${slug.replace(/-/g, " ")} – Meet Results`;
-        
+
         // Set browser tab title
         document.title = `${meetName} | Mountain State Miles`;
-        
+
         // Set main page header
         document.getElementById("meet-title").textContent = meetName;
         // ------------------------------------
-    
+
         metaDiv.innerHTML = `<strong>${formatMeetDate(currentMeetData.date)}</strong> &nbsp;•&nbsp; ${currentMeetData.location || 'Location Unknown'}`;
-        
+
         // --- POPULATE EXPECTED TEAMS ---
         const teamsList = currentMeetData.teams || currentMeetData.expected_teams || [];
         if (teamsList.length > 0) {
             const etContainer = document.getElementById("expected-teams-container");
             const etList = document.getElementById("expected-teams-list");
             etContainer.style.display = "block";
-            
+
             teamsList.forEach(team => {
                 const teamName = typeof team === 'object' ? (team.name || team.school) : team;
                 const teamSlug = typeof team === 'object' && team.slug ? team.slug : slugify(teamName);
                 const logoUrl = `/assets/team logos/${teamSlug}.png`;
-                
+
                 const chip = document.createElement("a");
                 chip.className = "expected-team-chip";
                 chip.href = `school.html?slug=${teamSlug}`;
@@ -637,14 +679,14 @@
         }
 
         allResults = await window.getResultsByMeet(slug);
-        
+
         // --- HANDLE NO RESULTS (UPCOMING / PAST LOGIC) ---
         if (!allResults || allResults.length === 0) {
             const meetDateObj = new Date(currentMeetData.date);
             const todayObj = new Date();
-            
+
             emptyStateDiv.style.display = "block";
-            
+
             if (meetDateObj > todayObj) {
                 // Meet is in the future
                 emptyStateDiv.innerHTML = `
@@ -674,11 +716,11 @@
             r.school_name = schoolSlugToName[r.school_slug] || r.school_slug;
           }
         });
-        
+
         // Populate Top Stats
         const uniqueRaces = new Set(allResults.map(r => r.normalizedRaceType)).size;
         const uniqueTeams = new Set(allResults.map(r => r.school_slug || r.school_name || r.school)).size;
-        
+
         document.getElementById('stat-races').textContent = uniqueRaces || '-';
         document.getElementById('stat-teams').textContent = uniqueTeams || '-';
         document.getElementById('stat-athletes').textContent = allResults.length || '-';
@@ -751,7 +793,7 @@
 
     function updateRaceButtons() {
         const container = document.getElementById('race-button-wrap');
-        container.innerHTML = ''; 
+        container.innerHTML = '';
         document.getElementById('results-box').innerHTML = '';
 
         const relevantResults = allResults.filter(r => r.normalizedGender === activeGender);
@@ -761,7 +803,7 @@
 
         raceTypes.forEach((type, index) => {
             const btn = document.createElement('button');
-            btn.className = 'chip'; 
+            btn.className = 'chip';
             btn.textContent = type;
 
             btn.onclick = () => {
@@ -778,25 +820,25 @@
     function renderTableForSelection() {
         const query = (document.getElementById('search-input')?.value || '').toLowerCase().trim();
         const exportSelect = document.getElementById('team-export-select')?.value || 'all';
-    
+
         // 1. Grab the full race data (DO NOT filter by search yet)
-        let raceData = allResults.filter(r => 
+        let raceData = allResults.filter(r =>
             r.normalizedGender === activeGender && r.normalizedRaceType === activeRaceType
         );
-    
+
         // 2. Sort by actual place/time
         raceData.sort((a, b) => {
             if (a.place && b.place) return parseInt(a.place) - parseInt(b.place);
-            return parseFloat(a.time) - parseFloat(b.time); 
+            return parseFloat(a.time) - parseFloat(b.time);
         });
-    
+
         // 3. Calculate team scores & scoring places based on the ENTIRE field
         const teamScores = calculateTeamScores(raceData);
         const distance = raceData.length > 0 ? parseFloat(raceData[0].distance) : 5000;
-    
+
         // 4. Update the Export Dropdown with the teams in this race
         updateExportDropdown(teamScores);
-    
+
         // 5. NOW apply search and team filters for what is displayed and exported
         let filteredData = raceData;
         if (query) {
@@ -809,35 +851,36 @@
         if (exportSelect !== 'all') {
             filteredData = filteredData.filter(r => normalizeSchoolName(r.school_name || r.school || 'Unknown') === exportSelect);
         }
-    
-        currentFilteredResults = filteredData; 
-        
+
+        currentFilteredResults = filteredData;
+
+        // Keep the team standings that match the current team filter around for export.
+        currentTeamScores = (exportSelect !== 'all')
+            ? teamScores.filter(t => t.school === exportSelect)
+            : teamScores;
+
         const resultsBox = document.getElementById('results-box');
         resultsBox.innerHTML = '';
-    
+
         if (activeViewMode === 'all' || activeViewMode === 'teams') {
-          let displayScores = teamScores;
-          if (exportSelect !== 'all') {
-              displayScores = teamScores.filter(t => t.school === exportSelect);
-          }
           const teamSection = document.createElement('div');
-          teamSection.innerHTML = renderTeamResultsHTML(displayScores);
+          teamSection.innerHTML = renderTeamResultsHTML(currentTeamScores);
           resultsBox.appendChild(teamSection);
         }
-    
+
         if (activeViewMode === 'all' || activeViewMode === 'indiv') {
           const indivSection = document.createElement('div');
           indivSection.innerHTML = renderResultsTableHTML(filteredData, distance);
           resultsBox.appendChild(indivSection);
         }
     }
-    
+
     function updateExportDropdown(teamScores) {
         const select = document.getElementById('team-export-select');
         if (!select) return;
         const currentVal = select.value;
         select.innerHTML = '<option value="all">All Teams</option>';
-        
+
         const sortedTeams = teamScores.map(t => t.school).sort();
         sortedTeams.forEach(team => {
             const opt = document.createElement('option');
@@ -845,7 +888,7 @@
             opt.textContent = team;
             select.appendChild(opt);
         });
-        
+
         // Retain selection if they switch tabs but the team is still present
         if (sortedTeams.includes(currentVal)) {
             select.value = currentVal;
@@ -859,6 +902,17 @@
         return normalized.split(/\s+/).map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
     }
 
+    // Meets that use true NFHS scoring: non-scorers (incomplete teams / extra
+    // individuals) are removed and everyone below moves up, so scoring places are
+    // contiguous. Every other meet uses displacement scoring, where a non-scorer
+    // still occupies a place and the scorers below keep their gapped number.
+    const NFHS_SCORING_MEETS = [
+      'state-meet',
+      '2024-state-meet',
+      '25-state-meet',
+      // 'class-aaa-region-i',
+    ];
+
     function calculateTeamScores(results) {
         const teamMap = {};
         results.forEach(result => {
@@ -871,16 +925,30 @@
             Object.entries(teamMap).filter(([, athletes]) => athletes.length >= 5).map(([s]) => s)
         );
 
-        const scoringField = results
-            .filter(r => scoringTeamNames.has(normalizeSchoolName(r.school_name || r.school || 'Unknown')))
-            .sort((a, b) => {
-                const placeA = parseInt(a.place) || 999;
-                const placeB = parseInt(b.place) || 999;
-                if (placeA !== placeB) return placeA - placeB;
-                return (parseFloat(a.time) || 0) - (parseFloat(b.time) || 0);
-            });
+        const meetSlug = new URLSearchParams(window.location.search).get('slug');
+        const useNFHS = NFHS_SCORING_MEETS.includes(meetSlug);
+        const isScorer = r => scoringTeamNames.has(normalizeSchoolName(r.school_name || r.school || 'Unknown'));
 
-        scoringField.forEach((runner, index) => { runner.scoringPlace = index + 1; });
+        const byFinish = (a, b) => {
+            const placeA = parseInt(a.place) || 999;
+            const placeB = parseInt(b.place) || 999;
+            if (placeA !== placeB) return placeA - placeB;
+            return (parseFloat(a.time) || 0) - (parseFloat(b.time) || 0);
+        };
+
+        if (useNFHS) {
+            // Contiguous: pull non-scorers out entirely, then number 1..N.
+            results.filter(isScorer).sort(byFinish)
+                .forEach((runner, index) => { runner.scoringPlace = index + 1; });
+        } else {
+            // Displacement (default): number over the FULL finish order; non-scorers
+            // still consume a place but get no scoringPlace, so they earn no points.
+            let counter = 0;
+            results.slice().sort(byFinish).forEach(runner => {
+                runner.scoringPlace = isScorer(runner) ? ++counter : null;
+            });
+        }
+
 
         const scores = [];
         Object.entries(teamMap).forEach(([school, athletes]) => {
@@ -888,16 +956,16 @@
             const sorted = athletes.slice().sort((a, b) => (a.scoringPlace || 999) - (b.scoringPlace || 999));
             const topFive = sorted.slice(0, 5);
             const score = topFive.reduce((sum, a) => sum + (a.scoringPlace || 999), 0);
-            
+
             const top5Times = topFive.map(a => parseFloat(a.time)).filter(t => !isNaN(t) && t > 0);
             const teamAvg = top5Times.length === 5 ? top5Times.reduce((s, t) => s + t, 0) / 5 : 0;
             const teamSplit = top5Times.length === 5 ? top5Times[4] - top5Times[0] : 0;
 
-            scores.push({ 
-              school, score, teamAvg, teamSplit, 
-              sixthPlace: sorted[5]?.scoringPlace ?? 999, 
-              seventhPlace: sorted[6]?.scoringPlace ?? 999, 
-              athletes: topFive 
+            scores.push({
+              school, score, teamAvg, teamSplit,
+              sixthPlace: sorted[5]?.scoringPlace ?? 999,
+              seventhPlace: sorted[6]?.scoringPlace ?? 999,
+              athletes: topFive
             });
         });
 
@@ -919,12 +987,12 @@
 
         let html = `<div class="app-list">
                       <div class="list-header">Team Standings</div>`;
-        
+
         teamScores.forEach((team, index) => {
             const schoolSlug = slugify(team.school);
             const logoUrl = `/assets/team logos/${schoolSlug}.png`;
 
-            const scorersHtml = team.athletes.map(a => 
+            const scorersHtml = team.athletes.map(a =>
               `<span class="scorer-badge">#${a.scoringPlace != null ? a.scoringPlace : a.place}</span>`
             ).join('');
 
@@ -942,7 +1010,7 @@
                 <div class="item-score">${team.score}</div>
             </div>`;
         });
-        
+
         return html + `</div>`;
     }
 
@@ -955,16 +1023,16 @@
                       <div class="list-header">Individual Results</div>`;
 
         results.forEach((runner, index) => {
-            const timeSeconds = runner.time ? parseFloat(runner.time) : 0; 
+            const timeSeconds = runner.time ? parseFloat(runner.time) : 0;
             const athleteName = runner.athlete_name || runner.name || 'Unknown';
             const rawSchool = runner.school_name || runner.school || runner.school_slug || 'Unknown';
             const schoolSlug = runner.school_slug || slugify(normalizeSchoolName(rawSchool));
             const athleteHref = `athlete.html?name=${encodeURIComponent(athleteName)}&school=${encodeURIComponent(schoolSlug)}`;
-            
+
             const logoUrl = `/assets/team logos/${schoolSlug}.png`;
             const grade = formatGrade(runner.gradYear || runner.grade);
             const pace = calculatePacePerMile(timeSeconds, distanceMeters);
-            
+
             // Build the meta string (e.g., "+1pts • Yr: 10 • Pace: 5:45")
             let metaParts = [];
             if (runner.scoringPlace) metaParts.push(`+${runner.scoringPlace}pts`);
@@ -985,46 +1053,80 @@
                 <div class="item-score">${formatTime(timeSeconds)}</div>
             </div>`;
         });
-        
+
         return html + `</div>`;
     }
 
     // ==========================================
     // EXPORT UTILITIES (CSV/PDF)
     // ==========================================
-    function exportToCSV() {
-      if (!currentFilteredResults || currentFilteredResults.length === 0) return alert("No results to export.");
-      const meetName = currentMeetData ? currentMeetData.name : "Meet_Results";
-      const filename = `${slugify(meetName)}_${slugify(activeGender)}_${slugify(activeRaceType)}.csv`;
-      let csvRows = [["Place", "Athlete Name", "Grade", "School", "Time", "Pace Per Mile"]];
-      const distance = currentFilteredResults.length > 0 ? parseFloat(currentFilteredResults[0].distance) : 5000;
-      currentFilteredResults.forEach(r => {
-        const t = r.time ? parseFloat(r.time) : 0;
-        csvRows.push([ r.place || '', `"${r.athlete_name || r.name || ''}"`, `"${formatGrade(r.gradYear || r.grade)}"`, `"${r.school_name || r.school || ''}"`, `"${formatTime(t)}"`, `"${calculatePacePerMile(t, distance)}"` ]);
-      });
-      const link = document.createElement("a");
-      link.href = encodeURI("data:text/csv;charset=utf-8," + csvRows.map(e => e.join(",")).join("\n"));
-      link.download = filename;
-      document.body.appendChild(link); link.click(); document.body.removeChild(link);
+
+    // Filename stem shared by CSV + PDF, e.g. "state-meet_m_varsity-5k".
+    function exportFilenameStem() {
+      const meetName = currentMeetData ? (currentMeetData.name || 'Meet Results') : 'Meet Results';
+      return `${slugify(meetName)}_${slugify(activeGender)}_${slugify(activeRaceType)}`;
     }
-    
+
+    function exportToCSV() {
+      const hasIndiv = currentFilteredResults && currentFilteredResults.length > 0;
+      const hasTeams = currentTeamScores && currentTeamScores.length > 0;
+      if (!hasIndiv && !hasTeams) return alert("No results to export.");
+
+      const rows = [];
+      const distance = hasIndiv ? (parseFloat(currentFilteredResults[0].distance) || 5000) : 5000;
+
+      // Team standings first (when the current view includes them).
+      if ((activeViewMode === 'all' || activeViewMode === 'teams') && hasTeams) {
+        rows.push(['Team Standings'].map(csvCell));
+        rows.push(['Place', 'School', 'Score', 'Team Avg', 'Team Split', 'Scoring Top 5'].map(csvCell));
+        currentTeamScores.forEach((t, i) => {
+          const scorers = t.athletes.map(a => `#${a.scoringPlace != null ? a.scoringPlace : a.place} ${a.athlete_name || a.name || ''}`).join('; ');
+          rows.push([i + 1, t.school, t.score, formatTime(t.teamAvg), formatTime(t.teamSplit), scorers].map(csvCell));
+        });
+        if (activeViewMode === 'all' && hasIndiv) rows.push([]); // spacer row
+      }
+
+      // Individual results (when the current view includes them).
+      if ((activeViewMode === 'all' || activeViewMode === 'indiv') && hasIndiv) {
+        rows.push(['Individual Results'].map(csvCell));
+        rows.push(['Place', 'Athlete Name', 'Grade', 'School', 'Time', 'Pace Per Mile'].map(csvCell));
+        currentFilteredResults.forEach(r => {
+          const t = r.time ? parseFloat(r.time) : 0;
+          rows.push([
+            r.place || '',
+            r.athlete_name || r.name || '',
+            formatGrade(r.gradYear || r.grade),
+            r.school_name || r.school || '',
+            formatTime(t),
+            calculatePacePerMile(t, distance)
+          ].map(csvCell));
+        });
+      }
+
+      // Prepend a UTF-8 BOM so Excel opens accented names correctly.
+      const csv = '﻿' + rows.map(cols => cols.join(',')).join('\r\n');
+      downloadBlob(`${exportFilenameStem()}.csv`, 'text/csv;charset=utf-8;', csv);
+    }
+
     async function exportResultsPDF() {
-      if (!currentFilteredResults || currentFilteredResults.length === 0) return alert("No results to export.");
+      const hasIndiv = currentFilteredResults && currentFilteredResults.length > 0;
+      const hasTeams = currentTeamScores && currentTeamScores.length > 0;
+      if (!hasIndiv && !hasTeams) return alert("No results to export.");
       if (typeof window.jspdf === 'undefined') return alert("PDF library is still loading. Please try again in a second.");
-      
-      const { jsPDF } = window.jspdf; 
-      const doc = new jsPDF({ orientation: 'landscape' }); 
+
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ orientation: 'landscape' });
       const bc = getBrandColorRgbArray();
-      
+
       // 1. Build the Detailed Context Title
       const meetName = currentMeetData?.name || document.getElementById("meet-title")?.textContent || "Meet Results";
-      const distance = currentFilteredResults.length > 0 ? (currentFilteredResults[0].distance || 5000) : 5000;
+      const distance = hasIndiv ? (currentFilteredResults[0].distance || 5000) : 5000;
       const genderText = activeGender === 'M' ? 'Boys' : 'Girls';
       const raceTitle = `${meetName} - ${genderText} ${activeRaceType} ${distance}m`;
-      
+
       const exportSelect = document.getElementById('team-export-select')?.value;
       const subtitle = exportSelect && exportSelect !== 'all' ? `Filtered by Team: ${exportSelect}` : '';
-    
+
       // 2. Safely load the site logo using Fetch & FileReader (Bypasses Canvas CORS issues)
       const getBase64Image = async (url) => {
         try {
@@ -1041,15 +1143,15 @@
             return null;
         }
       };
-      
+
       const logoBase64 = await getBase64Image('assets/images/logo.png');
-    
+
       // 3. Custom PDF Header with Logo and Titles
-      const drawHeader = () => { 
+      const drawHeader = () => {
         // Draw Header Background
-        doc.setFillColor(bc[0], bc[1], bc[2]); 
-        doc.rect(0, 0, doc.internal.pageSize.getWidth(), 24, 'F'); 
-        
+        doc.setFillColor(bc[0], bc[1], bc[2]);
+        doc.rect(0, 0, doc.internal.pageSize.getWidth(), 24, 'F');
+
         let textX = 14;
         if (logoBase64) {
           try {
@@ -1060,56 +1162,57 @@
             console.warn("Failed to draw image to PDF", e);
           }
         }
-        
+
         // Draw Main Title
-        doc.setFontSize(15); 
-        doc.setFont('helvetica', 'bold'); 
+        doc.setFontSize(15);
+        doc.setFont('helvetica', 'bold');
         doc.setTextColor(255, 255, 255); // White text
-        
+
         // If there is a subtitle, shift the main title up slightly
-        const titleY = subtitle ? 11 : 14; 
-        doc.text(raceTitle, textX, titleY); 
-        
+        const titleY = subtitle ? 11 : 14;
+        doc.text(raceTitle, textX, titleY);
+
         // Draw Subtitle (if a specific team is selected)
         if (subtitle) {
             doc.setFontSize(10);
             doc.setFont('helvetica', 'normal');
             doc.setTextColor(220, 220, 220); // Light Gray text
-            doc.text(subtitle, textX, 18); 
+            doc.text(subtitle, textX, 18);
         }
       };
-      
+
       // 4. Generate the Tables
-      const teamScores = calculateTeamScores(currentFilteredResults); 
       let startY = 30; // Push table down to clear the new 24px header
-      
+
       // Draw Team Scores Table (if applicable and not hidden)
-      if (teamScores.length > 0 && activeViewMode !== 'indiv') {
-        doc.autoTable({ 
-            head: [['Place', 'School', 'Score', 'Avg / Split', 'Scoring Top 5']], 
-            body: teamScores.map((t, i) => [i + 1, t.school, t.score, `${formatTime(t.teamAvg)} / ${formatTime(t.teamSplit)}`, t.athletes.map(a => `#${a.scoringPlace||a.place} ${a.athlete_name||a.name}`).join(', ')]), 
-            startY: startY, 
-            margin: { top: 30 }, 
-            styles: { fontSize: 8 }, 
-            headStyles: { fillColor: bc, textColor: [255, 255, 255] }, 
-            didDrawPage: drawHeader 
+      if (hasTeams && activeViewMode !== 'indiv') {
+        doc.autoTable({
+            head: [['Place', 'School', 'Score', 'Avg / Split', 'Scoring Top 5']],
+            body: currentTeamScores.map((t, i) => [i + 1, t.school, t.score, `${formatTime(t.teamAvg)} / ${formatTime(t.teamSplit)}`, t.athletes.map(a => `#${a.scoringPlace||a.place} ${a.athlete_name||a.name}`).join(', ')]),
+            startY: startY,
+            margin: { top: 30 },
+            styles: { fontSize: 8 },
+            headStyles: { fillColor: bc, textColor: [255, 255, 255] },
+            alternateRowStyles: { fillColor: [245, 245, 245] },
+            didDrawPage: drawHeader
         });
         startY = doc.lastAutoTable.finalY + 10;
       }
-      
+
       // Draw Individual Results Table (if not hidden)
-      if(activeViewMode !== 'teams') {
-          doc.autoTable({ 
-              head: [['Place', 'Name', 'Grade', 'School', 'Time', 'Pace/Mile']], 
-              body: currentFilteredResults.map(r => [r.place || '-', r.athlete_name || r.name || '', formatGrade(r.gradYear || r.grade), r.school_name || r.school || '', formatTime(r.time ? parseFloat(r.time) : 0), calculatePacePerMile(r.time ? parseFloat(r.time) : 0, distance)]), 
-              startY: startY, 
-              margin: { top: 30 }, 
-              styles: { fontSize: 8 }, 
-              headStyles: { fillColor: bc, textColor: [255, 255, 255] }, 
-              didDrawPage: drawHeader 
+      if (activeViewMode !== 'teams' && hasIndiv) {
+          doc.autoTable({
+              head: [['Place', 'Name', 'Grade', 'School', 'Time', 'Pace/Mile']],
+              body: currentFilteredResults.map(r => [r.place || '-', r.athlete_name || r.name || '', formatGrade(r.gradYear || r.grade), r.school_name || r.school || '', formatTime(r.time ? parseFloat(r.time) : 0), calculatePacePerMile(r.time ? parseFloat(r.time) : 0, distance)]),
+              startY: startY,
+              margin: { top: 30 },
+              styles: { fontSize: 8 },
+              headStyles: { fillColor: bc, textColor: [255, 255, 255] },
+              alternateRowStyles: { fillColor: [245, 245, 245] },
+              didDrawPage: drawHeader
           });
       }
-      
+
       doc.save(`${slugify(raceTitle)}.pdf`);
     }
   </script>

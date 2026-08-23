@@ -1,0 +1,10 @@
+<svg viewBox="0 0 621 228" xmlns="http://www.w3.org/2000/svg" width="621" height="228"><defs><clipPath id="tile-0-clip"><rect x="0" y="0" width="612" height="215"/></clipPath><clipPath id="tile-1-clip"><rect x="612" y="0" width="9" height="215"/></clipPath><clipPath id="tile-2-clip"><rect x="0" y="215" width="498" height="13"/></clipPath><clipPath id="tile-3-clip"><rect x="498" y="215" width="123" height="13"/></clipPath></defs><path d="M0,0 L621,0 L621,228 L0,228 Z" fill="#FDFEFD"/><g transform="translate(0,0)" clip-path="url(#tile-0-clip)"><path d="M611,16l1,0l0,199l-236,0l0-58l18-10l9-6l19-11l13-8l22-13l25-15l13-8l55-33l22-13l13-8l11-7l11-6Z" fill="#FEFEFE"/>
+<path d="M559,11l53,0l0,5l-10,7l-14,8L570,42L548,55l-13,8L515,75L493,88l-13,8l-20,12l-28,17l-12,7l-35,21l-7,4l-2,0l0,58l-116,0l5-5l26-20l20-15l17-13l4,1l11,11l5,4l0,2l4,2l10,10l2,1l0-46l18-11l14-9l11-6l4-3l-47-1l-1-38L351,92l-9,11l-10,11l-4,5l-15,0l-9-1l-60-3l-49-3l-9-1l-24-1l0-1l163-3l9-11l13-15l2-3l2,0l2-4l3-4l2,0l2-5l2,0l2-4l9-11l1,0l0,57l59-1l11-7l7-4l11-6l14-8l19-11l26-15l24-14l26-15l2-1L448,24l0,2l-5,4l-2,0l0,2l-6,5l-2,0l-1,3l-9,7L408,60l-3,1l0-35l-16,1l-34,1l-7,6L320,62l-1,0l0-34l-53-1L126,23L73,22L19,20l0-1l27-1l222-3l61,0l0,19l4-2l5-5l14-13l46-1l19,0l1,22l14-12l10-9l1-1l39-1Z" fill="#088109"/>
+<path d="M325,181l5,1l16,13l16,12l9,7l0,1l-109,0l4-3l22-12l16-8Z" fill="#FCFDFC"/>
+<path d="M73,41l147,0l8,10l0,1l-17,0l-72-5l-25-2L77,43Z" fill="#138614"/>
+<path d="M136,62l103,0l5,5l0,2l4,2l0,2l-11,0l-53-5l-48-5Z" fill="#09800B"/>
+<path d="M242,86l16,0l5,4l0,2l3,1l0,2l2,0l0,2l-16,0l-57-5l-28-2l-2-2Z" fill="#0E810E"/>
+<path d="M214,131l83,0l10,10l0,1l-15-1l-34-4l-38-4l-6-1Z" fill="#0F8211"/>
+<path d="M289,152l17,0l-6,8l-3,3l-9,0l-40-7l-11-2l0-1Z" fill="#0D800E"/>
+<path d="M46,18l44,0l-1,2l14,1l0,1L73,22L19,20l0-1Z" fill="#228923"/>
+<path d="M282,197l2,1l-3,4l6-1l-4,3l-21,11l-2-1l5-4l13-10Z" fill="#228423"/></g><g transform="translate(612,0)" clip-path="url(#tile-1-clip)"></g><g transform="translate(0,215)" clip-path="url(#tile-2-clip)"></g><g transform="translate(498,215)" clip-path="url(#tile-3-clip)"></g></svg>

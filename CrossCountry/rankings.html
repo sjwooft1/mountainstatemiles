@@ -180,14 +180,13 @@
   <div id="global-header"></div>
 
   <main class="content-section">
-<script src="/assets/msm-loader.js"></script>
-<div class="hero-section">
-    <div class="hero-content">
-      <img src="/assets/images/logo.svg" alt="Mountain State Miles Logo" class="hero-logo" />
-      <h1 class="hero-title">State Rankings</h1>
-      <p class="hero-subtitle">The fastest 50 times across Cross Country running in West Virginia.</p>
+    <div class="hero-section">
+      <div class="hero-content">
+        <img src="/assets/images/logo.svg" alt="Mountain State Miles Logo" class="hero-logo" />
+        <h1 class="hero-title">State Rankings</h1>
+        <p class="hero-subtitle">The fastest 50 times across Cross Country running in West Virginia.</p>
+      </div>
     </div>
-  </div>
 
     <!-- Ranking Mode Toggle: Raw Time vs. Dynamic MSM Rating -->
     <div class="rank-mode-tabs">
@@ -309,9 +308,7 @@
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
   <script src="firebase-config.js"></script>
-  <script src="/scripts/results-filter.js"></script>
-<script src="firebase-helpers.js"></script>
-  <script src="results-cutoff.js"></script>
+  <script src="firebase-helpers.js"></script>
 
   <script>
     // Global variables
@@ -580,7 +577,7 @@
           if (cm && globalMedianPace[g]) parts.push(cm / globalMedianPace[g]);
         });
         let f = parts.length ? parts.reduce((a,b)=>a+b,0)/parts.length : 1.0;
-        f = Math.max(0.90, Math.min(1.12, f));
+        f = Math.max(0.94, Math.min(1.08, f));
         courseFactor[cs] = f;
       });
     }
@@ -608,7 +605,7 @@
         const speedRatio = gm / fieldMed;
         const depth = Math.min(paces.length / 40, 1);
         let f = 1 + (speedRatio - 1) * 0.5 * (0.5 + 0.5*depth);
-        f = Math.max(0.96, Math.min(1.08, f));
+        f = Math.max(0.94, Math.min(1.08, f));
         fieldFactor[key] = f;
       });
     }
@@ -667,15 +664,15 @@
       return Math.max(0.94, Math.min(1.14, f));
     }
 
-    // Fallback multiplier from the admin-set difficulty label when no GPX exists.
     function difficultyLabelFactor(label) {
       switch ((label || '').toLowerCase()) {
-        case 'hard':   return 1.06;
+        case 'hard':   return 1.06;   // was 1.06
         case 'medium': return 1.00;
-        case 'easy':   return 0.96;
-        default:       return 1.00;
+        case 'easy':   return 0.96;   // was 0.96
+      default:       return 1.00;
       }
     }
+
 
     async function buildHillFactors() {
       courseHillFactor = {};
@@ -717,22 +714,16 @@
 
     function courseFactorFor(r) {
       const cs = r.course_slug || (meetsData[r.meet_slug] && meetsData[r.meet_slug].course_slug) || 'unknown';
-      const dataF = courseFactor[cs];          // median-derived (may be undefined)
-      const hillF = courseHillFactor[cs];      // terrain-derived (may be undefined)
-
-      // Blend 50/50 when both exist; otherwise use whichever is available.
-      let f;
-      if (typeof dataF === 'number' && typeof hillF === 'number') {
-        f = 0.5 * dataF + 0.5 * hillF;
-      } else if (typeof hillF === 'number') {
-        f = hillF;
-      } else if (typeof dataF === 'number') {
-        f = dataF;
-      } else {
-        f = 1.0;
-      }
+      const hillF = courseHillFactor[cs];      // terrain-derived (GPX or difficulty label)
+    
+      // Course difficulty comes from terrain only. Median race times are NOT used
+      // here — slow times usually mean a weaker field, which is handled separately
+      // by fieldFactor. Folding them into the course term double-counts field
+      // strength and over-projects times.
+      const f = (typeof hillF === 'number') ? hillF : 1.0;
       return Math.max(0.90, Math.min(1.14, f));
     }
+
 
     function paceToRating(adjPaceSecPerM, gender) {
       const ref = RATING_REF[gender] || RATING_REF.M;
@@ -752,17 +743,22 @@
       const dist = r.distance ? parseInt(r.distance,10) : 5000;
       if (!dist || !r.time_in_seconds) return null;
       const rawPace = r.time_in_seconds / dist;
-
+    
       const cF = courseFactorFor(r);
       const fF = fieldFactorFor(r);
       const wF = (typeof weatherFactorOverride === 'number')
                     ? weatherFactorOverride
                     : weatherDifficultyFactor(weatherCache[r.meet_slug]);
-
-      const adjPace = rawPace / (cF * fF * wF);
+    
+      // Cap the combined adjustment so no single race can be over-corrected.
+      let boost = cF * fF * wF;
+      boost = Math.max(0.90, Math.min(1.10, boost));
+    
+      const adjPace = rawPace / boost;
       const rating = paceToRating(adjPace, r.gender);
       return { rating, cF, fF, wF, adjPace };
     }
+
 
     // =========================================
     // EXPORT TO CSV & PDF

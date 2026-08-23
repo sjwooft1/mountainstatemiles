@@ -92,6 +92,55 @@
     }
     .xbtn.xbtn-primary:hover { opacity: 0.88; }
 
+    /* ---- Season filter panel (matches rankings.html) ---- */
+    #season-control-panel {
+      background: var(--bg-secondary, #f8fafc);
+      border: 1px solid var(--border, #e2e8f0);
+      border-radius: 12px;
+      padding: 18px 20px;
+      margin-bottom: 2.5rem;
+    }
+    .season-filter-row {
+      display: flex;
+      align-items: flex-end;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .season-filter-item {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-width: 200px;
+    }
+    .season-filter-item label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--text-secondary, #64748b);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .season-filter-item select {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border, #cbd5e1);
+      background-color: var(--bg-primary, #ffffff);
+      color: var(--text-primary, #0f172a);
+      font-size: 0.9rem;
+      cursor: pointer;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .season-filter-item select:focus {
+      border-color: var(--team-color, #0284c7);
+    }
+    .season-filter-note {
+      font-size: 0.8rem;
+      color: var(--text-tertiary);
+      margin-left: auto;
+      align-self: center;
+    }
+
     /* ---- Hero ---- */
     .school-hero {
       position: relative;
@@ -107,7 +156,7 @@
       width: 20vmax; height: 20vmax;
       margin: 0 auto 18px;
       border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;      
+      display: flex; align-items: center; justify-content: center;
       overflow: visible;              /* clip anything past the circle */
       background: #fff;              /* consistent backdrop behind transparent logos */
     }
@@ -300,6 +349,8 @@
     @media (max-width: 640px) {
       .schedule-card { flex-direction: column; }
       .schedule-date { flex-direction: row; width: 100%; height: auto; padding: 8px; gap: 8px; }
+      .season-filter-item { min-width: 100%; }
+      .season-filter-note { margin-left: 0; }
     }
   </style>
 </head>
@@ -325,6 +376,17 @@
         <button class="xbtn" id="btn-print" type="button"><i class="fa-solid fa-print"></i> Print</button>
       </div>
     </header>
+
+    <!-- SEASON FILTER -->
+    <section id="season-control-panel">
+      <div class="season-filter-row">
+        <div class="season-filter-item">
+          <label>Season</label>
+          <select id="season-filter" onchange="setSeason(this.value)"></select>
+        </div>
+        <p class="season-filter-note" id="season-filter-note">Scopes stats, results, and trends to the selected season.</p>
+      </div>
+    </section>
 
     <!-- TEAM STATISTICS -->
     <section class="section-block">
@@ -440,7 +502,9 @@
     let allSchoolsMap = {};
     let allMeetsList = [];
     let meetsBySlug = {};
-    let schoolResults = [];
+    let schoolResults = [];        // full, unfiltered result set for this school
+    let seasonResults = [];        // schoolResults scoped to currentSeason
+    let currentSeason = 'all';     // 'all' or a four-digit year string
     let rosterData = [];
     let personalBestMap = {}; // athlete key -> best time (seconds)
     let upcomingScheduleData = []; // resolved for PDF export
@@ -518,6 +582,19 @@
       return r.athlete_slug || r.athlete_id || r.athlete_name || r.name;
     }
 
+    // Resolve the season (year) a result belongs to, inheriting the meet date if needed.
+    function resultYear(r) {
+      const raw = r.date || (meetsBySlug[r.meet_slug] && meetsBySlug[r.meet_slug].date) || null;
+      if (!raw) return null;
+      const d = new Date(String(raw).split('T')[0] + 'T00:00:00');
+      return isNaN(d.getTime()) ? null : d.getFullYear();
+    }
+
+    // Human-readable label for the active season, reused by exports.
+    function seasonLabel() {
+      return currentSeason === 'all' ? 'All-Time' : `${currentSeason} Season`;
+    }
+
     // ==========================================
     // COLOR EXTRACTION (team branding)
     // ==========================================
@@ -579,11 +656,11 @@
       document.getElementById('school-name').textContent = school.name;
       document.getElementById('school-info').textContent = `School in ${school.city || 'West Virginia'}`;
       document.title = `${school.name} Profile – Mountain State Miles`;
-    
+
       const logoEl = document.getElementById('school-logo');
       const svgPath = `/assets/team logos/${schoolSlug}.svg`;
       const pngPath = `/assets/team logos/${schoolSlug}.png`;
-    
+
       logoEl.onerror = function () {
         this.onerror = function () {
           this.onerror = null;
@@ -591,10 +668,10 @@
         };
         this.src = pngPath;
       };
-    
+
       logoEl.src = svgPath;
       logoEl.style.display = 'block';
-    
+
       extractMainColor(svgPath).then(applyTeamColor);
     }
 
@@ -701,7 +778,8 @@
         fastestAthleteName = bestResult ? (bestResult.athlete_name || bestResult.name || '--') : '--';
       }
 
-      // Build all-time personal-best map (used for PR tagging in performance cards & exports)
+      // Build personal-best map (scoped to the active season) for PR tagging in
+      // performance cards & exports.
       personalBestMap = {};
       results.forEach(r => {
         const key = athleteKey(r);
@@ -718,7 +796,13 @@
         if (time === personalBestMap[key]) prCount++;
       });
 
-      document.getElementById('total-athletes').textContent = roster && roster.length ? roster.length : uniqueAthletes.size;
+      // "Total Athletes" reflects the roster only when viewing all-time; a specific
+      // season shows the number of athletes who actually raced that season.
+      const totalAthletes = currentSeason === 'all' && roster && roster.length
+        ? roster.length
+        : uniqueAthletes.size;
+
+      document.getElementById('total-athletes').textContent = totalAthletes;
       document.getElementById('avg-time').textContent = avgTimeDisplay;
       document.getElementById('pr-count').textContent = prCount;
       document.getElementById('meet-count').textContent = uniqueMeets.size;
@@ -899,12 +983,20 @@
 
       loadingEl.style.display = 'none';
 
-      if (!schoolResults || schoolResults.length === 0) {
+      if (!seasonResults || seasonResults.length === 0) {
+        listEl.innerHTML = '';
+        performanceMeetsSorted = [];
+        showMoreWrap.style.display = 'none';
+        emptyEl.textContent = currentSeason === 'all'
+          ? 'No meet results found for this school in the database.'
+          : `No meet results for this school in the ${currentSeason} season.`;
         emptyEl.style.display = 'block';
         return;
       }
 
-      performanceMeetsSorted = buildPerformanceMeets(schoolResults);
+      emptyEl.style.display = 'none';
+      performanceMeetsVisible = 6;
+      performanceMeetsSorted = buildPerformanceMeets(seasonResults);
 
       function renderCards() {
         const visible = performanceMeetsSorted.slice(0, performanceMeetsVisible);
@@ -995,6 +1087,9 @@
         return;
       }
 
+      canvas.style.display = 'block';
+      emptyEl.style.display = 'none';
+
       const labels = chronological.map(m => {
         const d = new Date(m.date + 'T00:00:00');
         return isNaN(d.getTime()) ? m.date : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
@@ -1051,10 +1146,53 @@
       });
     }
 
- // ==========================================
+    // ==========================================
+    // SEASON FILTER
+    // ==========================================
+    function populateSeasonFilter() {
+      const select = document.getElementById('season-filter');
+      if (!select) return;
+
+      const uniqueYears = [...new Set(schoolResults.map(r => resultYear(r)))]
+        .filter(y => y !== null && !isNaN(y))
+        .sort((a, b) => b - a);
+
+      // Default to the most recent season with results; fall back to all-time.
+      currentSeason = uniqueYears.length ? uniqueYears[0].toString() : 'all';
+
+      let html = `<option value="all">All-Time</option>`;
+      uniqueYears.forEach(year => {
+        const selected = year.toString() === currentSeason ? 'selected' : '';
+        html += `<option value="${year}" ${selected}>${year} Season</option>`;
+      });
+      select.innerHTML = html;
+      select.value = currentSeason;
+    }
+
+    // Rebuild the season-scoped result set and re-render everything that depends on it.
+    function applySeason() {
+      if (currentSeason === 'all') {
+        seasonResults = schoolResults.slice();
+      } else {
+        seasonResults = schoolResults.filter(r => {
+          const y = resultYear(r);
+          return y !== null && y.toString() === currentSeason;
+        });
+      }
+      computeStats(seasonResults, rosterData);
+      renderPerformanceResults();
+      renderTrendsChart();
+    }
+
+    function setSeason(value) {
+      currentSeason = value;
+      applySeason();
+    }
+
+    // ==========================================
     // EXPORTS (PDF)
     // ==========================================
-    
+
     // Helper to parse the dynamically extracted "rgb(r,g,b)" into an array for jsPDF
     function getTeamColorRgbArray() {
       const match = teamColorRgb.match(/\d+/g);
@@ -1062,6 +1200,42 @@
         return [parseInt(match[0]), parseInt(match[1]), parseInt(match[2])];
       }
       return [20, 20, 20]; // Default dark fallback if color extraction fails
+    }
+
+    // Shared branded page header for PDF exports (mirrors rankings.html): colored
+    // bar, logo, main title, and a subtitle line that surfaces the active season.
+    function makePdfHeader(doc, mainTitle, subtitle) {
+      const brandColor = getTeamColorRgbArray();
+      return function drawHeader() {
+        // 1. Branded top accent bar
+        doc.setFillColor(brandColor[0], brandColor[1], brandColor[2]);
+        doc.rect(0, 0, doc.internal.pageSize.getWidth(), 24, 'F');
+
+        let textX = 14;
+        // 2. Safely add the school logo
+        try {
+          const logoImg = document.getElementById('school-logo');
+          if (logoImg && logoImg.complete && logoImg.naturalWidth > 0 && !logoImg.src.includes('logob.png')) {
+            doc.addImage(logoImg, 'PNG', 14, 4, 16, 16);
+            textX = 36;
+          }
+        } catch (e) {
+          console.error('Could not add logo to PDF:', e);
+        }
+
+        // 3. Titles (white on the brand bar)
+        doc.setFontSize(15);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(255, 255, 255);
+        doc.text(mainTitle, textX, subtitle ? 11 : 14);
+
+        if (subtitle) {
+          doc.setFontSize(10);
+          doc.setFont('helvetica', 'normal');
+          doc.setTextColor(220, 220, 220);
+          doc.text(subtitle, textX, 18);
+        }
+      };
     }
 
     function exportSchedulePDF() {
@@ -1073,13 +1247,15 @@
         toast('PDF library still loading — try again in a moment.');
         return;
       }
-    
+
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF({ orientation: 'landscape' });
       const name = (schoolObj && schoolObj.name) || 'Team';
       const brandColor = getTeamColorRgbArray();
-    
-      // Define table data first so we know what we are printing
+
+      const mainTitle = `${name} — Upcoming Schedule`;
+      const subtitle = `Mountain State Miles  •  Generated ${new Date().toLocaleDateString()}  •  ${upcomingScheduleData.length} meet(s)`;
+
       const tableHeaders = [['Date', 'Meet', 'Location', 'Distance', 'Difficulty', 'Surface', 'Opponents']];
       const tableBody = upcomingScheduleData.map(m => [
         m.dateDisplay,
@@ -1090,88 +1266,50 @@
         m.course && Array.isArray(m.course.surfaces) && m.course.surfaces.length ? m.course.surfaces.map(s => `${s.type} ${s.pct}%`).join(', ') : '—',
         m.opponentNames.join(', ') || 'None expected at this time'
       ]);
-    
+
       doc.autoTable({
         head: tableHeaders,
         body: tableBody,
-        startY: 32,
-        styles: { 
+        startY: 30,
+        margin: { top: 30 },
+        styles: {
           fontSize: 8.5,
-          overflow: 'linebreak' // Ensures long text wraps cleanly within the cell
+          overflow: 'linebreak'
         },
-        headStyles: { 
-          fillColor: brandColor, 
-          textColor: [255, 255, 255] 
+        headStyles: {
+          fillColor: brandColor,
+          textColor: [255, 255, 255]
         },
-        alternateRowStyles: { 
-          fillColor: [245, 245, 245] 
+        alternateRowStyles: {
+          fillColor: [245, 245, 245]
         },
-        // This hook runs on every page, drawing your headers and logos dynamically
-        didDrawPage: function (data) {
-          // 1. Draw branded top accent bar
-          doc.setFillColor(brandColor[0], brandColor[1], brandColor[2]);
-          doc.rect(0, 0, doc.internal.pageSize.getWidth(), 5, 'F');
-    
-          let textX = 14;
-    
-          // 2. Safely add logo
-          try {
-            const logoImg = document.getElementById('school-logo');
-            if (logoImg && logoImg.complete && logoImg.naturalWidth > 0 && !logoImg.src.includes('logob.png')) {
-              doc.addImage(logoImg, 'PNG', 14, 10, 15, 15);
-              textX = 34;
-            }
-          } catch (e) {
-            console.error("Could not add logo to PDF:", e);
-          }
-    
-          // 3. Render Document Headers
-          doc.setFontSize(18);
-          doc.setFont('helvetica', 'bold');
-          doc.setTextColor(0, 0, 0);
-          doc.text(`${name} — Upcoming Schedule`, textX, 18);
-    
-          doc.setFontSize(9);
-          doc.setFont('helvetica', 'normal');
-          doc.setTextColor(100, 100, 100); // Muted grey for subheaders
-          doc.text(`Mountain State Miles · Generated ${new Date().toLocaleDateString()} · ${upcomingScheduleData.length} meet(s)`, textX, 24);
-        }
+        didDrawPage: makePdfHeader(doc, mainTitle, subtitle)
       });
-    
+
       doc.save(`${schoolSlug}_schedule.pdf`);
       toast('✓ Schedule exported as PDF');
     }
 
 
     function exportPerformancePDF() {
-      if (!schoolResults.length) { toast('No performance results to export yet.'); return; }
+      if (!seasonResults.length) {
+        toast(currentSeason === 'all' ? 'No performance results to export yet.' : `No ${currentSeason} results to export.`);
+        return;
+      }
       if (typeof window.jspdf === 'undefined') { toast('PDF library still loading — try again in a moment.'); return; }
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF({ orientation: 'landscape' });
       const name = (schoolObj && schoolObj.name) || 'Team';
       const brandColor = getTeamColorRgbArray();
 
-      // 1. Draw a branded accent bar at the top of the page
-      doc.setFillColor(brandColor[0], brandColor[1], brandColor[2]);
-      doc.rect(0, 0, doc.internal.pageSize.getWidth(), 5, 'F');
-
-      let textX = 14;
-      // 2. Dynamically add the school's logo if loaded
-      try {
-        const logoImg = document.getElementById('school-logo');
-        if (logoImg && logoImg.complete && logoImg.naturalWidth > 0 && !logoImg.src.includes('logob.png')) {
-          doc.addImage(logoImg, 'PNG', 14, 10, 15, 15);
-          textX = 34; // Shift header text to the right to make room for the logo
-        }
-      } catch (e) {
-        console.error("Could not add logo to PDF:", e);
-      }
-
-      // 3. Document Headers
-      doc.setFontSize(18); doc.setFont('helvetica', 'bold');
-      doc.text(`${name} — Performance Report`, textX, 18);
-      doc.setFontSize(9); doc.setFont('helvetica', 'normal');
-      doc.text(`Mountain State Miles · Generated ${new Date().toLocaleDateString()} · Avg ${document.getElementById('avg-time').textContent} · Best ${document.getElementById('best-time').textContent}`, textX, 24);
+      const mainTitle = `${name} — Performance Report`;
+      const subParts = [
+        seasonLabel(),
+        `Avg ${document.getElementById('avg-time').textContent}`,
+        `Best ${document.getElementById('best-time').textContent}`,
+        `Generated ${new Date().toLocaleDateString()}`
+      ];
+      const subtitle = `Mountain State Miles  •  ${subParts.join('  •  ')}`;
 
       const rows = [];
       performanceMeetsSorted.forEach(meet => {
@@ -1191,16 +1329,17 @@
         });
       });
 
-      // 4. Draw branded Table
       doc.autoTable({
         head: [['Date', 'Meet', 'Athlete', 'Gender', 'Time', 'Place', 'PR']],
         body: rows,
-        startY: 32,
+        startY: 30,
+        margin: { top: 30 },
         styles: { fontSize: 8 },
-        headStyles: { fillColor: brandColor, textColor: [255, 255, 255] }, // Uses dynamic brand color
-        alternateRowStyles: { fillColor: [245, 245, 245] }
+        headStyles: { fillColor: brandColor, textColor: [255, 255, 255] },
+        alternateRowStyles: { fillColor: [245, 245, 245] },
+        didDrawPage: makePdfHeader(doc, mainTitle, subtitle)
       });
-      doc.save(`${schoolSlug}_performance.pdf`);
+      doc.save(`${schoolSlug}_performance_${currentSeason}.pdf`);
       toast('✓ Performance report exported as PDF');
     }
 
@@ -1257,9 +1396,12 @@
 
         renderRoster(rosterData);
         wireRosterSearch();
-        computeStats(schoolResults, rosterData);
-        renderPerformanceResults();
-        renderTrendsChart();
+
+        // Build the season dropdown, then render stats/results/trends scoped to the
+        // default (most recent) season.
+        populateSeasonFilter();
+        applySeason();
+
         await renderUpcomingSchedule();
 
         document.getElementById('btn-export-schedule').addEventListener('click', exportSchedulePDF);

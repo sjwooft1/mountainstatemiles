@@ -209,6 +209,14 @@ html:not([data-theme="dark"]) .logo-dark  { display: none; }
   color: var(--text-tertiary);
   margin-top: 4px;
 }
+/* Highlight the MSM rating + state rank stat boxes */
+.hero-stat-box.msm-highlight {
+  border-color: var(--text-primary);
+  background: var(--text-primary);
+}
+.hero-stat-box.msm-highlight .hero-stat-num { color: var(--bg-primary); }
+.hero-stat-box.msm-highlight .hero-stat-lbl { color: var(--bg-primary); opacity: 0.7; }
+.rank-suffix { font-size: 1rem; font-weight: 700; vertical-align: super; }
 
 .page-main {
   max-width: 1400px;
@@ -311,6 +319,13 @@ html:not([data-theme="dark"]) .logo-dark  { display: none; }
   color: var(--text-primary);
   line-height: 1;
 }
+.pb-msm {
+  margin-top: 8px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-tertiary);
+}
+.pb-msm strong { color: var(--text-primary); font-weight: 800; }
 
 .charts-grid {
   display: grid;
@@ -353,6 +368,26 @@ html:not([data-theme="dark"]) .logo-dark  { display: none; }
   cursor: pointer;
 }
 .chart-wrap { position: relative; height: 200px; }
+
+/* Schools list */
+.schools-row { display: flex; gap: 10px; flex-wrap: wrap; }
+.school-card {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg-primary);
+  text-decoration: none;
+  transition: all var(--transition);
+}
+.school-card:hover { border-color: var(--text-primary); transform: translateY(-2px); }
+.school-card img {
+  width: 34px; height: 34px; border-radius: 50%;
+  object-fit: contain; background: #fff; padding: 2px; border: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.school-card-name { font-weight: 700; color: var(--text-primary); font-size: 0.9rem; }
+.school-card-meta { font-size: 0.74rem; color: var(--text-tertiary); margin-top: 1px; }
 
 .results-panel {
   background: var(--bg-primary);
@@ -430,6 +465,11 @@ table.rt .mark-col {
   font-weight: 700;
   letter-spacing: -0.01em;
   color: var(--text-primary);
+}
+table.rt .msm-col {
+  font-weight: 800;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
 }
 .pb-tag {
   display: inline-block;
@@ -538,7 +578,7 @@ table.rt a:hover { border-bottom-color: var(--text-primary); }
 }
 </style>
 
-  
+
   <script src="/assets/theme-toggle.js" defer></script>
   <script src="/assets/components.js" defer></script>
 </head>
@@ -560,6 +600,13 @@ table.rt a:hover { border-bottom-color: var(--text-primary); }
 </div>
 
 <main class="content-section page-main">
+  <section class="section-block" id="schoolsSection" style="display:none;">
+    <div class="section-head">
+      <h2 class="section-heading">Schools</h2>
+    </div>
+    <div class="schools-row" id="schoolsRow"></div>
+  </section>
+
   <section class="section-block">
     <div class="section-head">
       <h2 class="section-heading">Personal Bests</h2>
@@ -659,12 +706,13 @@ table.rt a:hover { border-bottom-color: var(--text-primary); }
               <th id="th-date"  onclick="sortBy('date')">Date</th>
               <th id="th-event" onclick="sortBy('event')">Event</th>
               <th id="th-mark"  onclick="sortBy('mark')">Mark</th>
+              <th id="th-msm"   onclick="sortBy('msm')">MSM Rating</th>
               <th id="th-meet"  onclick="sortBy('meet')">Meet</th>
               <th id="th-place" onclick="sortBy('place')">Place</th>
             </tr>
           </thead>
           <tbody id="tblBody">
-            <tr><td colspan="5" style="text-align:center;padding:2.5rem;color:var(--text-tertiary);">
+            <tr><td colspan="6" style="text-align:center;padding:2.5rem;color:var(--text-tertiary);">
               <i class="fas fa-circle-notch fa-spin" style="font-size:1.4rem;"></i>
             </td></tr>
           </tbody>
@@ -729,15 +777,208 @@ async function waitForFirebase() {
 }
 
 /* ═══════════════════════════════════════════════════
+   MSM RATING ENGINE (Track)
+   Ported from Track/rankings.html so the athlete page
+   shows the same rating: each mark is scored against an
+   elite standard for that event/gender, then adjusted
+   for field strength and (outdoor) race-day weather.
+═══════════════════════════════════════════════════ */
+const FIELD_EVENTS = ['long jump', 'high jump', 'triple jump', 'pole vault', 'shot put', 'discus', 'javelin', 'hammer'];
+
+const ELITE_STANDARDS = {
+  '100':        { M: 10.6,  W: 12.0 },
+  '200':        { M: 21.5,  W: 24.8 },
+  '400':        { M: 48.5,  W: 56.5 },
+  '800':        { M: 115,   W: 135 },
+  '1600':       { M: 250,   W: 295 },
+  'mile':       { M: 252,   W: 297 },
+  '3200':       { M: 555,   W: 640 },
+  '3000':       { M: 510,   W: 600 },
+  '110 hurdles':{ M: 14.5,  W: 15.5 },
+  '100 hurdles':{ M: 14.5,  W: 14.8 },
+  '300 hurdles':{ M: 38.5,  W: 44.5 },
+  '400 hurdles':{ M: 54.0,  W: 62.0 },
+  '4x100':      { M: 43.0,  W: 49.0 },
+  '4x200':      { M: 91.0,  W: 104 },
+  '4x400':      { M: 205,   W: 240 },
+  '4x800':      { M: 490,   W: 570 },
+  'long jump':  { M: 7.0,   W: 5.7,  field: true },
+  'triple jump':{ M: 14.5,  W: 12.0, field: true },
+  'high jump':  { M: 2.05,  W: 1.70, field: true },
+  'pole vault': { M: 4.80,  W: 3.70, field: true },
+  'shot put':   { M: 17.5,  W: 13.5, field: true },
+  'discus':     { M: 52.0,  W: 42.0, field: true },
+  'javelin':    { M: 58.0,  W: 40.0, field: true },
+  'hammer':     { M: 55.0,  W: 45.0, field: true }
+};
+const RATING_SPREAD = 1000;
+
+function eventStandard(eventName, gender) {
+  if (!eventName) return null;
+  const n = eventName.toLowerCase();
+  let best = null, bestLen = 0;
+  Object.keys(ELITE_STANDARDS).forEach(key => {
+    if (n.includes(key) && key.length > bestLen) { best = ELITE_STANDARDS[key]; bestLen = key.length; }
+  });
+  if (!best) return null;
+  const g = (gender === 'W' || gender === 'F') ? 'W' : 'M';
+  return { value: best[g], field: !!best.field };
+}
+
+function normalizeResultGender(value) {
+  const t = String(value || '').trim().toUpperCase();
+  if (t==='W'||t==='F'||t==='GIRLS'||t==='FEMALE') return 'W';
+  if (t==='M'||t==='BOYS'||t==='MALE') return 'M';
+  return t;
+}
+function isFieldEvent(eventName) {
+  if (!eventName) return false;
+  const n = eventName.toLowerCase();
+  return FIELD_EVENTS.some(fe => n.includes(fe));
+}
+function parseMarkValue(mark, eventName) {
+  if (!mark) return Infinity;
+  if (['DNS','SCR','NH','ND','DQ'].includes(mark.toString().toUpperCase())) return Infinity;
+  const s = mark.toString();
+  if (isFieldEvent(eventName)) {
+    const m = s.match(/(\d+)[^\d]*(\d+(?:\.\d+)?)/);
+    if (m) { return parseFloat(m[1]) + parseFloat(m[2]) / 12; } // feet + inches -> feet
+  }
+  if (s.includes(':')) {
+    const parts = s.split(':');
+    if (parts.length === 2) return (parseFloat(parts[0])||0)*60 + (parseFloat(parts[1])||0);
+  }
+  return parseFloat(s) || Infinity;
+}
+function markInMeters(mark, eventName) {
+  const feet = parseMarkValue(mark, eventName);
+  if (feet === Infinity) return Infinity;
+  return feet * 0.3048;
+}
+
+function median(arr) {
+  if (!arr.length) return null;
+  const s = arr.slice().sort((a,b)=>a-b);
+  const mid = Math.floor(s.length/2);
+  return s.length % 2 ? s[mid] : (s[mid-1]+s[mid])/2;
+}
+
+/* ---- Weather (outdoor meets only) — Open-Meteo historical ---- */
+const weatherCache = {};
+function meetDateISO(meet) {
+  const d = meet && (meet.date || meet.meet_date);
+  if (!d) return null;
+  const iso = String(d).split('T')[0];
+  return /^\d{4}-\d{2}-\d{2}$/.test(iso) ? iso : null;
+}
+function meetCoords(meet) {
+  if (meet && typeof meet.lat === 'number' && typeof meet.lon === 'number') return { lat: meet.lat, lon: meet.lon };
+  return { lat: 38.6409, lon: -80.6227 };
+}
+async function fetchWeatherForMeet(meetId, meet) {
+  if (meetId in weatherCache) return weatherCache[meetId];
+  const ssKey = `msm_trk_wx_${meetId}`;
+  const cached = sessionStorage.getItem(ssKey);
+  if (cached !== null) { weatherCache[meetId] = JSON.parse(cached); return weatherCache[meetId]; }
+  if (!meet || meet.season !== 'outdoor') { weatherCache[meetId] = null; sessionStorage.setItem(ssKey,'null'); return null; }
+  const iso = meetDateISO(meet);
+  if (!iso) { weatherCache[meetId] = null; sessionStorage.setItem(ssKey,'null'); return null; }
+  const { lat, lon } = meetCoords(meet);
+  const url = `https://archive-api.open-meteo.com/v1/archive?latitude=${lat}&longitude=${lon}`
+            + `&start_date=${iso}&end_date=${iso}`
+            + `&daily=temperature_2m_max,wind_speed_10m_max,precipitation_sum`
+            + `&temperature_unit=celsius&wind_speed_unit=kmh&timezone=America%2FNew_York`;
+  try {
+    const res = await fetch(url); const json = await res.json();
+    const d = json && json.daily;
+    const wx = d ? { tempMaxC: d.temperature_2m_max?.[0] ?? null, windMaxKmh: d.wind_speed_10m_max?.[0] ?? null, precipMm: d.precipitation_sum?.[0] ?? null } : null;
+    weatherCache[meetId] = wx; sessionStorage.setItem(ssKey, JSON.stringify(wx)); return wx;
+  } catch (e) { weatherCache[meetId] = null; sessionStorage.setItem(ssKey,'null'); return null; }
+}
+function weatherDifficultyFactor(wx) {
+  if (!wx) return 1.0;
+  let f = 1.0;
+  if (typeof wx.tempMaxC === 'number' && wx.tempMaxC > 20) f += Math.min((wx.tempMaxC-20)*0.004, 0.06);
+  if (typeof wx.windMaxKmh === 'number' && wx.windMaxKmh > 15) f += Math.min((wx.windMaxKmh-15)*0.002, 0.04);
+  if (typeof wx.precipMm === 'number' && wx.precipMm > 1) f += Math.min(wx.precipMm*0.003, 0.04);
+  return f;
+}
+
+/* ---- Field strength (per event/meet, across the whole state set) ---- */
+// fieldFactorByEvent[eventName][meet_id] -> factor
+let fieldFactorByEvent = {};
+function buildStateFieldFactors(stateResults) {
+  fieldFactorByEvent = {};
+  const byEvent = {};
+  stateResults.forEach(r => {
+    const en = r.eventName;
+    if (!en) return;
+    (byEvent[en] = byEvent[en] || []).push(r);
+  });
+  Object.keys(byEvent).forEach(en => {
+    const results = byEvent[en];
+    const groups = {}; // meet_id -> [values]
+    results.forEach(r => {
+      const key = r.meet_id || 'unknown';
+      const val = isFieldEvent(en) ? markInMeters(r.mark, en) : parseMarkValue(r.mark, en);
+      if (val === Infinity) return;
+      (groups[key] = groups[key] || []).push(val);
+    });
+    const factor = {};
+    const allVals = [];
+    Object.values(groups).forEach(arr => arr.forEach(v => allVals.push(v)));
+    const gMed = median(allVals);
+    Object.keys(groups).forEach(key => {
+      const med = median(groups[key]);
+      if (!gMed || !med) { factor[key] = 1.0; return; }
+      const ratio = isFieldEvent(en) ? (med / gMed) : (gMed / med);
+      const depth = Math.min(groups[key].length / 24, 1);
+      let f = 1 + (ratio - 1) * 0.4 * (0.5 + 0.5*depth);
+      f = Math.max(0.96, Math.min(1.06, f));
+      factor[key] = f;
+    });
+    fieldFactorByEvent[en] = factor;
+  });
+}
+
+// Compute an MSM rating for one normalized result
+// { eventName, gender, mark, meet_id }.
+function computeMsmRating(r) {
+  const std = eventStandard(r.eventName, r.gender);
+  if (!std || !std.value) return null;
+  const isField = isFieldEvent(r.eventName);
+  const perf = isField ? markInMeters(r.mark, r.eventName) : parseMarkValue(r.mark, r.eventName);
+  if (perf === Infinity || perf <= 0) return null;
+
+  const fF = (fieldFactorByEvent[r.eventName] && fieldFactorByEvent[r.eventName][r.meet_id]) || 1.0;
+  const wF = weatherDifficultyFactor(weatherCache[r.meet_id]);
+
+  let pct;
+  if (isField) {
+    const adjPerf = perf * (fF * wF);
+    pct = (adjPerf - std.value) / std.value;
+  } else {
+    const adjPerf = perf / (fF * wF);
+    pct = (std.value - adjPerf) / std.value;
+  }
+  return Math.max(0, Math.round(1000 + pct * RATING_SPREAD));
+}
+
+/* ═══════════════════════════════════════════════════
    GLOBAL STATE
 ═══════════════════════════════════════════════════ */
 const urlParams = new URLSearchParams(window.location.search);
 const athleteId = urlParams.get('id');
 
 let athlete   = null;
-let allResults = [];   
-let pbs        = {};   
+let allResults = [];
+let pbs        = {};
 let gCharts    = {};
+
+let athleteBestMsm = null;
+let athleteStateRank = null;
+let athleteStateTotal = null;
+let athleteSchools = [];
 
 let tFiltered  = [];
 let tSortKey   = 'date';
@@ -745,19 +986,20 @@ let tSortDir   = 'desc';
 let tPage      = 1;
 let tPerPage   = 15;
 
-/* ═══════════════════════════════════════════════════
-   SEARCH FIX: Wrap push in curly braces!
-═══════════════════════════════════════════════════ */
 let allAthletes  = [];
 let searchTimer;
+
+function ordinal(n) {
+  const s = ['th', 'st', 'nd', 'rd'], v = n % 100;
+  return s[(v - 20) % 10] || s[v] || s[0];
+}
 
 async function loadAthleteList() {
   try {
     await waitForFirebase();
     const snap = await window.firebaseDatabase.ref('Track/athletes').once('value');
     snap.forEach(c => {
-      // The braces prevent 'push' from returning a truthy value and canceling the loop
-      allAthletes.push({ id: c.key, ...c.val() }); 
+      allAthletes.push({ id: c.key, ...c.val() });
     });
   } catch(e) { console.warn("Athlete list for search unavailable."); }
 }
@@ -786,11 +1028,11 @@ if (searchInput && searchDropdown) {
 function runSearch() {
   if (!searchInput || !searchDropdown) return;
   const queryText = searchInput.value.trim().toLowerCase();
-  
+
   const terms = queryText.split(/\s+/);
   const hits = allAthletes.filter(a => {
     const searchString = `${a.first_name||''} ${a.last_name||''} ${a.school||''}`.toLowerCase();
-    return terms.every(term => searchString.includes(term)); 
+    return terms.every(term => searchString.includes(term));
   }).slice(0, 8);
 
   if (!hits.length) {
@@ -821,7 +1063,7 @@ async function loadAthlete() {
   if (!athleteId) {
     document.getElementById('heroName').textContent = 'No athlete selected';
     document.getElementById('heroChips').innerHTML = '<p style="color:var(--text-tertiary)">Use the search bar to find an athlete.</p>';
-    document.getElementById('tblBody').innerHTML = '<tr><td colspan="5" style="text-align:center;">No data to load.</td></tr>';
+    document.getElementById('tblBody').innerHTML = '<tr><td colspan="6" style="text-align:center;">No data to load.</td></tr>';
     return;
   }
 
@@ -830,7 +1072,7 @@ async function loadAthlete() {
 
     const athSnap = await window.firebaseDatabase.ref(`Track/athletes/${athleteId}`).once('value');
     athlete = athSnap.exists() ? { id: athleteId, ...athSnap.val() } : null;
-    
+
     if (!athlete) {
       document.getElementById('heroName').textContent = 'Athlete not found';
       return;
@@ -839,6 +1081,59 @@ async function loadAthlete() {
     const fullName = `${athlete.first_name||''} ${athlete.last_name||''}`.trim();
     document.title = `${fullName} — Mountain State Miles`;
     document.getElementById('heroName').textContent = fullName;
+
+    const [resultsSnap, meetsSnap, eventsSnap, athletesSnap] = await Promise.all([
+      window.firebaseDatabase.ref('Track/results').once('value'),
+      window.firebaseDatabase.ref('Track/meets').once('value'),
+      window.firebaseDatabase.ref('Track/events').once('value'),
+      window.firebaseDatabase.ref('Track/athletes').once('value')
+    ]);
+
+    const meetsMap  = {};
+    const eventsMap = {};
+    const athletesMap = {};
+    meetsSnap.forEach(c  => { meetsMap[c.key]  = { id: c.key,  ...c.val() }; });
+    eventsSnap.forEach(c => { eventsMap[c.key] = { id: c.key, ...c.val() }; });
+    athletesSnap.forEach(c => { athletesMap[c.key] = { id: c.key, ...c.val() }; });
+
+    // ---- Build the full statewide result set (for ratings + rank) ----
+    const rawAll = [];
+    resultsSnap.forEach(c => {
+      const val = c.val();
+      if (val.exclude_from_rankings === true) return;
+      rawAll.push({ id: c.key, ...val });
+    });
+
+    const eventNameOf = r => (eventsMap[r.event_id] && eventsMap[r.event_id].name) || '';
+    const genderOf = r => {
+      const g = normalizeResultGender(r.gender);
+      if (g) return g;
+      const a = athletesMap[r.athlete_id];
+      return a ? normalizeResultGender(a.gender) : '';
+    };
+
+    const stateNormalized = rawAll.map(r => ({
+      athlete_id: r.athlete_id,
+      eventName: eventNameOf(r),
+      gender: genderOf(r),
+      mark: r.mark,
+      meet_id: r.meet_id
+    }));
+
+    // Field-strength factors across all state results.
+    buildStateFieldFactors(stateNormalized);
+
+    // Outdoor weather for exact parity with the rankings page.
+    const outdoorMeetIds = [...new Set(rawAll
+      .map(r => r.meet_id)
+      .filter(id => meetsMap[id] && meetsMap[id].season === 'outdoor'))];
+    if (outdoorMeetIds.length) {
+      await Promise.all(outdoorMeetIds.map(id => fetchWeatherForMeet(id, meetsMap[id])));
+    }
+
+    // ---- This athlete's own results ----
+    const raw = rawAll.filter(r => r.athlete_id === athleteId);
+
     document.getElementById('heroChips').innerHTML = [
       athlete.school ? `<span class="hero-chip"><i class="fas fa-school"></i>${athlete.school}</span>` : '',
       athlete.grade  ? `<span class="hero-chip"><i class="fas fa-graduation-cap"></i>Grade ${athlete.grade}</span>` : '',
@@ -848,58 +1143,99 @@ async function loadAthlete() {
     window.__MSM_COACH_CTX = { kind:'athlete', athleteName:fullName, schoolName:athlete.school||'' };
     window.dispatchEvent(new CustomEvent('msm-coach-context-updated'));
 
-    const [resultsSnap, meetsSnap, eventsSnap] = await Promise.all([
-      window.firebaseDatabase.ref('Track/results').once('value'),
-      window.firebaseDatabase.ref('Track/meets').once('value'),
-      window.firebaseDatabase.ref('Track/events').once('value')
-    ]);
+    const athGender = genderOf({ gender: athlete.gender, athlete_id: athleteId });
 
-    const meetsMap  = {};
-    const eventsMap = {};
-    meetsSnap.forEach(c  => { meetsMap[c.key]  = { id: c.key,  ...c.val() }; });
-    eventsSnap.forEach(c => { eventsMap[c.key] = { id: c.key, ...c.val() }; });
-
-    const raw = [];
-    resultsSnap.forEach(c => {
-      const r = { id: c.key, ...c.val() };
-      if (r.athlete_id === athleteId) raw.push(r);
+    allResults = raw.map(r => {
+      const ev = eventsMap[r.event_id] || {};
+      const ratingInput = {
+        eventName: ev.name || '',
+        gender: athGender,
+        mark: r.mark,
+        meet_id: r.meet_id
+      };
+      return {
+        ...r,
+        meet:  meetsMap[r.meet_id]   || {},
+        event: ev,
+        msm: computeMsmRating(ratingInput)
+      };
     });
-
-    allResults = raw.map(r => ({
-      ...r,
-      meet:  meetsMap[r.meet_id]   || {},
-      event: eventsMap[r.event_id] || {}
-    }));
 
     allResults.sort((a, b) => (b.meet?.date||'').localeCompare(a.meet?.date||''));
 
     allResults.forEach(r => {
       const ev  = r.event?.name;
       if (!ev) return;
-      const val = parseMark(r.mark); 
-      
+      const val = parseMark(r.mark);
+
       if (!isNaN(val)) {
         const isField = String(r.mark).includes('-') || String(r.mark).includes('m') || /jump|vault|shot|discus|javelin|throw/i.test(ev);
         if (!pbs[ev]) {
-          pbs[ev] = { val, display: r.mark, isField };
+          pbs[ev] = { val, display: r.mark, isField, msm: r.msm };
         } else {
           const isNewPB = isField ? (val > pbs[ev].val) : (val < pbs[ev].val);
-          if (isNewPB) pbs[ev] = { val, display: r.mark, isField };
+          if (isNewPB) pbs[ev] = { val, display: r.mark, isField, msm: r.msm };
         }
       }
     });
 
+    // ---- This athlete's best MSM rating ----
+    const myRatings = allResults.map(r => r.msm).filter(v => v != null);
+    athleteBestMsm = myRatings.length ? Math.max(...myRatings) : null;
+
+    // ---- Statewide rank: best MSM per athlete of same gender, all-time ----
+    if (athleteBestMsm != null && (athGender === 'M' || athGender === 'W')) {
+      const bestByAthlete = new Map(); // athlete_id -> best rating
+      stateNormalized.forEach(r => {
+        if (r.gender !== athGender) return;
+        const rating = computeMsmRating(r);
+        if (rating == null) return;
+        const key = r.athlete_id || '';
+        if (!key) return;
+        if (!bestByAthlete.has(key) || rating > bestByAthlete.get(key)) bestByAthlete.set(key, rating);
+      });
+      const ranked = [...bestByAthlete.values()].sort((a, b) => b - a);
+      athleteStateTotal = ranked.length;
+      athleteStateRank = ranked.filter(v => v > athleteBestMsm).length + 1;
+    }
+
+    // ---- Schools: roster school + any distinct school on the result rows ----
+    const schoolCounts = {};
+    raw.forEach(r => {
+      const sc = r.school || (athletesMap[r.athlete_id] && athletesMap[r.athlete_id].school) || '';
+      if (!sc) return;
+      schoolCounts[sc] = (schoolCounts[sc] || 0) + 1;
+    });
+    if (athlete.school && !schoolCounts[athlete.school]) schoolCounts[athlete.school] = raw.length || 1;
+    athleteSchools = Object.keys(schoolCounts).map(name => ({
+      name,
+      count: schoolCounts[name]
+    })).sort((a, b) => b.count - a.count);
+
     const uniqueMeets = new Set(allResults.map(r => r.meet_id).filter(Boolean));
+
+    const genderLabel = athGender === 'M' ? 'Boys' : athGender === 'W' ? 'Girls' : '';
+    const rankDisplay = athleteStateRank != null
+      ? `${athleteStateRank}<span class="rank-suffix">${ordinal(athleteStateRank)}</span>`
+      : '—';
+    const rankLabel = (athleteStateRank != null && genderLabel)
+      ? `${genderLabel} State Rank`
+      : 'State Rank';
+
     document.getElementById('heroSummary').innerHTML = `
+      <div class="hero-stat-box msm-highlight"><div class="hero-stat-num">${athleteBestMsm != null ? athleteBestMsm : '—'}</div><div class="hero-stat-lbl">Best MSM Rating</div></div>
+      <div class="hero-stat-box msm-highlight"><div class="hero-stat-num">${rankDisplay}</div><div class="hero-stat-lbl">${rankLabel}</div></div>
       <div class="hero-stat-box"><div class="hero-stat-num">${allResults.length}</div><div class="hero-stat-lbl">Results</div></div>
       <div class="hero-stat-box"><div class="hero-stat-num">${Object.keys(pbs).length}</div><div class="hero-stat-lbl">Events</div></div>
       <div class="hero-stat-box"><div class="hero-stat-num">${uniqueMeets.size}</div><div class="hero-stat-lbl">Meets</div></div>
     `;
 
+    renderSchools();
     renderPBs();
     buildCharts();
     populateTableFilters();
     tFiltered = [...allResults];
+    doSort();
     renderTable();
 
   } catch(err) {
@@ -908,6 +1244,32 @@ async function loadAthlete() {
     document.getElementById('heroChips').innerHTML =
       '<p style="color:var(--danger,#ef4444)">⚠ Could not load data. Check your connection.</p>';
   }
+}
+
+/* ═══════════════════════════════════════════════════
+   SCHOOLS
+═══════════════════════════════════════════════════ */
+function slugifySchool(name) {
+  return (name || '').toString().toLowerCase().trim().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
+}
+function renderSchools() {
+  const section = document.getElementById('schoolsSection');
+  const row = document.getElementById('schoolsRow');
+  if (!athleteSchools.length) { section.style.display = 'none'; return; }
+
+  section.style.display = '';
+  row.innerHTML = athleteSchools.map(s => {
+    const slug = slugifySchool(s.name);
+    const logo = `/assets/team logos/${slug}.png`;
+    return `
+      <a class="school-card" href="/CrossCountry/school.html?slug=${encodeURIComponent(slug)}">
+        <img src="${logo}" alt="${s.name}" onerror="this.src='/assets/images/logob.svg'">
+        <div>
+          <div class="school-card-name">${s.name}</div>
+          <div class="school-card-meta">${s.count} result${s.count === 1 ? '' : 's'}</div>
+        </div>
+      </a>`;
+  }).join('');
 }
 
 function renderPBs() {
@@ -923,6 +1285,7 @@ function renderPBs() {
     <div class="pb-card" style="animation-delay:${i*40}ms">
       <div class="pb-event-name">${ev}</div>
       <div class="pb-mark-val">${pb.display}</div>
+      ${pb.msm != null ? `<div class="pb-msm">MSM Rating <strong>${pb.msm}</strong></div>` : ''}
     </div>
   `).join('');
 }
@@ -965,7 +1328,7 @@ function baseOptions(c, yTitle = '', xTitle = '') {
         grid:  { color: c.gridColor }
       },
       y: {
-        reverse: false, // 🌟 FIX: Disabled axis inversion
+        reverse: false,
         title: { display: !!yTitle, text: yTitle, color: c.textColor, font: { weight: 'bold' } },
         ticks:   { color: c.textColor, font: { size: 10, family: 'Inter, sans-serif' } },
         grid:    { color: c.gridColor }
@@ -977,21 +1340,21 @@ function baseOptions(c, yTitle = '', xTitle = '') {
 function parseMark(mark) {
   if (!mark) return NaN;
   const m = String(mark).trim().toLowerCase();
-  
+
   if (m.includes('-')) {
     const parts = m.split('-');
     const feet = parseFloat(parts[0]) || 0;
     const inches = parseFloat(parts[1]) || 0;
     return (feet * 12) + inches;
   }
-  
+
   if (m.includes(':')) {
     const parts = m.split(':');
     const mins = parseFloat(parts[0]) || 0;
     const secs = parseFloat(parts[1]) || 0;
     return (mins * 60) + secs;
   }
-  
+
   return parseFloat(m.replace(/[^\d.-]/g, ''));
 }
 
@@ -1020,14 +1383,14 @@ function populateProgSelect() {
 function buildProgChart() {
   const c = chartDefaults();
   const ev = document.getElementById('progEventSel').value;
-  
+
   const isFieldFeetInches = allResults.some(r => r.event?.name === ev && String(r.mark).includes('-'));
   const isFieldMetric = allResults.some(r => r.event?.name === ev && String(r.mark).toLowerCase().includes('m'));
 
   const pts = allResults
     .filter(r => r.event?.name === ev && r.meet?.date && r.mark)
-    .map(r => ({ 
-        x: r.meet.date, 
+    .map(r => ({
+        x: r.meet.date,
         y: parseMark(r.mark),
         meetName: r.meet?.name || 'Unknown Meet',
         rawMark: r.mark
@@ -1036,15 +1399,15 @@ function buildProgChart() {
     .sort((a,b) => a.x.localeCompare(b.x));
 
   if (gCharts.prog) gCharts.prog.destroy();
-  
-  let options = baseOptions(c, 'Mark / Time', 'Date of Meet'); 
-  
+
+  let options = baseOptions(c, 'Mark / Time', 'Date of Meet');
+
   options.scales.y.ticks.callback = function(value) {
       if (isFieldFeetInches) {
           const feet = Math.floor(value / 12);
           const inches = Math.round(value % 12);
           return `${feet}-${String(inches).padStart(2, '0')}`;
-      } else if (value >= 60 && !isFieldMetric && !/jump|vault|throw/i.test(ev)) { 
+      } else if (value >= 60 && !isFieldMetric && !/jump|vault|throw/i.test(ev)) {
           const mins = Math.floor(value / 60);
           const secs = Math.floor(value % 60);
           return `${mins}:${String(secs).padStart(2, '0')}`;
@@ -1084,7 +1447,7 @@ function buildPRChart() {
   const rawMarks = labels.map(ev => pbs[ev].display);
 
   if (gCharts.pr) gCharts.pr.destroy();
-  
+
   let options = baseOptions(c, 'Best Mark', 'Event');
   options.plugins.tooltip.callbacks = {
       label: (context) => `PR: ${rawMarks[context.dataIndex]}`
@@ -1117,7 +1480,7 @@ function buildMeetsChart() {
   const sorted = Object.entries(mc).sort((a,b)=>b[1]-a[1]).slice(0,8);
 
   if (gCharts.meets) gCharts.meets.destroy();
-  
+
   let options = { ...baseOptions(c, 'Meet Name', 'Events Competed'), indexAxis: 'y' };
   options.plugins.tooltip.callbacks = {
       label: (context) => `${context.raw} Events`
@@ -1139,20 +1502,16 @@ function buildMeetsChart() {
   });
 }
 
-/* 🌟 FIX: MultiChart refactored from scatter to line with shared dates */
 function buildMultiChart() {
   const c = chartDefaults();
   const events = [...new Set(allResults.map(r => r.event?.name).filter(Boolean))];
-  
-  // Create a unified X-axis label array so Chart.js correctly aligns dates
+
   const rawDates = [...new Set(allResults.filter(r=>r.meet?.date).map(r=>r.meet.date))].sort();
   const labels = rawDates.map(d => new Date(d).toLocaleDateString('en-US',{month:'short',day:'numeric'}));
 
   const alphas = ['1','0.8','0.6','0.4','0.2','0.1'];
-  
+
   const datasets = events.slice(0,6).map((ev, i) => {
-    
-    // Map the event's data explicitly to the shared date labels
     const data = rawDates.map(dateStr => {
       const res = allResults.find(r => r.event?.name === ev && r.meet?.date === dateStr && r.mark);
       if (res) {
@@ -1162,7 +1521,6 @@ function buildMultiChart() {
       return null;
     });
 
-    // We store the raw marks so tooltips display nicely instead of parsed decimals
     const rawMarks = rawDates.map(dateStr => {
       const res = allResults.find(r => r.event?.name === ev && r.meet?.date === dateStr && r.mark);
       return res ? res.mark : null;
@@ -1170,24 +1528,24 @@ function buildMultiChart() {
 
     const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
     const base = isDark ? '255,255,255' : '0,112,243';
-    
+
     return {
       label: ev,
       data: data,
-      rawMarks: rawMarks, // Custom prop for tooltips
+      rawMarks: rawMarks,
       borderColor: `rgba(${base},${alphas[i]})`,
       backgroundColor: `rgba(${base},${alphas[i]})`,
       borderWidth: 2,
       pointRadius: 4,
       pointHoverRadius: 6,
       tension: 0.3,
-      spanGaps: true, // Tells Chart.js to draw the line across missing meet dates
+      spanGaps: true,
       fill: false
     };
   });
 
   if (gCharts.multi) gCharts.multi.destroy();
-  
+
   let options = baseOptions(c, 'Mark', 'Date');
   options.plugins.legend = { display: true, labels: { color: c.textColor, boxWidth: 10, font: { size: 11 } } };
   options.plugins.tooltip.callbacks = {
@@ -1198,7 +1556,7 @@ function buildMultiChart() {
   };
 
   gCharts.multi = new Chart(document.getElementById('chartMulti'), {
-    type: 'line', // Swapped from scatter to line
+    type: 'line',
     data: { labels, datasets },
     options: options
   });
@@ -1222,15 +1580,15 @@ function populateTableFilters() {
 
 function applyFilters() {
   const queryText = document.getElementById('tblSearch').value.toLowerCase().trim();
-  const terms = queryText.split(/\s+/); 
-  
+  const terms = queryText.split(/\s+/);
+
   const ev = document.getElementById('tblEvent').value;
   const mt = document.getElementById('tblMeet').value;
 
   tFiltered = allResults.filter(r => {
     const text = `${r.event?.name||''} ${r.meet?.name||''} ${r.mark||''} ${r.place||''}`.toLowerCase();
     const matchesSearch = terms.every(term => text.includes(term));
-    
+
     return matchesSearch
         && (!ev || r.event?.name === ev)
         && (!mt || r.meet?.name  === mt);
@@ -1258,18 +1616,23 @@ function doSort() {
       case 'event': va=a.event?.name||'';    vb=b.event?.name||'';    break;
       case 'meet':  va=a.meet?.name||'';     vb=b.meet?.name||'';     break;
       case 'place': va=parseInt(a.place)||999; vb=parseInt(b.place)||999; break;
-      case 'mark':  
-        va = parseMark(a.mark); 
+      case 'msm':
+        va = a.msm; vb = b.msm;
+        if (va == null) va = tSortDir==='asc' ? Infinity : -Infinity;
+        if (vb == null) vb = tSortDir==='asc' ? Infinity : -Infinity;
+        break;
+      case 'mark':
+        va = parseMark(a.mark);
         vb = parseMark(b.mark);
         if(isNaN(va)) va = tSortDir==='asc' ? Infinity : -Infinity;
         if(isNaN(vb)) vb = tSortDir==='asc' ? Infinity : -Infinity;
-        
+
         const aIsField = pbs[a.event?.name]?.isField;
         const bIsField = pbs[b.event?.name]?.isField;
-        
+
         if (aIsField && bIsField) {
             return tSortDir === 'asc' ? vb - va : va - vb;
-        } 
+        }
         break;
       default:      va=''; vb='';
     }
@@ -1289,11 +1652,11 @@ function renderTable() {
     total ? `Showing ${start+1}–${Math.min(start+tPerPage,total)} of ${total}` : 'No results';
 
   const tbody = document.getElementById('tblBody');
-  tbody.innerHTML = ''; 
-  
+  tbody.innerHTML = '';
+
   if (!slice.length) {
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td colspan="5" style="text-align:center;padding:2.5rem;color:var(--text-tertiary);">No matching results.</td>`;
+    tr.innerHTML = `<td colspan="6" style="text-align:center;padding:2.5rem;color:var(--text-tertiary);">No matching results.</td>`;
     tbody.appendChild(tr);
   } else {
     const fragment = document.createDocumentFragment();
@@ -1304,14 +1667,16 @@ function renderTable() {
       const mtName  = r.meet?.name  || '—';
       const mtSlug  = r.meet?.slug;
       const mark    = r.mark || '—';
+      const msmDisp = r.msm != null ? r.msm : '—';
       const place   = r.place ? `${r.place}${ord(r.place)}` : '—';
       const isPB    = pbs[evName]?.display === mark;
-      
+
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td>${date}</td>
         <td>${evSlug?`<a href="event.html?event=${evSlug}">${evName}</a>`:evName}</td>
         <td class="mark-col">${mark}${isPB?'<span class="pb-tag">PB</span>':''}</td>
+        <td class="msm-col">${msmDisp}</td>
         <td>${mtSlug?`<a href="meet.html?slug=${mtSlug}">${mtName}</a>`:mtName}</td>
         <td>${place}</td>
       `;
@@ -1364,12 +1729,12 @@ function toCSVRow(cells) {
 function resultRows() {
   return tFiltered.map(r=>[
     r.meet?.date ? new Date(r.meet.date).toLocaleDateString() : '',
-    r.event?.name||'', r.mark||'', r.meet?.name||'', r.place||''
+    r.event?.name||'', r.mark||'', r.msm!=null?r.msm:'', r.meet?.name||'', r.place||''
   ]);
 }
 
 function exportPBsCSV() {
-  const rows=[['Event','Personal Best'],...Object.entries(pbs).map(([ev,pb])=>[ev,pb.display])];
+  const rows=[['Event','Personal Best','MSM Rating'],...Object.entries(pbs).map(([ev,pb])=>[ev,pb.display, pb.msm!=null?pb.msm:''])];
   dl(`${athleteSlug()}_PBs.csv`,'text/csv', rows.map(toCSVRow).join('\n'));
   toast('✓ PBs exported as CSV');
 }
@@ -1380,10 +1745,11 @@ function exportPBsPDF() {
   doc.setFontSize(18); doc.setFont('helvetica','bold');
   doc.text(`${name} — Personal Bests`, 14, 20);
   doc.setFontSize(9); doc.setFont('helvetica','normal');
-  doc.text(`Mountain State Miles · ${new Date().toLocaleDateString()}`, 14, 27);
+  const rankLine = athleteStateRank != null ? ` · State Rank ${athleteStateRank}${ord(athleteStateRank)}` : '';
+  doc.text(`Mountain State Miles · ${new Date().toLocaleDateString()}${athleteBestMsm!=null?` · Best MSM ${athleteBestMsm}`:''}${rankLine}`, 14, 27);
   doc.autoTable({
-    head:[['Event','Personal Best']],
-    body: Object.entries(pbs).map(([ev,pb])=>[ev,pb.display]),
+    head:[['Event','Personal Best','MSM Rating']],
+    body: Object.entries(pbs).map(([ev,pb])=>[ev,pb.display, pb.msm!=null?pb.msm:'—']),
     startY: 33,
     styles:{fontSize:10},
     headStyles:{fillColor:[0,0,0],textColor:[255,255,255]}
@@ -1393,24 +1759,24 @@ function exportPBsPDF() {
 }
 function exportPBsJSON() {
   dl(`${athleteSlug()}_PBs.json`,'application/json',
-    JSON.stringify(Object.entries(pbs).map(([event,pb])=>({event,mark:pb.display})),null,2));
+    JSON.stringify(Object.entries(pbs).map(([event,pb])=>({event,mark:pb.display,msm_rating:pb.msm!=null?pb.msm:null})),null,2));
   toast('✓ PBs exported as JSON');
 }
 
 function exportResultsCSV() {
-  const rows=[['Date','Event','Mark','Meet','Place'],...resultRows()];
+  const rows=[['Date','Event','Mark','MSM Rating','Meet','Place'],...resultRows()];
   dl(`${athleteSlug()}_Results.csv`,'text/csv', rows.map(toCSVRow).join('\n'));
   toast('✓ Results exported as CSV');
 }
 function exportResultsTSV() {
-  const rows=[['Date','Event','Mark','Meet','Place'],...resultRows()];
+  const rows=[['Date','Event','Mark','MSM Rating','Meet','Place'],...resultRows()];
   dl(`${athleteSlug()}_Results.tsv`,'text/tab-separated-values', rows.map(r=>r.join('\t')).join('\n'));
   toast('✓ Results exported as TSV');
 }
 function exportResultsJSON() {
   dl(`${athleteSlug()}_Results.json`,'application/json',
     JSON.stringify(tFiltered.map(r=>({
-      date:r.meet?.date||'', event:r.event?.name||'', mark:r.mark||'', meet:r.meet?.name||'', place:r.place||null
+      date:r.meet?.date||'', event:r.event?.name||'', mark:r.mark||'', msm_rating:r.msm!=null?r.msm:null, meet:r.meet?.name||'', place:r.place||null
     })),null,2));
   toast('✓ Results exported as JSON');
 }
@@ -1421,9 +1787,10 @@ function exportResultsPDF() {
   doc.setFontSize(18); doc.setFont('helvetica','bold');
   doc.text(`${name} — Results`, 14, 16);
   doc.setFontSize(9); doc.setFont('helvetica','normal');
-  doc.text(`Mountain State Miles · ${new Date().toLocaleDateString()} · ${tFiltered.length} results`, 14, 23);
+  const rankLine = athleteStateRank != null ? ` · State Rank ${athleteStateRank}${ord(athleteStateRank)}` : '';
+  doc.text(`Mountain State Miles · ${new Date().toLocaleDateString()} · ${tFiltered.length} results${athleteBestMsm!=null?` · Best MSM ${athleteBestMsm}`:''}${rankLine}`, 14, 23);
   doc.autoTable({
-    head:[['Date','Event','Mark','Meet','Place']],
+    head:[['Date','Event','Mark','MSM Rating','Meet','Place']],
     body: resultRows(),
     startY:28,
     styles:{fontSize:9},
@@ -1442,8 +1809,8 @@ function exportChartPNG() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  loadAthleteList();           
-  setTimeout(loadAthlete, 80); 
+  loadAthleteList();
+  setTimeout(loadAthlete, 80);
 });
 </script>
 

@@ -66,7 +66,7 @@ javascript:(async function(){
                 const text = cell.innerText.trim();
                 if (!text || text === name || text === school) return;
 
-                if (!place && /^\d+\.$|^\d+$/.test(text) && parseInt(text) > 0 && parseInt(text) < 200) {
+                if (!place && /^\d+\.$/.test(text) && parseInt(text) > 0) {
                     place = text.replace('.', '');
                     return;
                 }
