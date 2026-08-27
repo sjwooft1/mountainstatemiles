@@ -191,6 +191,54 @@
     .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
     .btn-download { background: var(--primary); color: var(--bg-primary); border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; flex: 2; font-weight: bold; }
     .btn-close { background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border); padding: 10px 20px; border-radius: 6px; cursor: pointer; flex: 1; font-weight: 600; }
+    /* ---- Season filter panel (matches rankings.html) ---- */
+    #season-control-panel {
+      background: var(--bg-secondary, #f8fafc);
+      border: 1px solid var(--border, #e2e8f0);
+      border-radius: 12px;
+      padding: 18px 20px;
+      margin-bottom: 2.5rem;
+    }
+    .season-filter-row {
+      display: flex;
+      align-items: flex-end;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .season-filter-item {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-width: 200px;
+    }
+    .season-filter-item label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--text-secondary, #64748b);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .season-filter-item select {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border, #cbd5e1);
+      background-color: var(--bg-primary, #ffffff);
+      color: var(--text-primary, #0f172a);
+      font-size: 0.9rem;
+      cursor: pointer;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .season-filter-item select:focus {
+      border-color: var(--team-color, #0284c7);
+    }
+    .season-filter-note {
+      font-size: 0.8rem;
+      color: var(--text-tertiary);
+      margin-left: auto;
+      align-self: center;
+    }
   </style>
 </head>
 <body>
@@ -219,6 +267,15 @@
 
     <div id="state-championship-section" hidden></div>
 
+    <section id="season-control-panel">
+      <div class="season-filter-row">
+        <div class="season-filter-item">
+          <label>Season</label>
+          <select id="season-filter" onchange="setSeason(this.value)"></select>
+        </div>
+        <p class="season-filter-note" id="season-filter-note">Scopes the meet list, calendar, and stats to the selected season.</p>
+      </div>
+    </section>
     <!-- Toolbar -->
     <div id="list-controls" class="toolbar">
       <div class="filter-bar">
@@ -294,6 +351,7 @@
 
         updateStats();
         renderStateChampionshipSection();
+        populateSeasonFilter();
         renderList('all');
         initCalendar();
       } finally {
@@ -305,10 +363,10 @@
     function updateStats() {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      const upcomingCount = allMeets.filter(m => m.date && new Date(m.date) >= today).length;
-      const pastCount = allMeets.filter(m => m.date && new Date(m.date) < today).length;
-
-      document.getElementById('stat-total').textContent = allMeets.length;
+      const scoped = seasonMeets();
+      const upcomingCount = scoped.filter(m => m.date && new Date(m.date) >= today).length;
+      const pastCount = scoped.filter(m => m.date && new Date(m.date) < today).length;
+      document.getElementById('stat-total').textContent = scoped.length;
       document.getElementById('stat-upcoming').textContent = upcomingCount;
       document.getElementById('stat-past').textContent = pastCount;
     }
@@ -356,11 +414,13 @@
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
+      const scoped = seasonMeets();
       const filtered = filter === 'all'
-        ? allMeets
+        ? scoped
         : filter === 'upcoming'
-          ? allMeets.filter(m => m.date && new Date(m.date) >= today)
-          : allMeets.filter(m => m.date && new Date(m.date) < today);
+          ? scoped.filter(m => m.date && new Date(m.date) >= today)
+          : scoped.filter(m => m.date && new Date(m.date) < today);
+
 
       const searchEl = document.getElementById('search');
       const searchValue = (searchEl && searchEl.value) ? searchEl.value.toLowerCase() : '';
@@ -368,10 +428,14 @@
         ? filtered.filter(m => (m.name || '').toLowerCase().includes(searchValue) || (m.location || '').toLowerCase().includes(searchValue))
         : filtered;
 
-      // Soonest-first for upcoming meets, most-recent-first otherwise
-      filtered2.sort((a, b) => filter === 'upcoming'
-        ? new Date(a.date) - new Date(b.date)
-        : new Date(b.date) - new Date(a.date));
+      // Chronological (oldest first) for 'all' and 'upcoming', reverse-chronological for past
+      filtered2.sort((a, b) => {
+        if (filter === 'all' || filter === 'upcoming') {
+          return new Date(a.date) - new Date(b.date); // Oldest to newest (e.g., 22nd before 23rd)
+        }
+        return new Date(b.date) - new Date(a.date); // Newest to oldest for past meets
+      });
+
 
       if (filtered2.length === 0) {
         container.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--text-secondary);">No meets match your search filters.</div>';
@@ -531,6 +595,87 @@
         }
         toggleExportMenu();
     }
+    // ==========================================
+    // SEASON FILTER
+    // ==========================================
+    let currentSeason = 'all';
+    
+    function meetYear(meet) {
+      if (!meet || !meet.date) return null;
+      const y = parseInt(String(meet.date).split('T')[0].split('-')[0], 10);
+      return isNaN(y) ? null : y;
+    }
+    
+    // Return the meets in scope for the currently selected season.
+    function seasonMeets() {
+      if (currentSeason === 'all') return allMeets.slice();
+      return allMeets.filter(m => {
+        const y = meetYear(m);
+        return y !== null && y.toString() === currentSeason;
+      });
+    }
+    
+    function populateSeasonFilter() {
+      const select = document.getElementById('season-filter');
+      if (!select) return;
+    
+      const uniqueYears = [...new Set(allMeets.map(m => meetYear(m)))]
+        .filter(y => y !== null && !isNaN(y))
+        .sort((a, b) => b - a);
+    
+      // Default to the most recent season that has meets; fall back to all-time.
+      currentSeason = uniqueYears.length ? uniqueYears[0].toString() : 'all';
+    
+      let html = `<option value="all">All-Time</option>`;
+      uniqueYears.forEach(year => {
+        const selected = year.toString() === currentSeason ? 'selected' : '';
+        html += `<option value="${year}" ${selected}>${year} Season</option>`;
+      });
+      select.innerHTML = html;
+      select.value = currentSeason;
+    }
+
+    
+    function setSeason(value) {
+      currentSeason = value;
+      applySeason();
+    }
+    
+    // Re-render everything that depends on the season scope.
+    function applySeason() {
+      updateStats();
+      const activeChip = document.querySelector('.filter-chip.active');
+      const label = activeChip ? activeChip.textContent : 'All';
+      let filterValue = 'all';
+      if (label.includes('Upcoming')) filterValue = 'upcoming';
+      else if (label.includes('Past')) filterValue = 'past';
+      renderList(filterValue);
+      refreshCalendarEvents();
+    }
+    function calendarEvents() {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const eventColor = (meet) =>
+        (meet.date && new Date(meet.date) < today) ? '#5a6472' : '#1a5f2a';
+      return seasonMeets().map(meet => ({
+        id: meet.id,
+        title: meet.name || 'Meet',
+        start: meet.date,
+        allDay: true,
+        url: `meet.html?slug=${encodeURIComponent(meet.slug || meet.id)}`,
+        backgroundColor: eventColor(meet),
+        borderColor: eventColor(meet),
+        extendedProps: { location: meet.location }
+      }));
+    }
+    
+    function refreshCalendarEvents() {
+      if (!calendar) return;
+      calendar.removeAllEvents();
+      calendarEvents().forEach(e => calendar.addEvent(e));
+    }
+
+
   </script>
 
   <div id="global-footer"></div>

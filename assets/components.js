@@ -113,7 +113,9 @@ const BASE_LINKS = [
           </nav>
         </div>
       </div>
-      <img src="/assets/images/background.jpeg" alt="Background Image" class="page-background-image" />
+      <img src="/assets/images/bg.png" alt="Background Image" class="page-background-image" 
+      data-theme-light-src="/assets/images/background.jpeg"
+      data-theme-dark-src="/assets/images/bg.png" />
     `;
   
     setupMobileMenu();
