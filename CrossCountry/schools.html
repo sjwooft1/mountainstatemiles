@@ -429,12 +429,12 @@
           }
 
           card.innerHTML = `
-            <div class="school-card-logo-wrap">
+            
             <img 
               src="${logoUrl}" 
               alt="${s.name} Logo" 
               onerror="this.onerror=null; this.src='${fallbackLogo}'; this.onerror=() => { this.onerror=null; this.src='${sFallbackLogo}'; };">
-              </div>
+              
             <h3>${s.name}</h3>
             ${s.city ? `<span class="school-card-city">${s.city}</span>` : ''}
             <div class="school-card-meta">${metaHtml}</div>

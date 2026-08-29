@@ -337,6 +337,20 @@
     let viewMode = 'indiv';
 
     // =========================================
+    // HOME STATE (WV) FILTERING
+    // =========================================
+    // The site ranks West Virginia athletes. Out-of-state runners (e.g. Ohio teams at
+    // a border invitational) are imported so that team scoring and the MSM field/course
+    // factors see the FULL field they actually raced — but they are hidden from the
+    // individual WV leaderboards. A result is in-state if its `state` is 'WV' or if it
+    // has no `state` at all (legacy results predate the tag and are assumed WV).
+    const HOME_STATE = 'WV';
+    function isInState(r) {
+      const s = (r && r.state ? String(r.state) : HOME_STATE).toUpperCase();
+      return s === HOME_STATE;
+    }
+
+    // =========================================
     // OUT OF SEASON / NON-COMPETITIVE CONFIG
     // =========================================
     // Add slugs here for meets that have unusually slow average times
@@ -542,6 +556,10 @@
       return s.length % 2 ? s[mid] : (s[mid-1]+s[mid])/2;
     }
 
+    // NOTE: buildDerivedFactors and buildFieldFactors intentionally read the FULL
+    // allResults set — including out-of-state runners. Field strength and course
+    // medians are only meaningful when computed over the whole field an athlete
+    // actually raced against. Filtering to WV happens later, at render time.
     function buildDerivedFactors() {
       courseFactor = {};
       const pacesByGender = { M: [], F: [] };
@@ -669,7 +687,7 @@
         case 'hard':   return 1.06;   // was 1.06
         case 'medium': return 1.00;
         case 'easy':   return 0.96;   // was 0.96
-      default:       return 1.00;
+        default:       return 1.00;
       }
     }
 
@@ -715,7 +733,7 @@
     function courseFactorFor(r) {
       const cs = r.course_slug || (meetsData[r.meet_slug] && meetsData[r.meet_slug].course_slug) || 'unknown';
       const hillF = courseHillFactor[cs];      // terrain-derived (GPX or difficulty label)
-    
+
       // Course difficulty comes from terrain only. Median race times are NOT used
       // here — slow times usually mean a weaker field, which is handled separately
       // by fieldFactor. Folding them into the course term double-counts field
@@ -743,17 +761,17 @@
       const dist = r.distance ? parseInt(r.distance,10) : 5000;
       if (!dist || !r.time_in_seconds) return null;
       const rawPace = r.time_in_seconds / dist;
-    
+
       const cF = courseFactorFor(r);
       const fF = fieldFactorFor(r);
       const wF = (typeof weatherFactorOverride === 'number')
                     ? weatherFactorOverride
                     : weatherDifficultyFactor(weatherCache[r.meet_slug]);
-    
+
       // Cap the combined adjustment so no single race can be over-corrected.
       let boost = cF * fF * wF;
       boost = Math.max(0.90, Math.min(1.10, boost));
-    
+
       const adjPace = rawPace / boost;
       const rating = paceToRating(adjPace, r.gender);
       return { rating, cF, fF, wF, adjPace };
@@ -1038,10 +1056,18 @@
         return n.split(/\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
     }
 
+    // Team standings score whatever results are passed in. filterAndRender() passes
+    // WV-only results, so the place-sum / top-5 rating is computed over WV teams alone.
     function renderTeamRankings(containerId, results) {
         const resultsBox = document.getElementById(containerId);
+
+        // Collapse to each athlete's single best result first, so a runner with more
+        // than one qualifying result in the current filter can't be counted twice in
+        // their team's top 5 (which was inflating team scores).
+        const scoringResults = dedupeBestPerAthlete(results);
+
         const teams = {};
-        results.forEach(r => {
+        scoringResults.forEach(r => {
             const school = normalizeSchoolName(r.school_name || r.school_slug || 'Unknown');
             if (!teams[school]) teams[school] = { school, slug: r.school_slug || slugify(school), runners: [] };
             teams[school].runners.push(r);
@@ -1062,7 +1088,7 @@
         }).filter(t => t.top5.length > 0);
 
         if (rankMode !== 'dynamic') {
-            const scoringField = results.slice().sort((a,b)=>a.time_in_seconds-b.time_in_seconds);
+            const scoringField = scoringResults.slice().sort((a,b)=>a.time_in_seconds-b.time_in_seconds);
             const placeOf = new Map();
             let p = 1; scoringField.forEach(r => { placeOf.set(r, p++); });
             scored.forEach(t => {
@@ -1230,6 +1256,8 @@
                     course_slug: result.course_slug || (meet && meet.course_slug) || '',
                     // FIX: Inherit the date from the meet if it's not on the result
                     date: result.date || (meet && meet.date) || null,
+                    // Legacy results without a `state` are assumed WV (in-state).
+                    state: result.state || HOME_STATE,
                     grade_string: formatGrade(result.grad_year)
                 };
 
@@ -1238,6 +1266,8 @@
                 else if (result.gender === 'F') femaleResults.push(resultWithExtras);
             });
 
+            // Factors are built over the FULL field (in- and out-of-state) so field
+            // strength and course medians reflect the real competition.
             buildDerivedFactors();
             buildFieldFactors();
 
@@ -1301,7 +1331,11 @@
             : currentLimit;
 
         if (rankMode === 'dynamic') {
-            const scoringSet = filteredResults.slice();
+            // The rankings page is WV-only in every view. Rate only WV results so
+            // individual leaderboards, team standings, and MSM field strength all
+            // reflect the WV field alone. (Out-of-state runners are still stored and
+            // still drive team scoring on the per-meet page — just not here.)
+            const scoringSet = filteredResults.filter(isInState);
 
             const uniqueMeets = [...new Set(scoringSet.map(r => r.meet_slug))];
             wxStatus.textContent = `Fetching race-day weather for ${uniqueMeets.length} meet(s)…`;
@@ -1316,28 +1350,36 @@
             wxStatus.innerHTML = `MSM Rating active · weather applied to ${weatheredCount}/${uniqueMeets.length} meets · course & field-strength always applied.`;
 
             if (viewMode === 'teams') {
+                // Teams: WV teams only, scored against each other.
                 renderRankings(currentGender, targetBoxId, withRatings);
             } else {
-                withRatings = dedupeBestPerAthlete(withRatings);
-                renderRankings(currentGender, targetBoxId, withRatings.slice(0, displayLimit));
+                // Individuals: best-per-athlete, then top-N.
+                const deduped = dedupeBestPerAthlete(withRatings);
+                renderRankings(currentGender, targetBoxId, deduped.slice(0, displayLimit));
             }
         } else {
             wxStatus.textContent = '';
+            // WV-only in every view.
+            const inStateResults = filteredResults.filter(isInState);
             if (viewMode === 'teams') {
-                renderRankings(currentGender, targetBoxId, filteredResults);
+                // Teams: WV teams only, scored against each other.
+                renderRankings(currentGender, targetBoxId, inStateResults);
             } else {
-                const deduped = dedupeBestPerAthlete(filteredResults);
+                // Individuals: best-per-athlete, then top-N.
+                const deduped = dedupeBestPerAthlete(inStateResults);
                 renderRankings(currentGender, targetBoxId, deduped.slice(0, displayLimit));
             }
         }
     }
 
-    // Keep only each athlete's single best result (by rating in dynamic mode, else fastest time)
+    // Keep only each athlete's single best result (by rating in dynamic mode, else fastest time).
+    // Keyed by school + name so two different runners who share a name aren't merged.
     function dedupeBestPerAthlete(results) {
         const bestMap = new Map();
         results.forEach(r => {
-            const athleteKey = (r.athlete_name || '').toLowerCase().trim();
-            if (!athleteKey) return;
+            const name = (r.athlete_name || '').toLowerCase().trim();
+            if (!name) return;
+            const athleteKey = `${(r.school_slug || '').toLowerCase().trim()}|${name}`;
             if (!bestMap.has(athleteKey)) {
                 bestMap.set(athleteKey, r);
             } else {

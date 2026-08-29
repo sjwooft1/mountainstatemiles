@@ -101,7 +101,7 @@
         .toolbar { display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; margin-bottom: 14px; }
         @media (max-width: 720px) { .toolbar { grid-template-columns: 1fr; } }
 
-        .defaults-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px; }
+        .defaults-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-bottom: 16px; }
         @media (max-width: 720px) { .defaults-row { grid-template-columns: 1fr; } }
         .defaults-row label { display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.03em; }
 
@@ -136,6 +136,7 @@
         .badge-success { background: rgba(16,185,129,0.15); color: var(--success); border: 1px solid rgba(16,185,129,0.4); }
         .badge-danger { background: rgba(239,68,68,0.15); color: var(--danger); border: 1px solid rgba(239,68,68,0.4); }
         .badge-warning { background: rgba(245,158,11,0.15); color: var(--warning); border: 1px solid rgba(245,158,11,0.4); }
+        .badge-oos { background: rgba(148,163,184,0.18); color: #cbd5e1; border: 1px solid rgba(148,163,184,0.4); }
 
         .progress-container { display: none; height: 10px; background: var(--card-bg); border-radius: 20px; overflow: hidden; margin-top: 18px; }
         .progress-fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--primary), var(--primary-hover)); transition: width 0.15s; }
@@ -232,6 +233,17 @@
                     <label for="defaultDistance">Default Distance in Meters (used if not detected from event name)</label>
                     <input type="number" id="defaultDistance" value="5000" min="0" step="1" />
                 </div>
+                <div>
+                    <label for="meetHomeState">Meet Home State (out-of-state runners score but stay out of WV rankings)</label>
+                    <select id="meetHomeState">
+                        <option value="WV" selected>WV — West Virginia</option>
+                        <option value="OH">OH — Ohio</option>
+                        <option value="PA">PA — Pennsylvania</option>
+                        <option value="VA">VA — Virginia</option>
+                        <option value="MD">MD — Maryland</option>
+                        <option value="KY">KY — Kentucky</option>
+                    </select>
+                </div>
             </div>
 
             <textarea id="pasteArea" placeholder="Paste your Athletic.net scraper CSV output here...&#10;event_name,place,grade,athlete_name,mark,school,heat,gender"></textarea>
@@ -263,6 +275,7 @@
                                 <th>CSV Original Event</th>
                                 <th>Athlete</th>
                                 <th>School</th>
+                                <th>State</th>
                                 <th>Grade</th>
                                 <th>Place</th>
                                 <th>Time</th>
@@ -297,6 +310,11 @@
         // "Identifier 'CC_PREFIX' has already been declared" and silently kills this
         // entire script block (meets never load, createNewMeet never gets defined, etc.).
 
+        // Home state of the site. Any result whose state !== HOME_STATE is treated as
+        // out-of-state: it still counts for team scoring and MSM field/course factors,
+        // but rankings.html filters it out of the individual WV leaderboards.
+        const HOME_STATE = 'WV';
+
         // Recognized race-division keywords, checked in this order. Anything left over after
         // stripping gender/distance tokens from the event name falls back to this list too,
         // so odd/unexpected event titles from Athletic.net still degrade gracefully instead of
@@ -318,6 +336,7 @@
                 this.parsedRows = [];
                 this.schoolKeyToSlug = {};
                 this.schoolSlugToName = {};
+                this.schoolSlugToState = {};
                 this.athletesCache = {};
                 this.meets = [];
                 this.meetImportedGroups = [];
@@ -340,6 +359,8 @@
                     const schools = (await window.getAllSchools()) || [];
                     schools.forEach(s => {
                         this.schoolSlugToName[s.slug] = s.name;
+                        // Existing schools are WV unless a state was explicitly stored on them.
+                        this.schoolSlugToState[s.slug] = s.state || HOME_STATE;
                         this.schoolKeyToSlug[this.normalizeSchoolKey(s.name)] = s.slug;
                         this.schoolKeyToSlug[this.normalizeSchoolKey((s.slug || '').replace(/-/g, ' '))] = s.slug;
                     });
@@ -365,6 +386,12 @@
                     await new Promise(resolve => setTimeout(resolve, 100));
                     attempts++;
                 }
+            }
+
+            // Home state chosen in the UI for this import batch. Used as the state for any
+            // school that isn't already a known WV school.
+            meetHomeState() {
+                return (document.getElementById("meetHomeState")?.value || HOME_STATE).toUpperCase();
             }
 
             async createNewMeet() {
@@ -583,7 +610,7 @@
             normalizeSchoolKey(str) {
                 return String(str || "")
                     .toLowerCase()
-                    .replace(/[.''\u2019]/g, "")
+                    .replace(/[.''’]/g, "")
                     .replace(/\bhigh\s*school\b/g, "")
                     .replace(/\bmiddle\s*school\b/g, "")
                     .replace(/\bsenior\s*high\b/g, "")
@@ -594,20 +621,31 @@
                     .replace(/\s+/g, " ");
             }
 
+            // Resolves a raw school name to a slug AND a state.
+            //  - Known WV schools keep their stored state (WV).
+            //  - Unattached runners inherit the meet's home state.
+            //  - Unmatched (new) schools are stamped with the meet's home state, so an
+            //    out-of-state meet's new schools are correctly flagged OOS.
             resolveSchoolSlug(rawSchoolName) {
+                const homeState = this.meetHomeState();
+
                 if (!rawSchoolName || /^unattached$/i.test(rawSchoolName.trim())) {
-                    return { slug: "unattached", matched: true };
+                    return { slug: "unattached", matched: true, state: homeState };
                 }
                 const norm = this.normalizeSchoolKey(rawSchoolName);
-                if (this.schoolKeyToSlug[norm]) return { slug: this.schoolKeyToSlug[norm], matched: true };
+                if (this.schoolKeyToSlug[norm]) {
+                    const slug = this.schoolKeyToSlug[norm];
+                    return { slug, matched: true, state: this.schoolSlugToState[slug] || HOME_STATE };
+                }
 
                 for (const [key, slug] of Object.entries(this.schoolKeyToSlug)) {
                     if (key && norm && (key.includes(norm) || norm.includes(key))) {
-                        return { slug, matched: true };
+                        return { slug, matched: true, state: this.schoolSlugToState[slug] || HOME_STATE };
                     }
                 }
                 // No confident match - use a best-effort slug but flag it so the importer can warn.
-                return { slug: this.slugify(rawSchoolName), matched: false };
+                // A brand-new school takes the meet's home state.
+                return { slug: this.slugify(rawSchoolName), matched: false, state: homeState };
             }
 
             // Best-effort graduation year estimate from a literal grade level (e.g. "11", "SR"),
@@ -712,6 +750,7 @@
                         school_raw: rawSchool,
                         school_slug: schoolMatch.slug,
                         school_matched: schoolMatch.matched,
+                        state: schoolMatch.state,
                         heat,
                         meet_slug: meetSlug,
                     });
@@ -752,6 +791,7 @@
                 const filtered = this.parsedRows.filter(r => checkedEvents.includes(r.raw_event));
                 const valid = filtered.filter(r => r.athlete_name && !isNaN(r.time_seconds) && r.time_seconds > 0);
                 const unmatchedSchools = filtered.filter(r => !r.school_matched).length;
+                const outOfState = filtered.filter(r => (r.state || HOME_STATE) !== HOME_STATE).length;
                 const invalid = filtered.length - valid.length;
 
                 document.getElementById("statsGrid").innerHTML = `
@@ -771,15 +811,24 @@
                         <div class="stat-val ${unmatchedSchools > 0 ? 'text-warning' : ''}">${unmatchedSchools}</div>
                         <div class="stat-label">Unmatched Schools</div>
                     </div>
+                    <div class="stat-box">
+                        <div class="stat-val">${outOfState}</div>
+                        <div class="stat-label">Out-of-State (scored, not ranked)</div>
+                    </div>
                 `;
 
                 const tbody = document.getElementById("previewBody");
                 tbody.innerHTML = filtered.map(r => {
                     const timeOk = !isNaN(r.time_seconds) && r.time_seconds > 0;
+                    const inState = (r.state || HOME_STATE) === HOME_STATE;
                     let statusBadge;
                     if (!timeOk) statusBadge = `<span class="badge badge-danger">✗ Bad Time</span>`;
                     else if (!r.school_matched) statusBadge = `<span class="badge badge-warning">⚠ New School</span>`;
                     else statusBadge = `<span class="badge badge-success">✓ Ready</span>`;
+
+                    const stateBadge = inState
+                        ? `<span class="badge badge-success">${r.state || HOME_STATE}</span>`
+                        : `<span class="badge badge-oos">${r.state || '??'} · not ranked</span>`;
 
                     return `
                     <tr>
@@ -788,6 +837,7 @@
                         <td style="color: var(--text-muted); font-size: 0.75rem;">${r.raw_event}</td>
                         <td>${r.athlete_name}</td>
                         <td>${r.school_raw}${!r.school_matched ? ` <span style="color:var(--warning);font-size:0.7rem;">(${r.school_slug})</span>` : ''}</td>
+                        <td>${stateBadge}</td>
                         <td>${r.grade || '—'}</td>
                         <td>${r.place || '—'}</td>
                         <td><strong>${r.mark}</strong></td>
@@ -818,6 +868,7 @@
 
                 for (let i = 0; i < toImport.length; i++) {
                     const row = toImport[i];
+                    const rowState = row.state || HOME_STATE;
                     const safeName = (row.athlete_name || "Unknown").trim().toLowerCase();
                     const cacheKey = `${row.school_slug}|${safeName}`;
 
@@ -828,6 +879,7 @@
                             name: row.athlete_name,
                             school_slug: row.school_slug,
                             gender: row.gender,
+                            state: rowState,
                             created_at: nowIso,
                             source: 'anet_import',
                         };
@@ -847,6 +899,7 @@
                         athlete_name: row.athlete_name,
                         school_slug: row.school_slug,
                         gender: row.gender,
+                        state: rowState,
                         time: row.time_seconds,
                         distance: row.distance,
                         place: parseInt(row.place) || null,
@@ -865,8 +918,10 @@
 
                 btn.innerText = "Import Complete ✓";
                 btn.classList.replace("btn-primary", "btn-secondary");
+                const oosCount = toImport.filter(r => (r.state || HOME_STATE) !== HOME_STATE).length;
                 alert(`Successfully imported ${toImport.length} results!` +
-                    (newAthletesCreated > 0 ? ` (${newAthletesCreated} new athlete${newAthletesCreated === 1 ? '' : 's'} added to the roster.)` : ''));
+                    (newAthletesCreated > 0 ? ` (${newAthletesCreated} new athlete${newAthletesCreated === 1 ? '' : 's'} added to the roster.)` : '') +
+                    (oosCount > 0 ? ` ${oosCount} out-of-state result${oosCount === 1 ? '' : 's'} were saved for scoring but will not appear in WV rankings.` : ''));
 
                 await this.loadImportedEventsForMeet(this.currentMeetSlug);
                 document.getElementById("pasteArea").value = "";
@@ -885,7 +940,7 @@
               window.importer.meets.length >= 0 &&
               Object.keys(window.importer.schoolKeyToSlug || {}).length > 0;
           }
-        
+
           async function waitReady(maxMs) {
             const start = Date.now();
             while (!ready()) {
@@ -893,39 +948,48 @@
               await new Promise(r => setTimeout(r, 150));
             }
           }
-        
+
           /**
            * @param {string} meetSlug     must match an existing meet slug
            * @param {string} csvText      scraper CSV, columns:
            *                              event_name,place,grade,athlete_name,mark,school,heat,gender
-           * @param {object} opts         { defaultDistance=5000, defaultGender='M' }
-           * @returns {Promise<object>}   {status, imported, skipped, newAthletes, unmatchedSchools, meetSlug}
+           * @param {object} opts         { defaultDistance=5000, defaultGender='M', homeState='WV' }
+           * @returns {Promise<object>}   {status, imported, skipped, newAthletes, unmatchedSchools, outOfState, meetSlug}
            */
           window.autoImport = async function (meetSlug, csvText, opts) {
             opts = opts || {};
             const defaultDistance = parseFloat(opts.defaultDistance) || 5000;
             const defaultGender = (opts.defaultGender || 'M').toUpperCase();
-        
+            // Home state override for programmatic imports; falls back to the UI dropdown, then WV.
+            const homeStateOverride = opts.homeState ? String(opts.homeState).toUpperCase() : null;
+
             await waitReady(15000);
             const imp = window.importer;
-        
+
             if (!meetSlug) return { status: 'error', message: 'missing meetSlug' };
             const meetExists = imp.meets.some(m => m.slug === meetSlug);
             if (!meetExists) {
               return { status: 'error', message: 'meet slug not found: ' + meetSlug };
             }
             if (!csvText || !csvText.trim()) return { status: 'error', message: 'empty CSV' };
-        
+
+            // If a homeState override is provided, reflect it in the UI dropdown so
+            // resolveSchoolSlug() (which reads meetHomeState()) uses it.
+            if (homeStateOverride) {
+              const sel = document.getElementById('meetHomeState');
+              if (sel) sel.value = homeStateOverride;
+            }
+
             // --- parse rows exactly like parseData(), minus the DOM/UI bits ---
             const rows = [];
             csvText.split('\n').forEach(line => {
               if (line.trim() === '') return;
               const lower = line.toLowerCase();
               if (lower.includes('event_name') && lower.includes('athlete_name')) return; // header
-        
+
               const p = imp.parseCSVLine(line);
               if (p.length < 5) return;
-        
+
               const rawEvent = p[0];
               const place = p[1];
               const grade = p[2];
@@ -935,13 +999,13 @@
               const heat = p[6] || '1';
               const csvGender = p[7] || '';
               if (!athleteName) return;
-        
+
               const parsedEvent = imp.parseEventField(rawEvent, csvGender || defaultGender);
               const gender = parsedEvent.gender || defaultGender;
               const distance = parsedEvent.distance || defaultDistance;
               const schoolMatch = imp.resolveSchoolSlug(rawSchool);
               const timeSeconds = window.parseTimeToSeconds ? window.parseTimeToSeconds(mark) : NaN;
-        
+
               rows.push({
                 race_type: parsedEvent.raceType,
                 gender: gender,
@@ -952,27 +1016,30 @@
                 time_seconds: timeSeconds,
                 school_slug: schoolMatch.slug,
                 school_matched: schoolMatch.matched,
+                state: schoolMatch.state,
                 meet_slug: meetSlug,
               });
             });
-        
+
             const valid = rows.filter(r => r.athlete_name && !isNaN(r.time_seconds) && r.time_seconds > 0);
             const skipped = rows.length - valid.length;
             const unmatchedSchools = valid.filter(r => !r.school_matched).length;
-        
+            const outOfState = valid.filter(r => (r.state || HOME_STATE) !== HOME_STATE).length;
+
             if (valid.length === 0) {
               return { status: 'error', message: 'no valid rows to import', skipped: skipped };
             }
-        
+
             // --- commit exactly like executeImport(), minus the UI/progress ---
             const nowIso = new Date().toISOString();
             let newAthletes = 0;
             let imported = 0;
-        
+
             for (const row of valid) {
+              const rowState = row.state || HOME_STATE;
               const safeName = (row.athlete_name || 'Unknown').trim().toLowerCase();
               const cacheKey = `${row.school_slug}|${safeName}`;
-        
+
               let athleteId = imp.athletesCache[cacheKey];
               if (!athleteId) {
                 const gradYear = imp.estimateGradYear(row.grade);
@@ -980,6 +1047,7 @@
                   name: row.athlete_name,
                   school_slug: row.school_slug,
                   gender: row.gender,
+                  state: rowState,
                   created_at: nowIso,
                   source: 'auto_import',
                 };
@@ -993,11 +1061,12 @@
                   console.error('athlete create failed:', e);
                 }
               }
-        
+
               const resultData = {
                 athlete_name: row.athlete_name,
                 school_slug: row.school_slug,
                 gender: row.gender,
+                state: rowState,
                 time: row.time_seconds,
                 distance: row.distance,
                 place: parseInt(row.place) || null,
@@ -1012,7 +1081,7 @@
                 console.error('result write failed:', e);
               }
             }
-        
+
             return {
               status: 'ok',
               meetSlug: meetSlug,
@@ -1020,14 +1089,15 @@
               skipped: skipped,
               newAthletes: newAthletes,
               unmatchedSchools: unmatchedSchools,
+              outOfState: outOfState,
             };
           };
-        
-          console.log('autoImport() attached — call window.autoImport(meetSlug, csvText, {defaultDistance}).');
+
+          console.log('autoImport() attached — call window.autoImport(meetSlug, csvText, {defaultDistance, homeState}).');
         };
 
         const importer = new XCMeetImporter();
-        window.importer = importer; 
+        window.importer = importer;
         importer.init();
     </script>
 
