@@ -309,6 +309,7 @@
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
   <script src="firebase-config.js"></script>
   <script src="firebase-helpers.js"></script>
+  <script src="/scripts/msm-rating.js"></script>
 
   <script>
     // Global variables
@@ -812,7 +813,7 @@
 
                 if (rankMode === 'dynamic' && r._msm) {
                     row.push(r._msm.rating);
-                    row.push(`"${formatTime(ratingToPredicted5K(r._msm.rating, r.gender))}"`);
+                    row.push(`"${formatTime(MSMRating.ratingToPredicted5K(r._msm.rating, r.gender))}"`);
                 }
 
                 csvContent += row.join(',') + '\n';
@@ -943,7 +944,7 @@
                 ];
                 if (rankMode === 'dynamic' && r._msm) {
                     row.push(r._msm.rating);
-                    row.push(formatTime(ratingToPredicted5K(r._msm.rating, r.gender)));
+                    row.push(formatTime(MSMRating.ratingToPredicted5K(r._msm.rating, r.gender)));
                 }
                 return row;
             });
@@ -1014,7 +1015,7 @@
 
                     let scoreCell;
                     if (rankMode === 'dynamic' && runner._msm) {
-                      const predicted = formatTime(ratingToPredicted5K(runner._msm.rating, runner.gender));
+                      const predicted = formatTime(MSMRating.ratingToPredicted5K(runner._msm.rating, runner.gender));
                       const boost = runner._msm.cF * runner._msm.fF * runner._msm.wF;
                       const pct = Math.round((boost - 1) * 100);
                       const badge = pct !== 0
@@ -1268,8 +1269,12 @@
 
             // Factors are built over the FULL field (in- and out-of-state) so field
             // strength and course medians reflect the real competition.
-            buildDerivedFactors();
-            buildFieldFactors();
+            await MSMRating.buildModel(allResults, {
+              meetsMap: meetsData,
+              coursesMap: coursesData,
+              fetchWeather: false   // rankings fetches weather itself per-filter (see EDIT 3)
+            });
+
 
             populateFilters();
             maleResults.sort((a,b)=>a.time_in_seconds-b.time_in_seconds);
@@ -1340,9 +1345,9 @@
             const uniqueMeets = [...new Set(scoringSet.map(r => r.meet_slug))];
             wxStatus.textContent = `Fetching race-day weather for ${uniqueMeets.length} meet(s)…`;
 
-            await Promise.all(uniqueMeets.map(slug => fetchWeatherForMeet(slug)));
+            await Promise.all(uniqueMeets.map(slug => MSMRating.fetchWeatherForMeet(slug)));
+            scoringSet.forEach(r => { r._msm = MSMRating.rate(r); });
 
-            scoringSet.forEach(r => { r._msm = computeRating(r); });
             let withRatings = scoringSet.filter(r => r._msm);
             withRatings.sort((a,b) => b._msm.rating - a._msm.rating);
 

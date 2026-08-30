@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Portal — Mountain State Miles</title>
+
+<link rel="icon" type="image/png" href="/assets/Favicon Generator/favicon-96x96.png" sizes="96x96">
+<link rel="icon" type="image/svg+xml" href="/assets/Favicon Generator/favicon.svg">
+<link rel="shortcut icon" href="/assets/Favicon Generator/favicon.ico">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/Favicon Generator/apple-touch-icon.png">
+<link rel="manifest" href="/assets/Favicon Generator/site.webmanifest">
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.7.1/jspdf.plugin.autotable.min.js"></script>
+
+<link rel="stylesheet" href="/assets/main.css" />
+<script src="/assets/theme-toggle.js" defer></script>
+<script src="/assets/components.js" defer></script>
+
+<style>
+body { padding-top: 0; margin-top:40px;}
+
+/* ---------- layout ---------- */
+.portal-hero { background: var(--bg-secondary); border-bottom: 1px solid var(--border); padding: 40px 0 34px; }
+.portal-hero-inner { max-width: 1400px; margin: 0 auto; padding: 0 1.5rem; display: flex; align-items: flex-end; justify-content: space-between; gap: 2rem; flex-wrap: wrap; }
+.hero-name { font-family: var(--font-display); font-size: clamp(2rem, 5vw, 3.4rem); font-weight: 800; letter-spacing: -0.03em; line-height: 1; color: var(--text-primary); }
+.hero-sub { color: var(--text-secondary); margin-top: 10px; font-size: 0.95rem; }
+.hero-chips { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+.hero-chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border: 1px solid var(--border); border-radius: 20px; font-size: 0.8rem; font-weight: 500; color: var(--text-secondary); background: var(--bg-primary); }
+.hero-chip i { font-size: 0.7rem; color: var(--text-tertiary); }
+.page-main { max-width: 1400px; margin: 0 auto; padding: 2.25rem 1.5rem 5rem; }
+
+.section-block { margin-bottom: 2.75rem; }
+.section-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.15rem; flex-wrap: wrap; gap: 0.75rem; }
+.section-heading { font-family: var(--font-display); font-size: 1.4rem; font-weight: 800; letter-spacing: -0.02em; color: var(--text-primary); display: flex; align-items: center; gap: 8px; }
+.section-heading::before { content: ''; display: inline-block; width: 3px; height: 1.05em; background: var(--text-primary); border-radius: 2px; }
+.section-sub { font-size: 0.82rem; color: var(--text-tertiary); margin-top: 2px; }
+
+/* ---------- buttons ---------- */
+.export-row { display: flex; gap: 6px; flex-wrap: wrap; }
+.xbtn { display: inline-flex; align-items: center; gap: 5px; padding: 6px 12px; font-family: var(--font-sans); font-size: 0.78rem; font-weight: 600; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--bg-primary); color: var(--text-secondary); cursor: pointer; transition: all var(--transition); white-space: nowrap; }
+.xbtn:hover { border-color: var(--text-primary); background: var(--text-primary); color: var(--bg-primary); }
+.xbtn i { font-size: 0.72rem; }
+.btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 11px 18px; font-family: var(--font-sans); font-size: 0.9rem; font-weight: 700; border: 1px solid var(--text-primary); border-radius: var(--radius-md); background: var(--text-primary); color: var(--bg-primary); cursor: pointer; transition: all var(--transition); width: 100%; }
+.btn-primary:hover { opacity: 0.9; }
+.btn-ghost { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 11px 18px; font-size: 0.9rem; font-weight: 600; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--bg-primary); color: var(--text-primary); cursor: pointer; transition: all var(--transition); width: 100%; }
+.btn-ghost:hover { border-color: var(--text-primary); }
+
+/* ---------- auth gate ---------- */
+.auth-wrap { max-width: 460px; margin: 3.5rem auto; padding: 0 1.25rem; }
+.auth-card { background: var(--bg-primary); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 32px 28px; box-shadow: 0 8px 30px var(--shadow-light); }
+.auth-title { font-family: var(--font-display); font-size: 1.9rem; font-weight: 800; letter-spacing: -0.02em; color: var(--text-primary); text-align: center; }
+.auth-lead { text-align: center; color: var(--text-secondary); font-size: 0.9rem; margin: 8px 0 22px; }
+.auth-tabs { display: flex; gap: 6px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 4px; margin-bottom: 20px; }
+.auth-tab { flex: 1; padding: 8px; font-size: 0.85rem; font-weight: 700; border: none; background: transparent; color: var(--text-secondary); border-radius: 6px; cursor: pointer; transition: all var(--transition); }
+.auth-tab.active { background: var(--text-primary); color: var(--bg-primary); }
+.field { margin-bottom: 14px; }
+.field label { display: block; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-tertiary); margin-bottom: 6px; }
+.field input { width: 100%; padding: 10px 12px; font-family: var(--font-sans); font-size: 0.9rem; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--bg-secondary); color: var(--text-primary); outline: none; transition: border-color var(--transition); }
+.field input:focus { border-color: var(--text-primary); background: var(--bg-primary); }
+.auth-alt { text-align: center; margin: 16px 0; font-size: 0.78rem; color: var(--text-tertiary); position: relative; }
+.auth-alt::before, .auth-alt::after { content: ''; position: absolute; top: 50%; width: 38%; height: 1px; background: var(--border); }
+.auth-alt::before { left: 0; } .auth-alt::after { right: 0; }
+.auth-msg { text-align: center; font-size: 0.82rem; margin-top: 12px; min-height: 18px; }
+.auth-msg.err { color: var(--danger, #ef4444); }
+.auth-msg.ok { color: var(--success, #10b981); }
+.link-btn { background: none; border: none; color: var(--text-primary); font-weight: 600; cursor: pointer; font-size: 0.8rem; text-decoration: underline; padding: 0; }
+
+/* ---------- role picker ---------- */
+.role-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; }
+.role-card { border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 22px; background: var(--bg-primary); cursor: pointer; transition: all var(--transition); text-align: center; }
+.role-card:hover { border-color: var(--text-primary); transform: translateY(-3px); box-shadow: 0 6px 18px var(--shadow-light); }
+.role-card.sel { border-color: var(--text-primary); background: var(--text-primary); color: var(--bg-primary); }
+.role-card i { font-size: 1.8rem; margin-bottom: 10px; }
+.role-card h3 { font-family: var(--font-display); font-size: 1.15rem; font-weight: 800; margin-bottom: 6px; }
+.role-card p { font-size: 0.8rem; opacity: 0.85; line-height: 1.4; }
+
+/* ---------- stat cards ---------- */
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; }
+.stat-card { background: var(--bg-primary); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 16px 18px; }
+.stat-card.hl { border-color: var(--text-primary); background: var(--text-primary); }
+.stat-card.hl .stat-lbl, .stat-card.hl .stat-sub { color: var(--bg-primary); opacity: 0.75; }
+.stat-card.hl .stat-val { color: var(--bg-primary); }
+.stat-lbl { font-size: 0.72rem; color: var(--text-tertiary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+.stat-val { font-family: var(--font-display); font-size: 1.75rem; font-weight: 800; color: var(--text-primary); line-height: 1; }
+.stat-sub { font-size: 0.74rem; color: var(--text-secondary); margin-top: 4px; }
+
+/* ---------- charts ---------- */
+.charts-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(440px, 1fr)); gap: 16px; }
+@media (max-width: 900px) { .charts-grid { grid-template-columns: 1fr; } }
+.chart-card { background: var(--bg-primary); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 20px; }
+.chart-card-head { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 14px; gap: 10px; }
+.chart-card-title { font-size: 0.88rem; font-weight: 700; color: var(--text-primary); }
+.chart-card-sub { font-size: 0.75rem; color: var(--text-tertiary); margin-top: 2px; }
+.chart-wrap { position: relative; height: 230px; }
+.event-select, .plain-select { padding: 5px 9px; font-family: var(--font-sans); font-size: 0.78rem; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--bg-secondary); color: var(--text-primary); cursor: pointer; }
+
+/* ---------- tables ---------- */
+.table-card { background: var(--bg-primary); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+table.rt { width: 100%; border-collapse: collapse; font-size: 0.86rem; }
+table.rt thead th { padding: 11px 14px; text-align: left; font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-tertiary); background: var(--bg-secondary); border-bottom: 1px solid var(--border); white-space: nowrap; }
+table.rt tbody td { padding: 10px 14px; border-bottom: 1px solid var(--border-light); color: var(--text-secondary); vertical-align: middle; }
+table.rt tbody tr:last-child td { border-bottom: none; }
+table.rt tbody tr:hover td { background: var(--bg-secondary); }
+table.rt .mark-col { font-family: var(--font-display); font-weight: 700; color: var(--text-primary); }
+.pos { color: var(--success, #10b981); font-weight: 700; }
+.neg { color: var(--danger, #ef4444); font-weight: 700; }
+.pill { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 0.68rem; font-weight: 700; }
+.pill.up { background: rgba(16,185,129,0.15); color: #10b981; }
+.pill.down { background: rgba(239,68,68,0.15); color: #ef4444; }
+.pill.flat { background: var(--bg-secondary); color: var(--text-secondary); }
+
+/* ---------- pace zones ---------- */
+.pace-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+.pace-card { border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 16px; background: var(--bg-primary); position: relative; overflow: hidden; }
+.pace-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; }
+.pace-card.z-easy::before { background: #22c55e; }
+.pace-card.z-marathon::before { background: #3b82f6; }
+.pace-card.z-threshold::before { background: #eab308; }
+.pace-card.z-interval::before { background: #f97316; }
+.pace-card.z-rep::before { background: #ef4444; }
+.pace-name { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-tertiary); }
+.pace-val { font-family: var(--font-display); font-size: 1.6rem; font-weight: 800; color: var(--text-primary); margin: 4px 0 2px; }
+.pace-desc { font-size: 0.72rem; color: var(--text-secondary); }
+
+/* ---------- search / typeahead ---------- */
+.ta-wrap { position: relative; }
+.ta-input { width: 100%; padding: 9px 12px; font-family: var(--font-sans); font-size: 0.9rem; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--bg-primary); color: var(--text-primary); outline: none; }
+.ta-input:focus { border-color: var(--text-primary); }
+.ta-drop { display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: var(--bg-primary); border: 1px solid var(--border); border-radius: var(--radius-md); box-shadow: 0 8px 24px var(--shadow-medium); z-index: 50; max-height: 280px; overflow-y: auto; }
+.ta-drop.open { display: block; }
+.ta-item { padding: 9px 12px; cursor: pointer; font-size: 0.85rem; border-bottom: 1px solid var(--border-light); }
+.ta-item:hover, .ta-item.hl { background: var(--bg-secondary); }
+.ta-item small { color: var(--text-tertiary); }
+
+.follow-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+.follow-chip { display: inline-flex; align-items: center; gap: 8px; padding: 6px 10px 6px 14px; border: 1px solid var(--border); border-radius: 20px; font-size: 0.85rem; font-weight: 600; color: var(--text-primary); background: var(--bg-primary); }
+.follow-chip button { background: none; border: none; color: var(--text-tertiary); cursor: pointer; font-size: 0.9rem; line-height: 1; }
+.follow-chip button:hover { color: var(--danger, #ef4444); }
+
+/* segmented control */
+.seg { display: inline-flex; border: 1px solid var(--border); border-radius: var(--radius-md); overflow: hidden; }
+.seg-btn { padding: 6px 14px; font-size: 0.8rem; font-weight: 700; border: none; background: var(--bg-primary); color: var(--text-secondary); cursor: pointer; transition: all var(--transition); }
+.seg-btn.active { background: var(--text-primary); color: var(--bg-primary); }
+.seg-btn + .seg-btn { border-left: 1px solid var(--border); }
+
+/* training tips */
+.tip { display: flex; gap: 10px; align-items: flex-start; padding: 10px 0; border-top: 1px solid var(--border-light); font-size: 0.88rem; color: var(--text-secondary); }
+.tip:first-of-type { border-top: none; }
+.tip-tag { flex-shrink: 0; font-size: 0.66rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; padding: 3px 8px; border-radius: 10px; background: var(--bg-secondary); color: var(--text-tertiary); min-width: 88px; text-align: center; }
+.tip-good .tip-tag { background: rgba(16,185,129,0.15); color: #10b981; }
+.tip-warn .tip-tag { background: rgba(239,68,68,0.15); color: #ef4444; }
+
+/* simulator */
+.sim-controls { display: flex; gap: 18px; flex-wrap: wrap; align-items: flex-end; }
+.field-inline { display: flex; flex-direction: column; gap: 6px; }
+.lineup-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; }
+.lineup-item { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius-md); font-size: 0.85rem; cursor: pointer; }
+.lineup-item small { color: var(--text-tertiary); margin-left: auto; font-family: var(--font-display); }
+
+/* ---------- misc ---------- */
+.empty-state { text-align: center; padding: 3rem 1rem; color: var(--text-tertiary); }
+.empty-state i { font-size: 2rem; margin-bottom: 0.75rem; display: block; }
+.card { background: var(--bg-primary); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 20px; }
+.hidden { display: none !important; }
+.spin { text-align: center; padding: 4rem 1rem; color: var(--text-tertiary); }
+.spin i { font-size: 1.6rem; }
+.toast-tray { position: fixed; bottom: 20px; right: 20px; display: flex; flex-direction: column; gap: 6px; z-index: 9999; pointer-events: none; }
+.toast { background: #000; color: #fff; padding: 10px 16px; border-radius: var(--radius-lg); font-size: 0.82rem; font-weight: 500; border-left: 3px solid var(--text-primary); box-shadow: 0 4px 16px rgba(0,0,0,0.2); animation: toastIn 0.2s ease; }
+@keyframes toastIn { from { opacity: 0; transform: translateX(12px); } to { opacity: 1; transform: translateX(0); } }
+.role-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
+.compare-controls { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; }
+.compare-controls .ta-wrap { flex: 1; min-width: 220px; }
+@media (max-width: 768px) { .portal-hero-inner { flex-direction: column; align-items: flex-start; } }
+</style>
+</head>
+<body>
+
+<div id="global-header"></div>
+
+<!-- ===================== AUTH GATE ===================== -->
+<div id="authGate" class="auth-wrap hidden">
+  <div class="auth-card">
+    <div class="auth-title">Mountain State Miles</div>
+    <p class="auth-lead">Sign in to your athlete, coach, or fan portal.</p>
+
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tabSignIn" type="button">Sign In</button>
+      <button class="auth-tab" id="tabSignUp" type="button">Create Account</button>
+    </div>
+
+    <div class="field" id="nameField" style="display:none;">
+      <label>Display Name</label>
+      <input type="text" id="authName" autocomplete="name" placeholder="Your name">
+    </div>
+    <div class="field">
+      <label>Username</label>
+      <input type="text" id="authUser" autocomplete="username" placeholder="username">
+    </div>
+    <div class="field">
+      <label>Password</label>
+      <input type="password" id="authPass" autocomplete="current-password" placeholder="••••••••">
+    </div>
+
+    <button class="btn-primary" id="authSubmit" type="button"><i class="fa-solid fa-right-to-bracket"></i> Sign In</button>
+
+    <div class="auth-msg" id="authMsg"></div>
+  </div>
+</div>
+
+<!-- ===================== ROLE ONBOARDING ===================== -->
+<main id="onboard" class="page-main hidden">
+  <div class="section-block">
+    <div class="section-head"><div><h2 class="section-heading">Welcome — pick your role</h2><p class="section-sub">This tailors your dashboard. You can change it anytime.</p></div></div>
+    <div class="role-grid" id="roleGrid">
+      <div class="role-card" data-role="athlete"><i class="fa-solid fa-person-running"></i><h3>Athlete</h3><p>Your progression, PBs, race predictions & training paces.</p></div>
+      <div class="role-card" data-role="coach"><i class="fa-solid fa-clipboard-user"></i><h3>Coach</h3><p>Roster, scoring 5, pack dynamics & top improvers.</p></div>
+      <div class="role-card" data-role="fan"><i class="fa-solid fa-heart"></i><h3>Fan</h3><p>Follow runners & teams, compare head-to-head, leaderboards.</p></div>
+    </div>
+  </div>
+
+  <div class="section-block card hidden" id="onboardDetails">
+    <div id="onboardAthlete" class="hidden">
+      <h3 class="section-heading" style="font-size:1.1rem;">Which athlete are you?</h3>
+      <p class="section-sub" style="margin-bottom:12px;">Start typing your name as it appears in results.</p>
+      <div class="ta-wrap"><input class="ta-input" id="obAthleteInput" placeholder="Search athletes…"><div class="ta-drop" id="obAthleteDrop"></div></div>
+    </div>
+    <div id="onboardCoach" class="hidden">
+      <h3 class="section-heading" style="font-size:1.1rem;">Which team do you coach?</h3>
+      <p class="section-sub" style="margin-bottom:12px;">Pick your school.</p>
+      <select class="plain-select" id="obSchoolSelect" style="min-width:280px;"></select>
+    </div>
+    <div id="onboardFan" class="hidden">
+      <p class="section-sub" style="margin-bottom:12px;">You're all set — follow athletes and teams from your dashboard.</p>
+    </div>
+    <div class="role-actions"><button class="btn-primary" id="obSave" style="width:auto;"><i class="fa-solid fa-check"></i> Save & Continue</button></div>
+  </div>
+</main>
+
+<!-- ===================== DASHBOARD ===================== -->
+<div id="dash" class="hidden">
+  <section class="portal-hero">
+    <div class="portal-hero-inner">
+      <div>
+        <h1 class="hero-name" id="dashTitle">Dashboard</h1>
+        <p class="hero-sub" id="dashSub"></p>
+        <div class="hero-chips" id="dashChips"></div>
+      </div>
+      <div class="export-row" id="dashActions"></div>
+    </div>
+  </section>
+  <main class="page-main" id="dashBody">
+    <div class="spin"><i class="fa-solid fa-circle-notch fa-spin"></i></div>
+  </main>
+</div>
+
+<div class="toast-tray" id="toastTray"></div>
+
+<!-- Firebase (compat) — matches the rest of the site -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+<script src="/CrossCountry/firebase-config.js"></script>
+<script src="/CrossCountry/firebase-helpers.js"></script>
+<script src="/scripts/msm-rating.js"></script>
+<script src="portal-engine.js"></script>
+<script src="portal-auth.js"></script>
+
+<script src="portal-ui.js" defer></script>
+</body>
+</html>

@@ -665,7 +665,7 @@
                 chip.className = "expected-team-chip";
                 chip.href = `school.html?slug=${teamSlug}`;
                 chip.innerHTML = `
-                    <img src="${logoUrl}" alt="${teamName}" onerror="this.src='/assets/images/logob.svg'" />
+                    <img src="${logoUrl}" alt="${teamName}" onerror="this.src='/assets/images/msmrunner.svg'" />
                     ${teamName}
                 `;
                 etList.appendChild(chip);
@@ -832,8 +832,11 @@
             return parseFloat(a.time) - parseFloat(b.time);
         });
 
-        // 3. Calculate team scores & scoring places based on the ENTIRE field
-        const teamScores = calculateTeamScores(raceData);
+        // 3. Calculate team scores & scoring places based on the ENTIRE field.
+        //    Relay races (results carrying a relay_team tag) are scored by summing
+        //    each relay squad's leg times instead of the usual place-sum scoring.
+        const relay = isRelayRace(raceData);
+        const teamScores = relay ? calculateRelayScores(raceData) : calculateTeamScores(raceData);
         const distance = raceData.length > 0 ? parseFloat(raceData[0].distance) : 5000;
 
         // 4. Update the Export Dropdown with the teams in this race
@@ -845,11 +848,16 @@
           filteredData = filteredData.filter(r => {
             const name = (r.athlete_name || r.name || '').toLowerCase();
             const school = (r.school_name || r.school || '').toLowerCase();
-            return name.includes(query) || school.includes(query);
+            const squad = (r.relay_team || '').toLowerCase();
+            return name.includes(query) || school.includes(query) || squad.includes(query);
           });
         }
         if (exportSelect !== 'all') {
-            filteredData = filteredData.filter(r => normalizeSchoolName(r.school_name || r.school || 'Unknown') === exportSelect);
+            // Match on the dropdown's team identity: relay squad name for relays,
+            // else the normalized school name.
+            filteredData = filteredData.filter(r =>
+                (relay ? (r.relay_team || '') : normalizeSchoolName(r.school_name || r.school || 'Unknown')) === exportSelect
+            );
         }
 
         currentFilteredResults = filteredData;
@@ -977,6 +985,55 @@
     }
 
     // ==========================================
+    // RELAY SCORING
+    // ==========================================
+    // A race is a relay if any result carries a relay_team tag (e.g. "Morgantown A").
+    // Relays are imported one row per LEG, so each runner's `time` is a single-leg
+    // time and their relay_team is the squad they ran for.
+    function isRelayRace(results) {
+        return Array.isArray(results) && results.some(r => r && r.relay_team);
+    }
+
+    // Relay scoring: a squad's time is the SUM of its legs; squads rank by total
+    // time ascending (fastest wins). This mirrors how a 4x1.5mile relay is scored
+    // and matches the official results (e.g. Morgantown A = sum of its 4 legs).
+    // Returns objects shaped like calculateTeamScores() so the existing renderers
+    // and exporters keep working, except `score` here is TOTAL SECONDS and each
+    // team also carries `schoolBase` (the school without the A/B/C tag) + `isRelay`.
+    function calculateRelayScores(results) {
+        const squads = {};
+        results.forEach(r => {
+            const squad = r.relay_team || (normalizeSchoolName(r.school_name || r.school || 'Unknown') + ' A');
+            (squads[squad] = squads[squad] || []).push(r);
+        });
+
+        const scored = Object.entries(squads).map(([squad, legs]) => {
+            const legTimes = legs.map(l => parseFloat(l.time)).filter(t => !isNaN(t) && t > 0);
+            const total = legTimes.reduce((s, t) => s + t, 0);
+            // School is the squad name minus a trailing single-letter tag (" A", " B", ...).
+            const schoolBase = squad.replace(/\s+[A-Z]$/, '').trim();
+            // Show legs fastest-first inside the squad.
+            const ordered = legs.slice().sort((a, b) => (parseFloat(a.time) || 0) - (parseFloat(b.time) || 0));
+            return {
+                school: squad,               // squad identity shown in standings + dropdown
+                schoolBase,                  // presence of this marks a relay row for renderers
+                isRelay: true,
+                score: total,                // TOTAL seconds (lower is better)
+                teamAvg: legTimes.length ? total / legTimes.length : 0,
+                teamSplit: legTimes.length ? Math.max(...legTimes) - Math.min(...legTimes) : 0,
+                complete: legs.length === 4,
+                athletes: ordered
+            };
+        }).filter(t => t.athletes.length > 0);
+
+        // Complete 4-leg squads first, then fastest total time.
+        return scored.sort((a, b) => {
+            if (a.complete !== b.complete) return a.complete ? -1 : 1;
+            return a.score - b.score;
+        });
+    }
+
+    // ==========================================
     // APP-STYLE RENDERING HTML GENERATORS
     // ==========================================
 
@@ -985,29 +1042,39 @@
           return activeViewMode === 'teams' ? '<div style="text-align:center; padding:20px; color:var(--text-secondary);">No team scores available (minimum 5 finishers required).</div>' : '';
         }
 
+        const anyRelay = teamScores.some(t => t.isRelay);
         let html = `<div class="app-list">
-                      <div class="list-header">Team Standings</div>`;
+                      <div class="list-header">${anyRelay ? 'Relay Standings' : 'Team Standings'}</div>`;
 
         teamScores.forEach((team, index) => {
-            const schoolSlug = slugify(team.school);
+            // For relays, logo comes from the base school (strip the A/B/C tag).
+            const logoBase = team.isRelay ? team.schoolBase : team.school;
+            const schoolSlug = slugify(logoBase);
             const logoUrl = `/assets/team logos/${schoolSlug}.png`;
 
-            const scorersHtml = team.athletes.map(a =>
-              `<span class="scorer-badge">#${a.scoringPlace != null ? a.scoringPlace : a.place}</span>`
-            ).join('');
+            // Relay: show each leg's time. Normal meet: show each scorer's place.
+            const scorersHtml = team.isRelay
+              ? team.athletes.map(a => `<span class="scorer-badge">${formatTime(parseFloat(a.time))}</span>`).join('')
+              : team.athletes.map(a => `<span class="scorer-badge">#${a.scoringPlace != null ? a.scoringPlace : a.place}</span>`).join('');
+
+            // Relay score is a total time; normal score is points.
+            const scoreDisplay = team.isRelay ? formatTime(team.score) : team.score;
+            const metaLine = team.isRelay
+              ? `Legs: ${team.athletes.length}${team.complete ? '' : ' (incomplete)'} • Avg leg: ${formatTime(team.teamAvg)}`
+              : `Avg: ${formatTime(team.teamAvg)} • Split: ${formatTime(team.teamSplit)}`;
 
             html += `
             <div class="list-item">
                 <div class="item-place">${index + 1}</div>
                 <div class="item-avatar">
-                    <img src="${logoUrl}" alt="${team.school}" onerror="this.src='/assets/images/logob.svg'" />
+                    <img src="${logoUrl}" alt="${team.school}" onerror="this.src='/assets/images/msm.svg'" />
                 </div>
                 <div class="item-details">
                     <div class="item-name">${team.school}</div>
-                    <div class="item-meta" style="margin-bottom:4px;">Avg: ${formatTime(team.teamAvg)} • Split: ${formatTime(team.teamSplit)}</div>
+                    <div class="item-meta" style="margin-bottom:4px;">${metaLine}</div>
                     <div>${scorersHtml}</div>
                 </div>
-                <div class="item-score">${team.score}</div>
+                <div class="item-score">${scoreDisplay}</div>
             </div>`;
         });
 
@@ -1033,8 +1100,10 @@
             const grade = formatGrade(runner.gradYear || runner.grade);
             const pace = calculatePacePerMile(timeSeconds, distanceMeters);
 
-            // Build the meta string (e.g., "+1pts • Yr: 10 • Pace: 5:45")
+            // Build the meta string (e.g., "+1pts • Yr: 10 • Pace: 5:45").
+            // For relays, show which squad the runner was a leg of.
             let metaParts = [];
+            if (runner.relay_team) metaParts.push(runner.relay_team);
             if (runner.scoringPlace) metaParts.push(`+${runner.scoringPlace}pts`);
             if (grade) metaParts.push(`Yr: ${grade}`);
             metaParts.push(`Pace: ${pace}`);
@@ -1043,7 +1112,7 @@
             <div class="list-item">
                 <div class="item-place">${runner.place || (index + 1)}</div>
                 <div class="item-avatar">
-                    <img src="${logoUrl}" alt="${rawSchool}" onerror="this.src='/assets/images/logob.svg'" />
+                    <img src="${logoUrl}" alt="${rawSchool}" onerror="this.src='/assets/images/msmrunner.svg'" />
                 </div>
                 <div class="item-details">
                     <a href="${athleteHref}" class="item-name">${athleteName}</a>
@@ -1074,32 +1143,46 @@
 
       const rows = [];
       const distance = hasIndiv ? (parseFloat(currentFilteredResults[0].distance) || 5000) : 5000;
+      const relay = hasTeams && currentTeamScores.some(t => t.isRelay);
 
       // Team standings first (when the current view includes them).
       if ((activeViewMode === 'all' || activeViewMode === 'teams') && hasTeams) {
-        rows.push(['Team Standings'].map(csvCell));
-        rows.push(['Place', 'School', 'Score', 'Team Avg', 'Team Split', 'Scoring Top 5'].map(csvCell));
-        currentTeamScores.forEach((t, i) => {
-          const scorers = t.athletes.map(a => `#${a.scoringPlace != null ? a.scoringPlace : a.place} ${a.athlete_name || a.name || ''}`).join('; ');
-          rows.push([i + 1, t.school, t.score, formatTime(t.teamAvg), formatTime(t.teamSplit), scorers].map(csvCell));
-        });
+        if (relay) {
+          rows.push(['Relay Standings'].map(csvCell));
+          rows.push(['Place', 'Relay Team', 'Total Time', 'Avg Leg', 'Legs', 'Leg Times'].map(csvCell));
+          currentTeamScores.forEach((t, i) => {
+            const legs = t.athletes.map(a => `${a.athlete_name || a.name || ''} ${formatTime(parseFloat(a.time))}`).join('; ');
+            rows.push([i + 1, t.school, formatTime(t.score), formatTime(t.teamAvg), t.athletes.length + (t.complete ? '' : ' (incomplete)'), legs].map(csvCell));
+          });
+        } else {
+          rows.push(['Team Standings'].map(csvCell));
+          rows.push(['Place', 'School', 'Score', 'Team Avg', 'Team Split', 'Scoring Top 5'].map(csvCell));
+          currentTeamScores.forEach((t, i) => {
+            const scorers = t.athletes.map(a => `#${a.scoringPlace != null ? a.scoringPlace : a.place} ${a.athlete_name || a.name || ''}`).join('; ');
+            rows.push([i + 1, t.school, t.score, formatTime(t.teamAvg), formatTime(t.teamSplit), scorers].map(csvCell));
+          });
+        }
         if (activeViewMode === 'all' && hasIndiv) rows.push([]); // spacer row
       }
 
       // Individual results (when the current view includes them).
       if ((activeViewMode === 'all' || activeViewMode === 'indiv') && hasIndiv) {
         rows.push(['Individual Results'].map(csvCell));
-        rows.push(['Place', 'Athlete Name', 'Grade', 'School', 'Time', 'Pace Per Mile'].map(csvCell));
+        const indivHead = ['Place', 'Athlete Name', 'Grade', 'School', 'Time', 'Pace Per Mile'];
+        if (relay) indivHead.splice(4, 0, 'Relay Team');
+        rows.push(indivHead.map(csvCell));
         currentFilteredResults.forEach(r => {
           const t = r.time ? parseFloat(r.time) : 0;
-          rows.push([
+          const row = [
             r.place || '',
             r.athlete_name || r.name || '',
             formatGrade(r.gradYear || r.grade),
             r.school_name || r.school || '',
             formatTime(t),
             calculatePacePerMile(t, distance)
-          ].map(csvCell));
+          ];
+          if (relay) row.splice(4, 0, r.relay_team || '');
+          rows.push(row.map(csvCell));
         });
       }
 
@@ -1117,6 +1200,7 @@
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF({ orientation: 'landscape' });
       const bc = getBrandColorRgbArray();
+      const relay = hasTeams && currentTeamScores.some(t => t.isRelay);
 
       // 1. Build the Detailed Context Title
       const meetName = currentMeetData?.name || document.getElementById("meet-title")?.textContent || "Meet Results";
@@ -1184,26 +1268,49 @@
       // 4. Generate the Tables
       let startY = 30; // Push table down to clear the new 24px header
 
-      // Draw Team Scores Table (if applicable and not hidden)
+      // Draw Team / Relay Scores Table (if applicable and not hidden)
       if (hasTeams && activeViewMode !== 'indiv') {
-        doc.autoTable({
-            head: [['Place', 'School', 'Score', 'Avg / Split', 'Scoring Top 5']],
-            body: currentTeamScores.map((t, i) => [i + 1, t.school, t.score, `${formatTime(t.teamAvg)} / ${formatTime(t.teamSplit)}`, t.athletes.map(a => `#${a.scoringPlace||a.place} ${a.athlete_name||a.name}`).join(', ')]),
-            startY: startY,
-            margin: { top: 30 },
-            styles: { fontSize: 8 },
-            headStyles: { fillColor: bc, textColor: [255, 255, 255] },
-            alternateRowStyles: { fillColor: [245, 245, 245] },
-            didDrawPage: drawHeader
-        });
+        if (relay) {
+          doc.autoTable({
+              head: [['Place', 'Relay Team', 'Total Time', 'Avg Leg', 'Legs']],
+              body: currentTeamScores.map((t, i) => [i + 1, t.school, formatTime(t.score), formatTime(t.teamAvg), t.athletes.length + (t.complete ? '' : ' (inc.)')]),
+              startY: startY,
+              margin: { top: 30 },
+              styles: { fontSize: 8 },
+              headStyles: { fillColor: bc, textColor: [255, 255, 255] },
+              alternateRowStyles: { fillColor: [245, 245, 245] },
+              didDrawPage: drawHeader
+          });
+        } else {
+          doc.autoTable({
+              head: [['Place', 'School', 'Score', 'Avg / Split', 'Scoring Top 5']],
+              body: currentTeamScores.map((t, i) => [i + 1, t.school, t.score, `${formatTime(t.teamAvg)} / ${formatTime(t.teamSplit)}`, t.athletes.map(a => `#${a.scoringPlace||a.place} ${a.athlete_name||a.name}`).join(', ')]),
+              startY: startY,
+              margin: { top: 30 },
+              styles: { fontSize: 8 },
+              headStyles: { fillColor: bc, textColor: [255, 255, 255] },
+              alternateRowStyles: { fillColor: [245, 245, 245] },
+              didDrawPage: drawHeader
+          });
+        }
         startY = doc.lastAutoTable.finalY + 10;
       }
 
       // Draw Individual Results Table (if not hidden)
       if (activeViewMode !== 'teams' && hasIndiv) {
+          const indivHead = relay
+            ? [['Place', 'Name', 'Relay Team', 'School', 'Time', 'Pace/Mile']]
+            : [['Place', 'Name', 'Grade', 'School', 'Time', 'Pace/Mile']];
           doc.autoTable({
-              head: [['Place', 'Name', 'Grade', 'School', 'Time', 'Pace/Mile']],
-              body: currentFilteredResults.map(r => [r.place || '-', r.athlete_name || r.name || '', formatGrade(r.gradYear || r.grade), r.school_name || r.school || '', formatTime(r.time ? parseFloat(r.time) : 0), calculatePacePerMile(r.time ? parseFloat(r.time) : 0, distance)]),
+              head: indivHead,
+              body: currentFilteredResults.map(r => {
+                const t = r.time ? parseFloat(r.time) : 0;
+                const school = r.school_name || r.school || '';
+                const pace = calculatePacePerMile(t, distance);
+                return relay
+                  ? [r.place || '-', r.athlete_name || r.name || '', r.relay_team || '', school, formatTime(t), pace]
+                  : [r.place || '-', r.athlete_name || r.name || '', formatGrade(r.gradYear || r.grade), school, formatTime(t), pace];
+              }),
               startY: startY,
               margin: { top: 30 },
               styles: { fontSize: 8 },

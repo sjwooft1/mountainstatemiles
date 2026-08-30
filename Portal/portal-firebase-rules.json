@@ -1,0 +1,40 @@
+{
+  "//": "Mountain State Miles — RTDB rules for the Portal (username/password in DB, NO Firebase Auth).",
+  "//_merge": "MERGE into your existing rules. Keep your crosscountry rules. Deploy in Firebase Console > Realtime Database > Rules. THIS is the file to paste — the whole thing under 'rules'.",
+
+  "//_warning": "Because this login does NOT use Firebase Auth, every request is unauthenticated (auth == null). RTDB rules cannot identify a specific user, so they can only allow-or-deny by path shape. Accounts are readable/writable per exact username key but the folder itself cannot be listed. Passwords are SHA-256 hashed client-side. Lightweight scheme for a low-stakes site, NOT bank-grade security — anyone who knows a username could overwrite that account.",
+
+  "rules": {
+    "crosscountry": {
+      "//": "Public read for XC data as the rest of the site relies on.",
+      ".read": true,
+      ".write": "false"
+    },
+
+    "portal_accounts": {
+      "//": "Folder is NOT listable (can't dump every account). Access is per single username key.",
+      ".read": false,
+      ".write": false,
+      "$userKey": {
+        "//": "Read/write a single account by exact key. Sign-up creates it (role is null at first, which is allowed); onboarding later sets role to athlete/coach/fan.",
+        ".read": true,
+        ".write": true,
+        ".validate": "newData.hasChildren(['username','passHash'])",
+        "username":    { ".validate": "newData.isString()" },
+        "passHash":    { ".validate": "newData.isString() && newData.val().length == 64" },
+        "role":        { ".validate": "newData.val() == null || newData.val() == 'athlete' || newData.val() == 'coach' || newData.val() == 'fan'" },
+        "displayName": { ".validate": "newData.isString()" },
+        "athleteName": { ".validate": "newData.isString()" },
+        "schoolSlug":  { ".validate": "newData.isString()" },
+        "gender":      { ".validate": "newData.isString()" },
+        "createdAt":   { ".validate": "newData.isString()" },
+        "updatedAt":   { ".validate": "newData.isString()" },
+        "follows": {
+          "athletes": { "$i": { ".validate": "newData.isString()" } },
+          "schools":  { "$i": { ".validate": "newData.isString()" } }
+        },
+        "$other": { ".validate": false }
+      }
+    }
+  }
+}

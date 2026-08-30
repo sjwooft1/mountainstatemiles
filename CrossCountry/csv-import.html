@@ -137,6 +137,7 @@
         .badge-danger { background: rgba(239,68,68,0.15); color: var(--danger); border: 1px solid rgba(239,68,68,0.4); }
         .badge-warning { background: rgba(245,158,11,0.15); color: var(--warning); border: 1px solid rgba(245,158,11,0.4); }
         .badge-oos { background: rgba(148,163,184,0.18); color: #cbd5e1; border: 1px solid rgba(148,163,184,0.4); }
+        .badge-relay { background: rgba(255,123,45,0.15); color: var(--primary); border: 1px solid rgba(255,123,45,0.4); }
 
         .progress-container { display: none; height: 10px; background: var(--card-bg); border-radius: 20px; overflow: hidden; margin-top: 18px; }
         .progress-fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--primary), var(--primary-hover)); transition: width 0.15s; }
@@ -182,7 +183,7 @@
 <script src="/assets/msm-loader.js"></script>
     <div class="container">
         <h1>Cross Country Meet Import Engine</h1>
-        <p class="subtitle">Run the <code>anet.js</code> bookmarklet on an Athletic.net results page, copy the CSV it generates, then paste it below to import straight into a meet. Expected columns: <code>event_name,place,grade,athlete_name,mark,school,heat,gender</code>.</p>
+        <p class="subtitle">Run the <code>anet.js</code> bookmarklet on an Athletic.net results page, copy the CSV it generates, then paste it below to import straight into a meet. Expected columns: <code>event_name,place,grade,athlete_name,mark,school,heat,gender</code>. An optional 9th column <code>relay_team</code> (e.g. "Morgantown A") tags relay squads so meet.html can sum each squad's leg times.</p>
 
         <div class="card">
             <div class="card-header-row">
@@ -246,7 +247,7 @@
                 </div>
             </div>
 
-            <textarea id="pasteArea" placeholder="Paste your Athletic.net scraper CSV output here...&#10;event_name,place,grade,athlete_name,mark,school,heat,gender"></textarea>
+            <textarea id="pasteArea" placeholder="Paste your Athletic.net scraper CSV output here...&#10;event_name,place,grade,athlete_name,mark,school,heat,gender[,relay_team]"></textarea>
 
             <div class="btn-group">
                 <button class="btn-primary" onclick="importer.parseData()">Parse &amp; Analyze</button>
@@ -275,6 +276,7 @@
                                 <th>CSV Original Event</th>
                                 <th>Athlete</th>
                                 <th>School</th>
+                                <th>Relay Team</th>
                                 <th>State</th>
                                 <th>Grade</th>
                                 <th>Place</th>
@@ -327,6 +329,7 @@
             { re: /\bmiddle\s*school\b|\bms\b/i, label: 'Middle School' },
             { re: /\belementary\b/i, label: 'Elementary' },
             { re: /\bopen\b/i, label: 'Open' },
+            { re: /\brelay\b/i, label: 'Relay' },
             { re: /\byouth\b|\bkids?\b|\bfun\s*run\b/i, label: 'Youth' },
             { re: /\balumni\b/i, label: 'Alumni' },
         ];
@@ -720,6 +723,7 @@
                     if (p.length < 5) return;
 
                     // anet.js column order: event_name, place, grade, athlete_name, mark, school, heat, gender
+                    // Optional 9th column: relay_team (e.g. "Morgantown A") for relay meets.
                     const rawEvent = p[0];
                     const place = p[1];
                     const grade = p[2];
@@ -728,6 +732,7 @@
                     const rawSchool = p[5] || "Unattached";
                     const heat = p[6] || "1";
                     const csvGender = p[7] || "";
+                    const relayTeam = p[8] || "";
 
                     if (!athleteName) return;
 
@@ -752,6 +757,7 @@
                         school_matched: schoolMatch.matched,
                         state: schoolMatch.state,
                         heat,
+                        relay_team: relayTeam,
                         meet_slug: meetSlug,
                     });
                     uniqueEvents.add(rawEvent);
@@ -792,6 +798,7 @@
                 const valid = filtered.filter(r => r.athlete_name && !isNaN(r.time_seconds) && r.time_seconds > 0);
                 const unmatchedSchools = filtered.filter(r => !r.school_matched).length;
                 const outOfState = filtered.filter(r => (r.state || HOME_STATE) !== HOME_STATE).length;
+                const relayRows = filtered.filter(r => r.relay_team).length;
                 const invalid = filtered.length - valid.length;
 
                 document.getElementById("statsGrid").innerHTML = `
@@ -815,6 +822,10 @@
                         <div class="stat-val">${outOfState}</div>
                         <div class="stat-label">Out-of-State (scored, not ranked)</div>
                     </div>
+                    <div class="stat-box">
+                        <div class="stat-val ${relayRows > 0 ? 'text-warning' : ''}">${relayRows}</div>
+                        <div class="stat-label">Relay Legs</div>
+                    </div>
                 `;
 
                 const tbody = document.getElementById("previewBody");
@@ -830,6 +841,10 @@
                         ? `<span class="badge badge-success">${r.state || HOME_STATE}</span>`
                         : `<span class="badge badge-oos">${r.state || '??'} · not ranked</span>`;
 
+                    const relayCell = r.relay_team
+                        ? `<span class="badge badge-relay">${r.relay_team}</span>`
+                        : '<span style="color:var(--text-muted)">—</span>';
+
                     return `
                     <tr>
                         <td>${statusBadge}</td>
@@ -837,6 +852,7 @@
                         <td style="color: var(--text-muted); font-size: 0.75rem;">${r.raw_event}</td>
                         <td>${r.athlete_name}</td>
                         <td>${r.school_raw}${!r.school_matched ? ` <span style="color:var(--warning);font-size:0.7rem;">(${r.school_slug})</span>` : ''}</td>
+                        <td>${relayCell}</td>
                         <td>${stateBadge}</td>
                         <td>${r.grade || '—'}</td>
                         <td>${r.place || '—'}</td>
@@ -907,6 +923,8 @@
                         meet_slug: row.meet_slug,
                         created_at: nowIso,
                     };
+                    // Only store relay_team when present, so normal meets stay clean.
+                    if (row.relay_team) resultData.relay_team = row.relay_team;
 
                     await window.firebaseDatabase.ref(`${CC_PREFIX}/results`).push(resultData);
 
@@ -952,7 +970,7 @@
           /**
            * @param {string} meetSlug     must match an existing meet slug
            * @param {string} csvText      scraper CSV, columns:
-           *                              event_name,place,grade,athlete_name,mark,school,heat,gender
+           *                              event_name,place,grade,athlete_name,mark,school,heat,gender[,relay_team]
            * @param {object} opts         { defaultDistance=5000, defaultGender='M', homeState='WV' }
            * @returns {Promise<object>}   {status, imported, skipped, newAthletes, unmatchedSchools, outOfState, meetSlug}
            */
@@ -998,6 +1016,7 @@
               const rawSchool = p[5] || 'Unattached';
               const heat = p[6] || '1';
               const csvGender = p[7] || '';
+              const relayTeam = p[8] || '';
               if (!athleteName) return;
 
               const parsedEvent = imp.parseEventField(rawEvent, csvGender || defaultGender);
@@ -1017,6 +1036,7 @@
                 school_slug: schoolMatch.slug,
                 school_matched: schoolMatch.matched,
                 state: schoolMatch.state,
+                relay_team: relayTeam,
                 meet_slug: meetSlug,
               });
             });
@@ -1074,6 +1094,7 @@
                 meet_slug: row.meet_slug,
                 created_at: nowIso,
               };
+              if (row.relay_team) resultData.relay_team = row.relay_team;
               try {
                 await window.firebaseDatabase.ref(`${CC_PREFIX}/results`).push(resultData);
                 imported++;

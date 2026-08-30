@@ -16,7 +16,7 @@ const BASE_LINKS = [
       { name: 'XC Rankings', url: 'CrossCountry/rankings.html' },
       { name: 'Schools', url: 'CrossCountry/schools.html' },
       { name: 'Courses', url: 'CrossCountry/courses/course%20viewer.html' },
-      { name: 'Athlete', url: 'CrossCountry/athlete.html' },
+      { name: 'Portal', url: '/Portal/portal.html' },
       { name: 'Track Home', url: '/Track/index.html' },
     ],
     track: [
@@ -25,13 +25,14 @@ const BASE_LINKS = [
       { name: 'Teams', url: '/Track/teams.html' },
       { name: 'Events', url: '/Track/events.html' },
       { name: 'Analytics', url: '/Track/analytics.html'},
-      { name: 'Athlete', url: '/Track/athlete.html' },
+      { name: 'Portal', url: '/Portal/portal.html' },
       { name: 'Cross Country', url: '/CrossCountry/xc.html' },
     ],
     default: [
       { name: 'About', url:'/home/about.html'},
       { name: 'Track', url: '/Track/index.html' },
       { name: 'Cross Country', url: '/CrossCountry/xc.html' },
+      { name: 'Portal', url: '/Portal/portal.html' },
     ]
   };
   

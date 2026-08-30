@@ -1,0 +1,670 @@
+// ============================================================
+//  portal-engine.js  —  Shared analytics engine for the Portal
+//  Mountain State Miles / wvruns
+//
+//  Framework-free. Exposes window.MSMEngine with:
+//    • Data loading + client-side joins (results/meets/schools/courses/athletes)
+//    • MSM rating engine (course terrain + field strength), ported from
+//      rankings.html / athlete.html so the portal shows the SAME numbers
+//    • Riegel race predictions to any distance
+//    • Season trajectory forecast (linear regression on rating over time)
+//    • Training pace zones derived from a recent race (Daniels-style VDOT-lite)
+//    • Per-athlete season summaries + team (coach) analytics
+//
+//  Depends on Firebase RTDB being initialised (firebase-config.js) exactly
+//  like the rest of the site. All reads are from the same public paths:
+//    crosscountry/{results,meets,schools,courses,athletes}
+// ============================================================
+
+(function () {
+  "use strict";
+
+  const MILE_M = 1609.34;
+  const RIEGEL = 1.06;
+
+  // Team rankings are WV-only, matching rankings.html. Legacy results with no
+  // `state` tag are assumed in-state.
+  const HOME_STATE = "WV";
+  function isInState(r) { return (r && r.state ? String(r.state) : HOME_STATE).toUpperCase() === HOME_STATE; }
+
+  // Match the site's rating engine constants.
+  const RATING_REF = { M: (16 * 60) / 5000, F: (18.5 * 60) / 5000 };
+  const RATING_SPREAD = 350;
+  const OUT_OF_SEASON_MEETS = ["chick-fil-a-5k", "st-marys-5k", "ymca-kennedy-center"];
+
+  // Course coordinates for race-day weather lookups (mirrors rankings.html).
+  const COURSE_COORDS = {
+    "holmdel-park": { lat: 40.3418, lon: -74.1735 },
+    "cabell-midland": { lat: 38.4126, lon: -82.2543 },
+    "glen-oak": { lat: 39.4390, lon: -80.1420 },
+    "pipestem-state-park": { lat: 37.5382, lon: -80.9865 },
+    "meadowood-park": { lat: 39.6295, lon: -79.9559 },
+    "preston-high": { lat: 39.4767, lon: -79.6640 },
+    "south-harrison": { lat: 39.2065, lon: -80.6390 },
+    "st-marys-5k": { lat: 39.3906, lon: -81.2043 },
+    "chick-fil-a-5k": { lat: 38.3498, lon: -81.6326 },
+    "frankfort-5k": { lat: 39.5001, lon: -78.9600 },
+    "ymca-kennedy-center": { lat: 38.3400, lon: -81.7300 },
+  };
+  const WV_DEFAULT_COORDS = { lat: 38.6409, lon: -80.6227 };
+
+  const KNOWN_DISTANCES = {
+    1600: "1 Mile", 3000: "3K", 3200: "2 Mile", 4000: "4K",
+    5000: "5K", 6000: "6K", 8000: "8K", 10000: "10K",
+  };
+
+  // ---- tiny utils -----------------------------------------------------
+  const norm = (s) => (s || "").toString().trim().toLowerCase();
+  const secOf = (v) => { const t = parseFloat(v); return isNaN(t) || t <= 0 ? null : t; };
+  const num = (v) => { const n = Number(v); return isNaN(n) ? null : n; };
+
+  function formatTime(sec) {
+    if (sec == null || isNaN(sec)) return "—";
+    const mins = Math.floor(sec / 60);
+    const secs = sec % 60;
+    if (mins >= 60) {
+      const h = Math.floor(mins / 60), m = mins % 60;
+      return `${h}:${String(m).padStart(2, "0")}:${secs.toFixed(1).padStart(4, "0")}`;
+    }
+    return `${mins}:${secs.toFixed(1).padStart(4, "0")}`;
+  }
+  function formatClock(sec) {
+    if (sec == null || isNaN(sec)) return "—";
+    const m = Math.floor(sec / 60), s = Math.round(sec % 60);
+    return `${m}:${String(s).padStart(2, "0")}`;
+  }
+  function distanceLabel(d) {
+    if (d == null || isNaN(d)) return "Unknown";
+    const r = Math.round(d);
+    return KNOWN_DISTANCES[r] ? `${KNOWN_DISTANCES[r]} (${r}m)` : `${r}m`;
+  }
+  function median(arr) {
+    if (!arr.length) return null;
+    const s = arr.slice().sort((a, b) => a - b);
+    const mid = Math.floor(s.length / 2);
+    return s.length % 2 ? s[mid] : (s[mid - 1] + s[mid]) / 2;
+  }
+  function slugify(name) {
+    return (name || "").toLowerCase().trim().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+  }
+  // sessionStorage wrapper that never throws (file:// / privacy modes).
+  const safeSS = {
+    get(k) { try { return sessionStorage.getItem(k); } catch (e) { return null; } },
+    set(k, v) { try { sessionStorage.setItem(k, v); } catch (e) { /* ignore */ } },
+  };
+
+  // ---- state ----------------------------------------------------------
+  const state = {
+    loaded: false,
+    results: [],       // normalized: {athlete_name, gender, school_slug, meet_slug, course_slug, distance, timeSec, place, race_type, grad_year, date, meet, msm}
+    meetsMap: {},
+    schoolsMap: {},
+    coursesMap: {},
+    athletesMap: {},   // id -> athlete
+    factors: { course: {}, field: {}, hill: {}, weather: {}, globalMedianPace: { M: null, F: null } },
+    weatherApplied: 0, // count of meets weather was successfully applied to
+    weatherTotal: 0,
+  };
+
+  // =====================================================================
+  //  MSM RATING ENGINE — delegated to the shared window.MSMRating module
+  //  (msm-rating.js), the single source of truth shared with rankings.html.
+  //  These thin wrappers keep the rest of the engine's API stable.
+  // =====================================================================
+  const R = () => window.MSMRating;
+  function isNonCompetitive(meetSlug) { return R().isNonCompetitive(meetSlug); }
+  // computeRating/-Value proxy the shared engine. They accept the engine's
+  // normalized row ({timeSec}) and adapt it to the shared shape ({time_in_seconds}).
+  function toRatingInput(r) {
+    return {
+      athlete_name: r.athlete_name, gender: r.gender, meet_slug: r.meet_slug,
+      course_slug: r.course_slug, distance: r.distance,
+      time_in_seconds: r.timeSec != null ? r.timeSec : Number(r.time),
+      date: r.date,
+    };
+  }
+  function computeRating(r, wfOverride) { return R().rate(toRatingInput(r), wfOverride); }
+  function computeRatingValue(r, wfOverride) { const m = computeRating(r, wfOverride); return m ? m.rating : null; }
+  function ratingToPredicted(rating, gender, distMeters) { return R().ratingToPredicted(rating, gender, distMeters); }
+  function weatherDifficultyFactor(wx) { return R().weatherDifficultyFactor(wx); }
+
+  // Legacy helper retained only for the course-difficulty label fallback used
+  // elsewhere (e.g. simulator projection UI). Terrain math itself now lives in
+  // the shared module; this mirrors its labels for display.
+  function difficultyLabelFactor(label) {
+    switch ((label || "").toLowerCase()) {
+      case "hard": return 1.06;
+      case "medium": return 1.00;
+      case "easy": return 0.96;
+      default: return 1.0;
+    }
+  }
+
+
+  // =====================================================================
+  //  RIEGEL RACE PREDICTIONS
+  // =====================================================================
+  // Predict an equivalent time at d2 from an actual time at d1.
+  function riegel(timeSec, d1, d2) {
+    if (!timeSec || !d1 || !d2) return null;
+    return timeSec * Math.pow(d2 / d1, RIEGEL);
+  }
+  // Standard prediction set for XC/road from a best effort.
+  function predictionSet(bestTimeSec, bestDist) {
+    const targets = [
+      ["1 Mile", 1600], ["3K", 3000], ["2 Mile", 3200], ["4K", 4000],
+      ["5K", 5000], ["6K", 6000], ["8K", 8000], ["10K", 10000],
+    ];
+    return targets.map(([label, d]) => ({
+      label, distance: d,
+      seconds: riegel(bestTimeSec, bestDist, d),
+    }));
+  }
+
+  // =====================================================================
+  //  TRAINING PACES (Daniels-style, derived from a recent race)
+  // =====================================================================
+  // Returns pace-per-mile (seconds) for each training zone from a race.
+  function trainingPaces(raceTimeSec, raceDist) {
+    if (!raceTimeSec || !raceDist) return null;
+    // Equivalent 5K time via Riegel, then scale zones off 5K race pace/mile.
+    const eq5k = riegel(raceTimeSec, raceDist, 5000);
+    const racePacePerMile = (eq5k / 5000) * MILE_M; // ~5K race effort per mile
+    return {
+      race5k: eq5k,
+      racePacePerMile,
+      easy: racePacePerMile * 1.30,      // conversational
+      marathon: racePacePerMile * 1.16,  // steady long-run
+      threshold: racePacePerMile * 1.06, // tempo / T pace
+      interval: racePacePerMile * 0.97,  // ~3K-5K effort (VO2)
+      repetition: racePacePerMile * 0.92, // mile / R pace
+    };
+  }
+
+  // =====================================================================
+  //  SEASON TRAJECTORY FORECAST (linear regression on rating vs. day index)
+  // =====================================================================
+  function forecastTrajectory(datedRatings) {
+    // datedRatings: [{date:'YYYY-MM-DD', rating:Number}]
+    const pts = datedRatings
+      .filter((p) => p.date && p.rating != null)
+      .map((p) => ({ t: Date.parse(p.date), y: p.rating }))
+      .filter((p) => !isNaN(p.t))
+      .sort((a, b) => a.t - b.t);
+    if (pts.length < 2) return null;
+    const t0 = pts[0].t;
+    const xs = pts.map((p) => (p.t - t0) / 86400000); // days since first race
+    const ys = pts.map((p) => p.y);
+    const n = xs.length;
+    const sx = xs.reduce((a, b) => a + b, 0);
+    const sy = ys.reduce((a, b) => a + b, 0);
+    const sxx = xs.reduce((a, b) => a + b * b, 0);
+    const sxy = xs.reduce((a, b, i) => a + b * ys[i], 0);
+    const denom = n * sxx - sx * sx;
+    if (denom === 0) return null;
+    const slope = (n * sxy - sx * sy) / denom; // rating pts per day
+    const intercept = (sy - slope * sx) / n;
+    const lastX = xs[xs.length - 1];
+    // Project 21 days beyond last race (typical taper to championship).
+    const projX = lastX + 21;
+    const projectedRating = Math.round(intercept + slope * projX);
+    return {
+      slopePerWeek: slope * 7,
+      current: Math.round(intercept + slope * lastX),
+      projectedRating,
+      trend: slope > 0.05 ? "improving" : slope < -0.05 ? "declining" : "flat",
+    };
+  }
+
+  // =====================================================================
+  //  DATA LOADING
+  // =====================================================================
+  function waitForFirebase() {
+    return new Promise((resolve, reject) => {
+      let i = 0;
+      (function poll() {
+        if (window.firebaseDatabase) return resolve();
+        if (i++ > 80) return reject(new Error("Firebase not ready"));
+        setTimeout(poll, 100);
+      })();
+    });
+  }
+
+  async function load() {
+    if (state.loaded) return state;
+    await waitForFirebase();
+    const db = window.firebaseDatabase;
+    const [resultsSnap, meetsSnap, schoolsSnap, coursesSnap, athletesSnap] = await Promise.all([
+      db.ref("crosscountry/results").once("value"),
+      db.ref("crosscountry/meets").once("value"),
+      db.ref("crosscountry/schools").once("value"),
+      db.ref("crosscountry/courses").once("value"),
+      db.ref("crosscountry/athletes").once("value"),
+    ]);
+
+    meetsSnap.forEach((c) => { const m = { id: c.key, ...c.val() }; if (m.slug) state.meetsMap[m.slug] = m; });
+    schoolsSnap.forEach((c) => { const s = { id: c.key, ...c.val() }; if (s.slug) state.schoolsMap[s.slug] = s; });
+    coursesSnap.forEach((c) => { const o = { id: c.key, ...c.val() }; if (o.slug) state.coursesMap[o.slug] = o; });
+    athletesSnap.forEach((c) => { state.athletesMap[c.key] = { id: c.key, ...c.val() }; });
+
+    const raw = [];
+    resultsSnap.forEach((c) => {
+      const r = c.val() || {};
+      const meet = state.meetsMap[r.meet_slug] || {};
+      raw.push({
+        id: c.key,
+        athlete_name: r.athlete_name || "",
+        gender: (r.gender || "").toUpperCase(),
+        school_slug: r.school_slug || "",
+        meet_slug: r.meet_slug || "",
+        course_slug: r.course_slug || meet.course_slug || "",
+        distance: r.distance || 5000,
+        timeSec: secOf(r.time),
+        place: r.place != null ? parseInt(r.place) : null,
+        race_type: r.race_type || "",
+        grad_year: r.grad_year || r.gradYear || null,
+        date: meet.date || r.created_at || "",
+        // In-state tag, mirroring rankings.html: legacy results with no `state`
+        // are assumed WV. Used to keep team rankings WV-only.
+        state: (r.state || meet.state || HOME_STATE).toString().toUpperCase(),
+        meet,
+      });
+    });
+
+    // Build the entire rating model in the shared engine (GPX hills,
+    // common-athlete course calibration, per-athlete pack field factor, and
+    // race-day weather). This is the SAME code rankings.html runs.
+    await window.MSMRating.buildModel(raw.map(toRatingInput), {
+      meetsMap: state.meetsMap,
+      coursesMap: state.coursesMap,
+      fetchWeather: true,
+    });
+    // Mirror the shared model's terrain factors for local use (simulator projections).
+    state.factors.hill = window.MSMRating.model.hill;
+    state.factors.course = window.MSMRating.model.courseFactor;
+    state.factors.weather = window.MSMRating.model.weather;
+    const meetSlugs = [...new Set(raw.map((r) => r.meet_slug).filter(Boolean))];
+    state.weatherTotal = meetSlugs.length;
+    state.weatherApplied = meetSlugs.filter((s) => state.factors.weather[s]).length;
+
+    // Attach full rating detail + numeric rating to each result.
+    raw.forEach((r) => { r._msm = computeRating(r); r.msm = r._msm ? r._msm.rating : null; });
+    raw.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+
+    state.results = raw;
+    state.loaded = true;
+    return state;
+  }
+
+  // =====================================================================
+  //  DERIVED QUERIES
+  // =====================================================================
+  // Season handling matches rankings.html: a season is a calendar year
+  // (from the result's date). "all" means all-time. Meet-type filtering
+  // (in/out of season) is applied on top when requested.
+  function yearOf(r) { return r.date ? new Date(r.date).getFullYear() : null; }
+  function seasonMatch(r, season) {
+    if (!season || season === "all") return true;
+    const y = yearOf(r);
+    return y != null && String(y) === String(season);
+  }
+  function meetTypeMatch(r, meetType) {
+    if (!meetType || meetType === "all") return true;
+    const oos = isNonCompetitive(r.meet_slug);
+    return meetType === "out_of_season" ? oos : !oos;
+  }
+  // All distinct seasons present in the data, newest first.
+  function listSeasons() {
+    const years = new Set();
+    state.results.forEach((r) => { const y = yearOf(r); if (y != null && !isNaN(y)) years.add(y); });
+    return [...years].sort((a, b) => b - a);
+  }
+
+  // Results for an athlete by NAME across every school they've run for.
+  // (Transfers keep one unified profile.) Optional season filter.
+  function resultsForAthlete(name, season) {
+    const nn = norm(name);
+    return state.results.filter((r) => norm(r.athlete_name) === nn && seasonMatch(r, season));
+  }
+
+  function athleteSummary(name, season) {
+    const rows = resultsForAthlete(name, season);
+    if (!rows.length) return null;
+    const gender = (rows.find((r) => r.gender) || {}).gender || "";
+
+    // Every school this athlete has results under (handles transfers).
+    const schoolCounts = {};
+    rows.forEach((r) => { if (r.school_slug) schoolCounts[r.school_slug] = (schoolCounts[r.school_slug] || 0) + 1; });
+    const schools = Object.keys(schoolCounts)
+      .map((slug) => ({ slug, name: (state.schoolsMap[slug] || {}).name || slug, count: schoolCounts[slug] }))
+      .sort((a, b) => b.count - a.count);
+    const primarySchool = schools[0] ? schools[0].slug : "";
+
+    const pbs = {};
+    rows.forEach((r) => {
+      if (r.timeSec == null || r.distance == null) return;
+      const key = String(Math.round(Number(r.distance)));
+      if (!pbs[key] || r.timeSec < pbs[key].timeSec) pbs[key] = { distance: Number(r.distance), timeSec: r.timeSec, raw: r };
+    });
+    const ratings = rows.map((r) => r.msm).filter((v) => v != null);
+    const bestMsm = ratings.length ? Math.max(...ratings) : null;
+    const datedRatings = rows.filter((r) => r.date && r.msm != null).map((r) => ({ date: String(r.date).split("T")[0], rating: r.msm }));
+    const pbEntries = Object.values(pbs);
+    const best5k = pbs["5000"] || pbEntries.sort((a, b) => a.timeSec - b.timeSec)[0] || null;
+    return {
+      name, gender,
+      schools, schoolSlug: primarySchool,
+      rows, pbs, bestMsm, datedRatings,
+      raceCount: rows.length,
+      meetCount: new Set(rows.map((r) => r.meet_slug).filter(Boolean)).size,
+      predictions: best5k ? predictionSet(best5k.timeSec, best5k.distance) : null,
+      paces: best5k ? trainingPaces(best5k.timeSec, best5k.distance) : null,
+      forecast: forecastTrajectory(datedRatings),
+      best5k,
+    };
+  }
+
+  // Statewide rank by best MSM rating per athlete-name, matching rankings.html's
+  // dedupe-by-name. Season-aware.
+  function stateRank(name, gender, season) {
+    if (!gender) return null;
+    const best = {};
+    state.results.forEach((r) => {
+      if (r.gender !== gender || r.msm == null) return;
+      if (!seasonMatch(r, season)) return;
+      const k = norm(r.athlete_name);
+      if (!k) return;
+      if (!(k in best) || r.msm > best[k]) best[k] = r.msm;
+    });
+    const me = best[norm(name)];
+    if (me == null) return null;
+    const ranked = Object.values(best).sort((a, b) => b - a);
+    return { rank: ranked.filter((v) => v > me).length + 1, total: ranked.length, rating: me };
+  }
+
+  // Roster = athletes who have run for this school (in the season, if given).
+  // Each athlete's summary still aggregates their full cross-school history so
+  // a transfer's complete record is visible, but their season is respected.
+  function rosterForSchool(schoolSlug, gender, season) {
+    const names = {};
+    state.results.forEach((r) => {
+      if (r.school_slug !== schoolSlug) return;
+      if (gender && r.gender !== gender) return;
+      if (!seasonMatch(r, season)) return;
+      const k = norm(r.athlete_name);
+      if (k) names[k] = r.athlete_name;
+    });
+    return Object.values(names)
+      .map((nm) => athleteSummary(nm, season))
+      .filter(Boolean)
+      .sort((a, b) => (a.best5k?.timeSec ?? Infinity) - (b.best5k?.timeSec ?? Infinity));
+  }
+
+  // Coach-level team metrics from the school's roster summaries.
+  function teamInsights(summaries) {
+    const withBest = summaries.filter((s) => s.best5k);
+    const scoring5 = withBest.slice(0, 5);
+    const scoringAvg = scoring5.length ? scoring5.reduce((s, a) => s + a.best5k.timeSec, 0) / scoring5.length : null;
+    const spread15 = scoring5.length >= 2 ? scoring5[scoring5.length - 1].best5k.timeSec - scoring5[0].best5k.timeSec : null;
+    let packGap = null;
+    if (scoring5.length === 5) {
+      const ts = scoring5.map((s) => s.best5k.timeSec);
+      let g = 0; for (let i = 1; i < 5; i++) g += ts[i] - ts[i - 1];
+      packGap = g / 4;
+    }
+    const improvers = summaries
+      .filter((s) => s.forecast && s.forecast.trend === "improving")
+      .sort((a, b) => (b.forecast.slopePerWeek) - (a.forecast.slopePerWeek))
+      .slice(0, 5);
+    return { scoringAvg, spread15, packGap, depth: withBest.length, scoring5, improvers };
+  }
+
+  function listSchools() {
+    return Object.values(state.schoolsMap).sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+  }
+  function listAthleteNames(gender) {
+    const names = {};
+    state.results.forEach((r) => {
+      if (gender && r.gender !== gender) return;
+      const k = norm(r.athlete_name);
+      if (k) names[k] = { name: r.athlete_name, school_slug: r.school_slug, gender: r.gender };
+    });
+    return Object.values(names).sort((a, b) => a.name.localeCompare(b.name));
+  }
+  function listCourses() {
+    return Object.values(state.coursesMap)
+      .map((c) => ({ slug: c.slug, name: c.name || c.slug, difficulty: c.difficulty || null, hill: state.factors.hill[c.slug] }))
+      .sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+  }
+  function listMeets() {
+    return Object.values(state.meetsMap)
+      .map((m) => ({ slug: m.slug, name: m.name || m.slug, date: m.date || null, course_slug: m.course_slug || "" }))
+      .sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+  }
+
+  // =====================================================================
+  //  MEET SIMULATION
+  // =====================================================================
+  // Project an athlete's effort onto a target course + distance.
+  // Removes the terrain difficulty baked into the source race, re-applies the
+  // target course's terrain, then Riegel-scales to the target distance. This is
+  // the course-adjusted basis the coach chose.
+  function projectOntoCourse(sourceRow, targetCourseSlug, targetDistance) {
+    if (!sourceRow || sourceRow.timeSec == null) return null;
+    const srcDist = sourceRow.distance ? parseInt(sourceRow.distance, 10) : 5000;
+    const srcCourse = sourceRow.course_slug || (state.meetsMap[sourceRow.meet_slug] && state.meetsMap[sourceRow.meet_slug].course_slug) || "";
+    const srcHill = (typeof state.factors.hill[srcCourse] === "number") ? state.factors.hill[srcCourse] : 1.0;
+    const tgtHill = (typeof state.factors.hill[targetCourseSlug] === "number") ? state.factors.hill[targetCourseSlug] : 1.0;
+    // Neutralize source terrain (faster course => de-inflate), apply target terrain.
+    const terrainAdj = tgtHill / srcHill;
+    const distAdjPace = sourceRow.timeSec * terrainAdj; // time on same distance, target terrain
+    return riegel(distAdjPace, srcDist, targetDistance);
+  }
+
+  // Best projected (or raw) time for an athlete onto a course.
+  // basis: "adjusted" (course-adjusted, default) or "raw" (fastest raw time).
+  function athleteProjectedTime(summary, courseSlug, distance, basis) {
+    if (!summary || !summary.rows.length) return null;
+    if (basis === "raw") {
+      const best = summary.rows.filter((r) => r.timeSec != null).sort((a, b) => a.timeSec - b.timeSec)[0];
+      return best ? { timeSec: best.timeSec, source: best, projected: false } : null;
+    }
+    // adjusted: project every timed race onto the course, keep the fastest.
+    let best = null;
+    summary.rows.forEach((r) => {
+      if (r.timeSec == null) return;
+      const proj = projectOntoCourse(r, courseSlug, distance);
+      if (proj != null && (best == null || proj < best.timeSec)) best = { timeSec: proj, source: r, projected: true };
+    });
+    return best;
+  }
+
+  // Build the entrant list for one team.
+  // includedNames: optional Set/array of athlete names to include (else top 7 by time).
+  function teamEntrants(schoolSlug, gender, season, courseSlug, distance, basis, includedNames) {
+    const roster = rosterForSchool(schoolSlug, gender, season);
+    let entrants = roster.map((s) => {
+      const t = athleteProjectedTime(s, courseSlug, distance, basis);
+      return t ? { name: s.name, schoolSlug, timeSec: t.timeSec, projected: t.projected, source: t.source, summary: s } : null;
+    }).filter(Boolean).sort((a, b) => a.timeSec - b.timeSec);
+    if (includedNames && includedNames.length) {
+      const set = new Set(includedNames.map(norm));
+      entrants = entrants.filter((e) => set.has(norm(e.name)));
+    } else {
+      entrants = entrants.slice(0, 7); // default: top 7
+    }
+    return entrants;
+  }
+
+  // Run the full simulation. teams: [{schoolSlug, includedNames?}].
+  // Returns { field:[{...place, scoringPlace}], teams:[{school, score, ...}], distance, courseSlug }.
+  // Scoring mirrors meet.html: displacement scoring (non-scorers still take a
+  // place); teams need 5+ finishers to score.
+  function simulateMeet(opts) {
+    const { teamList, gender, season, courseSlug, basis } = opts;
+    const distance = opts.distance || (state.coursesMap[courseSlug] && parseInt(state.coursesMap[courseSlug].distance, 10)) || 5000;
+
+    // Assemble the field.
+    let field = [];
+    teamList.forEach((t) => {
+      const ents = teamEntrants(t.schoolSlug, gender, season, courseSlug, distance, basis, t.includedNames);
+      field = field.concat(ents);
+    });
+    field.sort((a, b) => a.timeSec - b.timeSec);
+    field.forEach((e, i) => { e.place = i + 1; });
+
+    // Team scoring — displacement (default meet.html behavior).
+    const bySchool = {};
+    field.forEach((e) => { (bySchool[e.schoolSlug] = bySchool[e.schoolSlug] || []).push(e); });
+    const scoringSchools = new Set(Object.keys(bySchool).filter((s) => bySchool[s].length >= 5));
+    let counter = 0;
+    field.forEach((e) => { e.scoringPlace = scoringSchools.has(e.schoolSlug) ? ++counter : null; });
+
+    const teams = Object.keys(bySchool).map((slug) => {
+      const runners = bySchool[slug].slice().sort((a, b) => (a.scoringPlace || 999) - (b.scoringPlace || 999));
+      const top5 = runners.slice(0, 5);
+      const complete = top5.length === 5 && scoringSchools.has(slug);
+      const score = complete ? top5.reduce((s, r) => s + (r.scoringPlace || 999), 0) : null;
+      const t5 = top5.map((r) => r.timeSec);
+      const teamAvg = t5.length === 5 ? t5.reduce((s, x) => s + x, 0) / 5 : null;
+      const spread15 = t5.length === 5 ? t5[4] - t5[0] : null;
+      const top7 = runners.slice(0, 7);
+      const spread17 = top7.length >= 2 ? top7[top7.length - 1].timeSec - top7[0].timeSec : null;
+      return {
+        schoolSlug: slug,
+        school: (state.schoolsMap[slug] || {}).name || slug,
+        score, complete, teamAvg, spread15, spread17,
+        top5, top7, depth: runners.length,
+        sixth: runners[5] || null, seventh: runners[6] || null,
+      };
+    }).sort((a, b) => {
+      if (a.score == null && b.score == null) return (a.teamAvg ?? Infinity) - (b.teamAvg ?? Infinity);
+      if (a.score == null) return 1;
+      if (b.score == null) return -1;
+      if (a.score !== b.score) return a.score - b.score;
+      const a6 = a.sixth?.scoringPlace ?? 999, b6 = b.sixth?.scoringPlace ?? 999;
+      return a6 - b6;
+    });
+
+    return { field, teams, distance, courseSlug, basis };
+  }
+
+  // =====================================================================
+  //  STATEWIDE TEAM COMPARISON
+  // =====================================================================
+  // Rank WV teams by their scoring 5, using each athlete's BEST MSM RATING as
+  // the basis (not raw time). This is distance-, course-, and field-neutral, so
+  // a team that raced a 2-mile isn't flattered against a team that raced a 5K.
+  // Out-of-season / non-competitive races are excluded (matching rankings.html).
+  // The team metric is the top-5 average rating; for readability it's also shown
+  // as the equivalent neutral-5K time.
+  function teamStatewideComparison(schoolSlug, gender, season) {
+    const g = gender || "M";
+    const bySchool = {};
+    state.results.forEach((r) => {
+      if (r.gender !== g) return;
+      if (!seasonMatch(r, season)) return;
+      if (!isInState(r)) return;
+      if (isNonCompetitive(r.meet_slug)) return;        // in-season only
+      if (!r.school_slug || r.msm == null) return;      // needs a rating
+      const k = norm(r.athlete_name);
+      if (!k) return;
+      const bucket = (bySchool[r.school_slug] = bySchool[r.school_slug] || {});
+      if (!bucket[k] || r.msm > bucket[k]) bucket[k] = r.msm; // athlete's best rating
+    });
+    const teams = Object.keys(bySchool).map((slug) => {
+      const ratings = Object.values(bySchool[slug]).sort((a, b) => b - a); // best first
+      const top5 = ratings.slice(0, 5);
+      const avgRating = top5.length === 5 ? Math.round(top5.reduce((s, x) => s + x, 0) / 5) : null;
+      const spreadRating = top5.length === 5 ? top5[0] - top5[4] : null; // 1st minus 5th rating
+      // Equivalent neutral-5K time of the average rating, for display.
+      const scoringAvg = avgRating != null ? window.MSMRating.ratingToPredicted5K(avgRating, g) : null;
+      const spread15 = (top5.length === 5)
+        ? window.MSMRating.ratingToPredicted5K(top5[4], g) - window.MSMRating.ratingToPredicted5K(top5[0], g)
+        : null;
+      return {
+        schoolSlug: slug, school: (state.schoolsMap[slug] || {}).name || slug,
+        avgRating, spreadRating, scoringAvg, spread15, depth: ratings.length,
+      };
+    }).filter((t) => t.avgRating != null).sort((a, b) => b.avgRating - a.avgRating); // higher rating = better
+
+    const idx = teams.findIndex((t) => t.schoolSlug === schoolSlug);
+    return { rank: idx >= 0 ? idx + 1 : null, total: teams.length, teams, me: idx >= 0 ? teams[idx] : null };
+  }
+
+  // =====================================================================
+  //  ADVANCED PER-ATHLETE TRAINING TIPS
+  // =====================================================================
+  function advancedTips(summary) {
+    if (!summary) return [];
+    const tips = [];
+    const fc = summary.forecast;
+    const rows = summary.rows.filter((r) => r.date && r.timeSec != null).sort((a, b) => a.date.localeCompare(b.date));
+
+    // Trajectory
+    if (fc) {
+      if (fc.trend === "improving") tips.push({ tag: "Trajectory", tone: "good", text: `Rating rising ~${fc.slopePerWeek.toFixed(1)} pts/week. Hold the current training load; protect easy days so the upward trend continues into championship season.` });
+      else if (fc.trend === "declining") tips.push({ tag: "Trajectory", tone: "warn", text: `Rating slipping ~${Math.abs(fc.slopePerWeek).toFixed(1)} pts/week. Check for accumulated fatigue — consider a down week, then reassess before adding intensity.` });
+      else tips.push({ tag: "Trajectory", tone: "neutral", text: `Rating is flat. A focused block of threshold work (2×/week) is the highest-leverage change to break the plateau.` });
+    }
+
+    // Race spacing / volume of racing
+    if (rows.length >= 2) {
+      const gaps = [];
+      for (let i = 1; i < rows.length; i++) gaps.push((Date.parse(rows[i].date) - Date.parse(rows[i - 1].date)) / 86400000);
+      const avgGap = gaps.reduce((s, x) => s + x, 0) / gaps.length;
+      if (avgGap < 6) tips.push({ tag: "Racing load", tone: "warn", text: `Racing every ~${Math.round(avgGap)} days. That's aggressive — make sure at least one week between key races is a true recovery week to avoid flatlining.` });
+      else tips.push({ tag: "Racing load", tone: "neutral", text: `Averaging ~${Math.round(avgGap)} days between races — a sustainable rhythm. Keep one quality session + one long run between races.` });
+    } else {
+      tips.push({ tag: "Racing load", tone: "neutral", text: `Only ${rows.length} timed race on file — more data will sharpen these projections. Log time trials if races are sparse.` });
+    }
+
+    // Consistency / variability
+    const times = rows.map((r) => r.timeSec);
+    if (times.length >= 3) {
+      const mean = times.reduce((s, x) => s + x, 0) / times.length;
+      const sd = Math.sqrt(times.reduce((s, x) => s + (x - mean) ** 2, 0) / times.length);
+      const cv = sd / mean;
+      if (cv > 0.04) tips.push({ tag: "Consistency", tone: "warn", text: `Race times vary a lot (±${Math.round(sd)}s). Work on even pacing — target negative or even splits in workouts so race-day execution stabilizes.` });
+      else tips.push({ tag: "Consistency", tone: "good", text: `Very consistent race times (±${Math.round(sd)}s). Pacing is a strength — you can race aggressively from the gun.` });
+    }
+
+    // Distance-specific: strength vs. speed lean from Riegel comparison
+    const pbEntries = Object.values(summary.pbs);
+    if (pbEntries.length >= 2) {
+      const shortest = pbEntries.slice().sort((a, b) => a.distance - b.distance)[0];
+      const longest = pbEntries.slice().sort((a, b) => b.distance - a.distance)[0];
+      const predLongFromShort = riegel(shortest.timeSec, shortest.distance, longest.distance);
+      if (predLongFromShort && longest.timeSec < predLongFromShort * 0.99) {
+        tips.push({ tag: "Profile", tone: "neutral", text: `Stronger at longer distances than short-speed predicts — a strength runner. Add strides & short hill sprints to sharpen turnover for XC finishes.` });
+      } else if (predLongFromShort && longest.timeSec > predLongFromShort * 1.01) {
+        tips.push({ tag: "Profile", tone: "neutral", text: `Speed outpaces endurance — a speed runner. Prioritize aerobic volume and tempo work to hold pace over the full 5K.` });
+      }
+    }
+
+    // Pace-zone reminder tied to their best effort
+    if (summary.paces) {
+      tips.push({ tag: "Paces", tone: "neutral", text: `Anchor easy days at ${formatClock(summary.paces.easy)}/mi and threshold reps at ${formatClock(summary.paces.threshold)}/mi. Most weekly mileage should be at or slower than easy pace.` });
+    }
+    return tips;
+  }
+
+  window.MSMEngine = {
+    // lifecycle
+    load, get state() { return state; },
+    // formatting
+    formatTime, formatClock, distanceLabel, slugify, norm,
+    // rating + predictions + paces
+    computeRating, computeRatingValue, ratingToPredicted, weatherDifficultyFactor,
+    riegel, predictionSet, trainingPaces, forecastTrajectory,
+    // queries
+    resultsForAthlete, athleteSummary, stateRank, rosterForSchool, teamInsights,
+    listSchools, listAthleteNames, listSeasons, seasonMatch, meetTypeMatch,
+    listCourses, listMeets,
+    // simulation + advanced analysis
+    projectOntoCourse, athleteProjectedTime, teamEntrants, simulateMeet,
+    teamStatewideComparison, advancedTips,
+    // constants
+    MILE_M, KNOWN_DISTANCES,
+  };
+})();
