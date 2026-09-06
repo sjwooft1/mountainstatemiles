@@ -39,7 +39,7 @@
 .rx-sec ul { color: var(--text-secondary); line-height: 1.7; margin: 0 0 1rem 1.2rem; }
 .rx-sec li { margin-bottom: 0.4rem; }
 
-.rx-eq { background: var(--bg-secondary); border: 1px solid var(--border); border-left: 3px solid var(--text-primary); border-radius: var(--radius-md); padding: 14px 18px; margin: 1rem 0; font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 0.9rem; color: var(--text-primary); overflow-x: auto; }
+.rx-eq { background: var(--bg-secondary); border: 1px solid var(--border); border-left: 3px solid var(--text-primary); border-radius: var(--radius-md); padding: 14px 18px; margin: 1rem 0; font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 0.9rem; color: var(--text-primary); overflow-x: auto; white-space: pre-wrap; }
 .rx-note { background: var(--bg-primary); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 16px 18px; margin: 1rem 0; font-size: 0.9rem; color: var(--text-secondary); }
 .rx-note b { color: var(--text-primary); }
 .rx-callout { display: flex; gap: 12px; align-items: flex-start; background: var(--bg-secondary); border-radius: var(--radius-lg); padding: 16px 18px; margin: 1.25rem 0; }
@@ -72,7 +72,7 @@ table.rx-tbl td:first-child { color: var(--text-primary); font-weight: 600; }
   <div class="rx-hero-inner">
     <div class="rx-kicker">Mountain State Miles</div>
     <h1 class="rx-title">How the MSM Rating Works</h1>
-    <p class="rx-lede">A raw time only tells you how fast someone ran — not how hard it was. The MSM Rating turns every result into one comparable number by adjusting for the course, the field around the runner, and the weather. Here's exactly how, math and all.</p>
+    <p class="rx-lede">A raw time only tells you how fast someone ran — not how hard it was. The MSM Rating turns every result into one comparable number by normalizing for distance and then adjusting for the course, the field around the runner, and the weather. Here's exactly how, math and all.</p>
   </div>
 </div>
 
@@ -81,7 +81,7 @@ table.rx-tbl td:first-child { color: var(--text-primary); font-weight: 600; }
   <nav class="rx-toc">
     <a href="#tldr">The short version</a>
     <a href="#scale">The scale</a>
-    <a href="#pace">Step 1 · Pace</a>
+    <a href="#distance">Step 1 · Distance</a>
     <a href="#course">Step 2 · Course</a>
     <a href="#field">Step 3 · Field</a>
     <a href="#weather">Step 4 · Weather</a>
@@ -92,9 +92,9 @@ table.rx-tbl td:first-child { color: var(--text-primary); font-weight: 600; }
 
   <section class="rx-sec" id="tldr">
     <h2 class="rx-h2"><span class="n">TL;DR</span> The short version</h2>
-    <p>We convert each race to a <strong>pace</strong> (seconds per meter), then divide that pace by a small <strong>adjustment</strong> that captures how much the conditions helped or hurt. A tougher course, running alone with nobody to push you, or bad weather all make an equal time <em>more</em> impressive, so they raise the rating. The adjusted pace is mapped onto a 1000-point scale where higher is better.</p>
-    <div class="rx-eq">rating = 1000 + 3500 × ( REF − adjustedPace ) / REF</div>
-    <p>where <span style="font-family:ui-monospace,monospace;">adjustedPace = rawPace ÷ (courseFactor × fieldFactor × weatherFactor)</span>, and REF is the pace of a benchmark performance (16:00 for a 5K boys race, 18:30 girls).</p>
+    <p>We first convert every result to an <strong>equivalent 5K pace</strong> so a mile, a 3200, and a 5K can be compared fairly. Then we divide that pace by a small <strong>boost</strong> that captures how much the conditions helped or hurt. A tougher course, running alone with nobody to push you, or bad weather all make an equal effort <em>more</em> impressive, so they raise the rating. The adjusted pace is mapped onto a 1000-point scale where <strong>higher is better</strong>.</p>
+    <div class="rx-eq">rating = round( 1000 + 3500 × ( REF − adjustedPace ) / REF )</div>
+    <p>where <span style="font-family:ui-monospace,monospace;">adjustedPace = pace5K ÷ (courseFactor × fieldFactor × weatherFactor)</span>, <span style="font-family:ui-monospace,monospace;">pace5K</span> is the Riegel-normalized 5K pace, and REF is the pace of a benchmark performance (16:00 for boys, 18:30 for girls).</p>
   </section>
 
   <section class="rx-sec" id="scale">
@@ -107,11 +107,13 @@ table.rx-tbl td:first-child { color: var(--text-primary); font-weight: 600; }
     <p>Because everything is normalized to a neutral course and average field, an 1150 at a flat, fast invitational and an 1150 on a brutal state-meet course represent the <strong>same underlying fitness</strong> — which is the entire point.</p>
   </section>
 
-  <section class="rx-sec" id="pace">
-    <h2 class="rx-h2"><span class="n">1</span> Start with pace, not time</h2>
-    <p>Times aren't comparable across distances — a 5K and a 3200 can't be lined up directly. So the first move is to reduce every result to <strong>seconds per meter</strong>:</p>
-    <div class="rx-eq">rawPace = time_in_seconds ÷ distance_in_meters</div>
-    <p>All the adjustments below act on pace, and the final rating is distance-independent. That's why the rankings can mix a 4K, a 5K, and an 8K and still rank them fairly.</p>
+  <section class="rx-sec" id="distance">
+    <h2 class="rx-h2"><span class="n">1</span> Normalize the distance first</h2>
+    <p>Times aren't comparable across distances, and neither is raw pace — a miler holds a much faster pace than they could for 5K. Straight pace extrapolation would badly over-credit short races. So we convert every result to an <strong>equivalent 5K</strong> using the <strong>Riegel endurance model</strong>, then take that as a 5K pace:</p>
+    <div class="rx-eq">equiv5K = time × (5000 / distance)^1.06
+pace5K  = equiv5K / 5000</div>
+    <p>The exponent <strong>1.06</strong> is the standard endurance fatigue factor: doubling the distance costs more than double the time. A 4:45 mile projects to a realistic 5K, not an impossibly fast one, so short races no longer dominate the leaderboard. Every adjustment below acts on this <span style="font-family:ui-monospace,monospace;">pace5K</span>, which is why the rankings can mix a 4K, a 5K, and an 8K and still rank them fairly.</p>
+    <div class="rx-callout"><i class="fa-solid fa-ruler-horizontal"></i><div>Riegel is why a blazing 1600 and a strong 5K land on one honest list. Without it, every mile time would look like a national-class 5K.</div></div>
   </section>
 
   <section class="rx-sec" id="course">
@@ -119,34 +121,34 @@ table.rx-tbl td:first-child { color: var(--text-primary); font-weight: 600; }
     <p>Some courses are simply slower: hills, mud, tight turns, thick grass. A time on a hard course deserves more credit. We estimate each course's difficulty <strong>two independent ways</strong> and blend them.</p>
 
     <h3 class="rx-h3">A. Terrain from the map (GPX)</h3>
-    <p>When a course has a GPS track, we walk its points, sum the elevation <em>gained</em>, and divide by the distance to get climb-per-kilometer. More climbing per km ⇒ a higher factor. About 15 m/km is treated as neutral WV terrain.</p>
+    <p>When a course has a stored climb-per-kilometer figure (from its GPS track), more climbing per km ⇒ a higher factor. About 15 m/km is treated as neutral WV terrain.</p>
     <div class="rx-eq">hillFactor = 1 + (climbPerKm − 15) × 0.004      (clamped 0.94–1.14)</div>
-    <p>If there's no GPS track, we fall back to the admin difficulty label (easy 0.96 · medium 1.00 · hard 1.06).</p>
+    <p>If there's no GPS data, we fall back to the admin difficulty label (easy 0.96 · medium 1.00 · hard 1.06), and if there's neither, the terrain factor is a neutral 1.00.</p>
 
     <h3 class="rx-h3">B. The runners themselves (common-athlete calibration)</h3>
     <p>The map doesn't know about footing, heat traps, or a course that "just runs slow." So we also let the athletes tell us. The idea: <strong>a course is hard if the same runners run slower on it than they do everywhere else.</strong></p>
-    <p>For every athlete who has run a given course <em>and</em> at least one other course, we compute the ratio of their pace on that course to their median pace elsewhere. Average those ratios across all such runners and you get a difficulty measured purely from performance:</p>
+    <p>For every athlete who has run a given course <em>and</em> at least one other course, we compare their 5K-equivalent pace on that course to their median pace elsewhere. Take the median of those ratios across all such runners and you get a difficulty measured purely from performance:</p>
     <div class="rx-eq">commonFactor(course) = median over shared athletes of
-   ( their pace ON this course ) ÷ ( their median pace on OTHER courses )</div>
+   ( their pace5K ON this course ) ÷ ( their median pace5K on OTHER courses )</div>
 
     <h3 class="rx-h3">C. Blend, weighted by evidence</h3>
     <p>A course run by 40 athletes has trustworthy common-athlete data; one run by three doesn't. So we blend the two, letting the data term earn trust as the number of shared athletes grows (capped at 70% weight):</p>
-    <div class="rx-eq">w = min(commonAthletes ÷ 12, 0.70)
+    <div class="rx-eq">w = min(sharedAthletes ÷ 12, 0.70)
 courseFactor = hillFactor × (1 − w) + commonFactor × w   (clamped 0.90–1.14)</div>
     <div class="rx-callout"><i class="fa-solid fa-mountain-sun"></i><div>A rarely-run course leans on its terrain map; a heavily-run course is calibrated by how real athletes actually performed on it. Over a season, the more a course is used, the sharper its rating gets.</div></div>
   </section>
 
   <section class="rx-sec" id="field">
-    <h2 class="rx-h2"><span class="n">3</span> Field strength — now individualized</h2>
-    <p>This is the biggest change, and it comes straight from how racing actually feels. <strong>Two runners with the same time did not necessarily do the same amount of work.</strong></p>
+    <h2 class="rx-h2"><span class="n">3</span> Field strength — individualized</h2>
+    <p>This comes straight from how racing actually feels. <strong>Two runners with the same time did not necessarily do the same amount of work.</strong></p>
     <ul>
       <li><strong>Running alone</strong> — way ahead of everyone, or stuck in no-man's-land — is <em>harder</em>. There's nobody to draft, nobody to chase, no rhythm to lock onto. An equal time run solo reflects more fitness, so it earns a <strong>boost</strong>.</li>
       <li><strong>Running inside a tight, fast pack</strong> is <em>easier</em> for the same clock time — you get pulled along and carried through the middle miles. That earns a small <strong>discount</strong>.</li>
     </ul>
-    <p>The old model gave everyone in a race the same field factor based on the median time. The new model looks at <strong>each runner's own neighborhood</strong> in the results.</p>
+    <p>Rather than give everyone in a race the same field factor, the model looks at <strong>each runner's own neighborhood</strong> in the results.</p>
 
     <h3 class="rx-h3">How the pack is measured</h3>
-    <p>Within a race (same meet, gender, distance), we sort finishers by time and look at each runner's <strong>three nearest neighbors ahead and three behind</strong>. We compute the average pace gap to those neighbors, then compare it to the race's <em>typical</em> spacing (the median gap between consecutive finishers). That gives an <strong>isolation score</strong>:</p>
+    <p>Within a race (same meet, gender, distance), we sort finishers by 5K-equivalent pace and look at each runner's <strong>three nearest neighbors ahead and three behind</strong>. We average the pace gap to those neighbors, then compare it to the race's <em>typical</em> spacing (the median gap between consecutive finishers). That gives an <strong>isolation score</strong>:</p>
     <div class="rx-eq">isolation = 0.4 × (relative gap to runners AHEAD)
           + 0.6 × (relative gap to runners BEHIND)</div>
     <p>The gap to runners <em>behind</em> is weighted more heavily — leading a race with a big cushion is the textbook "ran alone" case. An isolation near 1 means normal spacing (no change); above 1 means isolated (boost); below 1 means tightly packed (discount).</p>
@@ -157,27 +159,27 @@ courseFactor = hillFactor × (1 − w) + commonFactor × w   (clamped 0.90–1.1
 
   <section class="rx-sec" id="weather">
     <h2 class="rx-h2"><span class="n">4</span> Weather</h2>
-    <p>Using each meet's date and location, we pull the historical race-day conditions (temperature, wind, precipitation) and build a small difficulty factor. Heat is the biggest penalty; wind and rain add a little.</p>
+    <p>When a meet has stored race-day conditions (temperature, wind, precipitation), we build a small difficulty factor from them. Heat is the biggest penalty; wind and rain add a little. The factor is <code>1 + (sum of penalties)</code>, clamped to at most +15%.</p>
     <table class="rx-tbl">
       <thead><tr><th>Condition</th><th>Effect on factor</th></tr></thead>
       <tbody>
-        <tr><td>Hot (&gt; 18 °C)</td><td>up to +9%, scaling with heat</td></tr>
-        <tr><td>Very cold (&lt; −5 °C)</td><td>up to +4%</td></tr>
-        <tr><td>Windy (&gt; 15 km/h)</td><td>up to +5%</td></tr>
-        <tr><td>Wet (&gt; 1 mm precip)</td><td>up to +6%</td></tr>
+        <tr><td>Hot (&gt; 18 °C)</td><td>+0.6% per °C above 18, up to +9%</td></tr>
+        <tr><td>Very cold (&lt; −5 °C)</td><td>+0.4% per °C below −5, up to +4%</td></tr>
+        <tr><td>Windy (&gt; 15 km/h)</td><td>+0.25% per km/h above 15, up to +5%</td></tr>
+        <tr><td>Wet (&gt; 1 mm precip)</td><td>+1% per mm above 1, up to +6%</td></tr>
       </tbody>
     </table>
-    <p>If a meet's weather can't be retrieved, the factor is simply <strong>1.0</strong> (neutral) — weather never invents an adjustment it can't support.</p>
+    <p>If a meet has no stored weather, the factor is simply <strong>1.0</strong> (neutral) — weather never invents an adjustment it can't support.</p>
   </section>
 
   <section class="rx-sec" id="formula">
     <h2 class="rx-h2"><span class="n">5</span> Putting it together</h2>
-    <p>The three factors multiply into a single <strong>boost</strong>, which is clamped so no single race can be over-corrected, then divides the raw pace:</p>
+    <p>The three factors multiply into a single <strong>boost</strong>, which is clamped so no single race can be over-corrected, then divides the normalized pace:</p>
     <div class="rx-eq">boost = courseFactor × fieldFactor × weatherFactor      (clamped 0.90–1.10)
-adjustedPace = rawPace ÷ boost
+adjustedPace = pace5K ÷ boost
 rating = round( 1000 + 3500 × (REF − adjustedPace) ÷ REF )</div>
     <p>A boost above 1 means conditions were <em>hard</em> (tough course, solo effort, bad weather) → the pace is treated as faster than the clock → a higher rating. A boost below 1 means conditions helped → the rating is trimmed. The <strong>±10% overall clamp</strong> is the guardrail: even a perfect storm of adjustments can't swing a rating by more than a tenth.</p>
-    <div class="rx-note"><b>Projected 5K.</b> Any rating can be turned back into an equivalent neutral-course time at any distance — that's the "proj 5K" you see next to each runner. It's the rating formula run in reverse.</div>
+    <div class="rx-note"><b>Proj 5K.</b> Any rating can be turned back into an equivalent neutral-course 5K time — that's the "proj 5K" shown next to each runner. It's the rating formula run in reverse. An athlete's overall standing is the <b>best</b> single performance they've posted.</div>
   </section>
 
   <section class="rx-sec" id="meaning">
@@ -185,7 +187,7 @@ rating = round( 1000 + 3500 × (REF − adjustedPace) ÷ REF )</div>
     <p>It answers one question: <strong>"How good was this performance, once you strip away the things the runner didn't control?"</strong> Because every result lands on the same neutral scale, you can:</p>
     <div class="rx-cards">
       <div class="rx-card"><h4>Compare across meets</h4><p>Rank runners who never toed the same line, on different courses, in different weather.</p></div>
-      <div class="rx-card"><h4>Compare across distances</h4><p>A strong 3200 and a strong 5K sit on one list, since everything is pace-based.</p></div>
+      <div class="rx-card"><h4>Compare across distances</h4><p>A strong 3200 and a strong 5K sit on one list, normalized by Riegel.</p></div>
       <div class="rx-card"><h4>Track real progress</h4><p>A rising rating means genuine improvement — not just an easier course or a tailwind.</p></div>
       <div class="rx-card"><h4>Reward hard efforts</h4><p>Solo front-running and brutal courses finally get the credit the stopwatch hides.</p></div>
     </div>
@@ -196,8 +198,9 @@ rating = round( 1000 + 3500 × (REF − adjustedPace) ÷ REF )</div>
     <ul>
       <li><strong>It's a model, not a verdict.</strong> The factors are principled estimates, deliberately clamped so they stay conservative. On any given day, a race can defy them.</li>
       <li><strong>Data-hungry.</strong> Course calibration needs runners who've raced multiple courses; field adjustment needs a real field. Tiny races and one-off courses lean on the terrain map and get less individualized treatment.</li>
+      <li><strong>Distance normalization is a model too.</strong> Riegel is a good general fit, but an individual runner's true 5K/mile ratio can differ from the 1.06 exponent.</li>
       <li><strong>Weather is daily, not hourly.</strong> We use the day's conditions at the venue, not the exact gun-time microclimate.</li>
-      <li><strong>Same engine everywhere.</strong> The rankings page and the athlete/coach portal now run this identical code, so a rating is the same number wherever you see it.</li>
+      <li><strong>Same engine everywhere.</strong> The rankings page and the athlete/coach portal run this identical code, so a rating is the same number wherever you see it.</li>
     </ul>
     <a class="rx-back" href="rankings.html"><i class="fa-solid fa-arrow-left"></i> Back to the rankings</a>
   </section>

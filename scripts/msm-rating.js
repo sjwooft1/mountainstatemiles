@@ -1,422 +1,369 @@
 // ============================================================
-//  msm-rating.js  —  Mountain State Miles unified rating engine
-//  SINGLE SOURCE OF TRUTH for the MSM Rating.
+//  msm-rating.js  —  MSM Rating Engine (full model)
+// ============================================================
 //
-//  Loaded by BOTH rankings.html and the portal (portal-engine.js delegates
-//  to it), so the two can never disagree again.
+//  One number per performance, on a 1000-point scale (higher is
+//  better). Every raw time is:
+//    1. reduced to pace (sec/m),
+//    2. normalized across distance with the Riegel endurance model,
+//    3. divided by a boost that captures how hard the conditions were
+//       (course difficulty + individual field isolation + weather),
+//    4. mapped onto the 1000 scale against a reference pace.
 //
-//  Public API (window.MSMRating):
-//    await buildModel(results, { meetsMap, coursesMap, fetchWeather })
-//        results: [{ athlete_name, gender('M'|'F'), meet_slug, course_slug,
-//                    distance, time_in_seconds, date }]
-//        Builds every statewide factor: global median pace, GPX hill factors,
-//        common-athlete course calibration, and per-race pack structures.
-//    rate(result)   -> { rating, cF, fF, wF, adjPace } | null
-//    ratingToPredicted(rating, gender, distMeters=5000) -> seconds
-//    ratingToPredicted5K(rating, gender) -> seconds
-//    constants: REF, SPREAD
+//  rating = round( 1000 + 3500 × (REF − adjustedPace) / REF )
+//  adjustedPace = rawPace5K ÷ (courseFactor × fieldFactor × weatherFactor)
 //
-//  The rating: 1000 = a neutral reference performance (16:00 5K boys /
-//  18:30 5K girls). Each ~35 rating points ≈ 1% faster on a neutral course
-//  in an average field. Higher = better.
+//  The same engine backs the rankings page and the athlete/coach
+//  portal, so a rating is identical wherever it is shown.
 // ============================================================
 
 (function () {
   "use strict";
 
-  // ---- reference constants (unchanged from the original engine) -------
-  const REF = { M: (16 * 60) / 5000, F: (18.5 * 60) / 5000 }; // sec per meter
-  const SPREAD = 350;
+  // --- Constants -------------------------------------------------
 
-  const OUT_OF_SEASON_MEETS = ["chick-fil-a-5k", "st-marys-5k", "ymca-kennedy-center"];
+  // Reference (1000-point) performance, as a 5K pace in sec/m.
+  // 16:00 boys / 18:30 girls over 5000 m.
+  const REF_TIME = { M: 16 * 60, F: 18.5 * 60 };
+  const REF_PACE = { M: REF_TIME.M / 5000, F: REF_TIME.F / 5000 };
 
-  const COURSE_COORDS = {
-    "holmdel-park": { lat: 40.3418, lon: -74.1735 },
-    "cabell-midland": { lat: 38.4126, lon: -82.2543 },
-    "glen-oak": { lat: 39.4390, lon: -80.1420 },
-    "pipestem-state-park": { lat: 37.5382, lon: -80.9865 },
-    "meadowood-park": { lat: 39.6295, lon: -79.9559 },
-    "preston-high": { lat: 39.4767, lon: -79.6640 },
-    "south-harrison": { lat: 39.2065, lon: -80.6390 },
-    "st-marys-5k": { lat: 39.3906, lon: -81.2043 },
-    "chick-fil-a-5k": { lat: 38.3498, lon: -81.6326 },
-    "frankfort-5k": { lat: 39.5001, lon: -78.9600 },
-    "ymca-kennedy-center": { lat: 38.3400, lon: -81.7300 },
-  };
-  const WV_DEFAULT_COORDS = { lat: 38.6409, lon: -80.6227 };
+  // Riegel endurance exponent: T2 = T1 × (D2/D1)^RIEGEL.
+  const RIEGEL = 1.06;
 
-  // ---- model state (rebuilt by buildModel) ----------------------------
+  // Course model.
+  const NEUTRAL_CLIMB_PER_KM = 15;      // m/km treated as neutral WV terrain
+  const HILL_SLOPE = 0.004;             // factor per (m/km) above neutral
+  const HILL_CLAMP = [0.94, 1.14];
+  const DIFFICULTY_FALLBACK = { easy: 0.96, medium: 1.00, hard: 1.06 };
+  const COMMON_ATHLETE_CAP = 12;        // shared athletes for full data weight
+  const COMMON_WEIGHT_MAX = 0.70;
+  const COURSE_CLAMP = [0.90, 1.14];
+
+  // Field (isolation) model.
+  const NEIGHBORS = 3;                  // runners ahead / behind examined
+  const FIELD_AMPLITUDE = 0.03;         // ±3% cap
+  const FIELD_TANH_SCALE = 0.6;
+  const FIELD_CLAMP = [0.97, 1.03];
+
+  // Weather model (all additive to the factor; factor = 1 + sum).
+  const WEATHER_CLAMP = [1.00, 1.15];
+
+  // Overall boost guardrail.
+  const BOOST_CLAMP = [0.90, 1.10];
+
+  // Points scale.
+  const POINTS_REF = 1000;
+  const POINTS_SPAN = 3500;
+
+  // --- Model state ----------------------------------------------
+
   const M = {
-    meetsMap: {}, coursesMap: {},
-    globalMedianPace: { M: null, F: null },
-    hill: {},            // courseSlug -> terrain multiplier (>1 harder)
-    courseFactor: {},    // courseSlug -> blended difficulty multiplier
-    courseInfo: {},      // courseSlug -> { hill, common, commonN, blended }
-    fieldByAthlete: {},  // resultKey -> individualized field factor
-    weather: {},         // meetSlug -> wx | null
-    raceGroups: {},      // "meet|gender|dist" -> sorted [{key,pace,time,name}]
+    ratings: {},        // athleteKey -> best (highest) rating this build
+    perfByAthlete: {},  // athleteKey -> [{ raceKey, rating, ... }]
+    courseFactor: {},   // courseKey -> blended difficulty factor
+    weatherFactor: {},  // raceKey   -> weather factor
+    meta: {}            // misc build metadata
   };
 
-  // ---- small utils ----------------------------------------------------
+  // --- Helpers ---------------------------------------------------
+
   const norm = (s) => (s || "").toString().trim().toLowerCase();
-  const clampN = (x, lo, hi) => Math.max(lo, Math.min(hi, x));
-  function median(arr) {
+  const clamp = (x, lo, hi) => Math.max(lo, Math.min(hi, x));
+  const median = (arr) => {
     if (!arr.length) return null;
-    const s = arr.slice().sort((a, b) => a - b);
-    const m = Math.floor(s.length / 2);
-    return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
-  }
-  const distOf = (r) => (r.distance ? parseInt(r.distance, 10) : 5000);
-  const paceOf = (r) => { const d = distOf(r); const t = Number(r.time_in_seconds); return d && t ? t / d : null; };
-  const resultKey = (r) => `${norm(r.athlete_name)}|${r.meet_slug}|${distOf(r)}|${r.time_in_seconds}`;
-  const courseOf = (r) => r.course_slug || (M.meetsMap[r.meet_slug] && M.meetsMap[r.meet_slug].course_slug) || "unknown";
+    const a = arr.slice().sort((x, y) => x - y);
+    const m = Math.floor(a.length / 2);
+    return a.length % 2 ? a[m] : (a[m - 1] + a[m]) / 2;
+  };
+  const mean = (arr) => (arr.length ? arr.reduce((s, x) => s + x, 0) / arr.length : null);
 
-  const safeSS = {
-    get(k) { try { return sessionStorage.getItem(k); } catch (e) { return null; } },
-    set(k, v) { try { sessionStorage.setItem(k, v); } catch (e) {} },
+  const raceKey = (r) => `${r.meet_slug}|${r.gender}|${r.distance || 5000}`;
+  const athleteKey = (r) => `${r.gender}|${norm(r.athlete_name)}`;
+  const courseKeyOf = (r) => r.course_slug || r.meet_slug || "unknown";
+  const distOf = (r) => {
+    const d = r.distance ? parseInt(r.distance, 10) : 5000;
+    return d > 0 ? d : 5000;
   };
 
-  function isNonCompetitive(meetSlug) {
-    if (OUT_OF_SEASON_MEETS.includes(meetSlug)) return true;
-    const meet = M.meetsMap[meetSlug];
-    if (meet && meet.date) {
-      const p = String(meet.date).split("T")[0].split("-");
-      if (p.length >= 3) {
-        const mo = parseInt(p[1], 10), day = parseInt(p[2], 10);
-        if (mo < 8 || (mo === 8 && day < 22)) return true;
-        if (mo > 11 || (mo === 11 && day > 1)) return true;
-      }
-    }
-    return false;
+  // Convert a raced time at `dist` meters into an equivalent 5000 m
+  // time using Riegel, then to a 5K pace (sec/m). Riegel realistically
+  // penalizes projecting a short race (mile, 3200) up to 5K, so a fast
+  // 1600 no longer masquerades as a fast 5K.
+  function riegel5KPace(timeSec, dist) {
+    const equiv5K = timeSec * Math.pow(5000 / dist, RIEGEL);
+    return equiv5K / 5000;
   }
 
-  // =====================================================================
-  //  TERRAIN (GPX hills) — same as before
-  // =====================================================================
-  function haversineMeters(lat1, lon1, lat2, lon2) {
-    const R = 6371000, toRad = (d) => (d * Math.PI) / 180;
-    const dLat = toRad(lat2 - lat1), dLon = toRad(lon2 - lon1);
-    const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
-    return 2 * R * Math.asin(Math.sqrt(a));
-  }
-  function parseGpxClimb(gpxText) {
-    try {
-      const doc = new DOMParser().parseFromString(gpxText, "application/xml");
-      const pts = Array.from(doc.getElementsByTagName("trkpt"));
-      if (pts.length < 2) return null;
-      let climb = 0, dist = 0, prevEle = null, prevLat = null, prevLon = null;
-      pts.forEach((pt) => {
-        const lat = parseFloat(pt.getAttribute("lat")), lon = parseFloat(pt.getAttribute("lon"));
-        const eleNode = pt.getElementsByTagName("ele")[0];
-        const ele = eleNode ? parseFloat(eleNode.textContent) : null;
-        if (prevEle !== null && ele !== null) { const d = ele - prevEle; if (d > 0.3) climb += d; }
-        if (prevLat !== null) dist += haversineMeters(prevLat, prevLon, lat, lon);
-        if (ele !== null) prevEle = ele;
-        prevLat = lat; prevLon = lon;
-      });
-      return { climb, dist };
-    } catch (e) { return null; }
-  }
-  function climbToFactor(mPerKm) {
-    const NEUTRAL = 15;
-    return clampN(1 + (mPerKm - NEUTRAL) * 0.004, 0.94, 1.14);
-  }
-  function difficultyLabelFactor(label) {
-    switch ((label || "").toLowerCase()) {
-      case "hard": return 1.06;
-      case "medium": return 1.0;
-      case "easy": return 0.96;
-      default: return 1.0;
+  // ---- Course difficulty ---------------------------------------
+
+  // Terrain factor from a GPX track, falling back to an admin label.
+  function terrainFactor(course) {
+    if (course && typeof course.climb_per_km === "number") {
+      const f = 1 + (course.climb_per_km - NEUTRAL_CLIMB_PER_KM) * HILL_SLOPE;
+      return clamp(f, HILL_CLAMP[0], HILL_CLAMP[1]);
     }
-  }
-  async function buildHillFactors() {
-    M.hill = {};
-    const slugs = Object.keys(M.coursesMap || {});
-    await Promise.all(slugs.map(async (slug) => {
-      const course = M.coursesMap[slug];
-      if (!course) return;
-      if (course.gpx_url) {
-        const ssKey = `msm_hill_${slug}`;
-        const cached = safeSS.get(ssKey);
-        if (cached !== null) { M.hill[slug] = parseFloat(cached); return; }
-        try {
-          const res = await fetch(course.gpx_url);
-          if (res.ok) {
-            const parsed = parseGpxClimb(await res.text());
-            if (parsed && parsed.dist > 100) {
-              const f = climbToFactor(parsed.climb / (parsed.dist / 1000));
-              M.hill[slug] = f; safeSS.set(ssKey, String(f)); return;
-            }
-          }
-        } catch (e) {}
-      }
-      M.hill[slug] = difficultyLabelFactor(course.difficulty);
-    }));
+    if (course && course.difficulty) {
+      const key = norm(course.difficulty);
+      if (DIFFICULTY_FALLBACK[key] != null) return DIFFICULTY_FALLBACK[key];
+    }
+    return 1.00;
   }
 
-  // =====================================================================
-  //  COURSE DIFFICULTY — common-athlete calibration blended with hills
-  // =====================================================================
-  //  Idea: a course is "hard" if the SAME runners run measurably slower on it
-  //  than they do elsewhere. For every athlete with a race on course C and at
-  //  least one race off C, take the ratio (their pace on C) / (their median
-  //  pace off C). Average those ratios across all such athletes → a purely
-  //  data-driven difficulty for C. Blend with the GPX/terrain hill factor,
-  //  weighting the data term by how many common athletes we have (so a course
-  //  only run a handful of times leans on terrain instead of noisy data).
-  function buildCourseFactors(results) {
-    // pace samples per athlete, split into (this course) vs (other courses)
-    const byAthlete = {}; // name -> { course -> [paces], all -> [{course,pace}] }
-    results.forEach((r) => {
-      if (isNonCompetitive(r.meet_slug)) return;
-      const p = paceOf(r); if (p == null) return;
-      const g = r.gender; if (g !== "M" && g !== "F") return;
-      const name = norm(r.athlete_name); if (!name) return;
-      const c = courseOf(r);
-      const a = (byAthlete[name] = byAthlete[name] || { byCourse: {}, samples: [] });
-      (a.byCourse[c] = a.byCourse[c] || []).push(p);
-      a.samples.push({ course: c, pace: p });
+  // Common-athlete calibration: a course is hard if the same runners
+  // run slower on it (in 5K-equivalent pace) than on their other
+  // courses. Returns { factor, n } where n is the shared-athlete count,
+  // or null if there is no usable signal.
+  function commonAthleteFactor(courseKey, byCourse5KPace) {
+    const ratios = [];
+    for (const aKey in byCourse5KPace) {
+      const paces = byCourse5KPace[aKey];
+      const here = paces[courseKey];
+      if (here == null) continue;
+      const others = [];
+      for (const ck in paces) if (ck !== courseKey) others.push(paces[ck]);
+      if (!others.length) continue;
+      const med = median(others);
+      if (med && med > 0) ratios.push(here / med);
+    }
+    if (!ratios.length) return null;
+    return { factor: median(ratios), n: ratios.length };
+  }
+
+  // ---- Field isolation -----------------------------------------
+
+  // For one runner in a sorted-by-time field, measure how isolated
+  // they are versus the race's typical spacing. >1 = isolated (boost),
+  // <1 = tightly packed (discount). Gaps are in 5K-equiv pace terms so
+  // mixed-distance fields (rare within one race) stay comparable.
+  function fieldFactorFor(idx, paces, typicalGap) {
+    if (!typicalGap || typicalGap <= 0) return 1.00;
+
+    const gapMean = (from, dir) => {
+      const gaps = [];
+      for (let k = 1; k <= NEIGHBORS; k++) {
+        const j = from + dir * k;
+        if (j < 0 || j >= paces.length) break;
+        gaps.push(Math.abs(paces[j] - paces[from]));
+      }
+      return gaps.length ? mean(gaps) : null;
+    };
+
+    const ahead = gapMean(idx, -1);   // faster neighbors
+    const behind = gapMean(idx, +1);  // slower neighbors
+
+    const relAhead = ahead != null ? ahead / typicalGap : 1;
+    const relBehind = behind != null ? behind / typicalGap : 1;
+
+    // Weight the gap to runners behind more heavily: leading with a big
+    // cushion is the textbook "ran alone" case.
+    const isolation = 0.4 * relAhead + 0.6 * relBehind;
+
+    const f = 1 - FIELD_AMPLITUDE * Math.tanh((isolation - 1) * FIELD_TANH_SCALE);
+    return clamp(f, FIELD_CLAMP[0], FIELD_CLAMP[1]);
+  }
+
+  // ---- Weather -------------------------------------------------
+
+  // Build a difficulty factor from a meet's daily conditions. Missing
+  // weather yields a neutral 1.0 — we never invent an adjustment.
+  function weatherFactor(meet) {
+    const wx = meet && (meet.weather || meet.wx);
+    if (!wx) return 1.00;
+
+    let add = 0;
+    const t = typeof wx.temp_c === "number" ? wx.temp_c : null;      // °C
+    const wind = typeof wx.wind_kmh === "number" ? wx.wind_kmh : null;
+    const precip = typeof wx.precip_mm === "number" ? wx.precip_mm : null;
+
+    if (t != null) {
+      if (t > 18) add += Math.min((t - 18) * 0.006, 0.09);           // heat, up to +9%
+      else if (t < -5) add += Math.min((-5 - t) * 0.004, 0.04);      // cold, up to +4%
+    }
+    if (wind != null && wind > 15) add += Math.min((wind - 15) * 0.0025, 0.05); // up to +5%
+    if (precip != null && precip > 1) add += Math.min((precip - 1) * 0.01, 0.06); // up to +6%
+
+    return clamp(1 + add, WEATHER_CLAMP[0], WEATHER_CLAMP[1]);
+  }
+
+  // ---- Rating math ---------------------------------------------
+
+  function paceToPoints(gender, adjustedPace) {
+    const ref = REF_PACE[gender] || REF_PACE.M;
+    return Math.round(POINTS_REF + POINTS_SPAN * (ref - adjustedPace) / ref);
+  }
+
+  // Invert the rating back into a neutral-course equivalent 5K time.
+  function pointsToEquiv5Ksec(gender, points) {
+    const ref = REF_PACE[gender] || REF_PACE.M;
+    const adjustedPace = ref - (points - POINTS_REF) * ref / POINTS_SPAN;
+    return (adjustedPace * 0.98) * 5000;
+  }
+
+  // --- Build ----------------------------------------------------
+
+  async function buildModel(results, opts = {}) {
+    const meetsMap = opts.meetsMap || {};
+    const coursesMap = opts.coursesMap || {};
+
+    M.ratings = {};
+    M.perfByAthlete = {};
+    M.courseFactor = {};
+    M.weatherFactor = {};
+    M.meta = { built: Date.now(), courseDetail: {} };
+
+    const valid = results.filter(r =>
+      r.time_in_seconds && r.time_in_seconds > 0 && r.athlete_name && r.date
+    );
+
+    // Group into races (same meet + gender + distance).
+    const races = {};
+    valid.forEach(r => {
+      const key = raceKey(r);
+      (races[key] || (races[key] = [])).push(r);
     });
 
-    const ratios = {}; // course -> [ratios]
-    Object.values(byAthlete).forEach((a) => {
-      const courses = Object.keys(a.byCourse);
-      if (courses.length < 2) return; // need at least one off-course sample
-      courses.forEach((c) => {
-        const onC = median(a.byCourse[c]);
-        const offPaces = a.samples.filter((s) => s.course !== c).map((s) => s.pace);
-        const offMed = median(offPaces);
-        if (onC && offMed) {
-          (ratios[c] = ratios[c] || []).push(onC / offMed);
+    // --- Pass 1: per-athlete 5K-equiv pace per course (for course
+    // calibration). Uses each athlete's median pace on each course.
+    const byCoursePaceLists = {}; // aKey -> courseKey -> [pace,...]
+    valid.forEach(r => {
+      const aKey = athleteKey(r);
+      const ck = courseKeyOf(r);
+      const pace = riegel5KPace(r.time_in_seconds, distOf(r));
+      const lists = byCoursePaceLists[aKey] || (byCoursePaceLists[aKey] = {});
+      (lists[ck] || (lists[ck] = [])).push(pace);
+    });
+    const byCourse5KPace = {}; // aKey -> courseKey -> median pace
+    for (const aKey in byCoursePaceLists) {
+      byCourse5KPace[aKey] = {};
+      for (const ck in byCoursePaceLists[aKey]) {
+        byCourse5KPace[aKey][ck] = median(byCoursePaceLists[aKey][ck]);
+      }
+    }
+
+    // --- Pass 2: course difficulty factor (blend terrain + common).
+    const courseKeys = new Set(valid.map(courseKeyOf));
+    courseKeys.forEach(ck => {
+      const course = coursesMap[ck] || null;
+      const terrain = terrainFactor(course);
+      const common = commonAthleteFactor(ck, byCourse5KPace);
+
+      let factor, detail;
+      if (common) {
+        const w = Math.min(common.n / COMMON_ATHLETE_CAP, COMMON_WEIGHT_MAX);
+        factor = terrain * (1 - w) + common.factor * w;
+        detail = { terrain, common: common.factor, sharedAthletes: common.n, weight: w };
+      } else {
+        factor = terrain;
+        detail = { terrain, common: null, sharedAthletes: 0, weight: 0 };
+      }
+      factor = clamp(factor, COURSE_CLAMP[0], COURSE_CLAMP[1]);
+      M.courseFactor[ck] = factor;
+      M.meta.courseDetail[ck] = { ...detail, factor };
+    });
+
+    // --- Pass 3: weather factor per race.
+    for (const key in races) {
+      const meetSlug = races[key][0].meet_slug;
+      M.weatherFactor[key] = weatherFactor(meetsMap[meetSlug]);
+    }
+
+    // --- Pass 4: score every result.
+    for (const key in races) {
+      const field = races[key];
+      const gender = field[0].gender;
+      const wxFactor = M.weatherFactor[key] || 1.00;
+
+      // Sort by 5K-equiv pace for isolation measurement.
+      const withPace = field.map(r => ({
+        r,
+        pace: riegel5KPace(r.time_in_seconds, distOf(r))
+      })).sort((a, b) => a.pace - b.pace);
+
+      const paces = withPace.map(x => x.pace);
+      const consec = [];
+      for (let i = 1; i < paces.length; i++) consec.push(paces[i] - paces[i - 1]);
+      const typicalGap = median(consec);
+
+      withPace.forEach((entry, idx) => {
+        const r = entry.r;
+        const ck = courseKeyOf(r);
+        const courseF = M.courseFactor[ck] || 1.00;
+        const fieldF = fieldFactorFor(idx, paces, typicalGap);
+
+        const boost = clamp(courseF * fieldF * wxFactor, BOOST_CLAMP[0], BOOST_CLAMP[1]);
+        const adjustedPace = entry.pace / boost;
+        const points = paceToPoints(gender, adjustedPace);
+
+        const aKey = athleteKey(r);
+        const perf = {
+          raceKey: key,
+          meet_slug: r.meet_slug,
+          date: r.date,
+          distance: distOf(r),
+          rawPace5K: entry.pace,
+          courseFactor: courseF,
+          fieldFactor: fieldF,
+          weatherFactor: wxFactor,
+          boost,
+          points
+        };
+        (M.perfByAthlete[aKey] || (M.perfByAthlete[aKey] = [])).push(perf);
+
+        // An athlete's overall rating is their best (highest) points.
+        if (M.ratings[aKey] == null || points > M.ratings[aKey]) {
+          M.ratings[aKey] = points;
         }
       });
-    });
-
-    M.courseFactor = {};
-    M.courseInfo = {};
-    const allCourses = new Set([...Object.keys(M.hill), ...Object.keys(ratios)]);
-    allCourses.forEach((c) => {
-      const hill = typeof M.hill[c] === "number" ? M.hill[c] : 1.0;
-      const rs = ratios[c] || [];
-      const commonN = rs.length;
-      let common = null;
-      if (commonN) common = clampN(median(rs), 0.90, 1.14);
-      // Blend weight: data term earns trust as commonN grows (full trust ~12+).
-      const w = common != null ? Math.min(commonN / 12, 0.7) : 0; // cap data at 70%
-      const blended = common != null ? clampN(hill * (1 - w) + common * w, 0.90, 1.14) : hill;
-      M.courseFactor[c] = blended;
-      M.courseInfo[c] = { hill, common, commonN, blended, dataWeight: w };
-    });
-  }
-
-  // =====================================================================
-  //  FIELD STRENGTH — individualized, pack-based (conservative ±3%)
-  // =====================================================================
-  //  Rationale (from the coach's own reasoning): running ALONE with a big gap
-  //  to the nearest competitors means you had no one to pull you along, so an
-  //  equal time is a HARDER effort → boost. Being carried inside a tight, fast
-  //  pack makes an equal time slightly EASIER → small discount.
-  //
-  //  For each runner we look at their nearest neighbours by time within the
-  //  same race (same meet|gender|distance): the k runners ahead and k behind.
-  //  We measure the average pace gap to them, normalized by the field's own
-  //  typical spacing, and separately weight the gap to runners BEHIND (being
-  //  chased with nobody near = truly solo). Small, capped adjustment.
-  const PACK_K = 3;                 // neighbours each side
-  const FIELD_CAP = 0.03;           // ±3% (conservative)
-
-  function buildRaceGroups(results) {
-    M.raceGroups = {};
-    results.forEach((r) => {
-      const g = r.gender; if (g !== "M" && g !== "F") return;
-      const t = Number(r.time_in_seconds); if (!t) return;
-      const key = `${r.meet_slug}|${g}|${distOf(r)}`;
-      (M.raceGroups[key] = M.raceGroups[key] || []).push({
-        key: resultKey(r), name: norm(r.athlete_name),
-        pace: paceOf(r), time: t,
-      });
-    });
-    Object.values(M.raceGroups).forEach((arr) => arr.sort((a, b) => a.time - b.time));
-  }
-
-  function buildFieldFactors() {
-    M.fieldByAthlete = {};
-    Object.values(M.raceGroups).forEach((field) => {
-      const n = field.length;
-      if (n < 3) { field.forEach((e) => { M.fieldByAthlete[e.key] = 1.0; }); return; }
-      // Typical spacing in this race = median gap between consecutive finishers.
-      const gaps = [];
-      for (let i = 1; i < n; i++) gaps.push(field[i].pace - field[i - 1].pace);
-      const medGap = median(gaps.filter((g) => g > 0)) || (field[n - 1].pace - field[0].pace) / Math.max(1, n - 1) || 1e-6;
-
-      field.forEach((e, i) => {
-        // Nearest neighbours ahead (faster) and behind (slower).
-        const ahead = [];
-        for (let j = i - 1; j >= 0 && ahead.length < PACK_K; j--) ahead.push(field[j].pace);
-        const behind = [];
-        for (let j = i + 1; j < n && behind.length < PACK_K; j++) behind.push(field[j].pace);
-
-        const avgGapAhead = ahead.length ? ahead.reduce((s, p) => s + Math.abs(p - e.pace), 0) / ahead.length : null;
-        const avgGapBehind = behind.length ? behind.reduce((s, p) => s + Math.abs(p - e.pace), 0) / behind.length : null;
-
-        // Isolation score: how large the surrounding gaps are vs the race's
-        // typical spacing. Weight the gap to runners BEHIND more heavily —
-        // leading a race with a big cushion is the classic "ran alone" case.
-        const rel = (gap) => (gap == null ? null : gap / medGap);
-        const relAhead = rel(avgGapAhead);
-        const relBehind = rel(avgGapBehind);
-        let isolation;
-        if (relAhead != null && relBehind != null) isolation = 0.4 * relAhead + 0.6 * relBehind;
-        else isolation = relAhead != null ? relAhead : (relBehind != null ? relBehind : 1);
-
-        // isolation ~1 means normal spacing (no adjustment). >1 isolated (boost),
-        // <1 tightly packed (discount). Map to a small factor with tanh, capped.
-        // factor <1 makes the adjusted pace FASTER → higher rating (boost).
-        const dev = isolation - 1;                    // + = isolated, − = packed
-        const raw = -FIELD_CAP * Math.tanh(dev * 0.6); // isolated -> negative -> boost
-        M.fieldByAthlete[e.key] = clampN(1 + raw, 1 - FIELD_CAP, 1 + FIELD_CAP);
-      });
-    });
-  }
-
-  // =====================================================================
-  //  WEATHER — same as before (optional; caller supplies fetchWeather)
-  // =====================================================================
-  function weatherDifficultyFactor(wx) {
-    if (!wx) return 1.0;
-    let f = 1.0;
-    if (typeof wx.tempMaxC === "number" && wx.tempMaxC > 18) f += Math.min((wx.tempMaxC - 18) * 0.006, 0.09);
-    if (typeof wx.tempMaxC === "number" && wx.tempMaxC < -5) f += Math.min((-5 - wx.tempMaxC) * 0.004, 0.04);
-    if (typeof wx.windMaxKmh === "number" && wx.windMaxKmh > 15) f += Math.min((wx.windMaxKmh - 15) * 0.0025, 0.05);
-    if (typeof wx.precipMm === "number" && wx.precipMm > 1) f += Math.min(wx.precipMm * 0.004, 0.06);
-    return f;
-  }
-  function meetCoords(meet) {
-    if (!meet) return WV_DEFAULT_COORDS;
-    if (typeof meet.lat === "number" && typeof meet.lon === "number") return { lat: meet.lat, lon: meet.lon };
-    const cs = meet.course_slug || meet.course || "";
-    if (cs && COURSE_COORDS[cs]) return COURSE_COORDS[cs];
-    return WV_DEFAULT_COORDS;
-  }
-  function meetDateISO(meet) {
-    if (!meet || !meet.date) return null;
-    const d = String(meet.date).split("T")[0];
-    return /^\d{4}-\d{2}-\d{2}$/.test(d) ? d : null;
-  }
-  async function fetchWeatherForMeet(meetSlug) {
-    if (meetSlug in M.weather) return M.weather[meetSlug];
-    const ssKey = `msm_wx_${meetSlug}`;
-    const cached = safeSS.get(ssKey);
-    if (cached !== null) { M.weather[meetSlug] = JSON.parse(cached); return M.weather[meetSlug]; }
-    const meet = M.meetsMap[meetSlug];
-    const iso = meetDateISO(meet);
-    if (!iso) { M.weather[meetSlug] = null; safeSS.set(ssKey, "null"); return null; }
-    const { lat, lon } = meetCoords(meet);
-    const url = `https://archive-api.open-meteo.com/v1/archive?latitude=${lat}&longitude=${lon}`
-      + `&start_date=${iso}&end_date=${iso}`
-      + `&daily=temperature_2m_max,wind_speed_10m_max,precipitation_sum`
-      + `&temperature_unit=celsius&wind_speed_unit=kmh&timezone=America%2FNew_York`;
-    try {
-      const res = await fetch(url);
-      const json = await res.json();
-      const daily = json && json.daily;
-      const wx = daily ? {
-        tempMaxC: Array.isArray(daily.temperature_2m_max) ? daily.temperature_2m_max[0] : null,
-        windMaxKmh: Array.isArray(daily.wind_speed_10m_max) ? daily.wind_speed_10m_max[0] : null,
-        precipMm: Array.isArray(daily.precipitation_sum) ? daily.precipitation_sum[0] : null,
-      } : null;
-      M.weather[meetSlug] = wx; safeSS.set(ssKey, JSON.stringify(wx)); return wx;
-    } catch (e) { M.weather[meetSlug] = null; safeSS.set(ssKey, "null"); return null; }
-  }
-
-  // =====================================================================
-  //  GLOBAL BASELINE
-  // =====================================================================
-  function buildGlobalMedians(results) {
-    const byG = { M: [], F: [] };
-    results.forEach((r) => {
-      if (isNonCompetitive(r.meet_slug)) return;
-      const g = r.gender; if (g !== "M" && g !== "F") return;
-      const p = paceOf(r); if (p != null) byG[g].push(p);
-    });
-    M.globalMedianPace.M = median(byG.M);
-    M.globalMedianPace.F = median(byG.F);
-  }
-
-  // =====================================================================
-  //  RATING
-  // =====================================================================
-  function courseFactorFor(r) {
-    const c = courseOf(r);
-    const f = typeof M.courseFactor[c] === "number" ? M.courseFactor[c] : (typeof M.hill[c] === "number" ? M.hill[c] : 1.0);
-    return clampN(f, 0.90, 1.14);
-  }
-  function fieldFactorFor(r) {
-    const f = M.fieldByAthlete[resultKey(r)];
-    return typeof f === "number" ? f : 1.0;
-  }
-  function paceToRating(adjPace, gender) {
-    const ref = REF[gender] || REF.M;
-    const pctFaster = (ref - adjPace) / ref;
-    return Math.max(0, Math.round(1000 + pctFaster * (SPREAD * 10)));
-  }
-  function ratingToPredicted(rating, gender, distMeters) {
-    const ref = REF[gender] || REF.M;
-    const pctFaster = (rating - 1000) / (SPREAD * 10);
-    const neutralPace = ref * (1 - pctFaster);
-    return Math.max(1, neutralPace * (distMeters || 5000));
-  }
-  function ratingToPredicted5K(rating, gender) { return ratingToPredicted(rating, gender, 5000); }
-
-  // Returns { rating, cF, fF, wF, adjPace } — identical shape to the old engine.
-  function rate(r, weatherOverride) {
-    const dist = distOf(r);
-    const t = Number(r.time_in_seconds);
-    if (!dist || !t) return null;
-    const rawPace = t / dist;
-    const cF = courseFactorFor(r);
-    const fF = fieldFactorFor(r);
-    const wF = typeof weatherOverride === "number"
-      ? weatherOverride
-      : weatherDifficultyFactor(M.weather[r.meet_slug]);
-    let boost = cF * fF * wF;
-    boost = clampN(boost, 0.90, 1.10);
-    const adjPace = rawPace / boost;
-    return { rating: paceToRating(adjPace, r.gender), cF, fF, wF, adjPace };
-  }
-
-  // =====================================================================
-  //  BUILD MODEL (one call sets everything up)
-  // =====================================================================
-  //  results: normalized array (see header). opts.meetsMap / coursesMap are
-  //  slug-keyed. opts.fetchWeather (bool) triggers Open-Meteo lookups for every
-  //  meet present (cached). If false, weather is neutral (wF = 1).
-  async function buildModel(results, opts) {
-    opts = opts || {};
-    M.meetsMap = opts.meetsMap || {};
-    M.coursesMap = opts.coursesMap || {};
-    M.weather = {};
-
-    await buildHillFactors();
-    buildGlobalMedians(results);
-    buildCourseFactors(results);
-    buildRaceGroups(results);
-    buildFieldFactors();
-
-    if (opts.fetchWeather) {
-      const slugs = [...new Set(results.map((r) => r.meet_slug).filter(Boolean))];
-      await Promise.all(slugs.map((s) => fetchWeatherForMeet(s)));
     }
+
     return M;
   }
 
+  // --- Public read API ------------------------------------------
+
+  // Current overall rating for an athlete (their best performance).
+  function currentRating(gender, name) {
+    const key = `${gender}|${norm(name)}`;
+    const points = M.ratings[key];
+    if (points == null) return null;
+    return {
+      points,
+      equiv5Ksec: pointsToEquiv5Ksec(gender, points)
+    };
+  }
+
+  // Rating for one specific performance (found by meet slug + distance).
+  function ratingForResult(r) {
+    const list = M.perfByAthlete[athleteKey(r)];
+    if (!list) return null;
+    const key = raceKey(r);
+    const perf = list.find(p => p.raceKey === key) || null;
+    if (!perf) return null;
+    return {
+      points: perf.points,
+      equiv5Ksec: pointsToEquiv5Ksec(r.gender, perf.points),
+      courseFactor: perf.courseFactor,
+      fieldFactor: perf.fieldFactor,
+      weatherFactor: perf.weatherFactor,
+      boost: perf.boost
+    };
+  }
+
+  // Format equivalent seconds into m:ss.s (lower = faster).
+  function fmtTime(totalSeconds) {
+    if (totalSeconds == null || isNaN(totalSeconds) || totalSeconds <= 0) return "";
+    const mins = Math.floor(totalSeconds / 60);
+    const secs = totalSeconds - mins * 60;
+    const secStr = secs.toFixed(1);
+    return `${mins}:${(secs < 10 ? "0" : "") + secStr}`;
+  }
+
   window.MSMRating = {
-    buildModel, rate,
-    ratingToPredicted, ratingToPredicted5K,
-    weatherDifficultyFactor, fetchWeatherForMeet, isNonCompetitive,
-    // introspection (for the explainer page + debugging)
-    get model() { return M; },
-    courseInfo: (slug) => M.courseInfo[slug] || null,
-    REF, SPREAD,
+    buildModel,
+    currentRating,
+    ratingForResult,
+    fmtTime,
+    pointsToEquiv5Ksec,
+    get model() { return M; }
   };
 })();
