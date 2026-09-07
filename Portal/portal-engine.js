@@ -112,9 +112,9 @@
   //  These thin wrappers keep the rest of the engine's API stable.
   // =====================================================================
   const R = () => window.MSMRating;
-  function isNonCompetitive(meetSlug) { return R().isNonCompetitive(meetSlug); }
-  // computeRating/-Value proxy the shared engine. They accept the engine's
-  // normalized row ({timeSec}) and adapt it to the shared shape ({time_in_seconds}).
+  function isNonCompetitive(meetSlug) {
+    return OUT_OF_SEASON_MEETS.indexOf(norm(meetSlug)) !== -1;
+  }
   function toRatingInput(r) {
     return {
       athlete_name: r.athlete_name, gender: r.gender, meet_slug: r.meet_slug,
@@ -123,10 +123,25 @@
       date: r.date,
     };
   }
-  function computeRating(r, wfOverride) { return R().rate(toRatingInput(r), wfOverride); }
-  function computeRatingValue(r, wfOverride) { const m = computeRating(r, wfOverride); return m ? m.rating : null; }
-  function ratingToPredicted(rating, gender, distMeters) { return R().ratingToPredicted(rating, gender, distMeters); }
-  function weatherDifficultyFactor(wx) { return R().weatherDifficultyFactor(wx); }
+  function computeRating(r) {
+    const m = R().ratingForResult(toRatingInput(r));
+    if (!m) return null;
+    return {
+      rating: m.points,
+      courseFactor: m.courseFactor,
+      fieldFactor: m.fieldFactor,
+      weatherFactor: m.weatherFactor,
+      boost: m.boost,
+    };
+  }
+  function computeRatingValue(r) { const m = computeRating(r); return m ? m.rating : null; }
+  function ratingToPredicted(rating, gender, distMeters) {
+    const eq5k = R().pointsToEquiv5Ksec(gender, rating);
+    if (eq5k == null) return null;
+    return distMeters === 5000 ? eq5k : riegel(eq5k, 5000, distMeters);
+  }
+  function weatherDifficultyFactor() { return 1.0; }
+
 
   // Legacy helper retained only for the course-difficulty label fallback used
   // elsewhere (e.g. simulator projection UI). Terrain math itself now lives in
@@ -279,13 +294,16 @@
       coursesMap: state.coursesMap,
       fetchWeather: true,
     });
-    // Mirror the shared model's terrain factors for local use (simulator projections).
-    state.factors.hill = window.MSMRating.model.hill;
-    state.factors.course = window.MSMRating.model.courseFactor;
-    state.factors.weather = window.MSMRating.model.weather;
+    // Mirror the shared model's factors for local use (simulator projections).
+    state.factors.course = R().model.courseFactor || {};
+    state.factors.weather = R().model.weatherFactor || {};
+    state.factors.hill = {}; // terrain is folded into courseFactor in the shared model
     const meetSlugs = [...new Set(raw.map((r) => r.meet_slug).filter(Boolean))];
     state.weatherTotal = meetSlugs.length;
-    state.weatherApplied = meetSlugs.filter((s) => state.factors.weather[s]).length;
+    // weatherFactor is keyed by raceKey (meet|gender|distance), and >1 means applied.
+    state.weatherApplied = Object.values(state.factors.weather).filter((f) => f > 1).length;
+
+
 
     // Attach full rating detail + numeric rating to each result.
     raw.forEach((r) => { r._msm = computeRating(r); r.msm = r._msm ? r._msm.rating : null; });
@@ -578,10 +596,11 @@
       const avgRating = top5.length === 5 ? Math.round(top5.reduce((s, x) => s + x, 0) / 5) : null;
       const spreadRating = top5.length === 5 ? top5[0] - top5[4] : null; // 1st minus 5th rating
       // Equivalent neutral-5K time of the average rating, for display.
-      const scoringAvg = avgRating != null ? window.MSMRating.ratingToPredicted5K(avgRating, g) : null;
+      const scoringAvg = avgRating != null ? R().pointsToEquiv5Ksec(g, avgRating) : null;
       const spread15 = (top5.length === 5)
-        ? window.MSMRating.ratingToPredicted5K(top5[4], g) - window.MSMRating.ratingToPredicted5K(top5[0], g)
+        ? R().pointsToEquiv5Ksec(g, top5[4]) - R().pointsToEquiv5Ksec(g, top5[0])
         : null;
+
       return {
         schoolSlug: slug, school: (state.schoolsMap[slug] || {}).name || slug,
         avgRating, spreadRating, scoringAvg, spread15, depth: ratings.length,
