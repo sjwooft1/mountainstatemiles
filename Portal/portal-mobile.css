@@ -1,0 +1,428 @@
+/* ============================================================
+   portal-mobile.css — Mobile polish + athlete personalization
+   Mountain State Miles / wvruns
+
+   Load AFTER the inline <style> block in portal.html so these
+   rules win. Adds:
+     • A responsive card treatment for table.rt on phones
+       (mirrors the meet.html "app-list" feel).
+     • Tightened hero / stat / chart / button layouts on small
+       screens.
+     • A customizable athlete hero banner + avatar.
+     • A sticky in-page section nav for smooth navigation.
+   Everything uses the existing --var design tokens.
+   ============================================================ */
+
+/* ---------- personalized athlete hero ---------- */
+.portal-hero {
+  position: relative;
+}
+/* Banner image sits behind the hero content. Set via inline
+   style background-image on #dashHeroMedia from portal-ui.js. */
+.portal-hero.has-media { border-bottom: none; }
+.portal-hero .hero-media {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  z-index: 0;
+}
+/* Readability scrim so text stays legible over any photo. */
+.portal-hero.has-media .hero-media::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    var(--bg-primary) 4%,
+    rgba(0, 0, 0, 0.45) 55%,
+    rgba(0, 0, 0, 0.15) 100%
+  );
+}
+.portal-hero.has-media .portal-hero-inner { position: relative; z-index: 1; }
+.portal-hero.has-media .hero-name { color: #fff; text-shadow: 0 2px 12px rgba(0,0,0,0.5); }
+.portal-hero.has-media .hero-sub  { color: rgba(255,255,255,0.92); text-shadow: 0 1px 6px rgba(0,0,0,0.5); }
+.portal-hero.has-media .hero-chip {
+  background: rgba(0,0,0,0.35);
+  border-color: rgba(255,255,255,0.35);
+  color: #fff;
+  backdrop-filter: blur(4px);
+}
+.portal-hero.has-media .hero-chip i { color: rgba(255,255,255,0.8); }
+
+/* Dropdowns inside the hero must escape the hero's clipping context. */
+.portal-hero .ta-drop { overflow: visible; }
+
+/* Avatar shown to the left of the name. */
+.hero-identity { display: flex; align-items: center; gap: 16px; }
+.hero-avatar {
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid var(--bg-primary);
+  box-shadow: 0 4px 14px var(--shadow-medium);
+  background: var(--bg-secondary);
+  flex-shrink: 0;
+}
+.portal-hero.has-media .hero-avatar { border-color: rgba(255,255,255,0.9); }
+
+/* "Customize" button that opens the image editor. */
+.hero-customize {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--bg-primary);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition);
+}
+.hero-customize:hover { border-color: var(--text-primary); color: var(--text-primary); }
+.portal-hero.has-media .hero-customize {
+  background: rgba(0,0,0,0.35);
+  border-color: rgba(255,255,255,0.35);
+  color: #fff;
+  backdrop-filter: blur(4px);
+}
+
+/* ---------- customize dialog ---------- */
+.img-editor-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 1rem;
+}
+.img-editor {
+  width: 100%;
+  max-width: 460px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  box-shadow: 0 20px 60px var(--shadow-medium);
+}
+.img-editor h3 {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  margin-bottom: 4px;
+  color: var(--text-primary);
+}
+.img-editor .section-sub { margin-bottom: 16px; }
+.img-editor .field { margin-bottom: 14px; }
+.img-editor .field label {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-tertiary);
+  margin-bottom: 6px;
+}
+.img-editor .field input {
+  width: 100%;
+  padding: 10px 12px;
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  outline: none;
+}
+.img-editor .field input:focus { border-color: var(--text-primary); background: var(--bg-primary); }
+.img-editor-preview {
+  height: 110px;
+  border-radius: var(--radius-md);
+  background: var(--bg-secondary) center/cover no-repeat;
+  border: 1px solid var(--border);
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-tertiary);
+  font-size: 0.8rem;
+}
+.img-editor-actions { display: flex; gap: 10px; margin-top: 4px; }
+
+/* ---------- sticky in-page section nav ---------- */
+.portal-nav {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: var(--bg-primary);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding: 0 1rem;
+}
+.portal-nav::-webkit-scrollbar { display: none; }
+.portal-nav-inner {
+  display: flex;
+  gap: 4px;
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+}
+.portal-nav a {
+  padding: 12px 16px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  transition: color var(--transition), border-color var(--transition);
+}
+.portal-nav a:hover { color: var(--text-primary); border-bottom-color: transparent; }
+.portal-nav a.active { color: var(--text-primary); border-bottom-color: var(--text-primary); }
+/* Offset anchored scroll so sections aren't hidden under the nav. */
+.section-block[id] { scroll-margin-top: 64px; }
+
+/* ============================================================
+   MOBILE  (≤ 720px)
+   ============================================================ */
+@media (max-width: 720px) {
+
+  body { margin-top: 24px; }
+
+  /* --- hero --- */
+  .portal-hero { padding: 26px 0 24px; }
+  .portal-hero-inner { padding: 0 1rem; gap: 1rem; }
+  .hero-identity { gap: 12px; }
+  .hero-avatar { width: 58px; height: 58px; }
+  .hero-name { font-size: clamp(1.7rem, 8vw, 2.3rem); }
+  .export-row { width: 100%; }
+
+  .page-main { padding: 1.5rem 1rem 4rem; }
+  .section-block { margin-bottom: 2rem; }
+  .section-heading { font-size: 1.2rem; }
+
+  /* --- stat cards: 2-up instead of cramped auto-fit --- */
+  .stat-grid { grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+  .stat-card { padding: 13px 14px; }
+  .stat-val { font-size: 1.4rem; }
+
+  .pace-grid { grid-template-columns: 1fr 1fr; }
+
+  /* --- charts stack full width and get a touch shorter --- */
+  .charts-grid { grid-template-columns: 1fr; }
+  .chart-wrap { height: 210px; }
+
+  /* --- export buttons wrap comfortably; season select full width --- */
+  .export-row .xbtn { flex: 1 1 auto; justify-content: center; }
+  #dashActions { width: 100%; }
+  #dashActions select#seasonSelect { flex: 1 1 100%; }
+
+  /* --- compare + simulator controls stack --- */
+  .compare-controls, .sim-controls { flex-direction: column; align-items: stretch; }
+  .compare-controls .ta-wrap { min-width: 0; }
+
+  /* ========================================================
+     TABLE → CARD transformation (the meet.html feel)
+     table.rt cells must carry data-label="Column Name"
+     (added in portal-ui.js). On phones each <tr> becomes a
+     stacked card and each <td> a label/value row.
+     ======================================================== */
+  .table-card { border: none; background: transparent; overflow: visible; }
+
+  table.rt { font-size: 0.9rem; }
+  table.rt thead { display: none; }
+
+  table.rt, table.rt tbody, table.rt tr, table.rt td { display: block; width: 100%; }
+
+  table.rt tbody tr {
+    background: var(--bg-primary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 6px 14px;
+    margin-bottom: 12px;
+    box-shadow: 0 2px 8px var(--shadow-light);
+  }
+  table.rt tbody tr:hover td { background: transparent; }
+
+  table.rt tbody td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border-light);
+    text-align: right;
+  }
+  table.rt tbody tr td:last-child { border-bottom: none; }
+
+  /* The label pulled from data-label sits on the left. */
+  table.rt tbody td::before {
+    content: attr(data-label);
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-tertiary);
+    text-align: left;
+    flex: 0 0 auto;
+  }
+  /* Cells with no label (spacer/colspan messages) render normally. */
+  table.rt tbody td[data-label=""]::before,
+  table.rt tbody td:not([data-label])::before { content: none; }
+  table.rt tbody td[colspan] {
+    justify-content: center;
+    text-align: center;
+    color: var(--text-tertiary);
+  }
+  table.rt tbody td[colspan]::before { content: none; }
+
+  /* Emphasize the primary mark on each card. */
+  table.rt tbody td.mark-col { font-size: 1rem; }
+}
+
+/* Very small phones: single-column stats. */
+@media (max-width: 400px) {
+  .stat-grid, .pace-grid { grid-template-columns: 1fr; }
+}
+
+/* ---------- Fan Zone enhancements ---------- */
+.fan-nav {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.75rem;
+}
+.fan-nav-btn {
+  padding: 8px 16px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-primary);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition);
+  white-space: nowrap;
+}
+.fan-nav-btn:hover { border-color: var(--text-primary); color: var(--text-primary); }
+.fan-nav-btn.active { background: var(--text-primary); color: var(--bg-primary); border-color: var(--text-primary); }
+
+.live-ticker { }
+.live-meet-group { margin-bottom: 1rem; border-bottom: 1px solid var(--border-light); padding-bottom: 1rem; }
+.live-meet-group:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+.live-meet-head {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 8px;
+  padding: 6px 14px;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+}
+.live-meet-name { font-weight: 700; color: var(--text-primary); font-size: 0.92rem; }
+.live-meet-date { font-size: 0.75rem; color: var(--text-tertiary); }
+
+@media (max-width: 720px) {
+  .fan-nav { gap: 4px; }
+  .fan-nav-btn { padding: 6px 10px; font-size: 0.78rem; }
+  .live-meet-head { flex-direction: column; gap: 2px; }
+
+  /* Live feed table card transformation */
+  .live-ticker .table-card { border: none; background: transparent; overflow: visible; }
+  .live-ticker table.rt { font-size: 0.9rem; }
+  .live-ticker table.rt thead { display: none; }
+  .live-ticker table.rt, .live-ticker table.rt tbody, .live-ticker table.rt tr, .live-ticker table.rt td { display: block; width: 100%; }
+  .live-ticker table.rt tbody tr {
+    background: var(--bg-primary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 6px 14px;
+    margin-bottom: 8px;
+    box-shadow: 0 2px 8px var(--shadow-light);
+  }
+  .live-ticker table.rt tbody td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border-light);
+  }
+  .live-ticker table.rt tbody tr td:last-child { border-bottom: none; }
+  .live-ticker table.rt tbody td::before {
+    content: attr(data-label);
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-tertiary);
+    text-align: left;
+    flex: 0 0 auto;
+  }
+  .live-ticker table.rt tbody td:not([data-label])::before { content: none; }    .live-ticker table.rt tbody td.mark-col { font-size: 1rem; }
+}
+
+/* ---------- Meet Sim + Expected Teams animations ---------- */
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes scorePop {
+  0% { transform: scale(0.6); opacity: 0; }
+  60% { transform: scale(1.12); opacity: 1; }
+  100% { transform: scale(1); }
+}
+@keyframes placeReveal {
+  from { opacity: 0; transform: translateX(-8px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes winnerGlow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+  50% { box-shadow: 0 0 16px 4px rgba(16, 185, 129, 0.35); }
+}
+
+.sim-results.animating .sim-team-card {
+  animation: fadeSlideUp 0.35s ease both;
+}
+.sim-results.animating .sim-team-card:nth-child(1) { animation-delay: 0.02s; }
+.sim-results.animating .sim-team-card:nth-child(2) { animation-delay: 0.06s; }
+.sim-results.animating .sim-team-card:nth-child(3) { animation-delay: 0.10s; }
+.sim-results.animating .sim-team-card:nth-child(4) { animation-delay: 0.14s; }
+.sim-results.animating .sim-team-card:nth-child(5) { animation-delay: 0.18s; }
+.sim-results.animating .sim-team-card:nth-child(6) { animation-delay: 0.22s; }
+.sim-results.animating .sim-team-card:nth-child(7) { animation-delay: 0.26s; }
+.sim-results.animating .sim-team-card:nth-child(8) { animation-delay: 0.30s; }
+
+.sim-score {
+  display: inline-block;
+  animation: scorePop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+.sim-place {
+  display: inline-block;
+  animation: placeReveal 0.3s ease both;
+}
+.sim-winner {
+  animation: winnerGlow 1.5s ease infinite;
+}
+
+.exp-team-score {
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.exp-team-card {
+  animation: fadeSlideUp 0.3s ease both;
+}
+
+@media (max-width: 720px) {
+  .sim-results { scroll-margin-top: 64px; }
+  .sim-team-card { scroll-margin-top: 64px; }
+}

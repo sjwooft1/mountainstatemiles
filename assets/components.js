@@ -86,7 +86,9 @@ const BASE_LINKS = [
                data-theme-light-src="/assets/images/msm.svg"
                data-theme-dark-src="/assets/images/msmb.svg" />
           </a>
-          ${context !== 'default' ? `<span class="sport-badge">${context === 'track' ? 'TRACK' : 'XC'}</span>` : ''}
+          ${context !== 'default' ? `<span class="sport-badge"><img src="/assets/images/favicon/apple-touch-icon.png" alt="Mountain State Miles Logo" class="brand-logo"
+               data-theme-light-src="/assets/images/favicon/apple-touch-icon.png"
+               data-theme-dark-src="/assets/images/favicon/apple-touch-icon.png" /></span>` : ''}
           
           <nav class="desktop-nav">
             ${linksHtml}
@@ -138,7 +140,7 @@ const BASE_LINKS = [
           <img src="/assets/images/MSM runner.svg" alt="Mountain State Miles Logo" class="footer-logo">
           
           <div class="brand-text">
-            <h3>MOUNTAIN STATE MILES</h3>
+            <h3 class="msm">MOUNTAIN STATE MILES</h3>
             <p>The premier hub for West Virginia Track & Cross Country data.</p>
           </div>
         </div>

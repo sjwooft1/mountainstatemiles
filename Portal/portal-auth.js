@@ -202,7 +202,7 @@
     await waitForDb();
     const now = new Date().toISOString();
     // Only write allowed profile fields.
-    const allowed = ["role", "displayName", "athleteName", "schoolSlug", "gender", "follows"];
+    const allowed = ["role", "displayName", "athleteName", "schoolSlug", "gender", "follows", "heroImage", "avatar"];
     const updates = { updatedAt: now };
     allowed.forEach((k) => { if (k in patch) updates[k] = patch[k]; });
     await accountRef(currentUser.username).update(updates);

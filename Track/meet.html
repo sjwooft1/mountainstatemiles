@@ -233,20 +233,13 @@
     <!-- TEAMS VIEW -->
     <div id="section-teams" style="display:none;">
       <h2 class="section-heading"><i class="fas fa-trophy" style="color:var(--gold)"></i> Team Standings</h2>
-      <div class="table-container">
-        <table class="data-table">
-          <thead><tr><th style="width:60px">Rank</th><th>School</th><th style="text-align:right;padding-right:28px">Points</th></tr></thead>
-          <tbody id="team-standings-body"></tbody>
-        </table>
-      </div>
+      <div id="team-standings-body" class="app-list"></div>
     </div>
 
     <!-- HIGH POINT VIEW -->
     <div id="section-highpoint" style="display:none;">
       <h2 class="section-heading"><i class="fas fa-star" style="color:var(--gold)"></i> High Point Athletes</h2>
-      <div class="table-container">
-        <div id="hp-grid-wrapper" class="hp-grid"></div>
-      </div>
+      <div id="hp-grid-wrapper" class="app-list"></div>
     </div>
   </div>
 
@@ -709,26 +702,20 @@
     const results = structuredData[activeGender][activeEvent]?.[heat];
     if (!results?.length) { wrapper.innerHTML = '<div class="empty-state">No results for this round.</div>'; return; }
 
-    wrapper.innerHTML = `
-      <table class="data-table">
-        <thead><tr>
-          <th style="width:60px;text-align:center">#</th>
-          <th>Athlete</th>
-          <th>School</th>
-          <th style="text-align:right;padding-right:24px">Mark</th>
-        </tr></thead>
-        <tbody>${results.map(r => {
-          const nameDisplay = r.relay_names
-            ? `<div><strong>${r.school} Relay</strong><br><span style="font-size:.78rem;color:var(--text-mid)">${r.relay_names}</span></div>`
-            : `<a href="athlete.html?id=${r.athlete_id}">${r.athlete_name||'Unknown'}</a>`;
-          return `<tr>
-            <td style="text-align:center">${getPlaceBadge(r.placement)}</td>
-            <td>${nameDisplay}</td>
-            <td><div class="school-cell">${logoTag(r.school,'school-logo-sm')}${r.school}</div></td>
-            <td style="text-align:right;padding-right:24px" class="mark-cell">${r.mark||'—'}</td>
-          </tr>`;
-        }).join('')}</tbody>
-      </table>`;
+    wrapper.innerHTML = `<div class="app-list"><div class="list-header">${activeEvent} · ${activeHeat}</div>${results.map(r => {
+      const nameDisplay = r.relay_names
+        ? `<div class="item-name">${r.school} Relay</div><div class="item-meta">${r.relay_names}</div>`
+        : `<a class="item-name" href="athlete.html?id=${r.athlete_id}">${r.athlete_name||'Unknown'}</a>`;
+      return `<div class="list-item">
+        <div class="item-place">${r.placement || '—'}</div>
+        <div class="item-avatar">${logoTag(r.school,'school-logo-sm')}</div>
+        <div class="item-details">
+          ${nameDisplay}
+          <div class="item-school">${r.school || 'Unknown'}</div>
+        </div>
+        <div class="item-score">${r.mark||'—'}</div>
+      </div>`;
+    }).join('')}</div>`;
   }
 
   function refreshTeamsView() {
@@ -748,17 +735,16 @@
     });
     const sorted = Object.entries(scores).map(([s,p])=>({school:s,pts:p})).sort((a,b)=>b.pts-a.pts);
     if (!sorted.length) {
-      tbody.innerHTML = '<tr><td colspan="3" class="empty-state">No team scores yet.</td></tr>';
+      tbody.innerHTML = '<div class="empty-state">No team scores yet.</div>';
       return;
     }
-    tbody.innerHTML = sorted.map((team,i) => {
-      const rankCls = i<3 ? ` rank-${i+1}` : '';
-      return `<tr>
-        <td><span class="rank-num${rankCls}">${i+1}</span></td>
-        <td><div class="school-cell">${logoTag(team.school,'standings-logo')}<span style="font-weight:600">${team.school}</span></div></td>
-        <td style="text-align:right;padding-right:24px"><span class="team-pts">${formatScorePoints(team.pts)}</span></td>
-      </tr>`;
-    }).join('');
+    tbody.innerHTML = `<div class="list-header">Team Standings</div>${sorted.map((team,i) => `
+      <div class="list-item">
+        <div class="item-place">${i + 1}</div>
+        <div class="item-avatar">${logoTag(team.school,'standings-logo')}</div>
+        <div class="item-details"><div class="item-name">${team.school}</div><div class="item-meta">Meet points</div></div>
+        <div class="item-score">${formatScorePoints(team.pts)}</div>
+      </div>`).join('')}`;
   }
 
   function refreshHighPointView() {
@@ -788,16 +774,19 @@
     const pillCls = p => p<=3 ? `p${p}` : '';
     const ordinal = p => p===1?'st':p===2?'nd':p===3?'rd':'th';
 
-    wrapper.innerHTML = topAthletes.map((ath, i) => {
+    wrapper.innerHTML = `<div class="list-header">High Point Athletes</div>` + topAthletes.map((ath, i) => {
       const pills = ath.placements.slice().sort((a,b)=>a.place-b.place).map(pl =>
-        `<span class="hp-pill ${pillCls(pl.place)}">${pl.event} — ${pl.place}${ordinal(pl.place)} (+${formatScorePoints(pl.pts)}${pl.tied ? " tie" : ""})</span>`
+        `<span class="scorer-badge">${pl.event} — ${pl.place}${ordinal(pl.place)} (+${formatScorePoints(pl.pts)}${pl.tied ? " tie" : ""})</span>`
       ).join('');
-      return `<div class="hp-athlete">
-        <div class="hp-medal">${medals[i]||`#${i+1}`}</div>
-        <div class="hp-school-row">${logoTag(ath.school,'hp-logo')}<span class="hp-school-name">${ath.school}</span></div>
-        <div class="hp-name">${ath.name||'Unknown'}</div>
-        <div class="hp-pts">${formatScorePoints(ath.pts)} pts</div>
-        <div class="hp-pills">${pills}</div>
+      return `<div class="list-item">
+        <div class="item-place">${i + 1}</div>
+        <div class="item-avatar">${logoTag(ath.school,'hp-logo')}</div>
+        <div class="item-details">
+          <div class="item-name">${medals[i] || ''} ${ath.name || 'Unknown'}</div>
+          <div class="item-school">${ath.school}</div>
+          <div class="item-meta">${pills}</div>
+        </div>
+        <div class="item-score">${formatScorePoints(ath.pts)} pts</div>
       </div>`;
     }).join('');
   }

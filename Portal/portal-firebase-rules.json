@@ -27,6 +27,8 @@
         "athleteName": { ".validate": "newData.isString()" },
         "schoolSlug":  { ".validate": "newData.isString()" },
         "gender":      { ".validate": "newData.isString()" },
+        "heroImage":   { ".validate": "newData.isString() && newData.val().length < 2048" },
+        "avatar":      { ".validate": "newData.isString() && newData.val().length < 2048" },
         "createdAt":   { ".validate": "newData.isString()" },
         "updatedAt":   { ".validate": "newData.isString()" },
         "follows": {

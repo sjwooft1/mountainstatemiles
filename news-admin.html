@@ -1,284 +1,190 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>News Admin — Mountain State Miles</title>
+  <title>News Desk — Mountain State Miles</title>
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/assets/main.css" />
-
-
-  
+  <style>
+    .desk-main{max-width:1120px;margin:0 auto;padding:2rem 1.25rem 5rem}.desk-head{margin-bottom:1.5rem}.desk-head h1{margin:0 0 .35rem;font-size:clamp(1.7rem,4vw,2.4rem)}.desk-head p{margin:0;color:var(--text-secondary)}
+    .desk-tabs{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1.2rem;border-bottom:1px solid var(--border);padding-bottom:.7rem}.desk-tab{border:1px solid var(--border);border-radius:99px;background:var(--bg-primary);color:var(--text-secondary);padding:.55rem 1rem;font-weight:800;cursor:pointer}.desk-tab.active{background:var(--primary);border-color:var(--primary);color:#fff}.desk-panel{display:none}.desk-panel.active{display:block}
+    .desk-card{background:var(--bg-primary);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem;margin-bottom:1rem;box-shadow:0 5px 18px var(--shadow-light)}.desk-card h2{font-size:1.15rem;margin:0 0 .3rem}.desk-card .help{color:var(--text-secondary);font-size:.84rem;line-height:1.5;margin:.2rem 0 1rem}.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem}@media(max-width:700px){.form-grid{grid-template-columns:1fr}}.field{display:flex;flex-direction:column;gap:.35rem}.field.full{grid-column:1/-1}.field label{font-weight:800;font-size:.82rem}.field input,.field select,.field textarea{font:inherit;border:1px solid var(--border);border-radius:var(--radius-md);background:var(--bg-secondary);color:var(--text-primary);padding:.7rem .8rem}.field textarea{min-height:125px;resize:vertical}.field textarea.story-body{min-height:260px}.checkline{display:flex;gap:.55rem;align-items:center;font-size:.88rem;font-weight:700}.button-row{display:flex;gap:.6rem;flex-wrap:wrap;margin-top:1rem}.desk-btn{border:0;border-radius:var(--radius-md);padding:.7rem 1rem;font:inherit;font-weight:800;cursor:pointer;background:var(--primary);color:#fff}.desk-btn.secondary{background:var(--bg-secondary);color:var(--text-primary);border:1px solid var(--border)}.desk-btn.gold{background:var(--msm-gold);color:#3a2c05}.desk-btn:disabled{opacity:.5;cursor:not-allowed}
+    .token-box{background:var(--bg-secondary);border:1px dashed var(--border);border-radius:var(--radius-md);padding:.85rem}.token-box strong{display:block;font-size:.82rem;margin-bottom:.45rem}.token-list{display:flex;flex-wrap:wrap;gap:.4rem}.token{border:1px solid var(--border);border-radius:99px;background:var(--bg-primary);color:var(--text-secondary);padding:.32rem .58rem;font:inherit;font-size:.73rem;font-weight:800;cursor:pointer}.token:hover{border-color:var(--primary);color:var(--primary)}
+    .story-preview{border-radius:var(--radius-lg);padding:1.35rem;background:linear-gradient(140deg,var(--bg-dark),#1e4235);color:var(--msm-cream);min-height:170px}.story-preview .preview-kicker{color:var(--msm-gold);font-size:.7rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase}.story-preview h3{font-size:1.45rem;line-height:1.15;margin:.4rem 0}.story-preview .preview-dek{color:rgba(251,247,239,.8);font-weight:700}.story-preview .preview-body{color:rgba(251,247,239,.78);font-size:.88rem;line-height:1.55;white-space:pre-line}.story-preview .preview-stats{display:flex;gap:.4rem;flex-wrap:wrap;margin-top:.8rem}.story-preview .preview-stats span{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);padding:.3rem .55rem;border-radius:99px;font-size:.72rem;font-weight:800}.alert{display:none;border-radius:var(--radius-md);padding:.75rem 1rem;margin-bottom:1rem;font-weight:700}.alert.show{display:block}.alert.success{background:rgba(63,125,99,.14);color:var(--primary)}.alert.error{background:rgba(198,91,70,.14);color:var(--danger)}.article-row{display:flex;justify-content:space-between;gap:1rem;align-items:flex-start;border-bottom:1px solid var(--border-light);padding:1rem 0}.article-row:last-child{border-bottom:0}.article-row h3{margin:0 0 .3rem;font-size:1rem}.article-row p{margin:0;color:var(--text-secondary);font-size:.86rem;line-height:1.45}.article-meta{color:var(--text-tertiary);font-size:.74rem}.article-row .delete{background:transparent;color:var(--danger);border:1px solid var(--border);padding:.4rem .6rem;border-radius:var(--radius-sm);font-weight:800;cursor:pointer;white-space:nowrap}
+  </style>
   <script src="/assets/theme-toggle.js" defer></script>
   <script src="/assets/components.js" defer></script>
 </head>
 <body>
-
   <div id="global-header"></div>
+  <script src="/assets/msm-loader.js"></script>
 
-<script src="/assets/msm-loader.js"></script>
-<main class="content-section">
-    <div class="admin-header">
-      <h1 class="admin-title">📰 News & Announcements</h1>
-      <p class="admin-subtitle">Publish site updates and announcements</p>
-    </div>
-
+  <main class="desk-main">
+    <header class="desk-head">
+      <h1>📰 News Desk</h1>
+      <p>Publish articles, shape the Story of the Week, and turn live MSM data into an email-ready feature.</p>
+    </header>
     <div id="alert" class="alert"></div>
 
-    <div class="tabs">
-      <button class="tab-btn active" data-tab="create" onclick="switchTab(event, 'create')">New Article</button>
-      <button class="tab-btn" data-tab="manage" onclick="switchTab(event, 'manage')">Manage Articles</button>
-    </div>
+    <nav class="desk-tabs" aria-label="News desk sections">
+      <button class="desk-tab active" data-panel="story" type="button">⭐ Story of the Week</button>
+      <button class="desk-tab" data-panel="article" type="button">✍️ New Article</button>
+      <button class="desk-tab" data-panel="manage" type="button">📚 Manage Articles</button>
+    </nav>
 
-    <!-- CREATE ARTICLE TAB -->
-    <div id="create" class="tab-content active">
-      <form id="article-form">
-        <div class="form-group">
-          <label for="title">Article Title *</label>
-          <input type="text" id="title" placeholder="e.g., Spring Season Kicks Off" required>
-          <p class="help-text">Make it clear and concise</p>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label for="article-date">Publication Date *</label>
-            <input type="date" id="article-date" required>
+    <section id="story-panel" class="desk-panel active">
+      <div class="desk-card">
+        <h2>Story of the Week editor</h2>
+        <p class="help">Write the feature once and the public hub will display it automatically. Use the live tokens below to pull current MSM data into the copy. Leave the story inactive to let the automatic breakout story take over.</p>
+        <form id="story-form">
+          <div class="form-grid">
+            <div class="field"><label for="story-kicker">Kicker</label><input id="story-kicker" placeholder="Inside the WV circuit"></div>
+            <div class="field"><label for="story-author">Byline</label><input id="story-author" placeholder="MSM Data Desk"></div>
+            <div class="field full"><label for="story-title">Headline *</label><input id="story-title" required placeholder="The race everyone is watching next"></div>
+            <div class="field full"><label for="story-dek">Standfirst / deck</label><textarea id="story-dek" placeholder="One sharp sentence to pull readers into the story."></textarea></div>
+            <div class="field full"><label for="story-body">Story body</label><textarea id="story-body" class="story-body" placeholder="Write the story here. Separate paragraphs with a blank line."></textarea></div>
           </div>
-          <div class="form-group">
-            <label for="category">Category *</label>
-            <select id="category" required>
-              <option value="">Select a category</option>
-              <option value="Announcement">📢 Announcement</option>
-              <option value="Update">📝 Update</option>
-              <option value="Schedule">📅 Schedule</option>
-              <option value="Results">🏆 Results</option>
-              <option value="General">📌 General</option>
-            </select>
+          <div class="token-box" style="margin-top:1rem">
+            <strong>Insert live stat</strong>
+            <div class="token-list" id="story-tokens"></div>
           </div>
-        </div>
-
-        <div class="form-group">
-          <label for="content">Article Content *</label>
-          <textarea id="content" placeholder="Write your announcement or update here..." required></textarea>
-          <p class="help-text">Use clear, engaging language. Markdown formatting is supported.</p>
-        </div>
-
-        <div class="form-group">
-          <label for="highlights">Key Points (optional)</label>
-          <textarea id="highlights" placeholder="• First important point&#10;• Second important point&#10;• Third important point"></textarea>
-          <p class="help-text">Separate each point with a new line, one per line</p>
-        </div>
-
-        <div style="display: flex; gap: 10px; margin-top: 30px;">
-          <button type="submit" class="btn btn-primary">✅ Publish Article</button>
-          <button type="reset" class="btn btn-secondary">Clear Form</button>
-        </div>
-      </form>
-    </div>
-
-    <!-- MANAGE ARTICLES TAB -->
-    <div id="manage" class="tab-content">
-      <div style="margin-bottom: 20px;">
-        <h3 style="color: var(--primary); margin-top: 0;">Published Articles</h3>
+          <label class="checkline" style="margin-top:1rem"><input type="checkbox" id="story-active" checked> Publish this as the public Story of the Week</label>
+          <div class="button-row">
+            <button class="desk-btn" type="submit">Save featured story</button>
+            <button class="desk-btn secondary" type="button" id="story-refresh">Reload saved story</button>
+            <button class="desk-btn gold" type="button" id="email-export">Generate HTML email</button>
+          </div>
+        </form>
       </div>
-      <div id="articles-list" class="news-list">
-        <div style="text-align: center; color: var(--text-secondary);">Loading articles...</div>
-      <div style="margin-bottom: 20px;">
-        <h3 style="color: var(--primary); margin-top: 0;">Published Articles</h3>
+      <div class="desk-card">
+        <h2>Live preview</h2>
+        <p class="help">Preview resolves the same tokens the public hub uses. The email button below generates a standalone table-based HTML email you can paste into your mail platform.</p>
+        <div id="story-preview" class="story-preview"><div class="preview-kicker">Loading live stats…</div></div>
       </div>
-      <div id="articles-list" class="news-list">
-        <div style="text-align: center; color: var(--text-secondary);">Loading articles...</div>
-      </div>
-    </div>
+    </section>
 
+    <section id="article-panel" class="desk-panel">
+      <div class="desk-card">
+        <h2>Publish an article</h2>
+        <p class="help">Announcements and recaps appear in the MSM News strip on WV Running News Central.</p>
+        <form id="article-form">
+          <div class="form-grid">
+            <div class="field full"><label for="article-title">Title *</label><input id="article-title" required placeholder="Autumn championship weekend is here"></div>
+            <div class="field"><label for="article-date">Publication date *</label><input id="article-date" type="date" required></div>
+            <div class="field"><label for="article-category">Category *</label><select id="article-category" required><option value="">Choose one</option><option>Results</option><option>Schedule</option><option>Announcement</option><option>Update</option><option>General</option></select></div>
+            <div class="field full"><label for="article-content">Content *</label><textarea id="article-content" required placeholder="Write the update…"></textarea></div>
+            <div class="field full"><label for="article-highlights">Key points</label><textarea id="article-highlights" placeholder="One point per line"></textarea></div>
+          </div>
+          <div class="button-row"><button class="desk-btn" type="submit">Publish article</button><button class="desk-btn secondary" type="reset">Clear</button></div>
+        </form>
+      </div>
+    </section>
+
+    <section id="manage-panel" class="desk-panel">
+      <div class="desk-card"><h2>Published articles</h2><div id="articles-list"><p class="help">Loading…</p></div></div>
+    </section>
   </main>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-  
-  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyCBQt9I_OSoUuTM61F-JXNBkD98f7PCJcA",
-      authDomain: "mountainstatemiles-1326f.firebaseapp.com",
-      databaseURL: "https://mountainstatemiles-1326f-default-rtdb.firebaseio.com",
-      projectId: "mountainstatemiles-1326f",
-      storageBucket: "mountainstatemiles-1326f.firebasestorage.app",
-      messagingSenderId: "605911511756",
-      appId: "1:605911511756:web:0e99071a816f0a39210869",
-      measurementId: "G-N3DNFRQNF9"
-    };
-
-    firebase.initializeApp(firebaseConfig);
-    const database = firebase.database();
-    const auth = firebase.auth();
-
-    // Enable anonymous authentication
-    auth.signInAnonymously()
-      .then(() => {
-        console.log('✅ Firebase authenticated');
-      })
-      .catch((error) => {
-        console.error('❌ Firebase auth error:', error);
-        showAlert('Firebase connection error. Please refresh the page.', 'error');
-      });
-
-    function switchTab(e, tabName) {
-      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-      document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-
-      document.getElementById(tabName).classList.add('active');
-
-      if (e && e.currentTarget) {
-        e.currentTarget.classList.add('active');
-      } else {
-        const btn = document.querySelector(`.tab-btn[data-tab="${tabName}"]`);
-        if (btn) btn.classList.add('active');
-      }
-
-      if (tabName === 'manage') {
-        loadArticles();
-      }
-    }
-
-    async function loadArticles() {
-      try {
-        const snapshot = await database.ref('news').once('value');
-        const articles = [];
-
-        snapshot.forEach(child => {
-          articles.push({
-            id: child.key,
-            ...child.val()
-          });
-        });
-
-        articles.sort((a, b) => new Date(b.date) - new Date(a.date));
-
-        const container = document.getElementById('articles-list');
-        if (articles.length === 0) {
-          container.innerHTML = '<div style="text-align: center; color: var(--text-secondary); padding: 40px;">No articles published yet</div>';
-          return;
-        }
-
-        function formatDate(dateString) {
-          const date = new Date(dateString);
-          return date.toLocaleDateString('en-US', { 
-            month: 'short', 
-            day: 'numeric', 
-            year: 'numeric' 
-          });
-        }
-
-        container.innerHTML = articles.map(article => `
-          <div class="news-card">
-            <div class="news-card-header">
-              <div style="flex: 1;">
-                <h3 class="news-card-title">${escapeHtml(article.title)}</h3>
-                <div class="news-card-meta">
-                  <span class="news-card-tag">📅 ${formatDate(article.date)}</span>
-                  ${article.category ? `<span class="news-card-tag">${escapeHtml(article.category)}</span>` : ''}
-                </div>
-              </div>
-              <div class="news-card-actions">
-                <button onclick="deleteArticle('${article.id}')" class="btn btn-danger btn-small">🗑️ Delete</button>
-              </div>
-            </div>
-            <p style="color: var(--text-secondary); font-size: 0.95rem; margin: 12px 0 0 0;">
-              ${escapeHtml(article.content).substring(0, 200)}${article.content.length > 200 ? '...' : ''}
-            </p>
-          </div>
-        `).join('');
-      } catch (error) {
-        console.error('Error loading articles:', error);
-        showAlert('Error loading articles: ' + error.message, 'error');
-      }
-    }
-
-    async function deleteArticle(id) {
-      if (!confirm('Are you sure you want to delete this article?')) return;
-
-      try {
-        await database.ref('news').child(id).remove();
-        showAlert('✅ Article deleted', 'success');
-        loadArticles();
-      } catch (error) {
-        showAlert('Error deleting article: ' + error.message, 'error');
-      }
-    }
-
-    function showAlert(message, type) {
-      const alert = document.getElementById('alert');
-      alert.textContent = message;
-      alert.className = `alert show alert-${type}`;
-      setTimeout(() => alert.classList.remove('show'), 4000);
-    }
-
-    function escapeHtml(text) {
-      const map = {
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        '"': '&quot;',
-        "'": '&#039;'
-      };
-      return text.replace(/[&<>"']/g, m => map[m]);
-    }
-
-    document.addEventListener('DOMContentLoaded', () => {
-      const articleForm = document.getElementById('article-form');
-      if (articleForm) {
-        articleForm.addEventListener('submit', async (e) => {
-          e.preventDefault();
-          console.log('📝 Form submitted, preparing to publish...');
-
-          const articleData = {
-            title: document.getElementById('title').value,
-            date: document.getElementById('article-date').value,
-            category: document.getElementById('category').value,
-            content: document.getElementById('content').value,
-            highlights: document.getElementById('highlights').value
-              .split('\n')
-              .map(h => h.trim())
-              .filter(h => h.length > 0),
-            createdAt: new Date().toISOString()
-          };
-
-          console.log('📦 Article data prepared:', articleData);
-
-          try {
-            console.log('🚀 Publishing to /news...');
-            const ref = database.ref('news').push();
-            console.log('📍 Reference created:', ref);
-            
-            await ref.set(articleData);
-            console.log('✅ Article published successfully!');
-            
-            showAlert('✅ Article published successfully!', 'success');
-            document.getElementById('article-form').reset();
-            document.getElementById('article-date').valueAsDate = new Date();
-            
-            // Reload articles after a short delay
-            setTimeout(() => loadArticles(), 500);
-          } catch (error) {
-            console.error('❌ Error publishing article:', error);
-            console.error('Error code:', error.code);
-            console.error('Error message:', error.message);
-            showAlert('Error publishing article: ' + error.message, 'error');
-          }
-        });
-      }
-
-      // Set today's date as default
-      const dateInput = document.getElementById('article-date');
-      if (dateInput) {
-        dateInput.valueAsDate = new Date();
-      }
-
-      document.dispatchEvent(new Event("MSMDataLoaded"));
-    });
-  </script>
 
   <div id="global-footer"></div>
 
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="/CrossCountry/firebase-config.js"></script>
+  <script src="/scripts/msm-rating.js"></script>
+  <script src="/scripts/hub-engine.js"></script>
+  <script>
+    'use strict';
+    // firebase-config.js exposes the initialized database as window.firebaseDatabase.
+    const newsDatabase = window.firebaseDatabase;
+    const newsAuth = window.firebase && typeof window.firebase.auth === 'function' ? window.firebase.auth() : null;
+    let activeStoryField = document.getElementById('story-body');
+    const esc = value => String(value == null ? '' : value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    const storyFields = { kicker:'story-kicker', title:'story-title', dek:'story-dek', body:'story-body', author:'story-author' };
+    let hub = null;
+
+    function alertDesk(message, type) {
+      const el = document.getElementById('alert'); el.textContent = message; el.className = `alert show ${type}`;
+      clearTimeout(alertDesk.timer); alertDesk.timer = setTimeout(() => el.className = 'alert', 4500);
+    }
+    function todayString() { return new Date().toISOString().slice(0, 10); }
+    function formatDate(value) { if (!value) return 'Date TBD'; const d = new Date(String(value).slice(0,10) + 'T12:00:00'); return isNaN(d) ? 'Date TBD' : d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}); }
+    function tokenList() {
+      const keys = [
+        ['{{most_improved_name}}','most-improved athlete'], ['{{most_improved_school}}','their school'], ['{{most_improved_delta}}','improvement delta'], ['{{most_improved_rating}}','current rating'], ['{{most_improved_previous}}','previous rating'],
+        ['{{top_boys_name}}','top boys athlete'], ['{{top_boys_school}}','top boys school'], ['{{top_boys_rating}}','top boys rating'], ['{{top_girls_name}}','top girls athlete'], ['{{top_girls_school}}','top girls school'], ['{{top_girls_rating}}','top girls rating'],
+        ['{{next_meet}}','next meet'], ['{{next_meet_date}}','next meet date'], ['{{next_meet_location}}','next meet location'], ['{{upcoming_meets}}','meets ahead'], ['{{rated_performances}}','rated performances'], ['{{schools_competing}}','schools competing'], ['{{current_season}}','season']
+      ];
+      document.getElementById('story-tokens').innerHTML = keys.map(([token,label]) => `<button type="button" class="token" data-token="${token}" title="Insert ${label}">${token}</button>`).join('');
+      document.querySelectorAll('.token').forEach(button => button.addEventListener('click', () => insertToken(button.dataset.token)));
+    }
+    function insertToken(token) {
+      const area = activeStoryField || document.getElementById('story-body');
+      area.focus();
+      const start = area.selectionStart == null ? area.value.length : area.selectionStart;
+      const end = area.selectionEnd == null ? start : area.selectionEnd;
+      area.value = area.value.slice(0,start) + token + area.value.slice(end);
+      area.selectionStart = area.selectionEnd = start + token.length;
+      renderStoryPreview();
+    }
+    function resolve(text) { return hub && typeof MSMHub.resolveStoryTokens === 'function' ? MSMHub.resolveStoryTokens(text) : text; }
+    function currentStory() { return { kicker:document.getElementById('story-kicker').value, title:document.getElementById('story-title').value, dek:document.getElementById('story-dek').value, body:document.getElementById('story-body').value, author:document.getElementById('story-author').value, active:document.getElementById('story-active').checked }; }
+    function renderStoryPreview() {
+      const story = currentStory(); const stats = hub ? MSMHub.state.storyStats : {};
+      const paragraphs = resolve(story.body).split(/\n\s*\n|\n/).filter(Boolean).map(p => `<p>${esc(p)}</p>`).join('');
+      document.getElementById('story-preview').innerHTML = `<div class="preview-kicker">${esc(resolve(story.kicker || 'Story of the Week'))}</div><h3>${esc(resolve(story.title || 'Untitled story'))}</h3><div class="preview-dek">${esc(resolve(story.dek || ''))}</div><div class="preview-body">${paragraphs}</div><div class="preview-stats"><span>${esc(stats.rated_performances || '—')} rated performances</span><span>${esc(stats.next_meet || 'Next meet')}</span><span>${esc(stats.most_improved_name || 'Live stats')}</span></div>`;
+    }
+    function fillStory(story) {
+      story = story || {};
+      Object.entries(storyFields).forEach(([key,id]) => { document.getElementById(id).value = story[key] || ''; });
+      document.getElementById('story-active').checked = story.active !== false; renderStoryPreview();
+    }
+    async function loadSavedStory() {
+      try { const snap = await newsDatabase.ref('featuredStory').once('value'); fillStory(snap.exists() ? snap.val() : { kicker:'Inside the WV circuit', author:'MSM Data Desk', active:true }); }
+      catch (e) { alertDesk('Could not load featured story: ' + e.message, 'error'); }
+    }
+    function storyEmailHtml(story) {
+      const title = resolve(story.title), kicker = resolve(story.kicker || 'Story of the Week'), dek = resolve(story.dek || ''), body = resolve(story.body || '').split(/\n\s*\n|\n/).filter(Boolean).map(p => `<p style="margin:0 0 16px;line-height:1.6;color:#4f463c;">${esc(p)}</p>`).join('');
+      const stats = hub ? MSMHub.state.storyStats : {};
+      return `<!doctype html><html><body style="margin:0;background:#f4ecdd;font-family:Arial,sans-serif;color:#2f2a24;"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f4ecdd;padding:28px 12px;"><tr><td align="center"><table role="presentation" width="600" cellspacing="0" cellpadding="0" style="max-width:600px;background:#fffdf8;border-radius:18px;overflow:hidden;"><tr><td style="background:#2c5a47;padding:30px 32px;color:#fbf7ef;"><div style="color:#e0a63f;font-size:12px;font-weight:bold;letter-spacing:2px;text-transform:uppercase;">${esc(kicker)}</div><h1 style="font-size:30px;line-height:1.12;margin:10px 0 0;color:#fff;">${esc(title)}</h1></td></tr><tr><td style="padding:28px 32px;"><p style="font-size:17px;line-height:1.5;font-weight:bold;color:#3f7d63;">${esc(dek)}</p>${body}<div style="border-top:1px solid #e6dcc8;padding-top:16px;font-size:12px;color:#8b7c68;"><strong>Live MSM snapshot:</strong> ${esc(stats.rated_performances || '—')} rated performances · ${esc(stats.schools_competing || '—')} schools competing · next meet: ${esc(stats.next_meet || '—')} (${esc(stats.next_meet_date || '—')})</div><p style="font-size:12px;color:#8b7c68;margin-bottom:0;">${esc(story.author || 'Mountain State Miles')}</p></td></tr></table></td></tr></table></body></html>`;
+    }
+    function download(filename, content) { const blob = new Blob([content], {type:'text/html'}), url = URL.createObjectURL(blob), a = document.createElement('a'); a.href=url; a.download=filename; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000); }
+
+    async function loadArticles() {
+      const target = document.getElementById('articles-list');
+      try {
+        const snap = await newsDatabase.ref('news').once('value'); const items=[];
+        snap.forEach(c => { const n=c.val()||{}; items.push({id:c.key,...n}); }); items.sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
+        target.innerHTML = items.length ? items.map(n => `<div class="article-row"><div><h3>${esc(n.title)}</h3><div class="article-meta">${esc(n.category || 'News')} · ${formatDate(n.date)}</div><p>${esc(String(n.content || '').replace(/<[^>]*>/g,'').slice(0,220))}${String(n.content||'').length>220?'…':''}</p></div><button class="delete" type="button" data-delete="${esc(n.id)}">Delete</button></div>`).join('') : '<p class="help">No articles published yet.</p>';
+        target.querySelectorAll('[data-delete]').forEach(btn => btn.addEventListener('click', () => deleteArticle(btn.dataset.delete)));
+      } catch(e) { target.innerHTML = `<p class="help" style="color:var(--danger)">${esc(e.message)}</p>`; }
+    }
+    async function deleteArticle(id) { if (!confirm('Delete this article?')) return; try { await newsDatabase.ref('news/' + id).remove(); alertDesk('Article deleted.', 'success'); loadArticles(); } catch(e) { alertDesk('Delete failed: ' + e.message, 'error'); } }
+
+    document.querySelectorAll('.desk-tab').forEach(tab => tab.addEventListener('click', () => { document.querySelectorAll('.desk-tab').forEach(t=>t.classList.remove('active')); document.querySelectorAll('.desk-panel').forEach(p=>p.classList.remove('active')); tab.classList.add('active'); document.getElementById(tab.dataset.panel + '-panel').classList.add('active'); if (tab.dataset.panel === 'manage') loadArticles(); }));
+    ['story-kicker','story-title','story-dek','story-body','story-author'].forEach(id => {
+      const field = document.getElementById(id);
+      field.addEventListener('focus', () => { activeStoryField = field; });
+    });
+    document.getElementById('story-form').addEventListener('input', renderStoryPreview);
+    document.getElementById('story-refresh').addEventListener('click', loadSavedStory);
+    document.getElementById('story-form').addEventListener('submit', async e => { e.preventDefault(); try { const story=currentStory(); story.updatedAt=new Date().toISOString(); await newsDatabase.ref('featuredStory').set(story); alertDesk('Featured story saved and live on the hub.', 'success'); } catch(err) { alertDesk('Could not save featured story. Admin authentication may be required: ' + err.message, 'error'); } });
+    document.getElementById('email-export').addEventListener('click', () => { const story=currentStory(); if (!story.title.trim()) return alertDesk('Add a headline before generating the email.', 'error'); download('msm-story-of-the-week.html', storyEmailHtml(story)); alertDesk('HTML email downloaded.', 'success'); });
+    document.getElementById('article-form').addEventListener('submit', async e => { e.preventDefault(); try { const highlights=document.getElementById('article-highlights').value.split('\n').map(x=>x.trim()).filter(Boolean); await newsDatabase.ref('news').push({ title:document.getElementById('article-title').value.trim(), date:document.getElementById('article-date').value, category:document.getElementById('article-category').value, content:document.getElementById('article-content').value, highlights, createdAt:new Date().toISOString() }); alertDesk('Article published.', 'success'); e.target.reset(); document.getElementById('article-date').value=todayString(); } catch(err) { alertDesk('Could not publish article: ' + err.message, 'error'); } });
+
+    document.getElementById('article-date').value=todayString(); tokenList();
+    (async () => {
+      try {
+        // Reads are public; authentication is only needed if Firebase rules
+        // require it for publishing. Do not block the live editor on an
+        // optional anonymous-auth provider that may be disabled.
+        await MSMHub.load(); hub=MSMHub;
+      } catch(e) { console.warn('Live stats unavailable:',e); }
+      await loadSavedStory(); renderStoryPreview(); document.dispatchEvent(new Event('MSMDataLoaded'));
+    })();
+  </script>
 </body>
 </html>

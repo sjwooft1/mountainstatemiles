@@ -146,7 +146,7 @@
       position: relative;
       border-radius: 24px;
       overflow:visible;
-      padding: 46px 30px 34px;
+      
       text-align: center;
       margin-bottom: 3rem;
       animation: fadeUp 0.4s ease both;
@@ -171,12 +171,9 @@
 
     .school-hero-name {
       font-family: var(--font-display);
-      font-size: 4rem;
-      font-weight: 800;
-      letter-spacing: -0.02em;
-      color: var(--text-primary);
-      margin-bottom: 6px;
-      text-shadow: 0 2px 4px var(--team-glow);
+      color: var(--text-primary);      
+      font-size: 3.5rem;
+      font-weight: 500;
     }
     .school-hero-sub {
       color: var(--text-secondary);
@@ -289,11 +286,13 @@
     /* ---- Performance ---- */
     .performance-list { display: flex; flex-direction: column; gap: 16px; }
     .performance-card {
+      margin-left: 10px;
       background: var(--bg-primary);
       border: 1px solid var(--border);
       border-radius: var(--radius-lg);
       padding: 18px 20px;
       animation: fadeUp 0.35s ease both;
+      min-width: 50vw
     }
     .performance-card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
     .performance-card-head h3 { font-size: 1.15rem; font-weight: 800; margin-bottom: 2px; }
@@ -352,6 +351,98 @@
       .season-filter-item { min-width: 100%; }
       .season-filter-note { margin-left: 0; }
     }
+
+    /* ================================================
+       SECTION QUICK-NAV + COLLAPSIBLE SECTIONS
+       (mirrors rankings.html's tab/pill/filter-panel look)
+       ================================================ */
+    .section-nav {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin: 0 auto 28px;
+    }
+    .section-nav-tab {
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      background: var(--bg-secondary, #f8fafc);
+      color: var(--text-secondary);
+      border: 1px solid var(--border);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .section-nav-tab:hover { border-color: var(--team-color, var(--text-primary)); color: var(--text-primary); }
+    .section-nav-tab.is-off { opacity: 0.55; text-decoration: line-through; }
+    .section-nav-actions {
+      display: flex;
+      justify-content: center;
+      gap: 14px;
+      margin: -16px 0 30px;
+    }
+    .section-nav-actions button {
+      background: none; border: none; cursor: pointer;
+      font-size: 0.78rem; font-weight: 600;
+      color: var(--text-tertiary);
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+    .section-nav-actions button:hover { color: var(--team-color, var(--text-primary)); }
+
+    .section-toggle {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 30px; height: 30px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg-primary);
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.2s;
+      flex-shrink: 0;
+    }
+    .section-toggle:hover { border-color: var(--team-color, var(--text-primary)); color: var(--team-color, var(--text-primary)); }
+    .section-toggle i { transition: transform 0.2s; font-size: 0.85rem; }
+    .section-block.is-collapsed .section-toggle i { transform: rotate(-90deg); }
+    .section-block .section-body {
+      overflow: hidden;
+      max-height: 6000px;
+      opacity: 1;
+      transition: max-height 0.3s ease, opacity 0.2s ease, margin 0.2s ease;
+    }
+    .section-block.is-collapsed .section-body {
+      max-height: 0;
+      opacity: 0;
+      pointer-events: none;
+      margin: 0;
+    }
+    .section-head { cursor: pointer; user-select: none; }
+    .section-head .export-row,
+    .section-head .roster-search { cursor: default; }
+
+    /* ---- Table polish (zebra + hover, matches rankings' list-item feel) ---- */
+    .results-table tbody tr { transition: background 0.15s; }
+    .results-table tbody tr:hover { background: var(--bg-secondary, #f8fafc); }
+    .results-table tbody tr:nth-child(even) { background: var(--bg-secondary, rgba(0,0,0,0.015)); }
+    .results-table tbody tr:nth-child(even):hover { background: var(--border-light, #eef2f7); }
+    .results-table thead th {
+      position: sticky; top: 0;
+      background: var(--bg-primary);
+    }
+
+    /* ---- Stat cards: card treatment consistent with rankings' list-items ---- */
+    .stat-card {
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg, 12px);
+      padding: 16px 18px;
+      transition: box-shadow var(--transition), border-color var(--transition);
+    }
+    .stat-card:hover { border-color: var(--team-color, var(--text-primary)); box-shadow: 0 8px 22px var(--shadow-light); }
+
+    /* ---- Section heading underline accent, matching rankings' h2 style ---- */
+    .section-heading { padding-bottom: 2px; }
   </style>
 </head>
 <body>
@@ -360,14 +451,13 @@
 
 <script src="/assets/msm-loader.js"></script>
 <main class="content-section">
-
     <!-- HERO -->
     <header class="school-hero" id="school-hero">
       <div class="school-hero-logo-wrap">
         <img id="school-logo" class="school-hero-logo" src="" alt="School Logo" style="display: none;"
              onerror="this.onerror=null; this.src='/assets/images/logob.svg'; this.style.display='block';">
       </div>
-      <h1 id="school-name" class="school-hero-name">School Profile</h1>
+      <p id="school-name" class="school-hero-name">School Profile</p>
       <p id="school-info" class="school-hero-sub">Loading school information...</p>
       <div class="school-hero-chips" id="school-hero-chips"></div>
       <div class="school-hero-actions">
@@ -388,11 +478,26 @@
       </div>
     </section>
 
+    <!-- SECTION QUICK-NAV: jump to / show-hide any section -->
+    <nav class="section-nav" id="section-nav">
+      <button class="section-nav-tab" data-target="stats-section">Team Statistics</button>
+      <button class="section-nav-tab" data-target="schedule-section">Upcoming Schedule</button>
+      <button class="section-nav-tab" data-target="performance-section">Performance Results</button>
+      <button class="section-nav-tab" data-target="roster-section">Current Roster</button>
+      <button class="section-nav-tab" data-target="trends-section">Season Trends</button>
+    </nav>
+    <div class="section-nav-actions">
+      <button type="button" onclick="setAllSections(false)">Expand all</button>
+      <button type="button" onclick="setAllSections(true)">Collapse all</button>
+    </div>
+
     <!-- TEAM STATISTICS -->
-    <section class="section-block">
-      <div class="section-head">
+    <section class="section-block" id="stats-section">
+      <div class="section-head" onclick="toggleSection('stats-section')">
         <h2 class="section-heading"><i class="fa-solid fa-ranking-star"></i> Team Statistics</h2>
+        <button class="section-toggle" type="button" aria-label="Toggle Team Statistics"><i class="fa-solid fa-chevron-down"></i></button>
       </div>
+      <div class="section-body">
       <div class="stats-grid">
         <div class="stat-card">
           <div class="stat-label"><i class="fa-solid fa-stopwatch"></i> Average Team Time</div>
@@ -419,65 +524,78 @@
           <div class="stat-value" id="fastest-athlete">--</div>
         </div>
       </div>
+      </div>
     </section>
 
     <!-- UPCOMING SCHEDULE -->
-    <section class="section-block">
-      <div class="section-head">
+    <section class="section-block" id="schedule-section">
+      <div class="section-head" onclick="toggleSection('schedule-section')">
         <div>
           <h2 class="section-heading"><i class="fa-solid fa-calendar-days"></i> Upcoming Schedule</h2>
           <p class="section-sub">Meets this team is expected to compete in, with opponents and course info for coaches.</p>
         </div>
         <div class="export-row">
-          <button class="xbtn" onclick="exportSchedulePDF()" type="button"><i class="fa-solid fa-file-pdf"></i> Export PDF</button>
+          <button class="xbtn" onclick="event.stopPropagation(); exportSchedulePDF()" type="button"><i class="fa-solid fa-file-pdf"></i> Export PDF</button>
+          <button class="section-toggle" type="button" aria-label="Toggle Upcoming Schedule"><i class="fa-solid fa-chevron-down"></i></button>
         </div>
       </div>
+      <div class="section-body">
       <div id="schedule-loading">
         <div class="skeleton-block" style="margin-bottom:12px;"></div>
         <div class="skeleton-block"></div>
       </div>
       <p class="loading-message" id="schedule-empty" style="display:none;">No upcoming meets are currently scheduled for this team. Check back once the season schedule is published.</p>
       <div class="schedule-grid" id="schedule-list"></div>
+      </div>
     </section>
 
     <!-- PERFORMANCE RESULTS -->
-    <section class="section-block">
-      <div class="section-head">
+    <section class="section-block" id="performance-section">
+      <div class="section-head" onclick="toggleSection('performance-section')">
         <div>
           <h2 class="section-heading"><i class="fa-solid fa-chart-simple"></i> Performance Results</h2>
           <p class="section-sub">Post-meet results, team scoring, and personal records by race.</p>
         </div>
         <div class="export-row">
-          <button class="xbtn" onclick="exportPerformancePDF()" type="button"><i class="fa-solid fa-file-pdf"></i> Export PDF</button>
+          <button class="xbtn" onclick="event.stopPropagation(); exportPerformancePDF()" type="button"><i class="fa-solid fa-file-pdf"></i> Export PDF</button>
+          <button class="section-toggle" type="button" aria-label="Toggle Performance Results"><i class="fa-solid fa-chevron-down"></i></button>
         </div>
       </div>
+      <div class="section-body">
       <div id="meets-loading" class="loading-message">Loading recent meet results...</div>
       <div id="meets-empty" class="loading-message" style="display:none;">No meet results found for this school in the database.</div>
       <div id="meets-list" class="performance-list"></div>
       <div class="show-more-wrap" id="performance-show-more-wrap" style="display:none;">
         <button class="xbtn" id="performance-show-more" type="button">Show older meets</button>
       </div>
+      </div>
     </section>
 
     <!-- ROSTER -->
-    <section class="section-block">
-      <div class="section-head">
+    <section class="section-block is-collapsed" id="roster-section">
+      <div class="section-head" onclick="toggleSection('roster-section')">
         <h2 class="section-heading"><i class="fa-solid fa-users"></i> Current Roster</h2>
-        <input type="text" id="roster-search" class="roster-search" placeholder="Search roster...">
+        <input type="text" id="roster-search" class="roster-search" placeholder="Search roster..." onclick="event.stopPropagation()">
+        <button class="section-toggle" type="button" aria-label="Toggle Current Roster"><i class="fa-solid fa-chevron-down"></i></button>
       </div>
+      <div class="section-body">
       <div id="roster-loading" class="loading-message">Loading roster...</div>
       <div id="no-athletes" class="loading-message" style="display: none;">No athletes found for this school.</div>
       <div id="roster-grid" class="table-container" style="display: none;"></div>
+      </div>
     </section>
 
     <!-- SEASON TRENDS -->
-    <section class="section-block">
-      <div class="section-head">
+    <section class="section-block is-collapsed" id="trends-section">
+      <div class="section-head" onclick="toggleSection('trends-section')">
         <h2 class="section-heading"><i class="fa-solid fa-chart-area"></i> Season Performance Trends</h2>
+        <button class="section-toggle" type="button" aria-label="Toggle Season Trends"><i class="fa-solid fa-chevron-down"></i></button>
       </div>
+      <div class="section-body">
       <div class="chart-card">
         <div class="chart-wrap-lg"><canvas id="trendsChart"></canvas></div>
         <p class="loading-message" id="trends-empty" style="display:none; text-align:center;">Not enough recorded meets yet to chart a season trend.</p>
+      </div>
       </div>
     </section>
 
@@ -697,7 +815,7 @@
 
       if (roster && roster.length > 0) {
         const tableHTML = `
-          <table class="results-table">
+          <table class="item-list">
             <thead>
               <tr><th>Name</th><th>Gender</th><th>Graduation Year</th></tr>
             </thead>
@@ -1044,7 +1162,7 @@
                 </div>
               </div>
               <div class="table-container">
-                <table class="results-table">
+                <table class="item-list">
                   <thead><tr><th>Place</th><th>Athlete</th><th>Gender</th><th>Time</th></tr></thead>
                   <tbody>${rows}</tbody>
                 </table>
@@ -1415,6 +1533,54 @@
       }
     }
 
+    // ==========================================
+    // COLLAPSIBLE SECTIONS / QUICK-NAV
+    // ==========================================
+    const SECTION_IDS = ['stats-section', 'schedule-section', 'performance-section', 'roster-section', 'trends-section'];
+
+    function collapseStorageKey(id) {
+      return `msm_school_section_${id}`;
+    }
+
+    function syncNavTab(id) {
+      const sectionEl = document.getElementById(id);
+      const tab = document.querySelector(`.section-nav-tab[data-target="${id}"]`);
+      if (!sectionEl || !tab) return;
+      tab.classList.toggle('is-off', sectionEl.classList.contains('is-collapsed'));
+    }
+
+    function toggleSection(id, forceCollapsed = null) {
+      const sectionEl = document.getElementById(id);
+      if (!sectionEl) return;
+      const collapsed = forceCollapsed !== null ? forceCollapsed : !sectionEl.classList.contains('is-collapsed');
+      sectionEl.classList.toggle('is-collapsed', collapsed);
+      try { localStorage.setItem(collapseStorageKey(id), collapsed ? '1' : '0'); } catch (e) {}
+      syncNavTab(id);
+    }
+
+    function setAllSections(collapsed) {
+      SECTION_IDS.forEach(id => toggleSection(id, collapsed));
+    }
+
+    // Jumping to a section via the quick-nav always expands it first, then scrolls to it.
+    function initSectionNav() {
+      SECTION_IDS.forEach(id => {
+        let saved = null;
+        try { saved = localStorage.getItem(collapseStorageKey(id)); } catch (e) {}
+        if (saved !== null) toggleSection(id, saved === '1');
+        else syncNavTab(id);
+      });
+
+      document.querySelectorAll('.section-nav-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+          const id = tab.getAttribute('data-target');
+          toggleSection(id, false);
+          document.getElementById(id).scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', initSectionNav);
     document.addEventListener('DOMContentLoaded', init);
   </script>
 

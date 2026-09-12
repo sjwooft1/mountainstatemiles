@@ -624,31 +624,69 @@
                     .replace(/\s+/g, " ");
             }
 
-            // Resolves a raw school name to a slug AND a state.
-            //  - Known WV schools keep their stored state (WV).
+            // Resolves a raw school name (optionally paired with a state the scraper
+            // already read off Athletic.net) to a slug AND a state.
+            //  - Exact name matches keep the DB's stored state (this is the canonical
+            //    record for that slug, so it's trusted even if it disagrees with csvState -
+            //    that disagreement usually means the DB entry needs fixing, not this row).
+            //  - Fuzzy/substring matches are common name collisions across states
+            //    ("Washington", "Trinity", "Central" all exist in multiple states once
+            //    "High School" is stripped off), so when the CSV gives us a state, fuzzy
+            //    candidates are FILTERED to that state first, and only the most specific
+            //    (longest normalized key) match among them is used. If no fuzzy candidate
+            //    agrees with the CSV's state, we refuse to guess and treat it as a new,
+            //    unmatched school instead of silently merging it into the wrong record.
             //  - Unattached runners inherit the meet's home state.
-            //  - Unmatched (new) schools are stamped with the meet's home state, so an
-            //    out-of-state meet's new schools are correctly flagged OOS.
-            resolveSchoolSlug(rawSchoolName) {
+            //  - Unmatched (new) schools are stamped with csvState if we have it, otherwise
+            //    the meet's home state, so an out-of-state meet's new schools are correctly
+            //    flagged OOS.
+            resolveSchoolSlug(rawSchoolName, csvState) {
                 const homeState = this.meetHomeState();
+                const hintState = (csvState || '').trim().toUpperCase() || null;
 
                 if (!rawSchoolName || /^unattached$/i.test(rawSchoolName.trim())) {
-                    return { slug: "unattached", matched: true, state: homeState };
+                    return { slug: "unattached", matched: true, state: hintState || homeState };
                 }
                 const norm = this.normalizeSchoolKey(rawSchoolName);
+
+                // Exact match: trust the DB's own record for this slug.
                 if (this.schoolKeyToSlug[norm]) {
                     const slug = this.schoolKeyToSlug[norm];
                     return { slug, matched: true, state: this.schoolSlugToState[slug] || HOME_STATE };
                 }
 
+                // Fuzzy match: collect every candidate, don't just take the first hit.
+                const candidates = [];
                 for (const [key, slug] of Object.entries(this.schoolKeyToSlug)) {
-                    if (key && norm && (key.includes(norm) || norm.includes(key))) {
-                        return { slug, matched: true, state: this.schoolSlugToState[slug] || HOME_STATE };
+                    // Require some real specificity - short/generic keys (<4 chars once
+                    // normalized) are responsible for most cross-state false positives.
+                    if (key && norm && key.length >= 4 && norm.length >= 4 &&
+                        (key.includes(norm) || norm.includes(key))) {
+                        candidates.push({ key, slug, state: this.schoolSlugToState[slug] || HOME_STATE });
                     }
                 }
+
+                if (candidates.length > 0) {
+                    // Prefer candidates whose stored state agrees with what the scraper saw.
+                    let pool = candidates;
+                    if (hintState) {
+                        const agreeing = candidates.filter(c => c.state === hintState);
+                        if (agreeing.length > 0) {
+                            pool = agreeing;
+                        } else {
+                            // Every fuzzy candidate disagrees with the scraped state - this is
+                            // exactly the "same name, different state" collision. Don't guess.
+                            return { slug: this.slugify(rawSchoolName), matched: false, state: hintState };
+                        }
+                    }
+                    // Among the surviving pool, the most specific (longest) key match wins.
+                    pool.sort((a, b) => b.key.length - a.key.length);
+                    return { slug: pool[0].slug, matched: true, state: pool[0].state };
+                }
+
                 // No confident match - use a best-effort slug but flag it so the importer can warn.
-                // A brand-new school takes the meet's home state.
-                return { slug: this.slugify(rawSchoolName), matched: false, state: homeState };
+                // A brand-new school takes the scraped state if we have one, else the meet's home state.
+                return { slug: this.slugify(rawSchoolName), matched: false, state: hintState || homeState };
             }
 
             // Best-effort graduation year estimate from a literal grade level (e.g. "11", "SR"),
@@ -724,6 +762,8 @@
 
                     // anet.js column order: event_name, place, grade, athlete_name, mark, school, heat, gender
                     // Optional 9th column: relay_team (e.g. "Morgantown A") for relay meets.
+                    // Optional 10th column: state, as scraped off Athletic.net - used to
+                    // disambiguate same-named schools in different states, see resolveSchoolSlug().
                     const rawEvent = p[0];
                     const place = p[1];
                     const grade = p[2];
@@ -733,13 +773,14 @@
                     const heat = p[6] || "1";
                     const csvGender = p[7] || "";
                     const relayTeam = p[8] || "";
+                    const csvState = p[9] || "";
 
                     if (!athleteName) return;
 
                     const parsedEvent = this.parseEventField(rawEvent, csvGender || defaultGender);
                     const gender = parsedEvent.gender || defaultGender;
                     const distance = parsedEvent.distance || defaultDistance;
-                    const schoolMatch = this.resolveSchoolSlug(rawSchool);
+                    const schoolMatch = this.resolveSchoolSlug(rawSchool, csvState);
                     const timeSeconds = window.parseTimeToSeconds ? window.parseTimeToSeconds(mark) : NaN;
 
                     this.parsedRows.push({
@@ -1017,12 +1058,13 @@
               const heat = p[6] || '1';
               const csvGender = p[7] || '';
               const relayTeam = p[8] || '';
+              const csvState = p[9] || '';
               if (!athleteName) return;
 
               const parsedEvent = imp.parseEventField(rawEvent, csvGender || defaultGender);
               const gender = parsedEvent.gender || defaultGender;
               const distance = parsedEvent.distance || defaultDistance;
-              const schoolMatch = imp.resolveSchoolSlug(rawSchool);
+              const schoolMatch = imp.resolveSchoolSlug(rawSchool, csvState);
               const timeSeconds = window.parseTimeToSeconds ? window.parseTimeToSeconds(mark) : NaN;
 
               rows.push({

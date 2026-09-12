@@ -449,14 +449,15 @@
             const t = parseFloat(r.time);
             const isPR = !isNaN(t) && t>0 && personalBestMap[pbKey(r)] === t;
             const g = (r.gender||'').toUpperCase();
-            const gp = (g==='M'||g==='F') ? `<span class="gender-pill ${g.toLowerCase()}">${g}</span>` : '—';
-            return `<tr>
-              <td data-label="Place">${r.place || (i+1)}</td>
-              <td data-label="Athlete">${escapeHtml(athleteName(r))}${isPR?'<i class="fa-solid fa-fire pr-flame" title="Personal Record"></i>':''}</td>
-              <td data-label="Event"><span class="event-tag">${escapeHtml(eventOf(r))}</span></td>
-              <td data-label="Gender">${gp}</td>
-              <td data-label="Time">${formatTime(t)}</td>
-            </tr>`;
+            const gp = (g==='M'||g==='F') ? (g==='M' ? 'Boys' : 'Girls') : '—';
+            return `<div class="list-item">
+              <div class="item-place">${r.place || (i + 1)}</div>
+              <div class="item-details">
+                <div class="item-name">${escapeHtml(athleteName(r))}${isPR?'<i class="fa-solid fa-fire pr-flame" title="Personal Record"></i>':''}</div>
+                <div class="item-meta">${escapeHtml(eventOf(r))} · ${gp}</div>
+              </div>
+              <div class="item-score">${formatTime(t)}</div>
+            </div>`;
           }).join('');
           return `<div class="performance-card">
             <div class="performance-card-head">
@@ -468,11 +469,9 @@
                 <span class="badge">Best ${meet.bestTime?formatTime(meet.bestTime):'--'}${meet.bestResult?' ('+escapeHtml(athleteName(meet.bestResult))+')':''}</span>
               </div>
             </div>
-            <div class="table-container">
-              <table class="results-table">
-                <thead><tr><th>Place</th><th>Athlete</th><th>Event</th><th>Gender</th><th>Time</th></tr></thead>
-                <tbody>${rows}</tbody>
-              </table>
+            <div class="app-list">
+              <div class="list-header">${meet.results.length} Results</div>
+              ${rows}
             </div>
           </div>`;
         }).join('');
@@ -498,17 +497,21 @@
       if (!rosterData.length) { loading.style.display='none'; none.style.display='block'; return; }
 
       rosterData.sort((a,b) => athleteName(a).toLowerCase().localeCompare(athleteName(b).toLowerCase()));
-      grid.innerHTML = `<table class="results-table">
-        <thead><tr><th>Name</th><th>Gender</th><th>Graduation Year</th></tr></thead>
-        <tbody>${rosterData.map(a => {
+      grid.innerHTML = `<div class="app-list">
+        <div class="list-header">Roster</div>
+        ${rosterData.map((a, i) => {
           const name = athleteName(a);
           let gy = a.grad_year || a.graduation_year || a.class; gy = gy ? `C/o ${gy}` : 'N/A';
           const g = (a.gender||'').toUpperCase();
-          const gp = (g==='M'||g==='F') ? `<span class="gender-pill ${g.toLowerCase()}">${g==='M'?'Male':'Female'}</span>` : 'N/A';
-          const link = `<a href="../CrossCountry/athlete.html?name=${encodeURIComponent(name)}&school=${encodeURIComponent(schoolSlug)}" style="color:var(--team-color);font-weight:600;text-decoration:none;">${escapeHtml(name)}</a>`;
-          return `<tr data-name="${escapeHtml(name.toLowerCase())}"><td data-label="Name">${link}</td><td data-label="Gender">${gp}</td><td data-label="Graduation Year"><span class="grad-badge">${gy}</span></td></tr>`;
-        }).join('')}</tbody>
-      </table>`;
+          const gender = (g==='M'||g==='F') ? (g==='M' ? 'Boys' : 'Girls') : '—';
+          const link = `<a class="item-name" href="../CrossCountry/athlete.html?name=${encodeURIComponent(name)}&school=${encodeURIComponent(schoolSlug)}">${escapeHtml(name)}</a>`;
+          return `<div class="list-item" data-name="${escapeHtml(name.toLowerCase())}">
+            <div class="item-place">${i + 1}</div>
+            <div class="item-details">${link}<div class="item-meta">${gender}</div></div>
+            <div class="item-score">${gy}</div>
+          </div>`;
+        }).join('')}
+      </div>`;
       loading.style.display='none'; grid.style.display='block';
 
       const search = document.getElementById('roster-search');

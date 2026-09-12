@@ -1,178 +1,836 @@
 <!doctype html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Cross Country – Mountain State Miles</title>
-        <meta property="og:image" content="/assets/images/logo.svg" />
-        <link
-            rel="icon"
-            type="image/png"
-            href="assets/Favicon Generator/favicon-96x96.png"
-            sizes="96x96"
-        />
-        <link
-            rel="icon"
-            type="image/svg+xml"
-            href="assets/Favicon Generator/favicon.svg"
-        />
-        <link rel="shortcut icon" href="assets/Favicon Generator/favicon.ico" />
-        <link
-            rel="apple-touch-icon"
-            sizes="180x180"
-            href="assets/Favicon Generator/apple-touch-icon.png"
-        />
-        <meta name="apple-mobile-web-app-title" content="MSM" />
-        <link rel="manifest" href="assets/Favicon Generator/site.webmanifest" />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-        <link
-            href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
-            rel="stylesheet"
-        />
-        <link
-            rel="stylesheet"
-            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-        />
-        <link rel="stylesheet" href="/assets/main.css" />
-        
-        <meta
-            name="description"
-            content="Mountain State Miles — West Virginia's home for XC & Track results, rankings, rosters, records, schedules, and meet coverage."
-        />
-        <meta
-            name="keywords"
-            content="West Virginia running, WVHSXC, WVXC, WV Track, WV high school running, WV cross country, WV track and field, WV runs, Mountain State Miles"
-        />
-        <meta name="author" content="Mountain State Miles" />
-        <meta name="theme-color" content="#002855" />
-        <link rel="canonical" href="https://mountainstatemiles.com/" />
-        <meta
-            property="og:title"
-            content="Mountain State Miles — WV Cross Country & Track"
-        />
-        <meta
-            property="og:description"
-            content="Official West Virginia running hub: results, rankings, rosters, athlete profiles, meet schedules, and team stats."
-        />
-        <meta property="og:url" content="https://mountainstatemiles.com/" />
-        <meta property="og:type" content="website" />
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="Mountain State Miles" />
-        <meta
-            name="twitter:description"
-            content="West Virginia's XC & Track results, rankings, and athlete profiles."
-        />
-        <meta name="robots" content="index, follow" />
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WV Running News Central — Mountain State Miles</title>
+    <meta name="description" content="West Virginia high school cross country news central: most-improved athletes, athletes to watch, divisional MSM rating podiums, upcoming meet outlooks, and automatic meet recaps." />
+    <meta property="og:title" content="WV Running News Central — Mountain State Miles" />
+    <meta property="og:description" content="Who's surging, who to watch, what's next — West Virginia cross country, all in one hub." />
+    <meta property="og:type" content="website" />
+    <link rel="icon" type="image/png" href="/assets/Favicon Generator/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="/assets/Favicon Generator/favicon.svg" />
+    <link rel="shortcut icon" href="/assets/Favicon Generator/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/Favicon Generator/apple-touch-icon.png" />
+    <link rel="manifest" href="/assets/Favicon Generator/site.webmanifest" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="stylesheet" href="/assets/main.css" />
+    <meta name="theme-color" content="#2c5a47" />
 
-        <script src="/assets/theme-toggle.js" defer></script>
-        <script src="/assets/components.js" defer></script>
-    </head>
-    <body>
-        <img src="/assets/images/bg.png" alt="Background Image" class="page-background-image" />
-        <div id="global-header"></div>
-        <script src="/assets/msm-loader.js"></script>
-        
+    <style>
+        /* ============ WV Running News Central ============ */
+        body { padding-top: 0; }
 
-        <main class="content-section">
-            <div class="hero-section">
-                <div class="hero-content">
-                    <img
-                        src="/assets/images/logo.svg"
-                        alt="Mountain State Miles Logo"
-                        class="hero-logo"
-                        data-theme-light-src="/assets/images/logo.svg"
-                        data-theme-dark-src="/assets/images/logob.svg"
-                    />
-                    <h1 class="hero-title">Cross Country</h1>
-                    <p class="hero-subtitle">
-                        Meet records, rankings, and results for West Virginia
-                        high school cross country.
-                    </p>
+        .hub-main { max-width: 1200px; margin: 0 auto; padding: 0 1.25rem 4rem; }
+
+        /* ---- Masthead ---- */
+        .hub-masthead {
+            background: linear-gradient(140deg, var(--bg-dark) 0%, #1e4235 55%, #173529 100%);
+            color: var(--msm-cream);
+            border-radius: var(--radius-xl);
+            padding: 2.4rem 2.2rem 2rem;
+            margin-top: 1.25rem;
+            position: relative;
+            overflow: hidden;
+        }
+        .hub-masthead::after {
+            content: "";
+            position: absolute; right: -70px; top: -70px;
+            width: 260px; height: 260px; border-radius: 50%;
+            background: radial-gradient(circle, rgba(224,166,63,0.22), transparent 70%);
+        }
+        .hub-masthead .kicker {
+            display: inline-flex; align-items: center; gap: 8px;
+            font-size: .78rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase;
+            color: var(--msm-gold); margin-bottom: .6rem;
+        }
+        .hub-masthead h1 {
+            font-family: var(--font-sans);
+            font-size: clamp(1.9rem, 4.5vw, 2.9rem);
+            font-weight: 800; margin: 0 0 .5rem; line-height: 1.08;
+        }
+        .hub-masthead .standfirst {
+            color: rgba(251,247,239,0.82); max-width: 620px; font-size: 1.02rem; line-height: 1.55; margin: 0 0 1.3rem;
+        }
+        .masthead-stats { display: flex; flex-wrap: wrap; gap: .7rem; position: relative; z-index: 1; }
+        .masthead-stat {
+            background: rgba(251,247,239,0.08); border: 1px solid rgba(251,247,239,0.16);
+            border-radius: var(--radius-md); padding: .6rem 1rem; min-width: 118px;
+        }
+        .masthead-stat b { display: block; font-size: 1.35rem; font-weight: 800; color: #fff; }
+        .masthead-stat span { font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; color: rgba(251,247,239,0.66); }
+        .live-dot { width: 8px; height: 8px; border-radius: 50%; background: #7dd8a5; display: inline-block; box-shadow: 0 0 0 0 rgba(125,216,165,.6); animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(125,216,165,.55);} 70% { box-shadow: 0 0 0 9px rgba(125,216,165,0);} 100% { box-shadow: 0 0 0 0 rgba(125,216,165,0);} }
+
+        /* ---- Section chrome ---- */
+        .hub-section { margin-top: 2.6rem; }
+        .hub-section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem; border-bottom: 3px solid var(--msm-ink); padding-bottom: .55rem; position: relative; }
+        .hub-section-head::after { content: ""; position: absolute; left: 0; bottom: -3px; width: 84px; height: 3px; background: var(--primary); }
+        html[data-theme="dark"] .hub-section-head { border-bottom-color: rgba(251,247,239,.35); }
+        .hub-section-head h2 { font-family: var(--font-sans); font-size: 1.35rem; font-weight: 800; margin: 0; display: flex; align-items: center; gap: .55rem; }
+        .hub-section-head h2 i { color: var(--primary); font-size: 1.05rem; }
+        .hub-section-head .see-all { font-size: .85rem; font-weight: 700; color: var(--primary); text-decoration: none; }
+        .hub-section-head .see-all:hover { text-decoration: underline; }
+        .hub-sub { color: var(--text-secondary); font-size: .88rem; margin: .35rem 0 0; }
+
+        /* ---- News strip ---- */
+        .news-strip { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1rem; }
+        .news-card {
+            background: var(--bg-primary); border: 1px solid var(--border); border-radius: var(--radius-lg);
+            padding: 1.1rem 1.2rem; text-decoration: none; color: inherit; display: flex; flex-direction: column; gap: .5rem;
+            transition: transform var(--transition), box-shadow var(--transition);
+        }
+        .news-card:hover { transform: translateY(-3px); box-shadow: 0 10px 26px var(--shadow-medium); }
+        .news-card .news-tag { align-self: flex-start; font-size: .68rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; background: var(--bg-secondary); color: var(--text-secondary); border-radius: 99px; padding: .25rem .65rem; }
+        .news-card h3 { font-size: 1.02rem; font-weight: 800; margin: 0; line-height: 1.3; }
+        .news-card p { margin: 0; font-size: .85rem; color: var(--text-secondary); line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+        .news-card time { font-size: .74rem; color: var(--text-tertiary); margin-top: auto; }
+
+        /* ---- Front-page spotlight (story of the week) ---- */
+        .spotlight-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 1.2rem; align-items: stretch; }
+        @media (max-width: 860px) { .spotlight-grid { grid-template-columns: 1fr; } }
+        .spotlight-hero {
+            background: var(--bg-primary); border: 1px solid var(--border); border-radius: var(--radius-lg);
+            padding: 1.5rem 1.6rem; display: flex; flex-direction: column; gap: .6rem;
+        }
+        .spotlight-hero .label { font-size: .72rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--msm-clay); }
+        .spotlight-hero .who { font-size: 1.7rem; font-weight: 800; line-height: 1.15; }
+        .spotlight-hero .who a { color: inherit; text-decoration: none; border-bottom: 3px solid var(--msm-gold); }
+        .spotlight-hero .delta-badge { display: inline-flex; align-items: center; gap: .4rem; background: rgba(63,125,99,.12); color: var(--primary); font-weight: 800; border-radius: 99px; padding: .3rem .8rem; font-size: .95rem; align-self: flex-start; }
+        .spotlight-hero .detail { color: var(--text-secondary); font-size: .92rem; line-height: 1.55; margin: 0; }
+        .spotlight-hero .detail p { margin: 0 0 .7rem; }
+        .spotlight-hero .detail p:last-child { margin-bottom: 0; }
+        .story-meta { display: flex; align-items: center; gap: .55rem; color: var(--text-tertiary); font-size: .74rem; margin-top: auto; padding-top: .5rem; }
+        .story-meta .story-live { color: var(--primary); font-weight: 800; }
+        .story-statline { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .35rem; }
+        .story-statline span { background: var(--bg-secondary); color: var(--text-secondary); border-radius: 99px; padding: .26rem .62rem; font-size: .72rem; font-weight: 800; }
+        .spotlight-side { display: flex; flex-direction: column; gap: 1rem; }
+        .mini-improver { background: var(--bg-secondary); border-radius: var(--radius-lg); padding: 1rem 1.1rem; display: flex; align-items: center; gap: .8rem; text-decoration: none; color: inherit; }
+        .mini-improver:hover { filter: brightness(0.98); }
+        .mini-improver .rank { font-weight: 800; font-size: 1.05rem; color: var(--text-tertiary); width: 1.4rem; }
+        .mini-improver .who { font-weight: 700; font-size: .95rem; }
+        .mini-improver .what { font-size: .78rem; color: var(--text-secondary); }
+        .mini-improver .delta { margin-left: auto; font-weight: 800; color: var(--primary); }
+
+        /* ---- Podium table (most improved) ---- */
+        .podium-wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; }
+        @media (max-width: 860px) { .podium-wrap { grid-template-columns: 1fr; } }
+        .podium-card { background: var(--bg-primary); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+        .podium-card .podium-head { display: flex; align-items: center; gap: .6rem; padding: .9rem 1.2rem; background: var(--bg-secondary); font-weight: 800; }
+        .podium-card .podium-head i { color: var(--msm-clay); }
+        table.podium { width: 100%; border-collapse: collapse; font-size: .88rem; }
+        table.podium th { text-align: left; font-size: .68rem; letter-spacing: .08em; text-transform: uppercase; color: var(--text-tertiary); padding: .55rem 1rem; border-bottom: 1px solid var(--border-light); }
+        table.podium td { padding: .6rem 1rem; border-bottom: 1px solid var(--border-light); }
+        table.podium tr:last-child td { border-bottom: none; }
+        table.podium tr:hover td { background: var(--bg-secondary); }
+        table.podium a { color: inherit; text-decoration: none; font-weight: 700; }
+        table.podium a:hover { color: var(--primary); }
+        .delta-up { color: var(--success); font-weight: 800; white-space: nowrap; }
+        .rating-chip { font-weight: 800; }
+
+        /* ---- Watch list ---- */
+        .watch-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; }
+        @media (max-width: 860px) { .watch-grid { grid-template-columns: 1fr; } }
+        .watch-card { background: var(--bg-primary); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1.1rem 1.2rem; display: flex; flex-direction: column; gap: .7rem; }
+        .watch-card .wc-head { display: flex; align-items: center; justify-content: space-between; gap: .6rem; }
+        .watch-card .wc-head h3 { margin: 0; font-size: 1rem; font-weight: 800; display: flex; gap: .5rem; align-items: center; }
+        .watch-card .wc-head h3 i { color: var(--msm-gold); }
+        .class-pill { font-size: .66rem; font-weight: 800; letter-spacing: .06em; border-radius: 99px; padding: .2rem .55rem; background: var(--bg-secondary); color: var(--text-secondary); }
+        .watch-row { display: flex; align-items: center; gap: .7rem; padding: .45rem 0; border-bottom: 1px dashed var(--border-light); }
+        .watch-row:last-child { border-bottom: none; }
+        .watch-row .wr-rank { font-weight: 800; color: var(--text-tertiary); width: 1.3rem; font-size: .85rem; }
+        .team-logo { width: 26px; height: 26px; border-radius: 50%; object-fit: contain; background: #fff; border: 1px solid var(--border-light); flex-shrink: 0; }
+        .watch-row .wr-name a { color: inherit; text-decoration: none; font-weight: 700; font-size: .92rem; }
+        .watch-row .wr-name a:hover { color: var(--primary); }
+        .watch-row .wr-meta { font-size: .72rem; color: var(--text-secondary); }
+        .watch-row .wr-msm { margin-left: auto; text-align: right; }
+        .watch-row .wr-msm b { font-size: .95rem; }
+        .watch-row .wr-msm span { display: block; font-size: .68rem; color: var(--text-tertiary); }
+
+        /* ---- Divisional tabs ---- */
+        .div-tabs { display: flex; gap: .5rem; flex-wrap: wrap; margin-bottom: 1rem; }
+        .div-tab { border: 1.5px solid var(--border); background: var(--bg-primary); color: var(--text-secondary); font-weight: 800; font-size: .85rem; border-radius: 99px; padding: .45rem 1.1rem; cursor: pointer; transition: all var(--transition); }
+        .div-tab.active { background: var(--msm-ink); border-color: var(--msm-ink); color: var(--msm-paper); }
+        html[data-theme="dark"] .div-tab.active { background: var(--paper); border-color: var(--paper); color: var(--ink); }
+        .div-panel { display: none; }
+        .div-panel.active { display: block; animation: fadeUp .35s ease; }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(8px);} to { opacity: 1; transform: none;} }
+        .div-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; }
+        @media (max-width: 860px) { .div-grid { grid-template-columns: 1fr; } }
+        .podium-list { display: flex; flex-direction: column; gap: .5rem; }
+        .podium-row { display: flex; align-items: center; gap: .7rem; background: var(--bg-primary); border: 1px solid var(--border); border-radius: var(--radius-md); padding: .55rem .8rem; }
+        .podium-row .pr-place { width: 1.6rem; height: 1.6rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: .78rem; background: var(--bg-secondary); color: var(--text-secondary); flex-shrink: 0; }
+        .podium-row:nth-child(1) .pr-place { background: var(--msm-gold); color: #3a2c05; }
+        .podium-row:nth-child(2) .pr-place { background: #c9c9c9; color: #333; }
+        .podium-row:nth-child(3) .pr-place { background: #d0925f; color: #3a230a; }
+        .podium-row .pr-name a { color: inherit; text-decoration: none; font-weight: 700; font-size: .9rem; }
+        .podium-row .pr-name a:hover { color: var(--primary); }
+        .podium-row .pr-meta { font-size: .72rem; color: var(--text-secondary); }
+        .podium-row .pr-score { margin-left: auto; font-weight: 800; }
+        .team-power-row { display: flex; align-items: center; gap: .7rem; background: var(--bg-primary); border: 1px solid var(--border); border-radius: var(--radius-md); padding: .55rem .8rem; }
+        .team-power-row .tp-name { font-weight: 700; font-size: .9rem; }
+        .team-power-row .tp-meta { font-size: .72rem; color: var(--text-secondary); }
+        .team-power-row .tp-power { margin-left: auto; font-weight: 800; }
+        .tp-bar { height: 5px; border-radius: 99px; background: var(--bg-secondary); flex: 1; overflow: hidden; max-width: 120px; }
+        .tp-bar i { display: block; height: 100%; background: var(--primary); border-radius: 99px; }
+
+        /* ---- Meet banners ---- */
+        .banner-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 1.1rem; }
+        .meet-banner {
+            position: relative; border-radius: var(--radius-lg); overflow: hidden; text-decoration: none; color: inherit;
+            background: var(--bg-primary); border: 1px solid var(--border); display: flex; flex-direction: column;
+            transition: transform var(--transition), box-shadow var(--transition);
+        }
+        .meet-banner:hover { transform: translateY(-4px); box-shadow: 0 14px 30px var(--shadow-medium); }
+        .meet-banner .banner-top { padding: 1.05rem 1.2rem .8rem; display: flex; align-items: flex-start; gap: .8rem; }
+        .banner-date { flex-shrink: 0; width: 54px; text-align: center; background: var(--ink); color: var(--paper); border-radius: var(--radius-md); padding: .45rem 0 .5rem; }
+        html[data-theme="dark"] .banner-date { background: var(--msm-paper); color: var(--msm-ink); }
+        .banner-date b { display: block; font-size: 1.25rem; line-height: 1; font-weight: 800; }
+        .banner-date span { font-size: .62rem; text-transform: uppercase; letter-spacing: .1em; font-weight: 700; opacity: .75; }
+        .meet-banner .banner-title { font-weight: 800; font-size: 1rem; line-height: 1.25; }
+        .meet-banner .banner-loc { font-size: .76rem; color: var(--text-secondary); margin-top: .2rem; }
+        .banner-tags { display: flex; gap: .4rem; flex-wrap: wrap; padding: 0 1.2rem .8rem; }
+        .btag { font-size: .66rem; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; border-radius: 99px; padding: .22rem .6rem; }
+        .btag.today { background: var(--danger); color: #fff; }
+        .btag.soon { background: var(--msm-gold); color: #3a2c05; }
+        .btag.champs { background: var(--primary); color: #fff; }
+        .btag.hype { background: var(--bg-secondary); color: var(--text-secondary); }
+        .banner-body { margin-top: auto; border-top: 1px dashed var(--border-light); padding: .8rem 1.2rem .95rem; }
+        .banner-body .bb-label { font-size: .66rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--text-tertiary); margin-bottom: .45rem; }
+        .field-chips { display: flex; flex-wrap: wrap; gap: .35rem; }
+        .field-chip { display: inline-flex; align-items: center; gap: .35rem; background: var(--bg-secondary); border-radius: 99px; padding: .18rem .55rem .18rem .22rem; font-size: .72rem; font-weight: 700; color: var(--text-secondary); text-decoration: none; }
+        .field-chip img { width: 18px; height: 18px; border-radius: 50%; background: #fff; border: 1px solid var(--border-light); }
+        .field-more { font-size: .72rem; font-weight: 700; color: var(--text-tertiary); align-self: center; }
+        .banner-hook { font-size: .78rem; color: var(--text-secondary); margin-top: .5rem; }
+        .banner-hook b { color: var(--text-primary); }
+
+        /* ---- Recaps ---- */
+        .recap-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 1.1rem; }
+        .recap-card { background: var(--bg-primary); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1.15rem 1.3rem; }
+        .recap-card h3 { margin: 0 0 .15rem; font-size: 1.02rem; font-weight: 800; }
+        .recap-card h3 a { color: inherit; text-decoration: none; }
+        .recap-card h3 a:hover { color: var(--primary); }
+        .recap-card time { font-size: .74rem; color: var(--text-tertiary); }
+        .recap-cols { display: grid; grid-template-columns: 1fr 1fr; gap: .4rem 1rem; margin-top: .8rem; }
+        .recap-col .rc-label { font-size: .64rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--text-tertiary); margin-bottom: .3rem; }
+        .recap-line { display: flex; justify-content: space-between; gap: .6rem; font-size: .8rem; padding: .18rem 0; }
+        .recap-line a { color: inherit; text-decoration: none; font-weight: 600; }
+        .recap-line a:hover { color: var(--primary); }
+        .recap-line .rl-msm { color: var(--primary); font-weight: 800; }
+
+        /* ---- State of the state ---- */
+        .sots-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(215px, 1fr)); gap: 1rem; }
+        .sots-card { background: var(--bg-primary); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1.05rem 1.15rem; }
+        .sots-card .sc-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: .55rem; }
+        .sots-card .sc-head h3 { margin: 0; font-size: .95rem; font-weight: 800; }
+        .sots-card .sc-head .class-pill { font-size: .7rem; }
+        .sots-line { display: flex; justify-content: space-between; align-items: baseline; padding: .28rem 0; border-bottom: 1px dashed var(--border-light); font-size: .84rem; }
+        .sots-line:last-child { border-bottom: none; }
+        .sots-line a { color: inherit; text-decoration: none; font-weight: 600; }
+        .sots-line a:hover { color: var(--primary); }
+        .sots-line b { font-weight: 800; }
+
+        /* ---- Loading / empty ---- */
+        .hub-loading { display: flex; flex-direction: column; align-items: center; gap: 1rem; padding: 4.5rem 0; color: var(--text-secondary); }
+        .hub-loading .spin { width: 42px; height: 42px; border-radius: 50%; border: 4px solid var(--border); border-top-color: var(--primary); animation: rotate 0.9s linear infinite; }
+        @keyframes rotate { to { transform: rotate(360deg); } }
+        .hub-empty { color: var(--text-tertiary); font-size: .9rem; padding: 1.2rem 0; }
+
+        @media (max-width: 640px) {
+            .hub-masthead { padding: 1.7rem 1.3rem 1.5rem; }
+            .podium-wrap, .watch-grid, .div-grid { grid-template-columns: 1fr; }
+            .recap-cols { grid-template-columns: 1fr; }
+        }
+        /* ---- Simulation Lab ---- */
+        .simulation-panel { background: var(--bg-primary); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1.2rem; }
+        .simulation-controls { display: grid; grid-template-columns: minmax(220px, 1.4fr) minmax(160px, .8fr) minmax(170px, .9fr); gap: .8rem; align-items: end; }
+        .sim-field label { display:block; font-size:.7rem; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--text-tertiary); margin-bottom:.35rem; }
+        .sim-field select { width:100%; border:1px solid var(--border); border-radius:var(--radius-md); background:var(--bg-primary); color:var(--text-primary); padding:.65rem .7rem; font:inherit; }
+        .sim-gender { display:flex; gap:.4rem; margin:.9rem 0; }
+        .sim-gender button { border:1px solid var(--border); background:var(--bg-primary); color:var(--text-secondary); border-radius:99px; padding:.45rem .9rem; font-weight:800; cursor:pointer; }
+        .sim-gender button.active { background:var(--msm-ink); border-color:var(--msm-ink); color:var(--msm-paper); }
+        .sim-sources { border-top:1px dashed var(--border-light); margin-top:1rem; padding-top:.9rem; }
+        .sim-sources-head { display:flex; align-items:center; justify-content:space-between; gap:1rem; flex-wrap:wrap; margin-bottom:.55rem; }
+        .sim-sources-head b { font-size:.9rem; }
+        .sim-sources-head span { color:var(--text-secondary); font-size:.78rem; }
+        .sim-source-list { display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:.35rem .7rem; max-height:190px; overflow:auto; padding:.25rem; }
+        .sim-source { display:flex; align-items:center; gap:.5rem; border:1px solid var(--border-light); border-radius:var(--radius-md); padding:.45rem .55rem; font-size:.78rem; cursor:pointer; }
+        .sim-source:hover { background:var(--bg-secondary); }
+        .sim-source small { margin-left:auto; color:var(--text-tertiary); }
+        .sim-actions { display:flex; align-items:center; gap:.7rem; flex-wrap:wrap; margin-top:1rem; }
+        .sim-run-btn { border:0; border-radius:var(--radius-md); background:var(--primary); color:#fff; padding:.65rem 1rem; font-weight:800; cursor:pointer; }
+        .sim-note { color:var(--text-secondary); font-size:.78rem; line-height:1.45; }
+        .sim-summary { display:flex; flex-wrap:wrap; gap:.5rem; margin:1rem 0 .7rem; }
+        .sim-summary span { background:var(--bg-secondary); border-radius:99px; padding:.3rem .65rem; font-size:.74rem; font-weight:700; color:var(--text-secondary); }
+        .sim-output-grid { display:grid; grid-template-columns:minmax(260px,.9fr) minmax(330px,1.5fr); gap:1rem; }
+        .sim-table-wrap { overflow:auto; border:1px solid var(--border); border-radius:var(--radius-md); }
+        .sim-table { width:100%; border-collapse:collapse; font-size:.82rem; }
+        .sim-table th,.sim-table td { padding:.55rem .65rem; border-bottom:1px solid var(--border-light); text-align:left; white-space:nowrap; }
+        .sim-table th { color:var(--text-tertiary); font-size:.66rem; letter-spacing:.07em; text-transform:uppercase; }
+        .sim-table tr:last-child td { border-bottom:0; }
+        .sim-empty { color:var(--text-tertiary); font-size:.86rem; padding:1rem 0; }
+        @media (max-width:760px) { .simulation-controls,.sim-output-grid { grid-template-columns:1fr; } }
+
+    </style>
+
+    <script src="/assets/theme-toggle.js" defer></script>
+    <script src="/assets/components.js" defer></script>
+</head>
+<body>
+    <img src="/assets/images/bg.png" alt="Background Image" class="page-background-image" />
+    <div id="global-header"></div>
+    <script src="/assets/msm-loader.js"></script>
+
+    <main class="hub-main">
+        <!-- ============ Masthead ============ -->
+        <section class="hub-masthead">
+            <div class="kicker"><span class="live-dot"></span> Live from the WV circuit</div>
+            <h1>WV Running News Central</h1>
+            <p class="standfirst">
+                Who&rsquo;s surging, who to watch, and what&rsquo;s next — every rating on this page comes from the
+                same MSM engine that powers our rankings, adjusted for course difficulty, field strength, and race-day weather.
+            </p>
+            <div class="masthead-stats" id="mastheadStats">
+                <div class="masthead-stat"><b>—</b><span>Loading data…</span></div>
+            </div>
+        </section>
+
+        <!-- ============ Simulation Lab ============ -->
+        <section class="hub-section" id="simulationSection" style="display:none;">
+            <div class="hub-section-head">
+                <h2><i class="fas fa-flask"></i> Meet Simulation Lab</h2>
+            </div>
+            <p class="hub-sub">Project current form onto a target meet. The default uses the last three selected meet efforts, course-adjusted by MSM — not lifetime PRs.</p>
+            <div class="simulation-panel" style="margin-top:.9rem;">
+                <div class="simulation-controls">
+                    <div class="sim-field"><label for="simTargetMeet">Target meet</label><select id="simTargetMeet"></select></div>
+                    <div class="sim-field"><label for="simBasis">Form basis</label><select id="simBasis"><option value="recent">Recent form · weighted last 3</option><option value="median">Median selected effort</option><option value="best">Best selected effort · what-if</option></select></div>
+                    <div class="sim-field"><label>Division</label><div class="sim-gender" style="margin:0;"><button type="button" class="active" data-sim-gender="M">Boys</button><button type="button" data-sim-gender="F">Girls</button></div></div>
+                </div>
+                <div class="sim-sources">
+                    <div class="sim-sources-head"><b>Use results from these meets</b><span id="simSourceNote">No selection means all current-season in-season results.</span></div>
+                    <div class="sim-source-list" id="simSourceList"></div>
+                </div>
+                <div class="sim-actions"><button type="button" class="sim-run-btn" id="simRun"><i class="fas fa-play"></i> Run boys simulation</button><span class="sim-note">Teams are built from the target meet&rsquo;s expected teams plus schools that actually raced there. A team needs five projected runners to score.</span></div>
+                <div id="simOutput"></div>
+            </div>
+        </section>
+
+        <!-- ============ Story of the week ============ -->
+        <section class="hub-section" id="spotlightSection" style="display:none;">
+            <div class="hub-section-head">
+                <h2><i class="fas fa-fire"></i> Story of the Week</h2>
+                <a class="see-all" href="rankings.html">Full rankings →</a>
+            </div>
+            <div class="spotlight-grid" id="spotlightGrid"></div>
+        </section>
+
+        <!-- ============ Most improved ============ -->
+        <section class="hub-section" id="improvedSection" style="display:none;">
+            <div class="hub-section-head">
+                <h2><i class="fas fa-arrow-trend-up"></i> Most Improved</h2>
+                <a class="see-all" href="rankings-explained.html">How ratings work →</a>
+            </div>
+            <p class="hub-sub" id="improvedSub"></p>
+            <div class="podium-wrap" style="margin-top: .9rem;">
+                <div class="podium-card">
+                    <div class="podium-head"> Boys · Biggest rating jump</div>
+                    <div id="improvedBoys" class="app-list"></div>
+                </div>
+                <div class="podium-card">
+                    <div class="podium-head"></i> Girls · Biggest rating jump</div>
+                    <div id="improvedGirls" class="app-list"></div>
                 </div>
             </div>
+        </section>
 
-            <h2 class="section-title">Upcoming Meets</h2>
-            <div id="meet-list" class="meet-grid">Loading recent meets...</div>
-        </main>
+        <!-- ============ Athletes to watch ============ -->
+        <section class="hub-section" id="watchSection" style="display:none;">
+            <div class="hub-section-head">
+                <h2><i class="fas fa-eye"></i> Athletes to Watch This Season</h2>
+                <a class="see-all" href="rankings.html">Season leaderboard →</a>
+            </div>
+            <p class="hub-sub">Hottest current-season MSM ratings across the state — the names most likely to headline the next month of meets.</p>
+            <div class="watch-grid" style="margin-top: .9rem;">
+                <div class="watch-card">
+                    <div class="wc-head"><h3> Boys Top 10</h3></div>
+                    <div id="watchBoys"></div>
+                </div>
+                <div class="watch-card">
+                    <div class="wc-head"><h3> Girls Top 10</h3></div>
+                    <div id="watchGirls"></div>
+                </div>
+            </div>
+        </section>
 
-        <div id="global-footer"></div>
+        <!-- ============ Divisional ratings ============ -->
+        <section class="hub-section" id="divisionalSection" style="display:none;">
+            <div class="hub-section-head">
+                <h2><i class="fas fa-layer-group"></i> Divisional Ratings</h2>
+            </div>
+            <p class="hub-sub">Where the state titles will be decided — top individuals and team scoring power (sum of each squad&rsquo;s top-5 ratings) by class.</p>
+            <div class="div-tabs" id="divTabs" style="margin-top: .9rem;"></div>
+            <div id="divPanels"></div>
+        </section>
 
-        <!-- Firebase SDK -->
-        <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-        <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-        <script src="firebase-config.js"></script>
-        <script src="/scripts/results-filter.js"></script>
-<script src="firebase-helpers.js"></script>
-        <script>
-           async function loadClosestFutureMeets() {
-  const container = document.getElementById("meet-list");
-  try {
-    // 1. Fetch all meets from your API helper
-    const meets = await getAllMeets(); 
-    
-    if (!meets || !meets.length) {
-      container.innerHTML = "<p>No meets found.</p>";
-      return;
-    }
+        <!-- ============ Meets to watch ============ -->
+        <section class="hub-section" id="meetsSection" style="display:none;">
+            <div class="hub-section-head">
+                <h2><i class="fas fa-calendar-star"></i> Meets to Watch</h2>
+                <a class="see-all" href="meets.html">Full schedule →</a>
+            </div>
+            <div class="banner-grid" id="meetBanners"></div>
+        </section>
 
-    // 2. Get the start of today's date for accurate comparisons
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+        <!-- ============ Meet recaps ============ -->
+        <section class="hub-section" id="recapsSection" style="display:none;">
+            <div class="hub-section-head">
+                <h2><i class="fas fa-newspaper"></i> Fresh Recaps</h2>
+            </div>
+            <p class="hub-sub">Auto-generated from finish-line data — top MSM-rated performances from the last three weeks.</p>
+            <div class="recap-grid" id="recapGrid"></div>
+        </section>
 
-    // 3. Filter for future dates, sort chronologically, and take the top 10
-    const upcomingMeets = meets
-      .filter((meet) => {
-        if (!meet.date) return false;
-        const meetDate = new Date(meet.date);
-        return meetDate >= today; // Keep only today or future dates
-      })
-      .sort((a, b) => new Date(a.date) - new Date(b.date)) // Closest date first
-      .slice(0, 9); // Take the top 10 closest future events
+        <!-- ============ State of the state ============ -->
+        <section class="hub-section" id="sotsSection" style="display:none;">
+            <div class="hub-section-head">
+                <h2><i class="fas fa-scale-balanced"></i> State of the State</h2>
+            </div>
+            <p class="hub-sub">Highest single rating in every class, boys &amp; girls — the current title favorites in one glance.</p>
+            <div class="sots-grid" id="sotsGrid"></div>
+        </section>
 
-    if (!upcomingMeets.length) {
-      container.innerHTML = "<p>No upcoming meets scheduled.</p>";
-      return;
-    }
+        <!-- ============ News ============ -->
+        <section class="hub-section" id="newsSection" style="display:none;">
+            <div class="hub-section-head">
+                <h2><i class="fas fa-rss"></i> MSM News</h2>
+                <a class="see-all" href="/news.html">All news →</a>
+            </div>
+            <div class="news-strip" id="newsStrip"></div>
+        </section>
 
-    function formatDate(dateString) {
-      if (!dateString) return "Date TBD";
-      const parts = dateString.split("-");
-      if (parts.length === 3) {
-        const year = parseInt(parts[0], 10);
-        const month = parseInt(parts[1], 10) - 1;
-        const day = parseInt(parts[2], 10);
-        const date = new Date(year, month, day);
-        return date.toLocaleDateString();
-      }
-      return new Date(dateString).toLocaleDateString();
-    }
+        <div class="hub-loading" id="hubLoading">
+            <div class="spin"></div>
+            <div>Building the rating model — course calibration, field strength, weather…</div>
+        </div>
+    </main>
 
-    container.innerHTML = upcomingMeets
-      .map((meet) => {
-        const date = formatDate(meet.date);
-        const location = meet.location || "";
-        return `
-          <a href="meet.html?slug=${meet.slug}" class="meet-card">
-            <h5 class="meet-card-title">${meet.name}</h5>
-            <h6 class="meet-card-date">📅 ${date}</h6>
-            ${location ? `<h6 class="meet-card-location">📍 ${location}</h6>` : ""}
-          </a>
-        `;
-      })
-      .join("");
-  } catch (e) {
-    console.error("Error loading meets:", e);
-    container.innerHTML = "<p>Error loading upcoming meets.</p>";
-  } finally {
-    document.dispatchEvent(new Event("MSMDataLoaded"));
-  }
-}
+    <div id="global-footer"></div>
 
-document.addEventListener("DOMContentLoaded", () => {
-  loadClosestFutureMeets();
-});
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <script src="/scripts/msm-rating.js"></script>
+    <script src="/scripts/hub-engine.js"></script>
 
-        </script>
-    </body>
+    <script>
+        /* ═══════════════════════════════════════════════════
+           WV RUNNING NEWS CENTRAL — renderer
+        ═══════════════════════════════════════════════════ */
+        const esc = (s) => String(s == null ? "" : s)
+            .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+
+        function fmtTime(sec) {
+            if (sec == null || isNaN(sec)) return "—";
+            const m = Math.floor(sec / 60);
+            const s = sec - m * 60;
+            return `${m}:${s.toFixed(1).padStart(4, "0")}`;
+        }
+
+        function fmtDate(dstr) {
+            if (!dstr) return "Date TBD";
+            const d = new Date(String(dstr).slice(0, 10) + "T12:00:00");
+            if (isNaN(d)) return "Date TBD";
+            return d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+        }
+
+        function countdown(dayDiff) {
+            if (dayDiff === 0) return "TODAY";
+            if (dayDiff === 1) return "Tomorrow";
+            const d = new Date(); d.setDate(d.getDate() + dayDiff);
+            const wk = d.toLocaleDateString("en-US", { weekday: "long" });
+            return `${wk} · in ${dayDiff} days`;
+        }
+
+        const logoOf = (slug) => `/assets/team logos/${encodeURIComponent(slug)}.png`;
+        const logoFallback = ` onerror="this.onerror=null;this.src='/assets/images/msmrunner.svg'"`;
+
+        function athleteHref(name, schoolSlug) {
+            return `athlete.html?name=${encodeURIComponent(name)}&school=${encodeURIComponent(schoolSlug || "")}`;
+        }
+        function schoolHref(slug) { return `school.html?slug=${encodeURIComponent(slug)}`; }
+
+        function fieldChips(teamStrengths, max = 6) {
+            const shown = teamStrengths.slice(0, max);
+            const rest = teamStrengths.length - shown.length;
+            let html = shown.map(t => t.slug
+                ? `<a class="field-chip" href="${schoolHref(t.slug)}" title="${esc(t.name)}"><img src="${logoOf(t.slug)}"${logoFallback} alt="">${esc(t.name)}</a>`
+                : `<span class="field-chip">${esc(t.name)}</span>`).join("");
+            if (rest > 0) html += `<span class="field-more">+${rest} more</span>`;
+            return html;
+        }
+
+        /* ---- Masthead ---- */
+        function renderMasthead(H) {
+            const el = document.getElementById("mastheadStats");
+            const rated = H.results.filter(r => r.msm != null).length;
+            const season = MSMHub.currentSeason();
+            const schoolsThisSeason = new Set(
+                H.results.filter(r => r.msm != null && MSMHub.seasonOf(r) === season && r.school_slug).map(r => r.school_slug)
+            ).size;
+            const nextMeet = H.upcoming[0];
+            el.innerHTML = `
+                <div class="masthead-stat"><b>${rated.toLocaleString()}</b><span>Rated performances</span></div>
+                <div class="masthead-stat"><b>${schoolsThisSeason}</b><span>Schools competing</span></div>
+                <div class="masthead-stat"><b>${H.upcoming.length}</b><span>Meets ahead</span></div>
+                <div class="masthead-stat"><b>${nextMeet ? esc(countdown(nextMeet.dayDiff)) : "—"}</b><span>Next: ${nextMeet ? esc(nextMeet.name.length > 22 ? nextMeet.name.slice(0, 20) + "…" : nextMeet.name) : ""}</span></div>
+            `;
+        }
+
+        /* ---- Story of the Week ---- */
+        function storyParagraphs(text) {
+            return String(text || "").split(/\\n\\s*\\n|\\n/).map(p => p.trim()).filter(Boolean)
+                .map(p => `<p>${esc(p)}</p>`).join("");
+        }
+
+        function renderSpotlight(H) {
+            const stats = H.storyStats || {};
+            const automatic = H.mostImproved.M.concat(H.mostImproved.F)
+                .sort((a, b) => b.delta - a.delta)[0] || null;
+            const authored = H.featuredStory && H.featuredStory.active !== false ? H.featuredStory : null;
+            const story = authored || {
+                kicker: automatic ? "The breakout story" : "Inside the WV circuit",
+                title: automatic ? `${automatic.name} is making the biggest move in West Virginia` : "The season is taking shape",
+                dek: automatic
+                    ? `${automatic.school}’s ${automatic.name} has climbed ${automatic.delta} MSM points year over year. Here is the name and the next race the state should be watching.`
+                    : `${stats.rated_performances || "Thousands of"} performances are shaping the West Virginia cross country season — and the next chapter is already on the calendar.`,
+                body: automatic
+                    ? `${automatic.name} moved from a ${automatic.prevRating} rating last season to ${automatic.curRating} this season across ${automatic.racesCur} rated races. That is the largest verified improvement on the current board. The next checkpoint is {{next_meet}}, scheduled for {{next_meet_date}}.`
+                    : `The live MSM board currently covers {{rated_performances}} rated performances from {{schools_competing}} schools. The next major date on the calendar is {{next_meet}} on {{next_meet_date}}.`,
+                author: "MSM Data Desk",
+                publishedAt: ""
+            };
+            const resolve = value => MSMHub.resolveStoryTokens(value || "");
+            const title = resolve(story.title);
+            const dek = resolve(story.dek || story.subtitle || "");
+            const body = resolve(story.body || story.content || "");
+            const leadName = automatic && !authored ? automatic.name : null;
+            const related = (leadName ? H.watch.M.concat(H.watch.F) : H.mostImproved.M.concat(H.mostImproved.F))
+                .filter(e => e.name !== leadName).sort((a, b) => (b.best || b.delta || 0) - (a.best || a.delta || 0)).slice(0, 3);
+
+            document.getElementById("spotlightSection").style.display = "";
+            document.getElementById("spotlightGrid").innerHTML = `
+                <article class="spotlight-hero">
+                    <span class="label">${esc(story.kicker || "Story of the Week")}</span>
+                    <div class="who">${esc(title)}</div>
+                    ${leadName ? `<span class="delta-badge"><i class="fas fa-arrow-up"></i> +${automatic.delta} MSM rating this season</span>` : `<div class="story-statline"><span><i class="fas fa-chart-line"></i> ${esc(stats.rated_performances || "Live stats") } rated performances</span><span><i class="fas fa-calendar"></i> ${esc(stats.upcoming_meets || "—")} meets ahead</span></div>`}
+                    ${dek ? `<p class="detail"><strong>${esc(dek)}</strong></p>` : ""}
+                    <div class="detail">${storyParagraphs(body)}</div>
+                    <div class="story-meta"><span class="story-live"><i class="fas fa-signal"></i> Live MSM stats</span>${story.author ? `<span>· ${esc(story.author)}</span>` : ""}${story.publishedAt ? `<span>· ${esc(story.publishedAt)}</span>` : ""}</div>
+                </article>
+                <div class="spotlight-side">
+                    ${related.map((e, i) => {
+                        const rating = e.best != null ? e.best : e.curRating;
+                        const descriptor = e.best != null ? `${e.school} · ${rating} MSM` : `+${e.delta} pts · now rated ${rating}`;
+                        return `<a class="mini-improver" href="${athleteHref(e.name, e.school_slug || "")}">
+                            <span class="rank">${i + 1}</span>
+                            <span><span class="who">${esc(e.name)}</span><br><span class="what">${esc(descriptor)}</span></span>
+                            <span class="delta"><i class="fas fa-arrow-right"></i></span>
+                        </a>`;
+                    }).join("") || `<div class="mini-improver"><span class="what">More stories will appear as this season's results arrive.</span></div>`}
+                </div>
+            `;
+        }
+
+        /* ---- Most improved podiums ---- */
+        function renderImproved(H) {
+            const season = MSMHub.latestSeason();
+            document.getElementById("improvedSub").textContent =
+                `Biggest MSM rating jump from the ${season} season median to this season's — minimum two rated in-season races.`;
+            const row = (e, i) => `
+                <div class="list-item">
+                    <div class="item-place">${i + 1}</div>
+                    <div class="item-avatar"><img src="${logoOf(e.school_slug)}"${logoFallback} alt=""></div>
+                    <div class="item-details">
+                        <a class="item-name" href="${athleteHref(e.name, e.school_slug || "")}">${esc(e.name)}</a>
+                        <div class="item-school">${esc(e.school)}</div>
+                        <div class="item-meta">${e.prevRating} → ${e.curRating} MSM</div>
+                    </div>
+                    <div class="item-score delta-up">+${e.delta}</div>
+                </div>`;
+            const boys = H.mostImproved.M.slice(0, 10);
+            const girls = H.mostImproved.F.slice(0, 10);
+            document.getElementById("improvedBoys").innerHTML = `<div class="list-header">Boys · Biggest Rating Jump</div>${boys.map(row).join("")}`;
+            document.getElementById("improvedGirls").innerHTML = `<div class="list-header">Girls · Biggest Rating Jump</div>${girls.map(row).join("")}`;
+            document.getElementById("improvedSection").style.display = "";
+        }
+
+        /* ---- Watch lists ---- */
+        function renderWatch(H) {
+            const row = (e, i) => `
+                <div class="list-item">
+                    <div class="item-place">${i + 1}</div>
+                    <div class="item-avatar"><img src="${logoOf(e.school_slug)}"${logoFallback} alt=""></div>
+                    <div class="item-details">
+                        <a class="item-name" href="${athleteHref(e.name, e.school_slug)}">${esc(e.name)}</a>
+                        <div class="item-school">${esc(e.school)} · ${e.classification}</div>
+                        <div class="item-meta">${esc(e.bestMeet.length > 18 ? e.bestMeet.slice(0, 16) + "…" : e.bestMeet)}</div>
+                    </div>
+                    <div class="item-score">${e.best}</div>
+                </div>`;
+            document.getElementById("watchBoys").innerHTML = `<div class="app-list"><div class="list-header">Boys Top 10</div>${H.watch.M.slice(0, 10).map(row).join("")}</div>`;
+            document.getElementById("watchGirls").innerHTML = `<div class="app-list"><div class="list-header">Girls Top 10</div>${H.watch.F.slice(0, 10).map(row).join("")}</div>`;
+            document.getElementById("watchSection").style.display = "";
+        }
+
+        /* ---- Divisional ratings ---- */
+        let divState = { current: 0, H: null };
+        function renderDivisional(H) {
+            const classes = ["AAAA", "AAA", "AA", "A"];
+            const tabs = document.getElementById("divTabs");
+            const panels = document.getElementById("divPanels");
+            tabs.innerHTML = classes.map((c, i) =>
+                `<button class="div-tab${i === 0 ? " active" : ""}" data-cls="${c}">${c}</button>`).join("");
+            panels.innerHTML = classes.map((c, i) => {
+                const d = H.divisional[c] || { watch: [], teams: [] };
+                const indiv = d.watch.slice(0, 8).map((e, j) => `
+                    <div class="list-item">
+                        <div class="item-place">${j + 1}</div>
+                        <div class="item-avatar"><img class="team-logo" src="${logoOf(e.school_slug)}"${logoFallback} alt=""></div>
+                        <div class="item-details">
+                            <a class="item-name" href="${athleteHref(e.name, e.school_slug)}">${esc(e.name)}</a>
+                            <div class="item-school">${esc(e.school)}</div>
+                            <div class="item-meta">${e.gender === "F" ? "Girls" : "Boys"} · ${c} division</div>
+                        </div>
+                        <div class="item-score">${e.best}</div>
+                    </div>`).join("") || `<div class="empty-state">No rated athletes mapped to ${c} yet.</div>`;
+                const maxPower = d.teams.length ? d.teams[0].power : 1;
+                const teams = d.teams.slice(0, 6).map((t, j) => `
+                    <div class="list-item">
+                        <div class="item-place">${j + 1}</div>
+                        <div class="item-avatar"><img class="team-logo" src="${logoOf(t.school_slug)}"${logoFallback} alt=""></div>
+                        <div class="item-details">
+                            <div class="item-name"><a href="${schoolHref(t.school_slug)}" style="color:inherit;text-decoration:none;">${esc(t.school)}</a></div>
+                            <div class="item-meta">${t.gender === "F" ? "Girls" : "Boys"} · top-5 sum · <span class="tp-bar"><i style="width:${Math.max(8, Math.round(t.power / maxPower * 100))}%"></i></span></div>
+                        </div>
+                        <div class="item-score">${t.power}</div>
+                    </div>`).join("") || `<div class="empty-state">Not enough mapped runners for team power yet.</div>`;
+                return `
+                    <div class="div-panel${i === 0 ? " active" : ""}" data-cls="${c}">
+                        <div class="div-grid">
+                            <div class="podium-card">
+                                <div class="podium-head"><i class="fas fa-medal"></i> ${c} Individuals</div>
+                                <div class="podium-list" style="padding:.8rem;">${indiv}</div>
+                            </div>
+                            <div class="podium-card">
+                                <div class="podium-head"><i class="fas fa-people-group"></i> ${c} Team Power</div>
+                                <div class="podium-list" style="padding:.8rem;">${teams}</div>
+                            </div>
+                        </div>
+                    </div>`;
+            }).join("");
+            tabs.querySelectorAll(".div-tab").forEach(btn => {
+                btn.addEventListener("click", () => {
+                    tabs.querySelectorAll(".div-tab").forEach(b => b.classList.remove("active"));
+                    panels.querySelectorAll(".div-panel").forEach(p => p.classList.remove("active"));
+                    btn.classList.add("active");
+                    panels.querySelector(`.div-panel[data-cls="${btn.dataset.cls}"]`).classList.add("active");
+                });
+            });
+            document.getElementById("divisionalSection").style.display = "";
+        }
+
+        /* ---- Meet banners ---- */
+        function renderMeets(H) {
+            const banners = H.upcoming.slice(0, 9);
+            document.getElementById("meetBanners").innerHTML = banners.map(m => {
+                const d = new Date(String(m.date).slice(0, 10) + "T12:00:00");
+                const tags = [
+                    m.dayDiff === 0 ? `<span class="btag today">Race day</span>` : "",
+                    (m.dayDiff > 0 && m.dayDiff <= 2) ? `<span class="btag soon">This week</span>` : "",
+                    m.isChampionship ? `<span class="btag champs">Championship</span>` : "",
+                    m.hype >= 6 ? `<span class="btag hype">🔥 Hype ${m.hype}/10</span>` : ""
+                ].filter(Boolean).join("");
+                const hook = m.topTeam
+                    ? `<div class="banner-hook">Headliner: <b>${esc(m.topTeam.name)}</b>${m.topTeam.topName ? ` — led by <b>${esc(m.topTeam.topName)}</b> (${m.topTeam.topRating})` : ""}</div>`
+                    : (m.richness ? "" : `<div class="banner-hook">Field still forming — expected teams will light this card up as they&rsquo;re added.</div>`);
+                return `
+                    <a class="meet-banner" href="meet.html?slug=${encodeURIComponent(m.slug)}">
+                        <div class="banner-top">
+                            <div class="banner-date"><b>${d.getDate() || "–"}</b><span>${d.toLocaleDateString("en-US", { month: "short" }) || ""}</span></div>
+                            <div>
+                                <div class="banner-title">${esc(m.name)}</div>
+                                <div class="banner-loc"><i class="fas fa-location-dot"></i> ${esc(m.location || countdown(m.dayDiff))}</div>
+                            </div>
+                        </div>
+                        <div class="banner-tags">${tags}</div>
+                        <div class="banner-body">
+                            <div class="bb-label">Expected field · ${m.expectedCount || m.richness || 0} team${(m.expectedCount || m.richness || 0) === 1 ? "" : "s"}</div>
+                            <div class="field-chips">${m.teamStrengths ? fieldChips(m.teamStrengths) : `<span class="field-more">Field TBD</span>`}</div>
+                            ${hook}
+                        </div>
+                    </a>`;
+            }).join("") || `<div class="hub-empty">No upcoming meets on the calendar.</div>`;
+            document.getElementById("meetsSection").style.display = "";
+        }
+
+        /* ---- Recaps ---- */
+        function renderRecaps(H) {
+            const card = (rc) => {
+                const line = (p) => `
+                    <div class="recap-line">
+                        <a href="${athleteHref(p.name, p.school_slug)}">${esc(p.name)}</a>
+                        <span><span class="rl-msm">${p.msm}</span> · ${fmtTime(p.timeSec)}</span>
+                    </div>`;
+                const col = (rows, label) => rows && rows.length
+                    ? `<div class="recap-col"><div class="rc-label">${label}</div>${rows.slice(0, 3).map(line).join("")}</div>`
+                    : "";
+                return `
+                    <div class="recap-card">
+                        <h3><a href="meet.html?slug=${encodeURIComponent(rc.slug)}">${esc(rc.name)}</a></h3>
+                        <time>${fmtDate(rc.date)} · ${Math.abs(rc.dayDiff)} day${Math.abs(rc.dayDiff) === 1 ? "" : "s"} ago</time>
+                        <div class="recap-cols">${col(rc.gendered.M, "Boys · Top rated")}${col(rc.gendered.F, "Girls · Top rated")}</div>
+                    </div>`;
+            };
+            document.getElementById("recapGrid").innerHTML = H.recaps.slice(0, 6).map(card).join("") ||
+                `<div class="hub-empty">No meets with results in the last three weeks — the season&rsquo;s first recaps will land here.</div>`;
+            document.getElementById("recapsSection").style.display = "";
+        }
+
+        /* ---- State of the state ---- */
+        function renderSOTS(H) {
+            const cards = ["AAAA", "AAA", "AA", "A"].map(cls => {
+                const lines = ["M", "F"].map(g => {
+                    const e = (H.watch[g] || []).find(x => x.classification === cls);
+                    return e ? `
+                        <div class="sots-line">
+                            <a href="${athleteHref(e.name, e.school_slug)}">${esc(e.name)}</a>
+                            <b>${e.best}</b>
+                        </div>` : `
+                        <div class="sots-line"><span style="color:var(--text-tertiary)">No rated ${g === "F" ? "girls" : "boys"} yet</span><b>—</b></div>`;
+                }).join("");
+                return `
+                    <div class="sots-card">
+                        <div class="sc-head"><h3>Class ${cls}</h3><span class="class-pill">${cls}</span></div>
+                        ${lines}
+                    </div>`;
+            }).join("");
+            document.getElementById("sotsGrid").innerHTML = cards;
+            document.getElementById("sotsSection").style.display = "";
+        }
+
+        /* ---- News ---- */
+        function renderNews(H) {
+            const strip = H.news.slice(0, 6).map(n => `
+                <a class="news-card" href="/news.html">
+                    <span class="news-tag">${esc(n.category || "News")}</span>
+                    <h3>${esc(n.title)}</h3>
+                    <p>${esc(String(n.content || "").replace(/<[^>]*>/g, "").slice(0, 160))}</p>
+                    <time>${fmtDate(n.date || n.createdAt)}</time>
+                </a>`).join("");
+            document.getElementById("newsStrip").innerHTML = strip ||
+                `<div class="hub-empty">No news yet — coverage starts soon.</div>`;
+            document.getElementById("newsSection").style.display = "";
+        }
+
+        /* ---- Meet Simulation Lab ---- */
+        const simState = { gender: "M", sourceSlugs: new Set(), H: null };
+        function renderSimulation(H) {
+            simState.H = H;
+            const target = document.getElementById("simTargetMeet");
+            const sources = document.getElementById("simSourceList");
+            const options = MSMHub.simulationMeetOptions(simState.gender);
+            target.innerHTML = options.map((m, i) => `<option value="${esc(m.slug)}"${i === 0 ? " selected" : ""}>${esc(m.name)} · ${esc(fmtDate(m.date))}</option>`).join("") || `<option value="">No meets available</option>`;
+            simState.sourceSlugs = new Set(options.filter(m => m.resultCount).slice(0, 3).map(m => m.slug));
+            sources.innerHTML = options.map(m => `<label class="sim-source"><input type="checkbox" data-sim-source="${esc(m.slug)}" ${simState.sourceSlugs.has(m.slug) ? "checked" : ""}> <span>${esc(m.name)}<br><small>${esc(fmtDate(m.date))}</small></span><small>${m.resultCount} result${m.resultCount === 1 ? "" : "s"}</small></label>`).join("") || `<div class="sim-empty">No meet results are available for this division yet.</div>`;
+            sources.querySelectorAll("input[data-sim-source]").forEach(cb => cb.addEventListener("change", () => {
+                if (cb.checked) simState.sourceSlugs.add(cb.dataset.simSource);
+                else simState.sourceSlugs.delete(cb.dataset.simSource);
+                document.getElementById("simSourceNote").textContent = simState.sourceSlugs.size ? `${simState.sourceSlugs.size} meet${simState.sourceSlugs.size === 1 ? "" : "s"} selected for current-form projections.` : "No selection means all current-season in-season results.";
+            }));
+            document.getElementById("simulationSection").style.display = "";
+            updateSimulationLabels();
+        }
+
+        function updateSimulationLabels() {
+            const girls = simState.gender === "F";
+            document.querySelectorAll("[data-sim-gender]").forEach(b => b.classList.toggle("active", b.dataset.simGender === simState.gender));
+            document.getElementById("simRun").innerHTML = `<i class="fas fa-play"></i> Run ${girls ? "girls" : "boys"} simulation`;
+            const selected = new Set([...simState.sourceSlugs]);
+            document.querySelectorAll("#simSourceList input[data-sim-source]").forEach(cb => { cb.checked = selected.has(cb.dataset.simSource); });
+            document.getElementById("simSourceNote").textContent = selected.size ? `${selected.size} meet${selected.size === 1 ? "" : "s"} selected for current-form projections.` : "No selection means all current-season in-season results.";
+        }
+
+        function renderSimulationOutput(sim) {
+            const out = document.getElementById("simOutput");
+            if (!sim || sim.error) { out.innerHTML = `<div class="sim-empty">${esc(sim && sim.error || "Choose a target meet to simulate.")}</div>`; return; }
+            const basis = sim.basis === "best" ? "best selected effort" : sim.basis === "median" ? "median selected effort" : "weighted recent form";
+            const fmtDateTime = sec => sec == null ? "—" : fmtTime(sec);
+            const standings = sim.teams.map((t, i) => `
+                <div class="list-item">
+                    <div class="item-place">${i + 1}</div>
+                    <div class="item-details"><div class="item-name">${esc(t.school)}</div><div class="item-meta">Top-5 avg · ${t.depth} runners</div></div>
+                    <div class="item-score">${t.complete ? t.score : "—"}</div>
+                </div>`).join("");
+            const field = sim.field.slice(0, 35).map(e => `
+                <div class="list-item">
+                    <div class="item-place">${e.place}</div>
+                    <div class="item-details"><div class="item-name">${esc(e.name)}</div><div class="item-school">${esc(e.school)}</div><div class="item-meta">${e.sourceCount} source effort${e.sourceCount === 1 ? "" : "s"} · ${esc(e.lastMeet || "—")}</div></div>
+                    <div class="item-score">${fmtDateTime(e.timeSec)}</div>
+                </div>`).join("");
+            out.innerHTML = `<div class="sim-summary"><span><i class="fas fa-flag-checkered"></i> ${esc(sim.targetMeetName)}</span><span>${sim.gender === "F" ? "Girls" : "Boys"}</span><span>${sim.field.length} projected runners</span><span>${sim.completeTeams} scoring team${sim.completeTeams === 1 ? "" : "s"}</span><span>Using ${esc(basis)}</span></div><div class="sim-output-grid"><div class="app-list"><div class="list-header">Projected Team Standings</div>${standings || `<div class="empty-state">No expected teams have usable selected results.</div>`}</div><div class="app-list"><div class="list-header">Projected Individual Finish</div>${field || `<div class="empty-state">No runners to project.</div>`}</div></div><p class="sim-note" style="margin-top:.7rem;">Projected times are course-adjusted 5K-equivalent efforts from actual selected meet results. They are not PR lookups; the best-effort option is intentionally labeled as a what-if.</p>`;
+        }
+
+        function runSimulation() {
+            const targetMeetSlug = document.getElementById("simTargetMeet").value;
+            const sourceMeetSlugs = [...simState.sourceSlugs];
+            const basis = document.getElementById("simBasis").value;
+            const sim = MSMHub.simulateNewsMeet({ targetMeetSlug, sourceMeetSlugs, basis, gender: simState.gender });
+            renderSimulationOutput(sim);
+        }
+
+        function bindSimulation() {
+            document.querySelectorAll("[data-sim-gender]").forEach(button => button.addEventListener("click", () => {
+                simState.gender = button.dataset.simGender;
+                renderSimulation(simState.H);
+            }));
+            document.getElementById("simRun").addEventListener("click", runSimulation);
+            document.getElementById("simTargetMeet").addEventListener("change", runSimulation);
+            document.getElementById("simBasis").addEventListener("change", runSimulation);
+        }
+
+        /* ---- Boot ---- */
+        async function boot() {
+            const loader = document.getElementById("hubLoading");
+            try {
+                await MSMHub.load();
+                const H = MSMHub.state;
+                renderMasthead(H);
+                renderSpotlight(H);
+                renderImproved(H);
+                renderWatch(H);
+                renderDivisional(H);
+                renderMeets(H);
+                renderRecaps(H);
+                renderSOTS(H);
+                renderNews(H);
+                renderSimulation(H);
+                bindSimulation();
+                loader.style.display = "none";
+            } catch (err) {
+                console.error("Hub failed to build:", err);
+                loader.innerHTML = `<div style="color:var(--danger)"><i class="fas fa-triangle-exclamation"></i> Could not build the hub. Check your connection and refresh.</div>`;
+            } finally {
+                document.dispatchEvent(new Event("MSMDataLoaded"));
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", boot);
+    </script>
+</body>
 </html>

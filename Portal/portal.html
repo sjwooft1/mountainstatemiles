@@ -20,6 +20,7 @@
 <link rel="stylesheet" href="/assets/main.css" />
 <script src="/assets/theme-toggle.js" defer></script>
 <script src="/assets/components.js" defer></script>
+<link rel="stylesheet" href="portal-mobile.css" />
 
 <style>
 body { padding-top: 0; margin-top:40px;}
@@ -176,6 +177,62 @@ table.rt .mark-col { font-family: var(--font-display); font-weight: 700; color: 
 .compare-controls { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; }
 .compare-controls .ta-wrap { flex: 1; min-width: 220px; }
 @media (max-width: 768px) { .portal-hero-inner { flex-direction: column; align-items: flex-start; } }
+
+/* ---------- expected-team chips (meet.html parity) ---------- */
+.expected-teams-list { display: flex; flex-wrap: wrap; gap: 10px; }
+.expected-team-chip {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 12px; background: var(--bg-primary);
+  border: 1px solid var(--border); border-radius: 20px;
+  font-size: 0.85rem; font-weight: 600; color: var(--text-primary);
+  text-decoration: none; transition: border-color var(--transition), transform var(--transition);
+}
+.expected-team-chip:hover { border-color: var(--text-primary); transform: translateY(-1px); }
+.expected-team-chip img { width: 20px; height: 20px; object-fit: contain; flex-shrink: 0; }
+
+/* ---------- coach toolkit ---------- */
+.outlook-meet-head { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; align-items: flex-start; }
+.outlook-meet-name { font-family: var(--font-display); font-size: 1.15rem; font-weight: 800; color: var(--text-primary); }
+.outlook-meet-meta { font-size: 0.8rem; color: var(--text-tertiary); margin-top: 2px; }
+.outlook-mylineup { max-width: 460px; }
+.outlook-seven { display: flex; flex-direction: column; gap: 3px; margin-top: 4px; }
+.outlook-seven-item { font-size: 0.82rem; color: var(--text-secondary); }
+.outlook-seven-item strong { display: inline-block; min-width: 18px; color: var(--text-primary); }
+.outlook-seven-item small { color: var(--text-tertiary); font-family: var(--font-display); margin-left: 4px; }
+.split-grid { display: flex; flex-direction: column; margin-top: 12px; }
+.split-row { display: flex; align-items: baseline; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--border-light); }
+.split-row:last-child { border-bottom: none; }
+.split-label { font-weight: 700; color: var(--text-primary); font-size: 0.88rem; }
+.split-val { font-family: var(--font-display); font-size: 1.25rem; font-weight: 800; color: var(--text-primary); margin-left: auto; }
+.split-tag { flex-shrink: 0; }
+.split-checks { display: flex; flex-wrap: wrap; gap: 8px; }
+.split-check { padding: 6px 12px; border: 1px solid var(--border); border-radius: var(--radius-md); font-size: 0.82rem; color: var(--text-secondary); background: var(--bg-secondary); }
+.split-check strong { color: var(--text-primary); margin-right: 6px; }
+.mp-weeks { display: flex; flex-direction: column; gap: 12px; }
+.mp-week { border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--bg-primary); overflow: hidden; }
+.mp-week-head { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--bg-secondary); border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+.mp-week-n { font-family: var(--font-display); font-weight: 800; color: var(--text-primary); }
+.mp-week-total { font-weight: 800; color: var(--text-primary); margin-left: auto; }
+.mp-days { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); }
+.mp-day { padding: 10px 12px; border-right: 1px solid var(--border-light); display: flex; flex-direction: column; gap: 2px; }
+.mp-day:last-child { border-right: none; }
+.mp-day-name { font-size: 0.68rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-tertiary); }
+.mp-day-type { font-size: 0.78rem; font-weight: 700; color: var(--text-primary); }
+.mp-day-miles { font-family: var(--font-display); font-size: 1.05rem; font-weight: 800; color: var(--text-primary); }
+.mp-day-desc { font-size: 0.72rem; color: var(--text-tertiary); line-height: 1.35; }
+.mp-rest { background: var(--bg-secondary); }
+.mp-quality { background: rgba(234, 179, 8, 0.08); }
+.mp-race { background: rgba(16, 185, 129, 0.12); }
+.mp-prerace { background: rgba(59, 130, 246, 0.08); }
+
+@media (max-width: 720px) {
+  .outlook-meet-head { flex-direction: column; }
+  .outlook-mylineup { max-width: none; }
+  .mp-days { grid-template-columns: repeat(2, 1fr); }
+  .mp-day { border-bottom: 1px solid var(--border-light); }
+  .split-row { flex-wrap: wrap; gap: 6px; }
+  .split-val { margin-left: 0; width: 100%; order: 3; }
+}
 </style>
 </head>
 <body>
@@ -242,21 +299,27 @@ table.rt .mark-col { font-family: var(--font-display); font-weight: 700; color: 
 </main>
 
 <!-- ===================== DASHBOARD ===================== -->
-<div id="dash" class="hidden">
-  <section class="portal-hero">
-    <div class="portal-hero-inner">
-      <div>
-        <h1 class="hero-name" id="dashTitle">Dashboard</h1>
-        <p class="hero-sub" id="dashSub"></p>
-        <div class="hero-chips" id="dashChips"></div>
-      </div>
+    <div id="dash" class="hidden">
+      <section class="portal-hero" id="dashHero">
+        <div class="hero-media" id="dashHeroMedia"></div>
+        <div class="portal-hero-inner">
+          <div class="hero-identity">
+            <img class="hero-avatar hidden" id="dashAvatar" alt="" />
+            <div>
+              <h1 class="hero-name" id="dashTitle">Dashboard</h1>
+              <p class="hero-sub" id="dashSub"></p>
+              <div class="hero-chips" id="dashChips"></div>
+            </div>
+          </div>
+          
+        </div>
+      </section>
+      <nav class="portal-nav hidden" id="dashNav"><div class="portal-nav-inner" id="dashNavInner"></div></nav>
       <div class="export-row" id="dashActions"></div>
+      <main class="page-main" id="dashBody">
+        <div class="spin"><i class="fa-solid fa-circle-notch fa-spin"></i></div>
+      </main>
     </div>
-  </section>
-  <main class="page-main" id="dashBody">
-    <div class="spin"><i class="fa-solid fa-circle-notch fa-spin"></i></div>
-  </main>
-</div>
 
 <div class="toast-tray" id="toastTray"></div>
 
@@ -269,6 +332,7 @@ table.rt .mark-col { font-family: var(--font-display); font-weight: 700; color: 
 <script src="portal-engine.js"></script>
 <script src="portal-auth.js"></script>
 
+<script src="portal-coach.js" defer></script>
 <script src="portal-ui.js" defer></script>
 </body>
 </html>

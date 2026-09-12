@@ -114,21 +114,19 @@
 
     // Leaderboard table
     const rows = summaries.filter((s) => s.best != null).map((a, i) => `
-      <tr>
-        <td data-label="#">${i + 1}</td>
-        <td data-label="Athlete">${escapeHtml(a.name)}</td>
-        <td data-label="Gender">${a.gender ? `<span class="gender-pill ${a.gender.toLowerCase()}">${a.gender}</span>` : "—"}</td>
-        <td data-label="Season Best">${formatTime(a.best)}</td>
-        <td data-label="Races">${a.raceCount}</td>
-        <td data-label="Improvement">${a.improvement != null ? (a.improvement > 0 ? `<span style="color:var(--success,#10b981);font-weight:700;">−${formatTime(a.improvement)}</span>` : a.improvement < 0 ? `<span style="color:var(--danger,#ef4444);">+${formatTime(-a.improvement)}</span>` : "—") : "—"}</td>
-      </tr>`).join("");
+      <div class="list-item">
+        <div class="item-place">${i + 1}</div>
+        <div class="item-details">
+          <div class="item-name">${escapeHtml(a.name)}</div>
+          <div class="item-meta">${a.gender ? a.gender + ' · ' : ''}${a.raceCount} races</div>
+        </div>
+        <div class="item-score"><div class="score-stack"><span class="score-rating">${formatTime(a.best)}</span><span class="score-predicted">${a.improvement != null ? (a.improvement > 0 ? '−' + formatTime(a.improvement) : a.improvement < 0 ? '+' + formatTime(-a.improvement) : 'No change') : '—'}</span></div></div>
+      </div>`).join("");
 
     const leaderboard = `
-      <div class="table-container" style="border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;">
-        <table class="results-table">
-          <thead><tr><th>#</th><th>Athlete</th><th>Gender</th><th>Season Best</th><th>Races</th><th>Improvement</th></tr></thead>
-          <tbody>${rows || '<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--text-secondary);">No timed results yet.</td></tr>'}</tbody>
-        </table>
+      <div class="app-list">
+        <div class="list-header">Athlete Leaderboard · Season Best</div>
+        ${rows || '<div class="empty-state">No timed results yet.</div>'}
       </div>`;
 
     return `

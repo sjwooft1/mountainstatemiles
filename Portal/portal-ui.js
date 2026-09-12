@@ -167,7 +167,35 @@
   }
   function makeChart(id, cfg) { if (charts[id]) charts[id].destroy(); const el = $(id); if (!el) return; charts[id] = new Chart(el, cfg); }
   function destroyCharts() { Object.keys(charts).forEach((k) => { charts[k].destroy(); delete charts[k]; }); }
-
+  let navObserver = null;
+    function buildSectionNav(items) {
+      const nav = $("dashNav"), inner = $("dashNavInner");
+      if (!nav || !inner) return;
+      const present = items.filter(([id]) => document.getElementById(id));
+      if (present.length < 2) { nav.classList.add("hidden"); return; }
+      inner.innerHTML = present.map(([id, label], i) =>
+        `<a href="#${id}" data-target="${id}"${i === 0 ? ' class="active"' : ""}>${esc(label)}</a>`).join("");
+      nav.classList.remove("hidden");
+  
+      inner.querySelectorAll("a").forEach((a) => {
+        a.onclick = (e) => {
+          e.preventDefault();
+          const t = document.getElementById(a.dataset.target);
+          if (t) t.scrollIntoView({ behavior: "smooth", block: "start" });
+        };
+      });
+  
+      // Scroll-spy: highlight the section nearest the top.
+      if (navObserver) navObserver.disconnect();
+      navObserver = new IntersectionObserver((entries) => {
+        entries.forEach((en) => {
+          if (!en.isIntersecting) return;
+          inner.querySelectorAll("a").forEach((a) =>
+            a.classList.toggle("active", a.dataset.target === en.target.id));
+        });
+      }, { rootMargin: "-64px 0px -70% 0px", threshold: 0 });
+      present.forEach(([id]) => { const el = document.getElementById(id); if (el) navObserver.observe(el); });
+    }
   // =====================================================================
   //  DASHBOARD ROUTER
   // =====================================================================
@@ -177,8 +205,10 @@
     $("dashActions").innerHTML = "";
     const roleChip = { athlete: "Athlete", coach: "Coach", fan: "Fan" }[role] || "Member";
     $("dashChips").innerHTML =
-      `<span class="hero-chip"><i class="fa-solid fa-id-badge"></i>${roleChip}</span>` +
-      `<span class="hero-chip"><i class="fa-solid fa-user"></i>${esc((A().user && A().user.username) || "")}</span>`;
+          `<span class="hero-chip"><i class="fa-solid fa-id-badge"></i>${roleChip}</span>` +
+          `<span class="hero-chip"><i class="fa-solid fa-user"></i>${esc((A().user && A().user.username) || "")}</span>`;
+    
+        applyHeroPersonalization(profile);
 
     // Default season to the newest one with data (first render only).
     if (!seasonInitialized) {
@@ -190,9 +220,10 @@
     addAction("switch", '<i class="fa-solid fa-repeat"></i> Change Role', () => { show("onboard"); resetOnboard(); });
     addAction("signout", '<i class="fa-solid fa-arrow-right-from-bracket"></i> Sign Out', () => A().signOut());
 
-    if (role === "athlete") renderAthlete(profile);
-    else if (role === "coach") renderCoach(profile);
-    else renderFan(profile);
+    const navEl = $("dashNav"); if (navEl) navEl.classList.add("hidden");
+        if (role === "athlete") renderAthlete(profile);
+        else if (role === "coach") renderCoach(profile);
+        else renderFan(profile);
   }
   function addSeasonSelect(profile) {
     const seasons = E().listSeasons();
@@ -208,6 +239,85 @@
   }
   function addAction(id, html, fn) { const b = document.createElement("button"); b.className = "xbtn"; b.innerHTML = html; b.onclick = fn; $("dashActions").appendChild(b); }
   function resetOnboard() { obRole = null; obAthlete = null; $("onboardDetails").classList.add("hidden"); $("roleGrid").querySelectorAll(".role-card").forEach((c) => c.classList.remove("sel")); }
+  // ---------- athlete hero personalization ----------
+    function applyHeroPersonalization(profile) {
+      const hero = $("dashHero");
+      const media = $("dashHeroMedia");
+      const avatar = $("dashAvatar");
+      const heroImg = profile.heroImage || "";
+      const avaImg = profile.avatar || "";
+  
+      // Banner
+      if (heroImg) {
+        media.style.backgroundImage = `url("${cssUrl(heroImg)}")`;
+        hero.classList.add("has-media");
+      } else {
+        media.style.backgroundImage = "";
+        hero.classList.remove("has-media");
+      }
+  
+      // Avatar
+      if (avaImg) {
+        avatar.src = avaImg;
+        avatar.classList.remove("hidden");
+      } else {
+        avatar.removeAttribute("src");
+        avatar.classList.add("hidden");
+      }
+  
+      // Customize is available on every dashboard — athletes, coaches, and fans
+      // can all personalize their hero banner + avatar.
+      addAction("customize", '<i class="fa-solid fa-image"></i> Customize', () => openImageEditor(profile));
+    }
+  
+    // Escape a URL for safe use inside a CSS url("...") value.
+    function cssUrl(u) { return String(u).replace(/["\\\n\r]/g, ""); }
+  
+    function openImageEditor(profile) {
+      const back = document.createElement("div");
+      back.className = "img-editor-backdrop";
+      back.innerHTML = `
+        <div class="img-editor" role="dialog" aria-modal="true">
+          <h3>Make it yours</h3>
+          <p class="section-sub">Paste an image link (https://…) for your banner and avatar. Great sources: a race photo, your team hero shot, or a favorite trail.</p>
+          <div class="img-editor-preview" id="ieBannerPrev">${profile.heroImage ? "" : "Banner preview"}</div>
+          <div class="field"><label>Banner image URL</label><input id="ieBanner" type="url" placeholder="https://…" value="${esc(profile.heroImage || "")}"></div>
+          <div class="field"><label>Avatar image URL</label><input id="ieAvatar" type="url" placeholder="https://…" value="${esc(profile.avatar || "")}"></div>
+          <div class="img-editor-actions">
+            <button class="btn-primary" id="ieSave"><i class="fa-solid fa-check"></i> Save</button>
+            <button class="btn-ghost" id="ieClear">Remove images</button>
+            <button class="btn-ghost" id="ieCancel">Cancel</button>
+          </div>
+        </div>`;
+      document.body.appendChild(back);
+  
+      const prev = back.querySelector("#ieBannerPrev");
+      const banner = back.querySelector("#ieBanner");
+      const syncPrev = () => {
+        const v = banner.value.trim();
+        prev.style.backgroundImage = v ? `url("${cssUrl(v)}")` : "";
+        prev.textContent = v ? "" : "Banner preview";
+      };
+      syncPrev(); banner.addEventListener("input", syncPrev);
+  
+      const close = () => back.remove();
+      back.addEventListener("click", (e) => { if (e.target === back) close(); });
+      back.querySelector("#ieCancel").onclick = close;
+      back.querySelector("#ieClear").onclick = async () => {
+        try { await A().saveProfile({ heroImage: "", avatar: "" }); toast("✓ Images removed"); }
+        catch (e) { toast("Couldn't save: " + (e.message || e.code)); }
+        close();
+      };
+      back.querySelector("#ieSave").onclick = async () => {
+        const heroImage = banner.value.trim();
+        const avatar = back.querySelector("#ieAvatar").value.trim();
+        if ((heroImage && !/^https?:\/\//i.test(heroImage)) || (avatar && !/^https?:\/\//i.test(avatar)))
+          return toast("Use full https:// image links.");
+        try { await A().saveProfile({ heroImage, avatar }); toast("✓ Saved"); }
+        catch (e) { toast("Couldn't save: " + (e.message || e.code)); }
+        close();
+      };
+    }
 
   // =====================================================================
   //  ATHLETE DASHBOARD
@@ -231,7 +341,7 @@
     const trendPill = fc ? `<span class="pill ${fc.trend === "improving" ? "up" : fc.trend === "declining" ? "down" : "flat"}">${fc.trend}</span>` : "";
 
     $("dashBody").innerHTML = `
-      <section class="section-block">
+      <section class="section-block" id="sec-snapshot">
         <div class="section-head"><div><h2 class="section-heading">Season Snapshot</h2></div>
           <div class="export-row">
             <button class="xbtn" id="ath-csv"><i class="fa-solid fa-file-csv"></i> Results CSV</button>
@@ -248,7 +358,7 @@
         </div>
       </section>
 
-      <section class="section-block">
+      <section class="section-block" id="sec-performance">
         <div class="section-head"><div><h2 class="section-heading">Performance</h2><p class="section-sub">Race-time progression and rating trend over the season.</p></div></div>
         <div class="charts-grid">
           <div class="chart-card"><div class="chart-card-head"><div><div class="chart-card-title">Time Progression</div><div class="chart-card-sub">Lower = faster</div></div><select class="event-select" id="ath-dist"></select></div><div class="chart-wrap"><canvas id="chartProg"></canvas></div></div>
@@ -258,18 +368,18 @@
         </div>
       </section>
 
-      <section class="section-block">
+      <section class="section-block" id="sec-predictions">
         <div class="section-head"><div><h2 class="section-heading">Race Predictions</h2><p class="section-sub">Projected from your best effort using the Riegel model.</p></div>
           <div class="export-row"><button class="xbtn" id="pred-csv"><i class="fa-solid fa-file-csv"></i> Predictions CSV</button></div></div>
         <div class="table-card"><table class="rt"><thead><tr><th>Distance</th><th>Predicted Time</th><th>Pace / Mile</th></tr></thead><tbody id="predBody"></tbody></table></div>
       </section>
 
-      <section class="section-block">
+      <section class="section-block" id="sec-paces">
         <div class="section-head"><div><h2 class="section-heading">Training Paces</h2><p class="section-sub">Zones derived from your ${sum.best5k ? E().distanceLabel(sum.best5k.distance) : "best"} effort. Guidance only — pair with your coach's plan.</p></div></div>
         <div class="pace-grid" id="paceGrid"></div>
       </section>
 
-      <section class="section-block">
+      <section class="section-block" id="sec-results">
         <div class="section-head"><div><h2 class="section-heading">All Results</h2></div></div>
         <div class="table-card"><table class="rt"><thead><tr><th>Date</th><th>Meet</th><th>Division</th><th>Time</th><th>MSM</th><th>Place</th></tr></thead><tbody id="resBody"></tbody></table></div>
       </section>
@@ -287,25 +397,25 @@
 
     // predictions table
     $("predBody").innerHTML = (sum.predictions || []).map((p) =>
-      `<tr><td>${p.label}</td><td class="mark-col">${fmt(p.seconds)}</td><td>${clock((p.seconds / p.distance) * E().MILE_M)}</td></tr>`).join("")
-      || `<tr><td colspan="3" style="text-align:center;padding:1.5rem;">Not enough data.</td></tr>`;
+          `<tr><td data-label="Distance">${p.label}</td><td data-label="Predicted Time" class="mark-col">${fmt(p.seconds)}</td><td data-label="Pace / Mile">${clock((p.seconds / p.distance) * E().MILE_M)}</td></tr>`).join("")
+          || `<tr><td colspan="3" style="text-align:center;padding:1.5rem;">Not enough data.</td></tr>`;
 
     // paces
     renderPaces(sum.paces);
 
     // results table
     $("resBody").innerHTML = sum.rows.map((r) => {
-      const distKey = String(Math.round(Number(r.distance)));
-      const isPB = sum.pbs[distKey] && sum.pbs[distKey].timeSec === r.timeSec;
-      return `<tr>
-        <td>${r.date ? new Date(r.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—"}</td>
-        <td>${esc(r.meet?.name || r.meet_slug || "—")}</td>
-        <td>${esc(r.race_type || "—")}</td>
-        <td class="mark-col">${fmt(r.timeSec)}${isPB ? ' <span class="pill up" style="font-size:0.6rem;">PB</span>' : ""}</td>
-        <td>${r.msm ?? "—"}</td>
-        <td>${r.place ? r.place + ordinal(r.place) : "—"}</td>
-      </tr>`;
-    }).join("");
+          const distKey = String(Math.round(Number(r.distance)));
+          const isPB = sum.pbs[distKey] && sum.pbs[distKey].timeSec === r.timeSec;
+          return `<tr>
+            <td data-label="Date">${r.date ? new Date(r.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—"}</td>
+            <td data-label="Meet">${esc(r.meet?.name || r.meet_slug || "—")}</td>
+            <td data-label="Division">${esc(r.race_type || "—")}</td>
+            <td data-label="Time" class="mark-col">${fmt(r.timeSec)}${isPB ? ' <span class="pill up" style="font-size:0.6rem;">PB</span>' : ""}</td>
+            <td data-label="MSM">${r.msm ?? "—"}</td>
+            <td data-label="Place">${r.place ? r.place + ordinal(r.place) : "—"}</td>
+          </tr>`;
+        }).join("");
 
     // exports
     $("ath-csv").onclick = () => {
@@ -328,6 +438,13 @@
       (sum.predictions || []).forEach((p) => rows.push([p.label, fmt(p.seconds), p.seconds.toFixed(1), clock((p.seconds / p.distance) * E().MILE_M)]));
       dl(`${E().slugify(sum.name)}_predictions.csv`, "text/csv", rows.map(csvRow).join("\n")); toast("✓ Predictions CSV");
     };
+    buildSectionNav([
+          ["sec-snapshot", "Snapshot"],
+          ["sec-performance", "Performance"],
+          ["sec-predictions", "Predictions"],
+          ["sec-paces", "Paces"],
+          ["sec-results", "Results"],
+        ]);
   }
 
   function renderPaces(paces) {
@@ -471,7 +588,7 @@
         </section>
 
         <section class="section-block" id="simSection">
-          <div class="section-head"><div><h2 class="section-heading">Meet Simulator</h2><p class="section-sub">Pick a course, build the field, and project places + team scores. Times are course-adjusted from each runner's season.</p></div>
+          <div class="section-head"><div><h2 class="section-heading">Meet Simulator</h2><p class="section-sub">Pick a course, build the field, and project places + team scores from recent meet form. The default uses the last three selected results — not lifetime PRs.</p></div>
             <div class="export-row"><button class="xbtn" id="sim-csv"><i class="fa-solid fa-file-csv"></i> Sim CSV</button><button class="xbtn" id="sim-pdf"><i class="fa-solid fa-file-pdf"></i> Sim PDF</button></div>
           </div>
           <div class="card">
@@ -480,20 +597,55 @@
                 <div class="seg" id="sim-mode"><button class="seg-btn active" data-m="teams">Pick teams</button><button class="seg-btn" data-m="meet">Load a meet</button></div>
               </div>
               <div class="field-inline"><label class="stat-lbl">Course</label><select class="plain-select" id="sim-course"></select></div>
-              <div class="field-inline"><label class="stat-lbl">Time basis</label><select class="plain-select" id="sim-basis"><option value="adjusted">Course-adjusted</option><option value="raw">Season-best raw</option></select></div>
+              <div class="field-inline"><label class="stat-lbl">Time basis</label><select class="plain-select" id="sim-basis"><option value="recent">Recent form · last 3 meets</option><option value="adjusted">Best course-adjusted effort</option><option value="raw">Fastest raw time · what-if</option></select></div>
+              <div class="field-inline"><label class="stat-lbl">Division</label><div class="seg" id="sim-gender"><button class="seg-btn active" data-g="M">Boys</button><button class="seg-btn" data-g="F">Girls</button></div></div>
             </div>
             <div id="sim-teams-mode" style="margin-top:14px;">
               <div class="ta-wrap"><label class="stat-lbl">Add opponent teams</label><input class="ta-input" id="sim-team-input" placeholder="Search schools to add…"><div class="ta-drop" id="sim-team-drop"></div></div>
               <div class="follow-chips" id="sim-team-chips"></div>
             </div>
             <div id="sim-meet-mode" class="hidden" style="margin-top:14px;">
-              <label class="stat-lbl">Meet</label><select class="plain-select" id="sim-meet-select" style="min-width:280px;"></select>
+              <label class="stat-lbl">Load a meet field</label><select class="plain-select" id="sim-meet-select" style="min-width:280px;"></select>
+              <div id="sim-meet-field"></div>
             </div>
+            <div id="sim-source-meets" style="margin-top:14px;"><label class="stat-lbl">Use results from selected meets <span class="section-sub">(empty = all current-season results)</span></label><div id="sim-source-list" class="lineup-grid"></div></div>
             <div style="margin-top:14px;"><button class="btn-primary" id="sim-run" style="width:auto;"><i class="fa-solid fa-play"></i> Run Simulation</button>
               <button class="xbtn" id="sim-lineup-toggle" style="margin-left:8px;"><i class="fa-solid fa-user-pen"></i> Edit my lineup</button></div>
             <div id="sim-lineup" class="hidden" style="margin-top:14px;"></div>
           </div>
           <div id="sim-results" style="margin-top:1rem;"></div>
+        </section>
+
+        <section class="section-block" id="coachToolkit">
+          <div class="section-head"><div><h2 class="section-heading">Upcoming Meet Outlook</h2><p class="section-sub">The meets ahead (with expected teams, same source as meet.html) and how your scoring 5 projects against every likely opponent.</p></div></div>
+          <div id="outlookBody"><div class="spin"><i class="fa-solid fa-circle-notch fa-spin"></i></div></div>
+        </section>
+
+        <section class="section-block">
+          <div class="section-head"><div><h2 class="section-heading">Split Coach</h2><p class="section-sub">A pacing plan per athlete — built from their own PB curve, not a population average.</p></div>
+            <div class="export-row">
+              <select class="plain-select" id="split-course"><option value="">Default 5K course</option></select>
+              <select class="plain-select" id="split-athlete"></select>
+              <input class="plain-select" id="split-goal" type="number" min="300" step="1" placeholder="Goal time (sec, optional)" style="max-width:190px;">
+            </div>
+          </div>
+          <div id="splitBody"></div>
+        </section>
+
+        <section class="section-block">
+          <div class="section-head"><div><h2 class="section-heading">Mileage Plan Generator</h2><p class="section-sub">A week-by-week build to a goal race — down weeks, peak, taper, and day-by-day workouts.</p></div>
+            <div class="export-row">
+              <input class="plain-select" id="mp-race" type="text" placeholder="Race name (e.g. Regional)">
+              <input class="plain-select" id="mp-date" type="date">
+              <input class="plain-select" id="mp-current" type="number" min="5" max="120" value="25" title="Current weekly miles">
+              <input class="plain-select" id="mp-peak" type="number" min="10" max="140" value="35" title="Peak weekly miles">
+              <select class="plain-select" id="mp-days"><option value="6">6 days/wk</option><option value="7">7 days/wk</option><option value="5">5 days/wk</option><option value="4">4 days/wk</option><option value="3">3 days/wk</option></select>
+              <select class="plain-select" id="mp-anchor"><option value="scorer">Paces: top scorer</option><option value="athlete">Paces: pick runner</option></select>
+              <select class="plain-select" id="mp-athlete"><option value="">— pick a runner —</option></select>
+              <button class="xbtn" id="mp-generate"><i class="fa-solid fa-wand-magic-sparkles"></i> Generate Plan</button>
+            </div>
+          </div>
+          <div id="mpBody"><div class="empty-state" style="padding:1.5rem;"><i class="fa-solid fa-wand-magic-sparkles"></i><p>Set current & peak miles, a goal date, and Generate.</p></div></div>
         </section>
 
         <section class="section-block">
@@ -516,16 +668,16 @@
 
       $("lineupBody").innerHTML = ci.scoring5.map((s, i) => {
         const t = s.forecast ? s.forecast.trend : "flat";
-        return `<tr><td>${i + 1}</td><td>${esc(s.name)}</td><td class="mark-col">${fmt(s.best5k.timeSec)}</td><td>${s.bestMsm ?? "—"}</td><td>${s.raceCount}</td><td><span class="pill ${t === "improving" ? "up" : t === "declining" ? "down" : "flat"}">${t}</span></td></tr>`;
+        return `<tr><td data-label="#">${i + 1}</td><td data-label="Athlete">${esc(s.name)}</td><td data-label="Best Effort" class="mark-col">${fmt(s.best5k.timeSec)}</td><td data-label="Best MSM">${s.bestMsm ?? "—"}</td><td data-label="Races">${s.raceCount}</td><td data-label="Trend"><span class="pill ${t === "improving" ? "up" : t === "declining" ? "down" : "flat"}">${t}</span></td></tr>`;
       }).join("") || `<tr><td colspan="6" style="text-align:center;padding:1.5rem;">Need 5 runners with times.</td></tr>`;
 
       $("improveBody").innerHTML = ci.improvers.map((s) =>
-        `<tr><td>${esc(s.name)}</td><td>${s.forecast.current}</td><td class="pos">+${s.forecast.slopePerWeek.toFixed(1)}/wk</td><td>${s.forecast.projectedRating}</td></tr>`).join("")
-        || `<tr><td colspan="4" style="text-align:center;padding:1.5rem;">No clear improvers yet.</td></tr>`;
+              `<tr><td data-label="Athlete">${esc(s.name)}</td><td data-label="Current">${s.forecast.current}</td><td data-label="Rate" class="pos">+${s.forecast.slopePerWeek.toFixed(1)}/wk</td><td data-label="3-wk Projection">${s.forecast.projectedRating}</td></tr>`).join("")
+              || `<tr><td colspan="4" style="text-align:center;padding:1.5rem;">No clear improvers yet.</td></tr>`;
 
       $("rosterBody").innerHTML = roster.map((s) =>
-        `<tr><td>${esc(s.name)}</td><td class="mark-col">${s.best5k ? fmt(s.best5k.timeSec) : "—"}</td><td>${s.bestMsm ?? "—"}</td><td>${s.best5k ? fmt(E().riegel(s.best5k.timeSec, s.best5k.distance, 5000)) : "—"}</td><td>${s.raceCount}</td><td>${s.meetCount}</td></tr>`).join("")
-        || `<tr><td colspan="6" style="text-align:center;padding:1.5rem;">No athletes found for this school.</td></tr>`;
+              `<tr><td data-label="Athlete">${esc(s.name)}</td><td data-label="Best Effort" class="mark-col">${s.best5k ? fmt(s.best5k.timeSec) : "—"}</td><td data-label="Best MSM">${s.bestMsm ?? "—"}</td><td data-label="5K Equiv">${s.best5k ? fmt(E().riegel(s.best5k.timeSec, s.best5k.distance, 5000)) : "—"}</td><td data-label="Races">${s.raceCount}</td><td data-label="Meets">${s.meetCount}</td></tr>`).join("")
+              || `<tr><td colspan="6" style="text-align:center;padding:1.5rem;">No athletes found for this school.</td></tr>`;
 
       // exports
       $("coach-csv").onclick = () => {
@@ -548,6 +700,7 @@
       renderStatewide(profile.schoolSlug, gender);
       renderTips(roster);
       setupSimulator(profile, gender);
+      setupCoachToolkit(profile, gender);
       $("sim-csv").onclick = simExportCSV;
       $("sim-pdf").onclick = simExportPDF;
     };
@@ -576,8 +729,9 @@
       const t = s.best5k.timeSec;
       const gap = prev != null ? t - prev : null; prev = t;
       const role = i < 5 ? "Scorer" : "Displacer";
-      return `<tr><td>${i + 1}</td><td>${esc(s.name)}</td><td class="mark-col">${fmt(t)}</td><td>${s.bestMsm ?? "—"}</td><td>${gap != null ? "+" + fmt(gap) : "—"}</td><td><span class="pill ${i < 5 ? "up" : "flat"}">${role}</span></td></tr>`;
-    }).join("") || `<tr><td colspan="6" style="text-align:center;padding:1.5rem;">No timed runners.</td></tr>`;
+      return `<tr><td data-label="#">${i + 1}</td><td data-label="Athlete">${esc(s.name)}</td><td data-label="Best Effort" class="mark-col">${fmt(t)}</td><td data-label="Best MSM">${s.bestMsm ?? "—"}</td><td data-label="Gap to Prev">${gap != null ? "+" + fmt(gap) : "—"}</td><td data-label="Role"><span class="pill ${i < 5 ? "up" : "flat"}">${role}</span></td></tr>`;
+    }).join("")
+    || `<tr><td colspan="6" style="text-align:center;padding:1.5rem;">No athletes found for this school.</td></tr>`;
   }
   function wirePackSeg(roster) {
     $("pack-seg").querySelectorAll(".seg-btn").forEach((b) => {
@@ -597,11 +751,15 @@
     let list = cmp.teams;
     if (cmp.rank && cmp.rank > 8) list = cmp.teams.slice(Math.max(0, cmp.rank - 5), cmp.rank + 3);
     else list = cmp.teams.slice(0, 15);
-    $("swBody").innerHTML = list.map((t) => {
+    $("swBody").innerHTML = `<div class="app-list"><div class="list-header">Statewide Team Comparison</div>${list.map((t) => {
       const isMe = t.schoolSlug === schoolSlug;
       const rank = cmp.teams.indexOf(t) + 1;
-      return `<tr style="${isMe ? "background:var(--bg-secondary);font-weight:700;" : ""}"><td>${rank}</td><td>${esc(t.school)}${isMe ? ' <span class="pill up" style="font-size:0.6rem;">YOU</span>' : ""}</td><td class="mark-col">${t.avgRating}</td><td>${t.spreadRating != null ? t.spreadRating : "—"}</td><td>${t.depth}</td></tr>`;
-    }).join("") || `<tr><td colspan="5" style="text-align:center;padding:1.5rem;">No scoring teams this season.</td></tr>`;
+      return `<div class="list-item">
+        <div class="item-place">${rank}</div>
+        <div class="item-details"><div class="item-name">${esc(t.school)}${isMe ? ' <span class="pill up" style="font-size:0.6rem;">YOU</span>' : ""}</div><div class="item-meta">Depth ${t.depth} · 1–5 gap ${t.spreadRating != null ? t.spreadRating : "—"}</div></div>
+        <div class="item-score"><div class="score-stack"><span class="score-rating">${t.avgRating}</span><span class="score-predicted">Scoring 5 rating</span></div></div>
+      </div>`;
+    }).join("") || '<div class="empty-state">No data.</div>'}</div>`;
   }
 
   // ---- Advanced training tips ----
@@ -651,22 +809,47 @@
     doc.save(`${school.name || "team"}_coach_sheet.pdf`); toast("✓ Coach sheet PDF");
   }
 
+  function setupCoachToolkit(profile, gender) {
+    // Fill the split-coach course select (all courses, 5K default first).
+    const sel = $("split-course");
+    if (sel && !sel.dataset.populated) {
+      sel.innerHTML = '<option value="">Default 5K course</option>' +
+        E().listCourses().map((c) => `<option value="${esc(c.slug)}">${esc(c.name)}${c.difficulty ? " · " + esc(c.difficulty) : ""}</option>`).join("");
+      sel.dataset.populated = "1";
+    }
+    if (window.MSMCoach) window.MSMCoach.init(profile, gender);
+  }
+
   // =====================================================================
   //  MEET SIMULATOR (coach)
   // =====================================================================
-  const simState = { mode: "teams", opponents: [], myLineup: null };
+  const simState = { mode: "teams", gender: "M", opponents: [], myLineup: null, sourceMeetSlugs: [] };
   function setupSimulator(profile, gender) {
     simState.mode = "teams";
+    simState.gender = gender || "M";
     simState.opponents = [];
     simState.myLineup = null; // null = auto top 7
+    simState.sourceMeetSlugs = [];
     const school = E().state.schoolsMap[profile.schoolSlug] || { name: profile.schoolSlug };
 
     // Course select (default to a 5K course if present)
     const courses = E().listCourses();
     $("sim-course").innerHTML = courses.map((c) => `<option value="${esc(c.slug)}">${esc(c.name)}${c.difficulty ? " · " + esc(c.difficulty) : ""}</option>`).join("");
 
-    // Meet select
-    $("sim-meet-select").innerHTML = E().listMeets().map((m) => `<option value="${esc(m.slug)}">${esc(m.name)}${m.date ? " (" + String(m.date).split("T")[0] + ")" : ""}</option>`).join("");
+    // Meet select used for the field itself.
+    $("sim-meet-select").innerHTML = '<option value="">— Select a meet —</option>' +
+      E().listMeets().map((m) => `<option value="${esc(m.slug)}">${esc(m.name)}${m.date ? " (" + String(m.date).split("T")[0] + ")" : ""}</option>`).join("");
+
+    // Gender toggle: both divisions live in the same simulator. Rebuilding
+    // the source selector also resets the default lineup to this division.
+    $("sim-gender").querySelectorAll(".seg-btn").forEach((b) => {
+      b.onclick = () => {
+        simState.gender = b.dataset.g;
+        $("sim-gender").querySelectorAll(".seg-btn").forEach((x) => x.classList.toggle("active", x === b));
+        setupSimulationSources(profile);
+        renderLineupEditor(profile, simState.gender);
+      };
+    });
 
     // Mode toggle
     $("sim-mode").querySelectorAll(".seg-btn").forEach((b) => {
@@ -678,26 +861,42 @@
       };
     });
 
-    // Opponent typeahead (exclude own school + already-added)
     typeahead($("sim-team-input"), $("sim-team-drop"),
       () => E().listSchools().filter((s) => s.slug !== profile.schoolSlug && !simState.opponents.includes(s.slug)).map((s) => ({ name: s.name, slug: s.slug })),
       (item) => { simState.opponents.push(item.slug); $("sim-team-input").value = ""; renderOppChips(); });
     renderOppChips();
 
-    // When meet-mode meet changes, auto-pick that meet's course.
     $("sim-meet-select").onchange = () => {
-      const m = E().listMeets().find((x) => x.slug === $("sim-meet-select").value);
+      const slug = $("sim-meet-select").value;
+      const m = E().listMeets().find((x) => x.slug === slug);
       if (m && m.course_slug) $("sim-course").value = m.course_slug;
+      renderMeetFieldPreview(slug);
     };
+    $("sim-course").onchange = () => { if ($("sim-meet-select").value) renderMeetFieldPreview($("sim-meet-select").value); };
 
-    // Lineup editor
     $("sim-lineup-toggle").onclick = () => {
       const box = $("sim-lineup");
       box.classList.toggle("hidden");
-      if (!box.classList.contains("hidden")) renderLineupEditor(profile, gender);
+      if (!box.classList.contains("hidden")) renderLineupEditor(profile, simState.gender);
     };
 
-    $("sim-run").onclick = () => runSim(profile, gender, school);
+    $("sim-run").onclick = () => runSim(profile, simState.gender, school);
+    setupSimulationSources(profile);
+  }
+
+  function setupSimulationSources(profile) {
+    const box = $("sim-source-list");
+    if (!box) return;
+    const g = simState.gender;
+    const seasonRows = E().state.results.filter((r) => r.gender === g && r.timeSec != null && r.school_slug && r.school_slug !== "unattached" && String(currentSeason) === String(new Date(r.date).getFullYear()) && !E().isNonCompetitive(r.meet_slug));
+    const counts = {};
+    seasonRows.forEach((r) => { counts[r.meet_slug] = (counts[r.meet_slug] || 0) + 1; });
+    const meets = E().listMeets().filter((m) => counts[m.slug]).sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")));
+    simState.sourceMeetSlugs = meets.slice(0, 3).map((m) => m.slug);
+    box.innerHTML = meets.map((m) => `<label class="lineup-item"><input type="checkbox" data-sim-source="${esc(m.slug)}" ${simState.sourceMeetSlugs.includes(m.slug) ? "checked" : ""}> ${esc(m.name)} <small>${counts[m.slug]} results</small></label>`).join("") || '<div class="section-sub">No current-season results available for this division.</div>';
+    box.querySelectorAll("input[data-sim-source]").forEach((cb) => cb.onchange = () => {
+      simState.sourceMeetSlugs = [...box.querySelectorAll("input[data-sim-source]:checked")].map((x) => x.dataset.simSource);
+    });
   }
 
   function renderOppChips() {
@@ -725,6 +924,24 @@
     });
   }
 
+  // ---- Meet-mode field preview (expected teams, same source as meet.html) ----
+  function renderMeetFieldPreview(meetSlug) {
+    const box = $("sim-meet-field");
+    if (!box) return;
+    if (!meetSlug) { box.innerHTML = ""; return; }
+    const meet = E().state.meetsMap[meetSlug] || {};
+    const expected = E().meetExpectedTeams(meetSlug);
+    const raced = new Set(E().state.results.filter((r) => r.meet_slug === meetSlug).map((r) => r.school_slug).filter(Boolean));
+    if (!expected.length) {
+      box.innerHTML = `<div class="section-sub" style="margin-top:10px;">No expected-teams list on this meet record — the sim will load the teams that raced there${meet.date ? " on " + esc(String(meet.date).split("T")[0]) : ""}.</div>`;
+      return;
+    }
+    const chips = expected.map((t) =>
+      `<a class="expected-team-chip" href="/CrossCountry/school.html?slug=${esc(t.slug)}" target="_blank" rel="noopener" title="Open ${esc(t.name)}">` +
+      `<img src="/assets/team logos/${esc(t.slug)}.png" alt="" onerror="this.src='/assets/images/msmrunner.svg'">${esc(t.name)}</a>`).join("");
+    box.innerHTML = `<div class="section-sub" style="margin-top:10px;"><strong>${expected.length} expected teams</strong> from the meet record.${expected.some((t) => raced.has(t.slug)) ? " Teams that have already raced there this season use their results from that meet when you run the sim." : ""}</div><div class="expected-teams-list">${chips}</div>`;
+  }
+
   let lastSim = null;
   function runSim(profile, gender, school) {
     const courseSlug = $("sim-course").value;
@@ -733,8 +950,11 @@
 
     if (simState.mode === "meet") {
       const meetSlug = $("sim-meet-select").value;
-      // Teams that actually competed at that meet (this gender).
-      const slugs = new Set();
+      if (!meetSlug) return toast("Pick a meet to load its field.");
+      // Expected teams from the meet record (mirrors meet.html's
+      // teams || expected_teams), unioned with teams that actually raced
+      // there at this gender, plus the coach's own squad.
+      const slugs = new Set(E().meetExpectedTeams(meetSlug).map((t) => t.slug));
       E().state.results.forEach((r) => { if (r.meet_slug === meetSlug && r.gender === gender && r.school_slug) slugs.add(r.school_slug); });
       slugs.add(profile.schoolSlug);
       teamList = [...slugs].map((s) => ({ schoolSlug: s, includedNames: s === profile.schoolSlug ? simState.myLineup : null }));
@@ -744,8 +964,9 @@
         .concat(simState.opponents.map((s) => ({ schoolSlug: s, includedNames: null })));
     }
 
-    const sim = E().simulateMeet({ teamList, gender, season: currentSeason, courseSlug, basis });
-    lastSim = { sim, gender, courseName: (E().state.coursesMap[courseSlug] || {}).name || courseSlug, mySlug: profile.schoolSlug };
+    const sim = E().simulateMeet({ teamList, gender, season: currentSeason, courseSlug, basis, sourceMeetSlugs: simState.sourceMeetSlugs });
+    const meetName = simState.mode === "meet" ? ((E().state.meetsMap[$("sim-meet-select").value] || {}).name || "") : "";
+    lastSim = { sim, gender, courseName: (E().state.coursesMap[courseSlug] || {}).name || courseSlug, mySlug: profile.schoolSlug, meetName };
     renderSimResults(lastSim);
   }
 
@@ -753,7 +974,7 @@
     const { sim, mySlug, courseName } = ctx;
     if (!sim.field.length) { $("sim-results").innerHTML = `<div class="empty-state"><i class="fa-solid fa-flag-checkered"></i><p>No runners to simulate. Check your teams and season.</p></div>`; return; }
     const distLabel = E().distanceLabel(sim.distance);
-    const basisLabel = sim.basis === "raw" ? "season-best raw times" : "course-adjusted projections";
+    const basisLabel = sim.basis === "raw" ? "fastest raw times (what-if)" : sim.basis === "recent" ? "weighted recent form from selected meets" : "best course-adjusted effort";
 
     const standings = sim.teams.map((t, i) =>
       `<tr style="${t.schoolSlug === mySlug ? "background:var(--bg-secondary);font-weight:700;" : ""}">
@@ -775,12 +996,40 @@
         <td>${e.scoringPlace ? "+" + e.scoringPlace : "—"}</td>
       </tr>`).join("");
 
+    // Determine winner (lowest score wins)
+    const winnerSlug = sim.teams.filter((t) => t.score != null).sort((a, b) => a.score - b.score)[0]?.schoolSlug || "";
+
+    // Team standings — wrap each row in a card with animation
+    const standingsHTML = sim.teams.map((t, i) => {
+      const isWinner = t.schoolSlug === winnerSlug && t.score != null;
+      const isMine = t.schoolSlug === mySlug;
+      return `<div class="sim-team-card${isWinner ? ' sim-winner' : ''}" style="margin-bottom:8px;padding:10px 14px;border:1px solid var(--border);border-radius:var(--radius-lg);background:var(--bg-primary);display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+        <span class="sim-place" style="font-family:var(--font-display);font-size:1.4rem;font-weight:800;min-width:32px;">${t.complete ? i + 1 : "—"}</span>
+        <span style="font-weight:700;font-size:0.9rem;flex:1;">${esc(t.school)}${isMine ? ' <span class="pill up" style="font-size:0.6rem;">YOU</span>' : ""}${t.complete ? "" : ' <span class="section-sub">(incomplete)</span>'}</span>
+        <span class="sim-score" style="font-family:var(--font-display);font-size:1.3rem;font-weight:800;color:${isWinner ? 'var(--success, #10b981)' : 'var(--text-primary)'};">${t.score != null ? t.score : "—"}</span>
+        <span style="font-size:0.78rem;color:var(--text-tertiary);">${t.teamAvg != null ? fmt(t.teamAvg) + ' avg' : ''}${t.spread15 != null ? ' · ' + fmt(t.spread15) + ' spread' : ''}</span>
+        <span style="font-size:0.78rem;color:var(--text-tertiary);margin-left:auto;">${t.top5.map((r) => "#" + r.scoringPlace).filter((x) => !x.includes("null")).join(" ") || "—"}</span>
+      </div>`;
+    }).join("");
+
+    const fieldHTML = sim.field.map((e) => {
+      const isWinner = e.schoolSlug === winnerSlug && e.scoringPlace != null && e.scoringPlace <= 5;
+      return `<tr style="${e.schoolSlug === mySlug ? "background:var(--bg-secondary);" : ""}${isWinner && e.place <= 7 ? "background:rgba(16,185,129,0.08);" : ""}">
+        <td class="mark-col sim-place" style="font-family:var(--font-display);font-weight:800;">${e.place}</td>
+        <td data-label="Athlete">${esc(e.name)}${isWinner ? ' <span class="pill up" style="font-size:0.55rem;">🏆</span>' : ""}</td>
+        <td data-label="School">${esc((E().state.schoolsMap[e.schoolSlug] || {}).name || e.schoolSlug)}</td>
+        <td class="mark-col">${fmt(e.timeSec)}</td>
+        <td>${clock((e.timeSec / sim.distance) * E().MILE_M)}</td>
+        <td class="mark-col">${e.scoringPlace ? "+" + e.scoringPlace : "—"}</td>
+      </tr>`;
+    }).join("");
+
     $("sim-results").innerHTML = `
-      <div class="section-sub" style="margin-bottom:10px;">Simulated on <strong>${esc(courseName)}</strong> at ${distLabel}, using ${basisLabel}. ${sim.teams.filter((t) => t.complete).length} scoring teams · ${sim.field.length} runners.</div>
+      <div class="section-sub" style="margin-bottom:12px;">${ctx.meetName ? `Projected field for <strong>${esc(ctx.meetName)}</strong> — ` : ""}simulated on <strong>${esc(courseName)}</strong> at ${distLabel}, using ${basisLabel}. ${sim.teams.filter((t) => t.complete).length} scoring teams · ${sim.field.length} runners.</div>
       <div class="section-head" style="margin-bottom:0.6rem;"><h3 class="section-heading" style="font-size:1.05rem;">Projected Team Standings</h3></div>
-      <div class="table-card" style="margin-bottom:1.25rem;"><table class="rt"><thead><tr><th>Place</th><th>School</th><th>Score</th><th>Top-5 Avg</th><th>1–5 Split</th><th>Scorers</th></tr></thead><tbody>${standings}</tbody></table></div>
-      <div class="section-head" style="margin-bottom:0.6rem;"><h3 class="section-heading" style="font-size:1.05rem;">Projected Individual Finish</h3></div>
-      <div class="table-card"><table class="rt"><thead><tr><th>Place</th><th>Athlete</th><th>School</th><th>Proj Time</th><th>Pace/Mi</th><th>Pts</th></tr></thead><tbody>${field}</tbody></table></div>
+      <div class="sim-results animating">${standingsHTML}</div>
+      <div class="section-head" style="margin-bottom:0.6rem;margin-top:1rem;"><h3 class="section-heading" style="font-size:1.05rem;">Projected Individual Finish</h3></div>
+      <div class="table-card"><table class="rt"><thead><tr><th>Place</th><th>Athlete</th><th>School</th><th>Proj Time</th><th>Pace/Mi</th><th>Pts</th></tr></thead><tbody>${fieldHTML}</tbody></table></div>
     `;
   }
 
@@ -799,86 +1048,631 @@
     doc.setFontSize(16); doc.setFont("helvetica", "bold");
     doc.text(`Meet Simulation — ${gender === "M" ? "Boys" : "Girls"}`, 14, 18);
     doc.setFontSize(9); doc.setFont("helvetica", "normal");
-    doc.text(`${courseName} · ${E().distanceLabel(sim.distance)} · ${sim.basis === "raw" ? "raw times" : "course-adjusted"} · ${new Date().toLocaleDateString()}`, 14, 25);
+    doc.text(`${courseName} · ${E().distanceLabel(sim.distance)} · ${sim.basis === "raw" ? "fastest raw what-if" : sim.basis === "recent" ? "weighted recent form" : "best course-adjusted effort"} · ${new Date().toLocaleDateString()}`, 14, 25);
     doc.autoTable({ head: [["Place", "School", "Score", "Top-5 Avg", "1-5 Split"]], body: sim.teams.map((t, i) => [t.complete ? i + 1 : "—", t.school, t.score ?? "—", t.teamAvg != null ? fmt(t.teamAvg) : "—", t.spread15 != null ? fmt(t.spread15) : "—"]), startY: 31, styles: { fontSize: 9 }, headStyles: { fillColor: [0, 0, 0] } });
     doc.autoTable({ head: [["Place", "Athlete", "School", "Proj Time", "Pace/Mi", "Pts"]], body: sim.field.map((e) => [e.place, e.name, (E().state.schoolsMap[e.schoolSlug] || {}).name || e.schoolSlug, fmt(e.timeSec), clock((e.timeSec / sim.distance) * E().MILE_M), e.scoringPlace ?? "—"]), startY: doc.lastAutoTable.finalY + 8, styles: { fontSize: 8 }, headStyles: { fillColor: [0, 0, 0] } });
     doc.save(`meet_simulation_${gender}.pdf`); toast("✓ Simulation PDF");
   }
 
   // =====================================================================
-  //  FAN DASHBOARD
+  //  FAN DASHBOARD — enhanced with live feed, team review, expected teams, rankings
   // =====================================================================
+  const FAN_SECTIONS = ["liveFeed", "teamReview", "expectedTeams", "meetSim", "rankings", "follow"];
+  const FAN_SECTION_LABELS = { liveFeed: "Live Feed", teamReview: "Team Review", expectedTeams: "Expected Teams", meetSim: "Meet Sim", rankings: "Rankings", follow: "Follow" };
+  let fanActiveSection = "liveFeed";
+
   function renderFan(profile) {
     $("dashTitle").textContent = "Fan Zone";
-    $("dashSub").textContent = "Follow runners and teams, compare head-to-head, watch the leaderboards.";
+    $("dashSub").textContent = "Live results, team matchups, meet sims, and the state rankings.";
     const follows = (profile.follows) || { athletes: [], schools: [] };
 
     $("dashBody").innerHTML = `
-      <section class="section-block card">
-        <h2 class="section-heading" style="font-size:1.15rem;">Follow Athletes</h2>
-        <p class="section-sub" style="margin-bottom:10px;">Search and tap to follow. Followed runners show up in your compare tool.</p>
-        <div class="ta-wrap"><input class="ta-input" id="fanFollowInput" placeholder="Search athletes to follow…"><div class="ta-drop" id="fanFollowDrop"></div></div>
-        <div class="follow-chips" id="followChips"></div>
-      </section>
+      <!-- Fan section nav -->
+      <div class="fan-nav" id="fanNav"></div>
 
-      <section class="section-block">
-        <div class="section-head"><div><h2 class="section-heading">Head-to-Head Compare</h2><p class="section-sub">Overlay two runners' progression and see the gap.</p></div>
-          <div class="export-row"><button class="xbtn" id="cmp-png"><i class="fa-solid fa-image"></i> PNG</button><button class="xbtn" id="cmp-csv"><i class="fa-solid fa-file-csv"></i> CSV</button></div></div>
-        <div class="card">
-          <div class="compare-controls">
-            <div class="ta-wrap"><label class="stat-lbl">Runner A</label><input class="ta-input" id="cmpAInput" placeholder="Search…"><div class="ta-drop" id="cmpADrop"></div></div>
-            <div class="ta-wrap"><label class="stat-lbl">Runner B</label><input class="ta-input" id="cmpBInput" placeholder="Search…"><div class="ta-drop" id="cmpBDrop"></div></div>
+      <!-- Live Results Feed -->
+      <section class="section-block" id="sec-liveFeed">
+        <div class="section-head"><div><h2 class="section-heading"><i class="fa-solid fa-bolt" style="color:var(--danger, #ef4444);"></i> Live Results Feed</h2><p class="section-sub">Recent results across West Virginia — updates as races are logged.</p></div>
+          <div class="export-row">
+            <select class="plain-select" id="live-gender"><option value="all">All</option><option value="M">Boys</option><option value="F">Girls</option></select>
+            <select class="plain-select" id="live-limit"><option value="20">Last 20</option><option value="50">Last 50</option><option value="100">Last 100</option></select>
           </div>
-          <div class="stat-grid" id="cmpStats" style="margin-top:16px;"></div>
-          <div class="chart-wrap" style="height:280px;margin-top:16px;"><canvas id="chartCompare"></canvas></div>
+        </div>
+        <div class="card" style="padding:0;overflow:hidden;">
+          <div class="live-ticker" id="liveTicker" style="overflow-y:auto;max-height:480px;"></div>
         </div>
       </section>
 
-      <section class="section-block">
-        <div class="section-head"><div><h2 class="section-heading">State Leaderboard</h2><p class="section-sub">Top MSM ratings, all-time.</p></div>
-          <div class="export-row"><select class="plain-select" id="lb-gender"><option value="M">Boys</option><option value="F">Girls</option></select><button class="xbtn" id="lb-csv"><i class="fa-solid fa-file-csv"></i> CSV</button></div></div>
-        <div class="table-card"><table class="rt"><thead><tr><th>#</th><th>Athlete</th><th>School</th><th>Best MSM</th></tr></thead><tbody id="lbBody"></tbody></table></div>
+      <!-- Team Review -->
+      <section class="section-block" id="sec-teamReview">
+        <div class="section-head"><div><h2 class="section-heading"><i class="fa-solid fa-clipboard-list"></i> Team Review</h2><p class="section-sub">Dive into any school's roster, recent results, and trends.</p></div></div>
+        <div class="card">
+          <div class="sim-controls" style="margin-bottom:14px;">
+            <div class="field-inline"><label class="stat-lbl">School</label><select class="plain-select" id="teamReview-school" style="min-width:280px;"></select></div>
+            <div class="field-inline"><label class="stat-lbl">Gender</label><select class="plain-select" id="teamReview-gender"><option value="M">Boys</option><option value="F">Girls</option></select></div>
+            <div class="field-inline"><label class="stat-lbl">Season</label><select class="plain-select" id="teamReview-season"></select></div>
+          </div>
+          <div id="teamReview-body"><div class="spin"><i class="fa-solid fa-circle-notch fa-spin"></i> Loading…</div></div>
+        </div>
+      </section>
+
+      <!-- Expected Teams Matchup -->
+      <section class="section-block" id="sec-expectedTeams">
+        <div class="section-head"><div><h2 class="section-heading"><i class="fa-solid fa-trophy"></i> Expected Teams</h2><p class="section-sub">Load a meet's expected field (same source as meet.html), see every team as a chip, and head-to-head any two.</p></div></div>
+        <div class="card">
+          <div class="sim-controls" style="margin-bottom:14px;">
+            <div class="field-inline"><label class="stat-lbl">Meet</label><select class="plain-select" id="exp-meet-picker" style="min-width:280px;"></select></div>
+            <div class="field-inline" style="flex:1;"><label class="stat-lbl">Course</label><select class="plain-select" id="exp-course"></select></div>
+            <div class="field-inline"><label class="stat-lbl">Team A</label><select class="plain-select" id="exp-teamA" style="min-width:200px;"></select></div>
+            <div class="field-inline"><label class="stat-lbl">Team B</label><select class="plain-select" id="exp-teamB" style="min-width:200px;"></select></div>
+            <div class="field-inline"><label class="stat-lbl">Time basis</label><select class="plain-select" id="exp-basis"><option value="adjusted">Course-adjusted</option><option value="raw">Season-best raw</option></select></div>
+          </div>
+          <div id="exp-field" style="margin-bottom:14px;"></div>
+          <div id="exp-results"><div class="empty-state"><i class="fa-solid fa-columns"></i><p>Select two teams to compare.</p></div></div>
+        </div>
+      </section>
+
+      <!-- Meet Simulation (enhanced) -->
+      <section class="section-block" id="sec-meetSim">
+        <div class="section-head"><div><h2 class="section-heading"><i class="fa-solid fa-flag-checkered"></i> Meet Simulator</h2><p class="section-sub">Build the field, project places & team scores. Times are course-adjusted from each runner's season.</p></div>
+          <div class="export-row"><button class="xbtn" id="sim-csv"><i class="fa-solid fa-file-csv"></i> Sim CSV</button><button class="xbtn" id="sim-pdf"><i class="fa-solid fa-file-pdf"></i> Sim PDF</button><button class="xbtn" id="sim-reset"><i class="fa-solid fa-rotate-left"></i> Reset</button></div></div></div>
+        <div class="card">
+          <div class="sim-controls">
+            <div class="field-inline"><label class="stat-lbl">Your school</label><select class="plain-select" id="sim-my-school" style="min-width:200px;"></select></div>
+            <div class="field-inline"><label class="stat-lbl">Field source</label>
+              <div class="seg" id="sim-mode"><button class="seg-btn active" data-m="teams">Pick teams</button><button class="seg-btn" data-m="meet">Load a meet</button></div>
+            </div>
+            <div class="field-inline"><label class="stat-lbl">Course</label><select class="plain-select" id="sim-course"></select></div>
+            <div class="field-inline"><label class="stat-lbl">Time basis</label><select class="plain-select" id="sim-basis"><option value="recent">Recent form · last 3 meets</option><option value="adjusted">Best course-adjusted effort</option><option value="raw">Fastest raw time · what-if</option></select></div>
+            <div class="field-inline"><label class="stat-lbl">Division</label><div class="seg" id="sim-gender"><button class="seg-btn active" data-g="M">Boys</button><button class="seg-btn" data-g="F">Girls</button></div></div>
+          </div>
+          <div id="sim-teams-mode" style="margin-top:14px;">
+            <div class="ta-wrap"><label class="stat-lbl">Add opponent teams</label><input class="ta-input" id="sim-team-input" placeholder="Search schools to add…"><div class="ta-drop" id="sim-team-drop"></div></div>
+            <div class="follow-chips" id="sim-team-chips"></div>
+          </div>
+          <div id="sim-meet-mode" class="hidden" style="margin-top:14px;">
+            <label class="stat-lbl">Load a meet field</label><select class="plain-select" id="sim-meet-select" style="min-width:280px;"></select>
+            <div id="sim-meet-field"></div>
+          </div>
+          <div id="sim-source-meets" style="margin-top:14px;"><label class="stat-lbl">Use results from selected meets <span class="section-sub">(empty = all current-season results)</span></label><div id="sim-source-list" class="lineup-grid"></div></div>
+          <div style="margin-top:14px;"><button class="btn-primary" id="sim-run" style="width:auto;"><i class="fa-solid fa-play"></i> Run Simulation</button>
+            <button class="xbtn" id="sim-lineup-toggle" style="margin-left:8px;"><i class="fa-solid fa-user-pen"></i> Edit my lineup</button></div>
+          <div id="sim-lineup" class="hidden" style="margin-top:14px;"></div>
+        </div>
+        <div id="sim-results" style="margin-top:1rem;"></div>
+      </section>
+
+      <!-- Rankings -->
+      <section class="section-block" id="sec-rankings">
+        <div class="section-head"><div><h2 class="section-heading"><i class="fa-solid fa-list-ol"></i> State Leaderboard</h2><p class="section-sub">Top MSM ratings. Filter by gender, season, and school.</p></div>
+          <div class="export-row">
+            <select class="plain-select" id="lb-gender"><option value="M">Boys</option><option value="F">Girls</option></select>
+            <select class="plain-select" id="lb-season"><option value="all">All-Time</option></select>
+            <select class="plain-select" id="lb-school"><option value="">All Schools</option></select>
+            <button class="xbtn" id="lb-csv"><i class="fa-solid fa-file-csv"></i> CSV</button>
+          </div>
+        </div>
+        <div class="table-card"><table class="rt"><thead><tr><th>#</th><th>Athlete</th><th>School</th><th>Best MSM</th><th>5K Equiv</th><th>Trend</th></tr></thead><tbody id="lbBody"></tbody></table></div>
+      </section>
+
+      <!-- Follow Athletes (collapsible) -->
+      <section class="section-block" id="sec-follow">
+        <div class="section-head"><div><h2 class="section-heading"><i class="fa-solid fa-heart"></i> Follow Athletes</h2><p class="section-sub">Follow runners to see them in compare and your feed.</p></div></div>
+        <div class="card">
+          <div class="ta-wrap"><input class="ta-input" id="fanFollowInput" placeholder="Search athletes to follow…"><div class="ta-drop" id="fanFollowDrop"></div></div>
+          <div class="follow-chips" id="followChips" style="margin-top:12px;"></div>
+        </div>
       </section>
     `;
 
-    // follow typeahead
+    // --- Fan section navigation ---
+    buildFanNav();
+    switchFanSection(fanActiveSection);
+
+    // --- Live feed ---
+    wireLiveFeed();
+
+    // --- Team review ---
+    wireTeamReview(profile);
+
+    // --- Expected teams ---
+    wireExpectedTeams();
+
+    // --- Meet sim (fan-friendly: let them pick a school) ---
+    setupSimulatorFan(profile);
+    $("sim-csv").onclick = simExportCSV;
+    $("sim-pdf").onclick = simExportPDF;
+    $("sim-reset").onclick = () => { simState.opponents = []; simState.myLineup = null; renderOppChips(); $("sim-results").innerHTML = ""; };
+
+    // --- Rankings ---
+    wireRankings();
+
+    // --- Follow ---
     typeahead($("fanFollowInput"), $("fanFollowDrop"), () => E().listAthleteNames(), async (item) => {
       $("fanFollowInput").value = "";
       await A().toggleFollowAthlete(item.name);
     });
     renderFollowChips();
 
-    // compare
-    let cmpA = follows.athletes[0] ? E().athleteSummary(follows.athletes[0], currentSeason) : null;
-    let cmpB = follows.athletes[1] ? E().athleteSummary(follows.athletes[1], currentSeason) : null;
-    const drawCompare = () => renderCompare(cmpA, cmpB);
-    typeahead($("cmpAInput"), $("cmpADrop"), () => E().listAthleteNames(), (item) => { $("cmpAInput").value = item.name; cmpA = E().athleteSummary(item.name, currentSeason); drawCompare(); });
-    typeahead($("cmpBInput"), $("cmpBDrop"), () => E().listAthleteNames(), (item) => { $("cmpBInput").value = item.name; cmpB = E().athleteSummary(item.name, currentSeason); drawCompare(); });
-    if (cmpA) $("cmpAInput").value = cmpA.name;
-    if (cmpB) $("cmpBInput").value = cmpB.name;
-    drawCompare();
-    $("cmp-png").onclick = () => exportPNG("chartCompare", "compare.png");
-    $("cmp-csv").onclick = () => {
-      if (!cmpA && !cmpB) return toast("Pick runners first.");
-      const rows = [["Runner", "Date", "Meet", "Seconds", "MSM"]];
-      [cmpA, cmpB].filter(Boolean).forEach((s) => s.rows.forEach((r) => rows.push([s.name, r.date, r.meet?.name || r.meet_slug, r.timeSec ?? "", r.msm ?? ""])));
-      dl("compare.csv", "text/csv", rows.map(csvRow).join("\n")); toast("✓ Compare CSV");
-    };
-
-    // leaderboard
-    let lbGender = "M";
-    const drawLB = () => renderLeaderboard(lbGender);
-    $("lb-gender").onchange = (e) => { lbGender = e.target.value; drawLB(); };
-    drawLB();
-    $("lb-csv").onclick = () => {
-      const list = leaderboardData(lbGender);
-      const rows = [["Rank", "Athlete", "School", "Best MSM"]];
-      list.forEach((x, i) => rows.push([i + 1, x.name, x.school, x.rating]));
-      dl(`leaderboard_${lbGender}.csv`, "text/csv", rows.map(csvRow).join("\n")); toast("✓ Leaderboard CSV");
-    };
   }
 
-  function renderFollowChips() {
+  // ---- Fan section navigation ----
+  function buildFanNav() {
+    const nav = $("fanNav");
+    if (!nav) return;
+    nav.innerHTML = FAN_SECTIONS.map((id) => {
+      const label = FAN_SECTION_LABELS[id];
+      return `<button class="fan-nav-btn${id === fanActiveSection ? ' active' : ''}" data-section="${id}">${label}</button>`;
+    }).join("");
+    nav.querySelectorAll(".fan-nav-btn").forEach((btn) => {
+      btn.onclick = () => switchFanSection(btn.dataset.section);
+    });
+  }
+  function switchFanSection(id) {
+    fanActiveSection = id;
+    $("fanNav").querySelectorAll(".fan-nav-btn").forEach((b) => b.classList.toggle("active", b.dataset.section === id));
+    FAN_SECTIONS.forEach((sid) => {
+      const el = document.getElementById("sec-" + sid);
+      if (el) el.classList.toggle("hidden", sid !== id);
+    });
+    // Re-draw dynamic content when switching to a section
+    if (id === "liveFeed") wireLiveFeed();
+    else if (id === "teamReview") wireTeamReview(A().profile);
+    else if (id === "expectedTeams") wireExpectedTeams();
+    else if (id === "rankings") wireRankings();
+  }
+
+  // ---- Live results feed ----
+  let liveFeedObserver = null;
+  function wireLiveFeed() {
+    const genderSel = $("live-gender"); const limitSel = $("live-limit");
+    const ticker = $("liveTicker");
+    if (!ticker) return;
+    const gender = genderSel ? genderSel.value : "all";
+    const limit = limitSel ? parseInt(limitSel.value, 10) : 20;
+
+    // Build the feed from current data
+    const rows = E().state.results
+      .filter((r) => gender === "all" || r.gender === gender)
+      .sort((a, b) => (b.date || "").localeCompare(a.date || ""))
+      .slice(0, limit);
+
+    if (!rows.length) {
+      ticker.innerHTML = '<div class="empty-state"><i class="fa-solid fa-flag"></i><p>No results yet. Check back after the next race.</p></div>';
+      return;
+    }
+
+    // Group by meet for a cleaner display
+    const byMeet = {};
+    rows.forEach((r) => {
+      const m = r.meet_slug || "unknown";
+      if (!byMeet[m]) byMeet[m] = { meet: r.meet, meet_slug: m, date: r.date, results: [] };
+      byMeet[m].results.push(r);
+    });
+
+    ticker.innerHTML = Object.values(byMeet)
+      .sort((a, b) => (b.date || "").localeCompare(a.date || ""))
+      .map((group) => {
+        const meetName = group.meet?.name || group.meet_slug;
+        const dateStr = group.date ? new Date(group.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "";
+        return `<div class="live-meet-group">
+          <div class="live-meet-head">
+            <span class="live-meet-name">${esc(meetName)}</span>
+            <span class="live-meet-date">${dateStr}</span>
+          </div>
+          <table class="rt"><thead><tr><th>Athlete</th><th>School</th><th>Time</th><th>MSM</th><th>Place</th></tr></thead>
+          <tbody>${group.results.map((r) => `<tr>
+            <td data-label="Athlete">${esc(r.athlete_name)}</td>
+            <td data-label="School">${esc((E().state.schoolsMap[r.school_slug] || {}).name || r.school_slug)}</td>
+            <td data-label="Time" class="mark-col">${fmt(r.timeSec)}</td>
+            <td data-label="MSM">${r.msm ?? "—"}</td>
+            <td data-label="Place">${r.place ? r.place + ordinal(r.place) : "—"}</td>
+          </tr>`).join("")}</tbody>
+        </div>`;
+      }).join("");
+
+    // Note: For true live updates, you'd attach a Firebase observer here.
+    // The current implementation shows the latest loaded data.
+  }
+
+  // ---- Team review ----
+  let teamReviewData = null;
+  function wireTeamReview(profile) {
+    const schoolSel = $("teamReview-school");
+    const genderSel = $("teamReview-gender");
+    const seasonSel = $("teamReview-season");
+    const body = $("teamReview-body");
+    if (!schoolSel || !body) return;
+
+    // Populate school select
+    if (!schoolSel.dataset.populated) {
+      const schools = E().listSchools();
+      schoolSel.innerHTML = schools.map((s) => `<option value="${esc(s.slug)}">${esc(s.name)}</option>`).join("");
+      schoolSel.dataset.populated = "1";
+    }
+
+    // Populate season select
+    if (!seasonSel.dataset.populated) {
+      const seasons = E().listSeasons();
+      seasonSel.innerHTML = '<option value="all">All-Time</option>' + seasons.map((y) => `<option value="${y}">${y} Season</option>`).join("");
+      seasonSel.dataset.populated = "1";
+    }
+
+    const slug = schoolSel.value || (profile.schoolSlug || "");
+    const gender = genderSel.value;
+    const season = seasonSel.value;
+    schoolSel.value = slug;
+
+    drawTeamReview(slug, gender, season);
+
+    schoolSel.onchange = () => drawTeamReview(schoolSel.value, genderSel.value, seasonSel.value);
+    genderSel.onchange = () => drawTeamReview(schoolSel.value, genderSel.value, seasonSel.value);
+    seasonSel.onchange = () => drawTeamReview(schoolSel.value, genderSel.value, seasonSel.value);
+  }
+  function drawTeamReview(slug, gender, season) {
+    const body = $("teamReview-body");
+    if (!body) return;
+    const school = E().state.schoolsMap[slug] || { name: slug };
+    const roster = E().rosterForSchool(slug, gender, season);
+    const insights = E().teamInsights(roster);
+
+    if (!roster.length) {
+      body.innerHTML = `<div class="empty-state"><i class="fa-solid fa-school"></i><p>No results for ${esc(school.name)} in this season.</p></div>`;
+      return;
+    }
+
+    const cmp = E().teamStatewideComparison(slug, gender, season);
+
+    body.innerHTML = `
+      <div class="section-head" style="margin-bottom:14px;">
+        <div><h3 class="section-heading" style="font-size:1.1rem;">${esc(school.name)}</h3><p class="section-sub">${gender === "M" ? "Boys" : "Girls"} · ${roster.length} athletes · ${season === "all" ? "all-time" : season + " season"}</p></div>
+        <div class="stat-grid" style="grid-template-columns:repeat(3,1fr);gap:8px;">
+          <div class="stat-card hl"><div class="stat-lbl">Scoring 5 Avg</div><div class="stat-val" style="font-size:1.2rem;">${insights.scoringAvg != null ? fmt(insights.scoringAvg) : "—"}</div></div>
+          <div class="stat-card"><div class="stat-lbl">1–5 Spread</div><div class="stat-val" style="font-size:1.2rem;">${insights.spread15 != null ? fmt(insights.spread15) : "—"}</div></div>
+          <div class="stat-card"><div class="stat-lbl">State Rank</div><div class="stat-val" style="font-size:1.2rem;">${cmp.rank ? cmp.rank + ordinal(cmp.rank) : "—"}</div><div class="stat-sub">of ${cmp.total}</div></div>
+        </div>
+      </div>
+
+      <div class="charts-grid" style="grid-template-columns:1fr 1fr;">
+        <div class="chart-card"><div class="chart-card-head"><div><div class="chart-card-title">Top 7 — Best Efforts</div></div></div><div class="chart-wrap" style="height:200px;"><canvas id="tr-chartTop7"></canvas></div></div>
+        <div class="chart-card"><div class="chart-card-head"><div><div class="chart-card-title">Rating Distribution</div></div></div><div class="chart-wrap" style="height:200px;"><canvas id="tr-chartDist"></canvas></div></div>
+      </div>
+
+      <div class="table-card" style="margin-top:1rem;"><table class="rt"><thead><tr><th>#</th><th>Athlete</th><th>Best Effort</th><th>Best MSM</th><th>5K Equiv</th><th>Races</th><th>Trend</th></tr></thead><tbody>${roster.map((s, i) => `<tr>
+        <td data-label="#">${i + 1}</td>
+        <td data-label="Athlete">${esc(s.name)}</td>
+        <td data-label="Best Effort" class="mark-col">${s.best5k ? fmt(s.best5k.timeSec) : "—"}</td>
+        <td data-label="Best MSM">${s.bestMsm ?? "—"}</td>
+        <td data-label="5K Equiv">${s.best5k ? fmt(E().riegel(s.best5k.timeSec, s.best5k.distance, 5000)) : "—"}</td>
+        <td data-label="Races">${s.raceCount}</td>
+        <td data-label="Trend"><span class="pill ${s.forecast && s.forecast.trend === "improving" ? "up" : s.forecast && s.forecast.trend === "declining" ? "down" : "flat"}">${s.forecast ? s.forecast.trend : "—"}</span></td>
+      </tr>`).join("")}</tbody></table></div>
+    `;
+
+    // Charts
+    if (charts["tr-chartTop7"]) charts["tr-chartTop7"].destroy();
+    const c = chartTheme();
+    const top7 = roster.slice(0, 7);
+    makeChart("tr-chartTop7", {
+      type: "bar", data: { labels: top7.map((s) => s.name), datasets: [{ data: top7.map((s) => s.best5k ? s.best5k.timeSec : 0), backgroundColor: c.fill, borderColor: c.line, borderWidth: 1.5, borderRadius: 4 }] },
+      options: Object.assign({}, baseOpts("Best Effort", "", true), { indexAxis: "y", scales: Object.assign({}, baseOpts().scales, { x: Object.assign({}, baseOpts().scales.x, { ticks: Object.assign({}, baseOpts().scales.x.ticks, { callback: (v) => fmt(v) }) }) }) })
+    });
+
+    if (charts["tr-chartDist"]) charts["tr-chartDist"].destroy();
+    const ratings = roster.map((s) => s.bestMsm).filter((v) => v != null);
+    if (ratings.length) {
+      const min = Math.min(...ratings), max = Math.max(...ratings);
+      const bins = 5, size = Math.max(1, (max - min) / bins);
+      const counts = new Array(bins).fill(0), labels = [];
+      for (let i = 0; i < bins; i++) labels.push(`${Math.round(min + i * size)}–${Math.round(min + (i + 1) * size)}`);
+      ratings.forEach((r) => { let idx = Math.min(bins - 1, Math.floor((r - min) / size)); counts[idx]++; });
+      makeChart("tr-chartDist", { type: "bar", data: { labels, datasets: [{ data: counts, backgroundColor: c.fill, borderColor: c.line, borderWidth: 1.5, borderRadius: 4 }] }, options: baseOpts("Athletes", "MSM Rating") });
+    }
+  }
+
+  // ---- Expected teams matchup ----
+  let expState = { teamA: "", teamB: "", course: "", basis: "adjusted", meetSlug: "" };
+  let expLoadedMeets = [];
+  function wireExpectedTeams() {
+    const courseSel = $("exp-course");
+    const teamASel = $("exp-teamA");
+    const teamBSel = $("exp-teamB");
+    const basisSel = $("exp-basis");
+    const meetPicker = $("exp-meet-picker");
+    const results = $("exp-results");
+    if (!courseSel || !teamASel || !teamBSel || !results) return;
+
+    // Populate
+    if (!courseSel.dataset.populated) {
+      const courses = E().listCourses();
+      courseSel.innerHTML = courses.map((c) => `<option value="${esc(c.slug)}">${esc(c.name)}${c.difficulty ? " · " + esc(c.difficulty) : ""}</option>`).join("");
+      courseSel.dataset.populated = "1";
+    }
+    if (!teamASel.dataset.populated) {
+      const schools = E().listSchools();
+      teamASel.innerHTML = schools.map((s) => `<option value="${esc(s.slug)}">${esc(s.name)}</option>`).join("");
+      teamBSel.innerHTML = schools.map((s) => `<option value="${esc(s.slug)}">${esc(s.name)}</option>`).join("");
+      teamASel.dataset.populated = "1"; teamBSel.dataset.populated = "1";
+    }
+
+    // Populate meet picker from Firebase meets that have expected_teams
+    if (!meetPicker.dataset.populated) {
+      const upcomingOption = document.createElement("option");
+      upcomingOption.value = "";
+      upcomingOption.textContent = "Pick a meet (optional)…";
+      meetPicker.appendChild(upcomingOption);
+      meetPicker.dataset.populated = "1";
+    }
+
+    const courses = E().listCourses();
+    const course = courses[0] ? courses[0].slug : "";
+    courseSel.value = course; expState.course = course;
+
+    const defaultA = teamASel.options[0] ? teamASel.options[0].value : "";
+    const defaultB = teamBSel.options[1] ? teamBSel.options[1].value : "";
+    teamASel.value = defaultA; teamBSel.value = defaultB;
+    expState.teamA = defaultA; expState.teamB = defaultB;
+
+    drawExpectedTeams();
+
+    courseSel.onchange = () => { expState.course = courseSel.value; drawExpectedTeams(); };
+    teamASel.onchange = () => { expState.teamA = teamASel.value; drawExpectedTeams(); };
+    teamBSel.onchange = () => { expState.teamB = teamBSel.value; drawExpectedTeams(); };
+    basisSel.onchange = () => { expState.basis = basisSel.value; drawExpectedTeams(); };
+    meetPicker.onchange = () => {
+      expState.meetSlug = meetPicker.value;
+      const meet = expLoadedMeets.find((m) => m.slug === meetPicker.value);
+      if (meet && meet.expected && meet.expected.length >= 2) {
+        const teams = meet.expected.map((t) => t.slug).filter(Boolean);
+        teamASel.value = teams[0];
+        teamBSel.value = teams[1];
+        expState.teamA = teams[0];
+        expState.teamB = teams[1];
+        if (meet.course_slug) { courseSel.value = meet.course_slug; expState.course = meet.course_slug; }
+        drawExpectedTeams();
+      } else {
+        drawExpectedTeams();
+      }
+    };
+
+    // Load meets with expected teams from Firebase, then preselect the
+    // soonest one so the section is alive on first open (meet.html parity).
+    loadExpectedTeamsMeets().then(() => {
+      if (expLoadedMeets.length) {
+        meetPicker.value = expLoadedMeets[0].slug;
+        meetPicker.onchange();
+      }
+    });
+  }
+  async function loadExpectedTeamsMeets() {
+    const meetPicker = $("exp-meet-picker");
+    if (!meetPicker) return;
+    try {
+      const db = window.firebaseDatabase;
+      if (!db) { console.warn("Firebase not ready for expected teams"); return; }
+      const snapshot = await db.ref("crosscountry/meets").once("value");
+      const meets = [];
+      snapshot.forEach((child) => {
+        const m = child.val();
+        // Accept either spelling; resolve entries to {slug, name} like meet.html.
+        const raw = m && (m.teams || m.expected_teams);
+        const count = Array.isArray(raw) ? raw.length : (raw ? Object.keys(raw).length : 0);
+        if (m && count >= 2 && m.date) {
+          // Resolve by the record's own slug (the meets map is keyed by slug,
+          // not by the Firebase push key).
+          meets.push({ slug: child.key, ...m, expected: E().meetExpectedTeams(m.slug || child.key) });
+        }
+      });
+      // Sort by date, most recent first
+      // Upcoming meets first (soonest), then past meets (most recent) —
+      // the default pick should always be the next meet on the calendar.
+      const todayStr = new Date().toISOString().split("T")[0];
+      const up = meets.filter((m) => String(m.date).split("T")[0] >= todayStr).sort((a, b) => String(a.date).localeCompare(String(b.date)));
+      const past = meets.filter((m) => String(m.date).split("T")[0] < todayStr).sort((a, b) => String(b.date).localeCompare(String(a.date)));
+      expLoadedMeets = up.concat(past);
+
+      // Keep the placeholder, remove old options
+      Array.from(meetPicker.options).slice(1).forEach((o) => o.remove());
+
+      meets.forEach((m) => {
+        const opt = document.createElement("option");
+        opt.value = m.slug;
+        const dateStr = m.date ? new Date(m.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "";
+        const teamCount = (m.expected_teams || []).length;
+        opt.textContent = `${esc(m.name || m.slug)} — ${esc(dateStr)} (${teamCount} teams)`;
+        meetPicker.appendChild(opt);
+      });
+    } catch (e) {
+      console.warn("Could not load expected teams meets:", e);
+    }
+  }
+  function drawExpectedTeams() {
+    const results = $("exp-results");
+    if (!results) return;
+    const { teamA, teamB, course, basis } = expState;
+
+    // Full expected field for the selected meet, rendered as chips (meet.html style).
+    const fieldBox = $("exp-field");
+    if (fieldBox) {
+      const meet = expLoadedMeets.find((m) => m.slug === expState.meetSlug);
+      if (meet) {
+        const raced = new Set(E().state.results.filter((r) => r.meet_slug === meet.slug).map((r) => r.school_slug).filter(Boolean));
+        fieldBox.innerHTML = `<div class="section-sub" style="margin:10px 0 6px;"><strong>${meet.expected.length} expected teams</strong> for ${esc(meet.name || meet.slug)}${meet.date ? " · " + esc(String(meet.date).split("T")[0]) : ""} — from the meet record, same as meet.html. Click a chip to open the team page.</div>` +
+          `<div class="expected-teams-list">` + meet.expected.map((t) =>
+            `<a class="expected-team-chip" href="/CrossCountry/school.html?slug=${esc(t.slug)}" target="_blank" rel="noopener" title="Open ${esc(t.name)}">` +
+            `<img src="/assets/team logos/${esc(t.slug)}.png" alt="" onerror="this.src='/assets/images/msmrunner.svg'">${esc(t.name)}</a>`).join("") + `</div>`;
+      } else {
+        fieldBox.innerHTML = `<div class="section-sub" style="margin:10px 0 6px;">Pick a meet to load its expected field, or choose any two schools below for a head-to-head.</div>`;
+      }
+    }
+
+    if (!teamA || !teamB || teamA === teamB) {
+      results.innerHTML = '<div class="empty-state"><i class="fa-solid fa-columns"></i><p>Select two different teams to compare.</p></div>';
+      return;
+    }
+
+    const season = currentSeason;
+    const dist = course ? (E().state.coursesMap[course] && parseInt(E().state.coursesMap[course].distance, 10)) || 5000 : 5000;
+
+    const rosterA = E().rosterForSchool(teamA, "M", season);
+    const rosterB = E().rosterForSchool(teamB, "M", season);
+    const summaryA = rosterA.map((s) => ({ name: s.name, proj: E().athleteProjectedTime(s, course, dist, basis) }));
+    const summaryB = rosterB.map((s) => ({ name: s.name, proj: E().athleteProjectedTime(s, course, dist, basis) }));
+
+    const field = [];
+    summaryA.forEach((e) => { if (e.proj) field.push({ name: e.name, schoolSlug: teamA, timeSec: e.proj.timeSec, projected: e.proj.projected, source: e.proj.source }); });
+    summaryB.forEach((e) => { if (e.proj) field.push({ name: e.name, schoolSlug: teamB, timeSec: e.proj.timeSec, projected: e.proj.projected, source: e.proj.source }); });
+    field.sort((a, b) => a.timeSec - b.timeSec);
+    field.forEach((e, i) => { e.place = i + 1; });
+
+    const bySchool = {};
+    field.forEach((e) => { (bySchool[e.schoolSlug] = bySchool[e.schoolSlug] || []).push(e); });
+    const scoringSchools = new Set(Object.keys(bySchool).filter((s) => bySchool[s].length >= 5));
+    let counter = 0;
+    field.forEach((e) => { e.scoringPlace = scoringSchools.has(e.schoolSlug) ? ++counter : null; });
+
+    const teamAInfo = bySchool[teamA] ? {
+      score: (bySchool[teamA].filter((e) => e.scoringPlace).length === 5 && scoringSchools.has(teamA))
+        ? bySchool[teamA].filter((e) => e.scoringPlace).slice(0, 5).reduce((s, r) => s + r.scoringPlace, 0) : null,
+      avg: bySchool[teamA].slice(0, 5).reduce((s, r) => s + r.timeSec, 0) / Math.min(5, bySchool[teamA].length),
+      runners: bySchool[teamA].slice(0, 7),
+      depth: bySchool[teamA].length,
+    } : null;
+    const teamBInfo = bySchool[teamB] ? {
+      score: (bySchool[teamB].filter((e) => e.scoringPlace).length === 5 && scoringSchools.has(teamB))
+        ? bySchool[teamB].filter((e) => e.scoringPlace).slice(0, 5).reduce((s, r) => s + r.scoringPlace, 0) : null,
+      avg: bySchool[teamB].slice(0, 5).reduce((s, r) => s + r.timeSec, 0) / Math.min(5, bySchool[teamB].length),
+      runners: bySchool[teamB].slice(0, 7),
+      depth: bySchool[teamB].length,
+    } : null;
+
+    const winner = teamAInfo && teamBInfo && teamAInfo.score != null && teamBInfo.score != null
+      ? (teamAInfo.score < teamBInfo.score ? teamA : teamB)
+      : (teamAInfo && teamBInfo && teamAInfo.avg < teamBInfo.avg ? teamA : teamB);
+
+    const courseName = (E().state.coursesMap[course] || {}).name || course;
+
+    results.innerHTML = `
+      <div class="section-sub" style="margin-bottom:12px;">Projected matchup on <strong>${esc(courseName)}</strong> at ${E().distanceLabel(dist)} · ${basis === "raw" ? "season-best raw times" : "course-adjusted projections"}.</div>
+
+      <div class="stat-grid" style="margin-bottom:1rem;gap:12px;">
+        <div class="exp-team-card" style="padding:16px 18px;border:2px solid ${teamA === winner ? 'var(--success, #10b981)' : 'var(--border)'};border-radius:var(--radius-lg);background:var(--bg-primary);animation:fadeSlideUp 0.3s ease both;">
+          <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-tertiary);margin-bottom:4px;">${esc((E().state.schoolsMap[teamA] || {}).name || teamA)}</div>
+          <div class="exp-team-score" style="font-family:var(--font-display);font-size:2rem;font-weight:800;color:${teamA === winner ? 'var(--success, #10b981)' : 'var(--text-primary)'};line-height:1;">${teamAInfo && teamAInfo.score != null ? teamAInfo.score : "—"}</div>
+          <div style="font-size:0.78rem;color:var(--text-tertiary);margin-top:4px;">${teamAInfo ? teamAInfo.depth + ' runners · ' + (teamAInfo.avg != null ? fmt(teamAInfo.avg) + ' avg' : '') : ''}</div>
+        </div>
+        <div class="exp-team-card" style="padding:16px 18px;border:2px solid ${teamB === winner ? 'var(--success, #10b981)' : 'var(--border)'};border-radius:var(--radius-lg);background:var(--bg-primary);animation:fadeSlideUp 0.3s ease 0.05s both;">
+          <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-tertiary);margin-bottom:4px;">${esc((E().state.schoolsMap[teamB] || {}).name || teamB)}</div>
+          <div class="exp-team-score" style="font-family:var(--font-display);font-size:2rem;font-weight:800;color:${teamB === winner ? 'var(--success, #10b981)' : 'var(--text-primary)'};line-height:1;">${teamBInfo && teamBInfo.score != null ? teamBInfo.score : "—"}</div>
+          <div style="font-size:0.78rem;color:var(--text-tertiary);margin-top:4px;">${teamBInfo ? teamBInfo.depth + ' runners · ' + (teamBInfo.avg != null ? fmt(teamBInfo.avg) + ' avg' : '') : ''}</div>
+        </div>
+      </div>
+
+      <div class="section-sub" style="margin-bottom:8px;color:var(--text-tertiary);font-size:0.82rem;">${winner ? esc((E().state.schoolsMap[winner] || {}).name || winner) + ' wins' : 'Select two teams to compare'}</div>
+
+      <div class="table-card"><table class="rt"><thead><tr><th>Place</th><th>Athlete</th><th>School</th><th>Proj Time</th><th>Pace/Mi</th><th>Pts</th></tr></thead><tbody>
+        ${field.map((e) => `<tr style="${e.schoolSlug === winner && e.place <= 5 ? "background:rgba(16,185,129,0.08);font-weight:600;" : ""}">
+          <td class="mark-col sim-place" style="font-family:var(--font-display);font-weight:800;">${e.place}</td>
+          <td data-label="Athlete">${esc(e.name)}${e.schoolSlug === winner && e.place <= 5 ? ' <span class="pill up" style="font-size:0.55rem;">🏆</span>' : ""}</td>
+          <td data-label="School">${esc((E().state.schoolsMap[e.schoolSlug] || {}).name || e.schoolSlug)}</td>
+          <td class="mark-col">${fmt(e.timeSec)}</td>
+          <td>${clock((e.timeSec / dist) * E().MILE_M)}</td>
+          <td class="mark-col">${e.scoringPlace ? "+" + e.scoringPlace : "—"}</td>
+        </tr>`).join("")}
+      </tbody></table></div>
+    `;
+  }
+
+  // ---- Rankings with filters ----
+  let rankGender = "M", rankSeason = "all", rankSchool = "";
+  function wireRankings() {
+    const genderSel = $("lb-gender");
+    const seasonSel = $("lb-season");
+    const schoolSel = $("lb-school");
+    if (!genderSel || !seasonSel || !schoolSel) return;
+
+    // Populate seasons
+    if (!seasonSel.dataset.populated) {
+      const seasons = E().listSeasons();
+      seasonSel.innerHTML = '<option value="all">All-Time</option>' + seasons.map((y) => `<option value="${y}">${y} Season</option>`).join("");
+      seasonSel.dataset.populated = "1";
+    }
+
+    // Populate schools
+    if (!schoolSel.dataset.populated) {
+      const schools = E().listSchools();
+      schoolSel.innerHTML = '<option value="">All Schools</option>' + schools.map((s) => `<option value="${esc(s.slug)}">${esc(s.name)}</option>`).join("");
+      schoolSel.dataset.populated = "1";
+    }
+
+    rankGender = genderSel.value;
+    rankSeason = seasonSel.value;
+    rankSchool = schoolSel.value;
+
+    drawRankings();
+    genderSel.onchange = () => { rankGender = genderSel.value; drawRankings(); };
+    seasonSel.onchange = () => { rankSeason = seasonSel.value; drawRankings(); };
+    schoolSel.onchange = () => { rankSchool = schoolSel.value; drawRankings(); };
+  }
+  function drawRankings() {
+    const body = $("lbBody");
+    if (!body) return;
+
+    const list = leaderboardData(rankGender, rankSeason, rankSchool);
+    body.innerHTML = `<div class="app-list"><div class="list-header">State Leaderboard</div>${list.map((x, i) => {
+      const trend = x.forecast ? (x.forecast.trend === "improving" ? '<span class="pill up">↑</span>' : x.forecast.trend === "declining" ? '<span class="pill down">↓</span>' : '<span class="pill flat">—</span>') : "";
+      return `<div class="list-item">
+        <div class="item-place">${i + 1}</div>
+        <div class="item-details"><div class="item-name">${esc(x.name)}</div><div class="item-school">${esc(x.school)}</div><div class="item-meta">5K equivalent · ${x.equiv5k != null ? fmt(x.equiv5k) : "—"} · ${trend}</div></div>
+        <div class="item-score"><div class="score-stack"><span class="score-rating">${x.rating}</span><span class="score-predicted">MSM Rating</span></div></div>
+      </div>`;
+    }).join("") || '<div class="empty-state">No data.</div>'}</div>`;
+  }
+  // ---- Meet sim for fans (pick your school first) ----
+  let fanSimSchool = null;
+  function setupSimulatorFan(profile) {
+    const schoolSel = $("sim-my-school");
+    if (!schoolSel) return;
+    // Populate school selector
+    const schools = E().listSchools();
+    schoolSel.innerHTML = '<option value="">Select your school…</option>' +
+      schools.map((s) => `<option value="${esc(s.slug)}">${esc(s.name)}</option>`).join("");
+    if (profile.schoolSlug) schoolSel.value = profile.schoolSlug;
+    fanSimSchool = profile.schoolSlug || null;
+    schoolSel.onchange = () => { fanSimSchool = schoolSel.value || null; if (schoolSel.value) setupSimulatorBySchool(schoolSel.value); else $("sim-results").innerHTML = '<div class="empty-state"><i class="fa-solid fa-school"></i><p>Select your school to simulate meets.</p></div>'; };
+    if (fanSimSchool) setupSimulatorBySchool(fanSimSchool);
+    else $("sim-results").innerHTML = '<div class="empty-state"><i class="fa-solid fa-school"></i><p>Select your school to simulate meets.</p></div>';
+  }
+  function setupSimulatorBySchool(slug) {
+    const profile = { schoolSlug: slug };
+    setupSimulator(profile, "M");
+    $("sim-run").onclick = () => runSim(profile, "M", (E().state.schoolsMap[slug] || { name: slug }));
+    $("sim-csv").onclick = simExportCSV;
+    $("sim-pdf").onclick = simExportPDF;
+    $("sim-reset").onclick = () => { simState.opponents = []; simState.myLineup = null; renderOppChips(); $("sim-results").innerHTML = ""; };
+  }
+
+  function leaderboardData(gender, season, schoolSlug) {
+    const best = {};
+    E().state.results.forEach((r) => {
+      if (r.gender !== gender || r.msm == null) return;
+      if (!E().seasonMatch(r, season)) return;
+      if (schoolSlug && r.school_slug !== schoolSlug) return;
+      const k = E().norm(r.athlete_name);
+      if (!k) return;
+      if (!best[k] || r.msm > best[k].rating) {
+        const summary = E().athleteSummary(r.athlete_name, season);
+        best[k] = {
+          name: r.athlete_name,
+          school: (E().state.schoolsMap[r.school_slug] || {}).name || r.school_slug || "",
+          rating: r.msm,
+          equiv5k: summary && summary.best5k ? E().riegel(summary.best5k.timeSec, summary.best5k.distance, 5000) : null,
+          forecast: summary && summary.forecast ? summary.forecast : null,
+        };
+      }
+    });
+    return Object.values(best).sort((a, b) => b.rating - a.rating).slice(0, 200);
+  }  function renderFollowChips() {
     const follows = (A().profile && A().profile.follows) || { athletes: [] };
     const box = $("followChips");
     if (!box) return;
@@ -886,47 +1680,6 @@
       `<span class="follow-chip">${esc(n)} <button data-n="${esc(n)}" title="Unfollow">&times;</button></span>`).join("")
       || '<span class="section-sub">Not following anyone yet.</span>';
     box.querySelectorAll("button[data-n]").forEach((b) => { b.onclick = async () => { await A().toggleFollowAthlete(b.dataset.n); }; });
-  }
-
-  function renderCompare(a, b) {
-    const box = $("cmpStats");
-    const list = [a, b].filter(Boolean);
-    box.innerHTML = list.map((s, i) => {
-      const rank = E().stateRank(s.name, s.gender, currentSeason);
-      return `<div class="stat-card${i === 0 ? " hl" : ""}"><div class="stat-lbl">${esc(s.name)}</div><div class="stat-val">${s.bestMsm ?? "—"}</div><div class="stat-sub">${s.best5k ? "5K eq " + fmt(E().riegel(s.best5k.timeSec, s.best5k.distance, 5000)) : ""}${rank ? " · #" + rank.rank : ""}</div></div>`;
-    }).join("") || '<p class="section-sub">Pick two runners to compare.</p>';
-
-    const c = chartTheme();
-    const datasets = [];
-    const allDates = new Set();
-    list.forEach((s) => s.datedRatings.forEach((d) => allDates.add(d.date)));
-    const dates = [...allDates].sort();
-    const palette = [c.line, "#f97316"];
-    list.forEach((s, i) => {
-      const map = {}; s.datedRatings.forEach((d) => { map[d.date] = d.rating; });
-      datasets.push({ label: s.name, data: dates.map((d) => map[d] ?? null), borderColor: palette[i], backgroundColor: "transparent", borderWidth: 2, pointRadius: 4, tension: 0.25, spanGaps: true });
-    });
-    const opts = baseOpts("MSM Rating", "Meet Date");
-    opts.plugins.legend = { display: true, labels: { color: c.text, boxWidth: 10 } };
-    makeChart("chartCompare", { type: "line", data: { labels: dates.map((d) => new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric" })), datasets }, options: opts });
-  }
-
-  function leaderboardData(gender) {
-    const best = {};
-    E().state.results.forEach((r) => {
-      if (r.gender !== gender || r.msm == null) return;
-      if (!E().seasonMatch(r, currentSeason)) return;
-      const k = E().norm(r.athlete_name);
-      if (!k) return;
-      if (!best[k] || r.msm > best[k].rating) best[k] = { name: r.athlete_name, school: (E().state.schoolsMap[r.school_slug] || {}).name || r.school_slug || "", rating: r.msm };
-    });
-    return Object.values(best).sort((a, b) => b.rating - a.rating).slice(0, 100);
-  }
-  function renderLeaderboard(gender) {
-    const list = leaderboardData(gender);
-    $("lbBody").innerHTML = list.map((x, i) =>
-      `<tr><td>${i + 1}</td><td>${esc(x.name)}</td><td>${esc(x.school)}</td><td class="mark-col">${x.rating}</td></tr>`).join("")
-      || `<tr><td colspan="4" style="text-align:center;padding:1.5rem;">No data.</td></tr>`;
   }
 
   // =====================================================================

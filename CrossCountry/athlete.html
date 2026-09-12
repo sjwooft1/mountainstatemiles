@@ -600,6 +600,7 @@ table.rt a:hover { border-bottom-color: var(--text-primary); }
   <section class="section-block" id="schoolsSection" style="display:none;">
     <div class="section-head">
       <h2 class="section-heading">Schools</h2>
+      <p class="section-sub" style="margin:4px 0 0;">This athlete ran for more than one school &mdash; pick a school to view that part of their record. PBs, charts, and state rank reflect the school you&rsquo;re viewing.</p>
     </div>
     <div class="schools-row" id="schoolsRow"></div>
   </section>
@@ -731,6 +732,7 @@ table.rt a:hover { border-bottom-color: var(--text-primary); }
 <script src="firebase-config.js"></script>
 <script src="/scripts/results-filter.js"></script>
 <script src="firebase-helpers.js"></script>
+<script src="/scripts/msm-rating.js"></script>
 
 <script>
 /* ═══════════════════════════════════════════════════
@@ -791,24 +793,23 @@ function formatTime(sec) {
 }
 
 /* ═══════════════════════════════════════════════════
-   MSM RATING ENGINE
-   Ported from rankings.html so the athlete page shows
-   the same rating. Adjusts each result for course
-   terrain (hills, from the GPX tracks in
-   crosscountry/courses), field strength, and marks
-   out-of-season races so they don't inflate ratings.
-   Weather is treated as neutral here (the rankings page
-   fetches live race-day weather; on a single athlete
-   page that would mean dozens of API calls, so it is
-   omitted and ratings are within ~1-2 pts).
+   MSM RATING ENGINE — shared module adapter
+   All rating math lives in /scripts/msm-rating.js
+   (window.MSMRating), the single source of truth that
+   also backs rankings.html and the coach portal:
+   Riegel 5K-equivalent normalization, course
+   difficulty (GPX terrain + common-athlete
+   calibration), field isolation, and race-day
+   weather from meet records. A rating shown here is
+   identical to the same performance's rating
+   everywhere else on MSM. This page only feeds the
+   model and reads ratings back out of it.
 ═══════════════════════════════════════════════════ */
-const RATING_REF = { M: (16 * 60) / 5000, F: (18.5 * 60) / 5000 };
-const RATING_SPREAD = 350;
-
 const OUT_OF_SEASON_MEETS = ['chick-fil-a-5k', 'st-marys-5k', 'ymca-kennedy-center'];
 
 let msmMeetsData = {};   // slug -> meet record (for dates/course)
 let msmCoursesData = {}; // slug -> course record
+let ratingModelReady = false;
 
 function isNonCompetitive(meetSlug) {
   if (OUT_OF_SEASON_MEETS.includes(meetSlug)) return true;
@@ -825,188 +826,36 @@ function isNonCompetitive(meetSlug) {
   return false;
 }
 
-function median(arr) {
-  if (!arr.length) return null;
-  const s = arr.slice().sort((a, b) => a - b);
-  const mid = Math.floor(s.length / 2);
-  return s.length % 2 ? s[mid] : (s[mid - 1] + s[mid]) / 2;
+// Normalize a raw Firebase result into the shape the shared engine expects.
+function toRatingInput(r) {
+  const meet = msmMeetsData[r.meet_slug] || {};
+  return {
+    athlete_name: r.athlete_name,
+    gender: r.gender,
+    meet_slug: r.meet_slug,
+    course_slug: r.course_slug || meet.course_slug || '',
+    distance: r.distance,
+    time_in_seconds: Number(r.time),
+    date: meet.date || r.created_at || null
+  };
 }
 
-/* ---- Terrain (hill) difficulty from GPX tracks ---- */
-let courseHillFactor = {};
-
-function haversineMeters(lat1, lon1, lat2, lon2) {
-  const R = 6371000;
-  const toRad = d => d * Math.PI / 180;
-  const dLat = toRad(lat2 - lat1);
-  const dLon = toRad(lon2 - lon1);
-  const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
-  return 2 * R * Math.asin(Math.sqrt(a));
-}
-
-function parseGpxClimb(gpxText) {
-  try {
-    const doc = new DOMParser().parseFromString(gpxText, 'application/xml');
-    const pts = Array.from(doc.getElementsByTagName('trkpt'));
-    if (pts.length < 2) return null;
-    let climb = 0, dist = 0, prevEle = null, prevLat = null, prevLon = null;
-    pts.forEach(pt => {
-      const lat = parseFloat(pt.getAttribute('lat'));
-      const lon = parseFloat(pt.getAttribute('lon'));
-      const eleNode = pt.getElementsByTagName('ele')[0];
-      const ele = eleNode ? parseFloat(eleNode.textContent) : null;
-      if (prevEle !== null && ele !== null) {
-        const d = ele - prevEle;
-        if (d > 0.3) climb += d;
-      }
-      if (prevLat !== null) dist += haversineMeters(prevLat, prevLon, lat, lon);
-      if (ele !== null) prevEle = ele;
-      prevLat = lat; prevLon = lon;
-    });
-    return { climb, dist };
-  } catch (e) {
-    console.warn('GPX parse failed', e);
-    return null;
-  }
-}
-
-function climbToFactor(mPerKm) {
-  const NEUTRAL = 15;
-  const f = 1 + (mPerKm - NEUTRAL) * 0.004;
-  return Math.max(0.94, Math.min(1.14, f));
-}
-
-function difficultyLabelFactor(label) {
-  switch ((label || '').toLowerCase()) {
-    case 'hard':   return 1.06;
-    case 'medium': return 1.00;
-    case 'easy':   return 0.96;
-    default:       return 1.00;
-  }
-}
-
-async function buildHillFactors() {
-  courseHillFactor = {};
-  const slugs = Object.keys(msmCoursesData || {});
-  await Promise.all(slugs.map(async (slug) => {
-    const course = msmCoursesData[slug];
-    if (!course) return;
-    if (course.gpx_url) {
-      const ssKey = `msm_hill_${slug}`;
-      const cached = sessionStorage.getItem(ssKey);
-      if (cached !== null) { courseHillFactor[slug] = parseFloat(cached); return; }
-      try {
-        const res = await fetch(course.gpx_url);
-        if (res.ok) {
-          const text = await res.text();
-          const parsed = parseGpxClimb(text);
-          if (parsed && parsed.dist > 100) {
-            const mPerKm = parsed.climb / (parsed.dist / 1000);
-            const f = climbToFactor(mPerKm);
-            courseHillFactor[slug] = f;
-            sessionStorage.setItem(ssKey, String(f));
-            return;
-          }
-        }
-      } catch (e) { console.warn('GPX fetch failed for', slug, e); }
-    }
-    courseHillFactor[slug] = difficultyLabelFactor(course.difficulty);
-  }));
-}
-
-/* ---- Median-derived course factor + field strength ---- */
-let courseFactor = {};
-let fieldFactor = {};
-let globalMedianPace = { M: null, F: null };
-
-// Build all statewide factors from the full results set (rawStateResults:
-// array of { athlete_name, gender, meet_slug, course_slug, distance, time_in_seconds }).
-function buildStateFactors(rawStateResults) {
-  // Course medians (in-season only) + global baseline.
-  courseFactor = {};
-  const pacesByGender = { M: [], F: [] };
-  const pacesByCourse = {};
-  rawStateResults.forEach(r => {
-    const dist = r.distance ? parseInt(r.distance, 10) : 5000;
-    if (!dist || !r.time_in_seconds) return;
-    const g = r.gender;
-    if (g !== 'M' && g !== 'F') return;
-    if (isNonCompetitive(r.meet_slug)) return;
-    const pace = r.time_in_seconds / dist;
-    pacesByGender[g].push(pace);
-    const cs = r.course_slug || (msmMeetsData[r.meet_slug] && msmMeetsData[r.meet_slug].course_slug) || 'unknown';
-    if (!pacesByCourse[cs]) pacesByCourse[cs] = { M: [], F: [] };
-    pacesByCourse[cs][g].push(pace);
+// Build the statewide model once per page load. Calibration mirrors
+// rankings.html: in-season races only, so fun runs don't skew difficulty.
+async function buildRatingModel(rawRows) {
+  if (ratingModelReady || !window.MSMRating) return;
+  await window.MSMRating.buildModel(rawRows.map(toRatingInput), {
+    meetsMap: msmMeetsData,
+    coursesMap: msmCoursesData
   });
-  globalMedianPace.M = median(pacesByGender.M);
-  globalMedianPace.F = median(pacesByGender.F);
-  Object.keys(pacesByCourse).forEach(cs => {
-    const parts = [];
-    ['M', 'F'].forEach(g => {
-      const cm = median(pacesByCourse[cs][g]);
-      if (cm && globalMedianPace[g]) parts.push(cm / globalMedianPace[g]);
-    });
-    let f = parts.length ? parts.reduce((a, b) => a + b, 0) / parts.length : 1.0;
-    f = Math.max(0.90, Math.min(1.12, f));
-    courseFactor[cs] = f;
-  });
-
-  // Field strength per meet|gender|distance.
-  fieldFactor = {};
-  const groups = {};
-  rawStateResults.forEach(r => {
-    const dist = r.distance ? parseInt(r.distance, 10) : 5000;
-    if (!dist || !r.time_in_seconds) return;
-    const key = `${r.meet_slug}|${r.gender}|${dist}`;
-    if (!groups[key]) groups[key] = [];
-    groups[key].push(r.time_in_seconds / dist);
-  });
-  Object.keys(groups).forEach(key => {
-    const paces = groups[key];
-    const g = key.split('|')[1];
-    const gm = globalMedianPace[g];
-    if (!gm || paces.length === 0) { fieldFactor[key] = 1.0; return; }
-    const fieldMed = median(paces);
-    const speedRatio = gm / fieldMed;
-    const depth = Math.min(paces.length / 40, 1);
-    let f = 1 + (speedRatio - 1) * 0.5 * (0.5 + 0.5 * depth);
-    f = Math.max(0.96, Math.min(1.08, f));
-    fieldFactor[key] = f;
-  });
+  ratingModelReady = true;
 }
 
-function fieldFactorFor(r) {
-  const dist = r.distance ? parseInt(r.distance, 10) : 5000;
-  return fieldFactor[`${r.meet_slug}|${r.gender}|${dist}`] || 1.0;
-}
-
-function courseFactorFor(r) {
-  const cs = r.course_slug || (msmMeetsData[r.meet_slug] && msmMeetsData[r.meet_slug].course_slug) || 'unknown';
-  const dataF = courseFactor[cs];
-  const hillF = courseHillFactor[cs];
-  let f;
-  if (typeof dataF === 'number' && typeof hillF === 'number') f = 0.5 * dataF + 0.5 * hillF;
-  else if (typeof hillF === 'number') f = hillF;
-  else if (typeof dataF === 'number') f = dataF;
-  else f = 1.0;
-  return Math.max(0.90, Math.min(1.14, f));
-}
-
-function paceToRating(adjPaceSecPerM, gender) {
-  const ref = RATING_REF[gender] || RATING_REF.M;
-  const pctFaster = (ref - adjPaceSecPerM) / ref;
-  return Math.max(0, Math.round(1000 + pctFaster * (RATING_SPREAD * 10)));
-}
-
-// Compute an MSM rating for one normalized result { gender, meet_slug, course_slug, distance, time_in_seconds }.
+// MSM rating (1000-point scale) for one result, or null if unscorable.
 function computeMsmRating(r) {
-  const dist = r.distance ? parseInt(r.distance, 10) : 5000;
-  if (!dist || !r.time_in_seconds) return null;
-  const rawPace = r.time_in_seconds / dist;
-  const cF = courseFactorFor(r);
-  const fF = fieldFactorFor(r);
-  const adjPace = rawPace / (cF * fF); // weather neutral on athlete page
-  return paceToRating(adjPace, r.gender);
+  if (!window.MSMRating) return null;
+  const res = window.MSMRating.ratingForResult(r);
+  return res ? res.points : null;
 }
 
 /* ═══════════════════════════════════════════════════
@@ -1097,7 +946,7 @@ async function loadAthlete() {
     const schoolsMap = {};
     schoolsSnap.forEach(c => { const s = { id: c.key, ...c.val() }; if (s.slug) schoolsMap[s.slug] = s; });
 
-    // Feed meets/courses into the rating engine.
+    // Feed meets/courses into the shared rating engine.
     msmMeetsData = meetsMap;
     msmCoursesData = {};
     coursesSnap.forEach(c => { const co = { id: c.key, ...c.val() }; if (co.slug) msmCoursesData[co.slug] = co; });
@@ -1106,24 +955,31 @@ async function loadAthlete() {
     const rawResults = [];
     resultsSnap.forEach(c => { rawResults.push({ id: c.key, ...c.val() }); });
 
-    // ---- Build statewide MSM factors from ALL results (needed for ratings + rank) ----
-    const stateNormalized = rawResults.map(r => ({
-      athlete_name: r.athlete_name,
-      gender: r.gender,
-      meet_slug: r.meet_slug,
-      course_slug: r.course_slug || (meetsMap[r.meet_slug] && meetsMap[r.meet_slug].course_slug) || '',
-      distance: r.distance,
-      time_in_seconds: Number(r.time)
-    })).filter(r => r.time_in_seconds && !isNaN(r.time_in_seconds));
-
-    try { await buildHillFactors(); } catch (e) { console.warn('Hill factors unavailable:', e); }
-    buildStateFactors(stateNormalized);
-
-    // Name match is required; school match only narrows things down when both the
-    // known schoolSlug and the individual result actually carry a school_slug.
-    let matched = rawResults.filter(r => norm(r.athlete_name) === normName);
-    if (schoolSlug) {
-      matched = matched.filter(r => !r.school_slug || r.school_slug === schoolSlug);
+    /* --- Display universe: THIS athlete at THIS school. ---
+       Every result row carries school_slug, so the scope is exact. The
+       profile always shows one school at a time; the Schools section (and
+       the hero school chip) is how you view their record at other
+       schools. When the link names no school, fall back to the school
+       they ran for most. */
+    const nameMatched = rawResults.filter(r => norm(r.athlete_name) === normName);
+    if (!schoolSlug) {
+      const counts = {};
+      nameMatched.forEach(r => { if (r.school_slug) counts[r.school_slug] = (counts[r.school_slug] || 0) + 1; });
+      schoolSlug = Object.keys(counts).sort((a, b) => counts[b] - counts[a])[0] || '';
+    }
+    let matched = nameMatched.filter(r => r.school_slug === schoolSlug);
+    // A link with a school slug that doesn't belong to this athlete (stale or
+    // wrong link) would otherwise show an empty profile and mislabel the hero.
+    // Recover by falling back to the school they ran for most.
+    if (!matched.length && schoolSlug) {
+      const counts = {};
+      nameMatched.forEach(r => { if (r.school_slug) counts[r.school_slug] = (counts[r.school_slug] || 0) + 1; });
+      const best = Object.keys(counts).sort((a, b) => counts[b] - counts[a])[0] || '';
+      if (best && best !== schoolSlug) {
+        console.warn(`No results for ${athleteName} at "${schoolSlug}" — falling back to "${best}"`);
+        schoolSlug = best;
+        matched = nameMatched.filter(r => r.school_slug === schoolSlug);
+      }
     }
 
     // If we still don't have an athletes-roster record, try to find one by name(+school).
@@ -1137,31 +993,24 @@ async function loadAthlete() {
       if (candidates.length) athlete = candidates[0];
     }
 
-    if (!schoolSlug) {
-      const counts = {};
-      matched.forEach(r => { if (r.school_slug) counts[r.school_slug] = (counts[r.school_slug] || 0) + 1; });
-      schoolSlug = Object.keys(counts).sort((a, b) => counts[b] - counts[a])[0] || '';
-    }
     schoolName = (schoolsMap[schoolSlug] && schoolsMap[schoolSlug].name) || schoolSlug || '';
 
+    /* --- Build the shared rating model ONCE from every result statewide
+           (in-season calibration, exactly like rankings.html). --- */
+    await buildRatingModel(rawResults);
+
+    // Rate this athlete's in-scope results via the shared model.
     allResults = matched.map(r => {
       const meet = meetsMap[r.meet_slug] || {};
       const timeSec = Number(r.time);
       const distanceVal = Number(r.distance);
-      const courseSlug = r.course_slug || meet.course_slug || '';
-      const ratingInput = {
-        gender: r.gender,
-        meet_slug: r.meet_slug,
-        course_slug: courseSlug,
-        distance: r.distance,
-        time_in_seconds: isNaN(timeSec) ? null : timeSec
-      };
+      const input = toRatingInput(r);
       return {
         ...r,
         meet,
         timeSec: isNaN(timeSec) ? null : timeSec,
         distanceVal: isNaN(distanceVal) ? null : distanceVal,
-        msm: computeMsmRating(ratingInput),
+        msm: computeMsmRating(input),
         sortDate: meet.date || r.created_at || ''
       };
     });
@@ -1171,29 +1020,34 @@ async function loadAthlete() {
     const myRatings = allResults.map(r => r.msm).filter(v => v != null);
     athleteBestMsm = myRatings.length ? Math.max(...myRatings) : null;
 
-    // ---- Determine gender for ranking ----
-    const gender = (athlete && athlete.gender) || (matched.find(r => r.gender) || {}).gender || '';
+    // ---- Gender: roster record first, else best-scored result ----
+    const gender = (athlete && athlete.gender)
+      || (allResults.filter(r => r.msm != null && r.gender).find(() => true) || {}).gender
+      || (allResults.find(r => r.gender) || {}).gender
+      || '';
 
-    // ---- Statewide rank: best MSM rating per athlete (same gender), all-time ----
+    // ---- Statewide rank: best MSM rating per athlete (same gender), all-time.
+    //      One pass over the model's per-athlete performances, so every
+    //      runner's rating is computed exactly once (rankings.html parity).
     if (athleteBestMsm != null && (gender === 'M' || gender === 'F')) {
       const bestByAthlete = new Map(); // normName -> best rating
-      stateNormalized.forEach(r => {
-        if (r.gender !== gender) return;
-        const rating = computeMsmRating(r);
-        if (rating == null) return;
-        const key = norm(r.athlete_name);
-        if (!key) return;
-        if (!bestByAthlete.has(key) || rating > bestByAthlete.get(key)) bestByAthlete.set(key, rating);
-      });
+      const model = window.MSMRating.model || {};
+      const perfLists = model.perfByAthlete || {};
+      for (const aKey in perfLists) {
+        if (!aKey.startsWith(gender + '|')) continue;
+        let best = null;
+        perfLists[aKey].forEach(p => { if (best == null || p.points > best) best = p.points; });
+        if (best != null) bestByAthlete.set(aKey, best);
+      }
       const ranked = [...bestByAthlete.values()].sort((a, b) => b - a);
       athleteStateTotal = ranked.length;
       // Rank = number of athletes strictly better + 1.
       athleteStateRank = ranked.filter(v => v > athleteBestMsm).length + 1;
     }
 
-    // ---- Schools this athlete has results for ----
+    // ---- Schools this athlete has results for (transfer history) ----
     const schoolCounts = {};
-    matched.forEach(r => {
+    nameMatched.forEach(r => {
       const sl = r.school_slug || '';
       if (!sl) return;
       schoolCounts[sl] = (schoolCounts[sl] || 0) + 1;
@@ -1212,7 +1066,7 @@ async function loadAthlete() {
     const gradYear = athlete && athlete.grade;
 
     document.getElementById('heroChips').innerHTML = [
-      schoolSlug ? `<span class="hero-chip"><i class="fas fa-school"></i><a href="school.html?slug=${encodeURIComponent(schoolSlug)}" style="color:inherit;text-decoration:none;">${schoolName}</a></span>` : '',
+      schoolSlug ? `<span class="hero-chip"><i class="fas fa-school"></i><a href="athlete.html?name=${encodeURIComponent(athleteName)}&school=${encodeURIComponent(schoolSlug)}" style="color:inherit;text-decoration:none;">${schoolName}</a></span>${athleteSchools.length > 1 ? `<span class="hero-chip"><i class="fas fa-exchange-alt"></i>${athleteSchools.length} schools</span>` : ''}` : '',
       gradYear ? `<span class="hero-chip"><i class="fas fa-graduation-cap"></i>Class of ${gradYear}</span>` : '',
       genderLabel ? `<span class="hero-chip"><i class="fas fa-user"></i>${genderLabel}</span>` : ''
     ].join('');
@@ -1276,17 +1130,19 @@ function renderSchools(schoolsMap) {
   const row = document.getElementById('schoolsRow');
   if (!athleteSchools.length) { section.style.display = 'none'; return; }
 
-  // Always show the section; it's useful even with one school, and essential
-  // for athletes who transferred and have results under multiple schools.
+  // Always show the section; it's essential for athletes who transferred and
+  // have results under multiple schools. Each card re-scopes THIS profile to
+  // that school (not a generic school page), preserving the athlete context.
   section.style.display = '';
   row.innerHTML = athleteSchools.map(s => {
     const logo = `/assets/team logos/${s.slug}.png`;
+    const isCurrent = s.slug === schoolSlug;
     return `
-      <a class="school-card" href="school.html?slug=${encodeURIComponent(s.slug)}">
+      <a class="school-card" href="athlete.html?name=${encodeURIComponent(athleteName)}&school=${encodeURIComponent(s.slug)}" title="View ${athleteName}'s record at ${s.name}">
         <img src="${logo}" alt="${s.name}" onerror="this.src='/assets/images/logob.svg'">
         <div>
           <div class="school-card-name">${s.name}</div>
-          <div class="school-card-meta">${s.count} result${s.count === 1 ? '' : 's'}</div>
+          <div class="school-card-meta">${s.count} result${s.count === 1 ? '' : 's'}${isCurrent ? ' · viewing' : ''}</div>
         </div>
       </a>`;
   }).join('');

@@ -1073,18 +1073,20 @@
       const resultsArea = document.getElementById("results-area");
       const standings = Object.values(teamScores).sort((a,b) => b.points-a.points);
 
-      const podiumItems = standings.map((team, i) => {
-        const cls = ["p1","p2","p3"][i] || "";
-        const placeLabel = ["1ST","2ND","3RD"][i] || `${i+1}TH`;
-        const color = teamColorMap[team.school] || "#8899bb";
-        return `<div class="podium-item ${cls}">
-          ${logoTag(team.school, "podium-logo")}
-          <div class="podium-rank">${placeLabel}</div>
-          <div class="podium-name"><span class="team-dot" style="background:${color}"></span>${team.school}</div>
-          <div class="podium-pts">${formatScorePoints(team.points)}</div>
-          <div class="podium-pts-label">Points</div>
+      const standingsList = standings.map((team, i) => {
+        const logo = logoTag(team.school, "item-logo");
+        return `<div class="list-item">
+          <div class="item-place">${i + 1}</div>
+          <div class="item-avatar">${logo}</div>
+          <div class="item-details"><div class="item-name">${team.school}</div><div class="item-meta">${gender === "M" ? "Boys" : "Girls"} · NFHS 8-place scoring</div></div>
+          <div class="item-score">${formatScorePoints(team.points)} pts</div>
         </div>`;
       }).join("");
+
+      const highPointListHTML = highPointList.length ? `<div class="app-list"><div class="list-header">High Point Athletes</div>${highPointList.map((ath, i) => {
+        const pills = ath.placements.sort((a,b) => a.place-b.place).map(pl => `<span class="scorer-badge">${pl.event} — ${pl.place} (+${formatScorePoints(pl.pts)})</span>`).join("");
+        return `<div class="list-item"><div class="item-place">${i + 1}</div><div class="item-avatar">${logoTag(ath.school, "item-logo")}</div><div class="item-details"><div class="item-name">${ath.label}</div><div class="item-school">${ath.school}</div><div class="item-meta">${pills}</div></div><div class="item-score">${formatScorePoints(ath.points)} pts</div></div>`;
+      }).join("")}</div>` : "";
 
       const medClass = i => i===0?"m1":i===1?"m2":i===2?"m3":"";
       const pillClass = p => p<=3?`p${p}`:p<=8?`p${p}`:"";
@@ -1115,47 +1117,24 @@
         const rows = event.entries.map(e => {
           const color = teamColorMap[e.school] || "#8899bb";
           const qualTag = e.qualType === "top" ? `<span class="qual-tag q-top">Regional</span>` : e.qualType === "wildcard" ? `<span class="qual-tag q-wild">Wildcard</span>` : "";
-          return `<tr class="${rowClass(e.place)}">
-            <td><span class="place-badge ${placeClass(e.place)}">${e.place}</span></td>
-            <td class="athlete-name">${e.athleteLabel}${qualTag}</td>
-            <td><div class="school-cell">${logoTag(e.school,"cell-logo")}<span class="team-dot" style="background:${color}"></span>${e.school}</div></td>
-            <td class="mark-val">${e.mark}</td>
-            <td class="pts-val${e.points===0?" zero":""}">${e.points>0?"+"+formatScorePoints(e.points)+(e.tied?"*":""):"—"}</td>
-          </tr>`;
+          return `<div class="list-item">
+            <div class="item-place">${e.place}</div>
+            <div class="item-avatar">${logoTag(e.school, "item-logo")}</div>
+            <div class="item-details"><div class="item-name">${e.athleteLabel}${qualTag}</div><div class="item-school">${e.school}</div></div>
+            <div class="item-score"><div class="score-stack"><span class="score-rating">${e.mark}</span><span class="score-predicted">${e.points>0?"+"+formatScorePoints(e.points)+" pts":"—"}</span></div></div>
+          </div>`;
         }).join("");
         const tags = [
           event.relay ? `<span class="event-tag relay">Relay</span>` : "",
           event.fieldEvent ? `<span class="event-tag field">Field</span>` : `<span class="event-tag">Track</span>`,
           `<span class="event-tag">${event.entries.length} comp</span>`,
         ].filter(Boolean).join("");
-        return `<div class="event-card collapsed">
-          <div class="event-header" onclick="this.closest('.event-card').classList.toggle('collapsed')">
-            <h3 class="event-name">${event.name}</h3>
-            <div class="event-tags">${tags}<i class="fas fa-chevron-down toggle-chev"></i></div>
-          </div>
-          <div class="event-body">
-            <table class="event-table">
-              <thead><tr><th style="width:46px;">#</th><th>Athlete</th><th>School</th><th style="text-align:right;">Mark</th><th>Pts</th></tr></thead>
-              <tbody>${rows}</tbody>
-            </table>
-          </div>
-        </div>`;
+        return `<div class="app-list"><div class="list-header">${event.name} · ${event.entries.length} competitors</div>${rows}</div>`;
       }).join("");
 
       resultsArea.innerHTML = `<div class="results-wrap">
-        <div class="standings-card">
-          <div class="card-header">
-            <div class="card-header-icon"><i class="fas fa-trophy"></i></div>
-            <div>
-              <div class="card-header-title">Team Standings</div>
-              <div class="card-header-sub">${standings.length} teams &middot; ${gender==="M"?"Boys":"Girls"} ${season.charAt(0).toUpperCase()+season.slice(1)} &middot; NFHS 8-place · ties split pts</div>
-            </div>
-          </div>
-          <div class="podium-row">${podiumItems}</div>
-        </div>
-        ${highPointList.length ? `
-        <h2 class="section-heading"><i class="fas fa-star" style="color:var(--gold);font-size:1.1rem"></i> High Point Athletes</h2>
-        <div class="hp-card"><div class="hp-grid">${hpCards}</div></div>` : ""}
+        <div class="app-list"><div class="list-header">Team Standings · ${standings.length} teams · ${gender==="M"?"Boys":"Girls"} ${season.charAt(0).toUpperCase()+season.slice(1)}</div>${standingsList}</div>
+        ${highPointListHTML}
         <h2 class="section-heading">Event Results</h2>
         <div class="events-grid">${eventCards}</div>
       </div>`;
@@ -1193,22 +1172,18 @@
 
         const allStandingsRows = standings.map((team,i) => {
           const color = teamColorMap[team.school]||"#8899bb";
-          return `<tr>
-            <td style="width:36px;padding:7px 10px;"><span class="place-badge ${["g","s","b"][i]||"n"}" style="width:24px;height:24px;font-size:.75rem">${i+1}</span></td>
-            <td style="padding:7px 10px;">${logoTag(team.school,"cell-logo")}</td>
-            <td style="padding:7px 10px;font-weight:600"><span class="team-dot" style="background:${color};margin-right:5px"></span>${team.school}</td>
-            <td style="padding:7px 10px;font-family:var(--font-mono);color:var(--accent);font-weight:700">${formatScorePoints(team.points)}</td>
-          </tr>`;
+          return `<div class="list-item">
+            <div class="item-place">${i + 1}</div>
+            <div class="item-avatar">${logoTag(team.school, "item-logo")}</div>
+            <div class="item-details"><div class="item-name">${team.school}</div><div class="item-meta">Regional team score</div></div>
+            <div class="item-score">${formatScorePoints(team.points)} pts</div>
+          </div>`;
         }).join("");
 
         return `<div class="region-panel${ri===0?" active":""}" id="region-panel-${ri}">
           <div style="padding:0 0 12px">
             <div style="font-size:.75rem;color:var(--text-lo);margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em;font-weight:700">Team Standings</div>
-            <div class="podium-row" style="padding:0;gap:8px;margin-bottom:12px">${podium}</div>
-            <table class="event-table" style="background:var(--bg);border-radius:6px;overflow:hidden;border:1px solid var(--border)">
-              <thead><tr><th style="width:36px">#</th><th></th><th>School</th><th>Pts</th></tr></thead>
-              <tbody>${allStandingsRows}</tbody>
-            </table>
+            <div class="app-list"><div class="list-header">Team Standings</div>${allStandingsRows}</div>
           </div>
         </div>`;
       }).join("");
@@ -1242,31 +1217,20 @@
         const cls = ["p1","p2","p3"][i]||"";
         const placeLabel = ["1ST","2ND","3RD"][i]||`${i+1}TH`;
         const color = teamColorMap[team.school]||"#8899bb";
-        return `<div class="podium-item ${cls}">
-          ${logoTag(team.school,"podium-logo")}
-          <div class="podium-rank">${placeLabel}</div>
-          <div class="podium-name"><span class="team-dot" style="background:${color}"></span>${team.school}</div>
-          <div class="podium-pts">${formatScorePoints(team.points)}</div>
-          <div class="podium-pts-label">Points</div>
-        </div>`;
+          return `<div class="list-item">
+            <div class="item-place">${i + 1}</div>
+            <div class="item-avatar">${logoTag(team.school, "item-logo")}</div>
+            <div class="item-details"><div class="item-name">${team.school}</div><div class="item-meta">Championship team score</div></div>
+            <div class="item-score">${formatScorePoints(team.points)} pts</div>
+          </div>`;
       }).join("");
 
       const medClass = i => i===0?"m1":i===1?"m2":i===2?"m3":"";
       const pillClass = p => p<=3?`p${p}`:p<=8?`p${p}`:"";
-      const champHPCards = champHP.map((ath,i) => {
-        const color = teamColorMap[ath.school]||"#8899bb";
-        const pills = ath.placements.sort((a,b) => a.place-b.place).map(pl => {
-          const tieNote = pl.tied ? " (tie)" : "";
-          return `<span class="hp-pill ${pillClass(pl.place)}">${pl.event} — ${pl.place}${["st","nd","rd"][pl.place-1]||"th"} (+${formatScorePoints(pl.pts)}${tieNote})</span>`;
-        }).join("");
-        return `<div class="hp-athlete">
-          <div class="hp-medal ${medClass(i)}">${["🥇","🥈","🥉"][i]||`#${i+1}`}</div>
-          <div class="hp-school-row">${logoTag(ath.school,"hp-logo")}<span class="hp-school-name" style="color:${color}">${ath.school}</span></div>
-          <div class="hp-name">${ath.label}</div>
-          <div class="hp-pts">${formatScorePoints(ath.points)} pts</div>
-          <div class="hp-pills">${pills}</div>
-        </div>`;
-      }).join("");
+      const champHPCards = champHP.length ? `<div class="app-list"><div class="list-header">High Point Athletes</div>${champHP.map((ath,i) => {
+        const pills = ath.placements.sort((a,b) => a.place-b.place).map(pl => `<span class="scorer-badge">${pl.event} — ${pl.place} (+${formatScorePoints(pl.pts)})</span>`).join("");
+        return `<div class="list-item"><div class="item-place">${i + 1}</div><div class="item-avatar">${logoTag(ath.school, "item-logo")}</div><div class="item-details"><div class="item-name">${ath.label}</div><div class="item-school">${ath.school}</div><div class="item-meta">${pills}</div></div><div class="item-score">${formatScorePoints(ath.points)} pts</div></div>`;
+      }).join("")}</div>` : "";
 
       const placeClass = p => p===1?"g":p===2?"s":p===3?"b":"n";
       const rowClass = p => p===1?"row-gold":p===2?"row-silver":p===3?"row-bronze":"";
@@ -1283,31 +1247,19 @@
           const qualTag = qInfo
             ? (qInfo.qualType==="top" ? `<span class="qual-tag q-top">${qInfo.regionName}</span>` : `<span class="qual-tag q-wild">Wildcard</span>`)
             : "";
-          return `<tr class="${rowClass(e.place)}">
-            <td><span class="place-badge ${placeClass(e.place)}">${e.place}</span></td>
-            <td class="athlete-name">${e.athleteLabel}${qualTag}</td>
-            <td><div class="school-cell">${logoTag(e.school,"cell-logo")}<span class="team-dot" style="background:${color}"></span>${e.school}</div></td>
-            <td class="mark-val">${e.mark}</td>
-            <td class="pts-val${e.points===0?" zero":""}">${e.points>0?"+"+formatScorePoints(e.points)+(e.tied?"*":""):"—"}</td>
-          </tr>`;
+          return `<div class="list-item">
+            <div class="item-place">${e.place}</div>
+            <div class="item-avatar">${logoTag(e.school, "item-logo")}</div>
+            <div class="item-details"><div class="item-name">${e.athleteLabel}${qualTag}</div><div class="item-school">${e.school}</div></div>
+            <div class="item-score"><div class="score-stack"><span class="score-rating">${e.mark}</span><span class="score-predicted">${e.points>0?"+"+formatScorePoints(e.points)+" pts":"—"}</span></div></div>
+          </div>`;
         }).join("");
         const tags = [
           event.relay?`<span class="event-tag relay">Relay</span>`:"",
           event.fieldEvent?`<span class="event-tag field">Field</span>`:`<span class="event-tag">Track</span>`,
           `<span class="event-tag">${event.entries.length} comp</span>`,
         ].filter(Boolean).join("");
-        return `<div class="event-card collapsed">
-          <div class="event-header" onclick="this.closest('.event-card').classList.toggle('collapsed')">
-            <h3 class="event-name">${event.name}</h3>
-            <div class="event-tags">${tags}<i class="fas fa-chevron-down toggle-chev"></i></div>
-          </div>
-          <div class="event-body">
-            <table class="event-table">
-              <thead><tr><th style="width:46px;">#</th><th>Athlete</th><th>School</th><th style="text-align:right;">Mark</th><th>Pts</th></tr></thead>
-              <tbody>${rows}</tbody>
-            </table>
-          </div>
-        </div>`;
+        return `<div class="app-list"><div class="list-header">${event.name} · ${event.entries.length} competitors</div>${rows}</div>`;
       }).join("");
 
       resultsArea.innerHTML = `<div class="results-wrap">
@@ -1353,7 +1305,7 @@
               </div>
             </div>
             <div class="qual-stage-body">
-              <div class="podium-row" style="padding:0 0 16px">${champPodium}</div>
+              <div class="app-list"><div class="list-header">Championship Team Standings</div>${champPodium}</div>
               ${champHP.length ? `<div style="margin-bottom:16px"><div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-lo);margin-bottom:8px">High Point Athletes</div><div class="hp-card"><div class="hp-grid">${champHPCards}</div></div></div>` : ""}
               <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-lo);margin-bottom:8px">Event Results</div>
               <div class="events-grid">${champEventCards}</div>

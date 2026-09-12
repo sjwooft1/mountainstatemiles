@@ -17,6 +17,12 @@
   font-weight: normal;
   font-style: normal;
 }
+@font-face {
+  font-family: 'run';
+  src: url('/assets/fonts/Running.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
 
 /* Web fonts for the friendly display + body pairing.
    (Fraunces = rounded humanist serif, Nunito = soft sans.) */
@@ -66,6 +72,7 @@
   /* Typography */
   --font-display: 'Fraunces', 'Aqeon Demo', Georgia, serif;
   --font-sans: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --run: 'run', Arial, sans-serif;
 
   /* Spacing Scale */
   --spacing-xs: 0.25rem;
@@ -2333,16 +2340,17 @@ main.content-section {
   padding-bottom: 32px;
 }
 
-.footer-brand h3 {
+.msm {
   margin: 0 0 12px 0;
-  font-weight: 700;
   letter-spacing: 0.5px;
+  font-family: var(--run);
 }
 .footer-brand p {
   color: var(--text-secondary);
   max-width: 400px;
   line-height: 1.6;
   margin: 0;
+  font-family: var(--run);
 }
 .footer-brand{
     display: flex;
@@ -2394,14 +2402,246 @@ main.content-section {
     gap: 24px;
   }
 }
-.sport-badge {
-  font-size: 0.75rem;
-  font-weight: 800;
-  letter-spacing: 0.5px;
-  background: var(--msm-cream);
+
+/* ========================================================================
+   Shared leaderboard / results presentation
+   Rankings and meet pages use this app-list language everywhere:
+   placement rail, optional team logo, flexible details, and score column.
+   ======================================================================== */
+.app-list {
+  width: 100%;
+  margin: 0 0 2rem;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg, 18px);
+  overflow: hidden;
+  box-shadow: 0 2px 8px var(--shadow-light);
+}
+.app-list > .list-header {
+  background: var(--bg-secondary);
+  padding: 12px 16px;
   color: var(--text-secondary);
-  padding: 3px 8px;
-  border-radius: 999px;
-  margin-top: 1px;
+  border-bottom: 1px solid var(--border);
+  font-size: .8rem;
+  font-weight: 800;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+.app-list > .list-item {
+  display: flex;
+  align-items: stretch;
+  min-width: 0;
+  min-height: 68px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  transition: background var(--transition, 220ms ease);
+}
+.app-list > .list-item:last-child { border-bottom: 0; }
+.app-list > .list-item:hover { background: var(--bg-secondary); }
+.app-list .item-place {
+  width: 48px;
+  min-height: 68px;
+  flex: 0 0 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--text-primary);
+  color: var(--bg-primary);
+  font-size: 1.05rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.app-list .item-avatar {
+  display: flex;
+  align-items: center;
+  padding-left: 12px;
+  flex: 0 0 auto;
+}
+.app-list .item-avatar img {
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  padding: 2px;
+  object-fit: contain;
+  background: #fff;
+}
+.app-list .item-details {
+  min-width: 0;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 12px;
+}
+.app-list .item-name {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text-primary);
+  font-size: 1.02rem;
+  font-weight: 800;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-decoration: none;
+}
+.app-list .item-name:hover,
+.app-list .item-school:hover { color: var(--primary); }
+.app-list .item-school {
+  min-width: 0;
+  overflow: hidden;
+  margin: 2px 0 3px;
+  color: var(--text-secondary);
+  font-size: .84rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-decoration: none;
+}
+.app-list .item-meta {
+  color: var(--text-tertiary);
+  font-size: .74rem;
+  font-weight: 700;
+  line-height: 1.45;
+}
+.app-list .item-score {
+  min-width: 92px;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 12px 16px 12px 8px;
+  color: var(--text-primary);
+  font-size: 1.08rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.app-list .score-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  line-height: 1.15;
+}
+.app-list .score-rating { color: var(--text-primary); font-size: 1.15rem; font-weight: 900; font-variant-numeric: tabular-nums; }
+.app-list .score-predicted { color: var(--text-tertiary); font-size: .68rem; font-weight: 700; white-space: nowrap; }
+.app-list .scorer-badge {
+  display: inline-block;
+  margin: 2px 4px 2px 0;
+  padding: 2px 6px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  font-size: .65rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.leaderboard-table,
+.app-list table { width: 100%; border-collapse: collapse; color: var(--text-primary); }
+.leaderboard-table th,
+.app-list table th {
+  padding: 10px 16px;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+  color: var(--text-secondary);
+  font-size: .72rem;
+  font-weight: 800;
+  letter-spacing: .06em;
+  text-align: left;
+  text-transform: uppercase;
+}
+.leaderboard-table td,
+.app-list table td { padding: 11px 16px; border-bottom: 1px solid var(--border); color: var(--text-primary); }
+.leaderboard-table tbody tr:last-child td,
+.app-list table tbody tr:last-child td { border-bottom: 0; }
+.leaderboard-table tbody tr:hover td,
+.app-list table tbody tr:hover td { background: var(--bg-secondary); }
+@media (max-width: 600px) {
+  .app-list .item-place { width: 38px; flex-basis: 38px; font-size: .95rem; }
+  .app-list .item-avatar { padding-left: 8px; }
+  .app-list .item-avatar img { width: 34px; height: 34px; }
+  .app-list .item-details { padding: 10px 8px; }
+  .app-list .item-score { min-width: 74px; padding-right: 10px; }
+  .app-list .score-rating { font-size: 1rem; }
+  .app-list .score-predicted { max-width: 84px; overflow: hidden; text-overflow: ellipsis; }
+}
+/* Shared table treatment for legacy leaderboard renderers. */
+.table-container:has(> .item-list),
+.table-container:has(> .results-table),
+.table-container:has(> .data-table),
+.table-card:has(> table.rt),
+.results-table-wrap:has(> table.rt) {
+  overflow-x: auto;
+  margin: 0 0 2rem;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg, 18px);
+  box-shadow: 0 2px 8px var(--shadow-light);
+}
+.item-list,
+.results-table,
+.data-table,
+.event-table,
+table.rt,
+table.podium {
+  width: 100%;
+  border-collapse: collapse;
+  color: var(--text-primary);
+}
+.item-list th,
+.results-table th,
+.data-table th,
+.event-table th,
+table.rt thead th,
+table.podium th {
+  padding: 10px 16px;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+  color: var(--text-secondary);
+  font-size: .72rem;
+  font-weight: 800;
+  letter-spacing: .06em;
+  text-align: left;
+  text-transform: uppercase;
+}
+.item-list td,
+.results-table td,
+.data-table td,
+.event-table td,
+table.rt tbody td,
+table.podium td {
+  padding: 11px 16px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-primary);
+  vertical-align: middle;
+}
+.item-list tbody tr:last-child td,
+.results-table tbody tr:last-child td,
+.data-table tbody tr:last-child td,
+.event-table tbody tr:last-child td,
+table.rt tbody tr:last-child td,
+table.podium tbody tr:last-child td { border-bottom: 0; }
+.item-list tbody tr:hover td,
+.results-table tbody tr:hover td,
+.data-table tbody tr:hover td,
+.event-table tbody tr:hover td,
+table.rt tbody tr:hover td,
+table.podium tbody tr:hover td { background: var(--bg-secondary); }
+
+/* When a page uses a table for an individual leaderboard, keep its score/mark
+   visually equivalent to the app-list score column. */
+.item-list td:last-child,
+.results-table td:last-child,
+.data-table td:last-child,
+.event-table td:last-child,
+table.rt tbody td.mark-col,
+table.podium td:last-child {
+  font-variant-numeric: tabular-nums;
 }
 

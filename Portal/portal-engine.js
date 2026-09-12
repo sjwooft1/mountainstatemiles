@@ -464,46 +464,62 @@
   //  MEET SIMULATION
   // =====================================================================
   // Project an athlete's effort onto a target course + distance.
-  // Removes the terrain difficulty baked into the source race, re-applies the
-  // target course's terrain, then Riegel-scales to the target distance. This is
-  // the course-adjusted basis the coach chose.
+  // The shared MSM performance boost removes source-course, field, and weather
+  // effects; the target course factor is then applied. This keeps simulations
+  // from treating an easy-course PR as an athlete's portable ability.
   function projectOntoCourse(sourceRow, targetCourseSlug, targetDistance) {
     if (!sourceRow || sourceRow.timeSec == null) return null;
     const srcDist = sourceRow.distance ? parseInt(sourceRow.distance, 10) : 5000;
     const srcCourse = sourceRow.course_slug || (state.meetsMap[sourceRow.meet_slug] && state.meetsMap[sourceRow.meet_slug].course_slug) || "";
-    const srcHill = (typeof state.factors.hill[srcCourse] === "number") ? state.factors.hill[srcCourse] : 1.0;
-    const tgtHill = (typeof state.factors.hill[targetCourseSlug] === "number") ? state.factors.hill[targetCourseSlug] : 1.0;
-    // Neutralize source terrain (faster course => de-inflate), apply target terrain.
-    const terrainAdj = tgtHill / srcHill;
-    const distAdjPace = sourceRow.timeSec * terrainAdj; // time on same distance, target terrain
-    return riegel(distAdjPace, srcDist, targetDistance);
+    const sourceBoost = sourceRow._msm && Number(sourceRow._msm.boost) > 0
+      ? Number(sourceRow._msm.boost)
+      : (state.factors.course[srcCourse] || 1.0);
+    const targetFactor = state.factors.course[targetCourseSlug] || 1.0;
+    const neutral5k = riegel(sourceRow.timeSec, srcDist, 5000) / sourceBoost;
+    const target5k = neutral5k * targetFactor;
+    return riegel(target5k, 5000, targetDistance);
   }
 
-  // Best projected (or raw) time for an athlete onto a course.
-  // basis: "adjusted" (course-adjusted, default) or "raw" (fastest raw time).
+  // Best projected time for an athlete onto a course.
+  // basis: "recent" (weighted last three efforts, default), "adjusted"
+  // (best course-adjusted effort), or "raw" (fastest raw time diagnostic).
   function athleteProjectedTime(summary, courseSlug, distance, basis) {
     if (!summary || !summary.rows.length) return null;
+    const timed = summary.rows.filter((r) => r.timeSec != null).slice().sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")));
+    if (!timed.length) return null;
     if (basis === "raw") {
-      const best = summary.rows.filter((r) => r.timeSec != null).sort((a, b) => a.timeSec - b.timeSec)[0];
+      const best = timed.slice().sort((a, b) => a.timeSec - b.timeSec)[0];
       return best ? { timeSec: best.timeSec, source: best, projected: false } : null;
     }
-    // adjusted: project every timed race onto the course, keep the fastest.
-    let best = null;
-    summary.rows.forEach((r) => {
-      if (r.timeSec == null) return;
-      const proj = projectOntoCourse(r, courseSlug, distance);
-      if (proj != null && (best == null || proj < best.timeSec)) best = { timeSec: proj, source: r, projected: true };
-    });
-    return best;
+    const projected = timed.map((r) => ({ source: r, timeSec: projectOntoCourse(r, courseSlug, distance) })).filter((x) => x.timeSec != null);
+    if (!projected.length) return null;
+    if (basis === "adjusted") {
+      const best = projected.slice().sort((a, b) => a.timeSec - b.timeSec)[0];
+      return { timeSec: best.timeSec, source: best.source, projected: true };
+    }
+    // Recent form is deliberately not a PR: 50/30/20% over the latest three
+    // usable races, with fewer races re-normalized instead of invented.
+    const recent = projected.slice(0, 3);
+    const weights = [0.5, 0.3, 0.2].slice(0, recent.length);
+    const weightTotal = weights.reduce((s, w) => s + w, 0);
+    const timeSec = recent.reduce((s, x, i) => s + x.timeSec * weights[i], 0) / weightTotal;
+    return { timeSec, source: recent[0].source, projected: true, sourceCount: recent.length };
   }
 
   // Build the entrant list for one team.
   // includedNames: optional Set/array of athlete names to include (else top 7 by time).
-  function teamEntrants(schoolSlug, gender, season, courseSlug, distance, basis, includedNames) {
+  // sourceMeetSlugs: optional meet-result sample selected by the coach. When
+  // present, only efforts from those meets are used; this makes the simulator
+  // reproducible and prevents a lifetime/PR lookup from sneaking in.
+  function teamEntrants(schoolSlug, gender, season, courseSlug, distance, basis, includedNames, sourceMeetSlugs) {
     const roster = rosterForSchool(schoolSlug, gender, season);
+    const sourceSet = sourceMeetSlugs && sourceMeetSlugs.length ? new Set(sourceMeetSlugs) : null;
     let entrants = roster.map((s) => {
-      const t = athleteProjectedTime(s, courseSlug, distance, basis);
-      return t ? { name: s.name, schoolSlug, timeSec: t.timeSec, projected: t.projected, source: t.source, summary: s } : null;
+      const teamRows = s.rows.filter((r) => r.school_slug === schoolSlug && (!sourceSet || sourceSet.has(r.meet_slug)));
+      if (!teamRows.length) return null;
+      const teamSummary = { ...s, rows: teamRows };
+      const t = athleteProjectedTime(teamSummary, courseSlug, distance, basis);
+      return t ? { name: s.name, schoolSlug, timeSec: t.timeSec, projected: t.projected, source: t.source, sourceCount: t.sourceCount || 1, summary: s } : null;
     }).filter(Boolean).sort((a, b) => a.timeSec - b.timeSec);
     if (includedNames && includedNames.length) {
       const set = new Set(includedNames.map(norm));
@@ -520,12 +536,13 @@
   // place); teams need 5+ finishers to score.
   function simulateMeet(opts) {
     const { teamList, gender, season, courseSlug, basis } = opts;
+    const sourceMeetSlugs = Array.isArray(opts.sourceMeetSlugs) ? opts.sourceMeetSlugs : null;
     const distance = opts.distance || (state.coursesMap[courseSlug] && parseInt(state.coursesMap[courseSlug].distance, 10)) || 5000;
 
     // Assemble the field.
     let field = [];
     teamList.forEach((t) => {
-      const ents = teamEntrants(t.schoolSlug, gender, season, courseSlug, distance, basis, t.includedNames);
+      const ents = teamEntrants(t.schoolSlug, gender, season, courseSlug, distance, basis, t.includedNames, sourceMeetSlugs);
       field = field.concat(ents);
     });
     field.sort((a, b) => a.timeSec - b.timeSec);
@@ -535,8 +552,10 @@
     const bySchool = {};
     field.forEach((e) => { (bySchool[e.schoolSlug] = bySchool[e.schoolSlug] || []).push(e); });
     const scoringSchools = new Set(Object.keys(bySchool).filter((s) => bySchool[s].length >= 5));
-    let counter = 0;
-    field.forEach((e) => { e.scoringPlace = scoringSchools.has(e.schoolSlug) ? ++counter : null; });
+    // Meet scoring is based on absolute finish places. Incomplete teams still
+    // occupy places and displace complete teams; they simply do not receive a
+    // team score themselves.
+    field.forEach((e) => { e.scoringPlace = scoringSchools.has(e.schoolSlug) ? e.place : null; });
 
     const teams = Object.keys(bySchool).map((slug) => {
       const runners = bySchool[slug].slice().sort((a, b) => (a.scoringPlace || 999) - (b.scoringPlace || 999));
@@ -564,7 +583,241 @@
       return a6 - b6;
     });
 
-    return { field, teams, distance, courseSlug, basis };
+    return { field, teams, distance, courseSlug, basis, sourceMeetSlugs: sourceMeetSlugs || [] };
+  }
+
+  // =====================================================================
+  //  EXPECTED TEAMS (mirrors meet.html)
+  // =====================================================================
+  // meet.html renders a meet's expected field with:
+  //   const teamsList = currentMeetData.teams || currentMeetData.expected_teams || [];
+  // Entries may be plain names/slugs (strings) or {name|school, slug?} objects.
+  // This resolves each entry to a school slug + display name the same way.
+  function meetExpectedTeams(meetSlug) {
+    const m = state.meetsMap[meetSlug];
+    if (!m) return [];
+    let list = m.teams && (Array.isArray(m.teams) || typeof m.teams === "object") && (Array.isArray(m.teams) ? m.teams.length : Object.keys(m.teams).length)
+      ? m.teams
+      : (m.expected_teams || []);
+    if (!Array.isArray(list)) list = Object.values(list || {});
+    // normName -> slug lookup for entries given as school NAMES.
+    const byName = {};
+    Object.values(state.schoolsMap).forEach((s) => { if (s.name) byName[slugify(s.name)] = s.slug; });
+    const out = [];
+    list.forEach((t) => {
+      if (t == null || t === "") return;
+      const raw = typeof t === "object" ? (t.slug || t.name || t.school || "") : String(t);
+      const display = typeof t === "object" ? (t.name || t.school || raw) : raw;
+      const slug = state.schoolsMap[raw] ? raw : (byName[slugify(raw)] || slugify(raw));
+      if (slug && !out.some((x) => x.slug === slug)) out.push({ slug, name: (state.schoolsMap[slug] || {}).name || display || slug });
+    });
+    return out;
+  }
+
+  // Upcoming meets (today forward), soonest first — for the coach's meet outlook.
+  function listUpcomingMeets(limit) {
+    const today = new Date();
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+    return Object.values(state.meetsMap)
+      .filter((m) => m.date && String(m.date).split("T")[0] >= todayStr)
+      .sort((a, b) => String(a.date).localeCompare(String(b.date)))
+      .map((m) => ({
+        slug: m.slug, name: m.name || m.slug, date: m.date, location: m.location || "",
+        course_slug: m.course_slug || "",
+        expected: meetExpectedTeams(m.slug),
+      }))
+      .slice(0, limit || 12);
+  }
+
+  // =====================================================================
+  //  SPLIT COACH — personalized pacing plan from the athlete's own PBs
+  // =====================================================================
+  // Fit the athlete's personal Riegel exponent from their PBs at two
+  // distances. n > 1.06 means they fade relative to the standard endurance
+  // model (go out controlled); n < 1.06 means endurance outruns their speed
+  // (they can afford to be slightly aggressive early).
+  function personalRiegelExponent(summary) {
+    const pbs = Object.values(summary && summary.pbs || {})
+      .filter((p) => p && p.distance >= 1600 && p.timeSec)
+      .sort((a, b) => a.distance - b.distance);
+    if (pbs.length < 2) return null;
+    const a = pbs[0], b = pbs[pbs.length - 1];
+    if (b.distance <= a.distance) return null;
+    return Math.log(b.timeSec / a.timeSec) / Math.log(b.distance / a.distance);
+  }
+
+  // Build a race-day split plan.
+  // opts: { distance (m), goalTimeSec (optional — else best equivalent effort) }
+  function splitPlan(summary, opts) {
+    opts = opts || {};
+    if (!summary || !summary.best5k) return null;
+    const distance = Number(opts.distance) || 5000;
+    const kms = distance / 1000;
+    let goal = opts.goalTimeSec != null && Number(opts.goalTimeSec) > 0 ? Number(opts.goalTimeSec) : null;
+    if (goal == null) goal = riegel(summary.best5k.timeSec, summary.best5k.distance, distance);
+    if (goal == null || !isFinite(goal)) return null;
+
+    const n = personalRiegelExponent(summary) || RIEGEL;
+    const evenKm = goal / kms;
+    const evenMile = (evenKm / 1000) * MILE_M;
+
+    // Segment adjustments (seconds per km) keyed to the athlete's fade profile.
+    let goOut = 0, close = 0, note = "";
+    if (n > 1.09) {
+      goOut = 5; close = -5;
+      note = `Personal exponent ${n.toFixed(2)} — you fade more than the standard model. Bank nothing early: go out ~5s/km slower than goal and close hard.`;
+    } else if (n > 1.07) {
+      goOut = 3; close = -3;
+      note = `Personal exponent ${n.toFixed(2)} — a slight fade tendency. Control the first km (~3s slow) and invest it in the last one.`;
+    } else if (n < 1.03) {
+      goOut = -2; close = 2;
+      note = `Personal exponent ${n.toFixed(2)} — your endurance outruns your speed. Even to slightly aggressive early is safe for you; expect to pass people late.`;
+    } else {
+      note = `Personal exponent ${n.toFixed(2)} — an even-effort racer. Lock onto goal pace from the gun and roll.`;
+    }
+
+    // Cumulative checkpoints (even pacing), fractional final km handled.
+    const checkpoints = [];
+    const totalKm = Math.round(kms * 10) / 10;
+    for (let k = 1; k <= Math.ceil(kms - 0.01); k++) {
+      const segLen = Math.min(1, kms - (k - 1));
+      checkpoints.push({ km: Math.round((k - 1 + segLen) * 10) / 10, cumSec: Math.round(evenKm * (k - 1 + segLen)) });
+    }
+
+    // Strategy segments: thirds for 3K+, halves for shorter races.
+    const strategy = [];
+    if (kms >= 3) {
+      strategy.push({ label: `First 1 km`, paceSec: evenKm + goOut, tag: goOut > 0 ? "Controlled" : goOut < 0 ? "Aggressive" : "Even" });
+      strategy.push({ label: `Through ${Math.floor(kms - 1)} km`, paceSec: evenKm, tag: "Even" });
+      strategy.push({ label: "Final km", paceSec: evenKm + close, tag: close < 0 ? "Kick" : "Hold" });
+    } else {
+      const half = distance / 2;
+      strategy.push({ label: `First ${Math.round(half)} m`, paceSec: evenKm + goOut, tag: goOut > 0 ? "Controlled" : "Even" });
+      strategy.push({ label: `Second ${Math.round(half)} m`, paceSec: evenKm + close, tag: "Finish" });
+    }
+
+    return {
+      distance, goalTimeSec: Math.round(goal), evenKm, evenMile,
+      exponent: n, goOut, close, note, checkpoints, strategy,
+      evenPaceMileSec: evenMile,
+    };
+  }
+
+  // =====================================================================
+  //  MILEAGE PLAN GENERATOR
+  // =====================================================================
+  // Week-by-week build from the athlete's current volume to a goal race:
+  // ~8% weekly growth, a down week every 4th week, peak 3 weeks out,
+  // then a 2-week taper. Miles are distributed across the chosen running
+  // days (long run, two quality days, easy filler).
+  const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+  const r2 = (v) => Math.round(v * 2) / 2;
+
+  function mileagePlan(opts) {
+    const o = opts || {};
+    const clampNum = (v, lo, hi, dflt) => { const n = Number(v); return isNaN(n) ? dflt : Math.max(lo, Math.min(hi, n)); };
+    const currentMiles = clampNum(o.currentMiles, 5, 120, 25);
+    const daysPerWeek = Math.round(clampNum(o.daysPerWeek, 3, 7, 6));
+    const peakMiles = clampNum(o.peakMiles, Math.min(currentMiles, 140), 140, Math.round(currentMiles * 1.35));
+    const raceName = (o.raceName || "Goal Race").toString().trim().slice(0, 60);
+
+    // Resolve the goal date (default 8 weeks out). Weeks run Mon–Sun.
+    let goal = o.goalDate ? new Date(o.goalDate + "T00:00:00") : null;
+    if (!goal || isNaN(goal)) { goal = new Date(); goal.setDate(goal.getDate() + 56); }
+    const mondayOf = (d) => { const x = new Date(d); x.setHours(0, 0, 0, 0); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); return x; };
+    const startMon = mondayOf(new Date());
+    const goalMon = mondayOf(goal);
+    const nWeeks = Math.max(2, Math.round((goalMon - startMon) / 604800000) + 1);
+    if (nWeeks > 30) return null; // refuse absurd horizons
+
+    // Day plan config: indices into DAY_NAMES.
+    const longDay = Number.isInteger(o.longDay) ? o.longDay : 6;            // Saturday
+    const q1Day = Number.isInteger(o.qualityDay1) ? o.qualityDay1 : 2;      // Tuesday
+    const q2Day = Number.isInteger(o.qualityDay2) ? o.qualityDay2 : 4;      // Thursday
+    const raceDay = longDay;
+    const nQuality = daysPerWeek >= 5 ? 2 : 1;
+    const runDays = new Set([longDay, q1Day]);
+    if (nQuality === 2) runDays.add(q2Day);
+    // Fill remaining running days with easy days: Wed, Mon, Fri, then Sunday
+    // (last resort) — most runners keep Sunday as their rest day unless they
+    // train all 7 days.
+    [3, 1, 5, 0].forEach((d) => {
+      if (runDays.size >= daysPerWeek) return;
+      if (!runDays.has(d)) runDays.add(d);
+    });
+
+    const paces = o.paces || null;
+    const weeks = [];
+    let totalMiles = 0;
+
+    for (let i = 0; i < nWeeks; i++) {
+      const isRaceWeek = i === nWeeks - 1;
+      const isTaper = i === nWeeks - 2;
+      const isPeak = i === nWeeks - 3;
+      let total;
+      if (isRaceWeek) total = peakMiles * 0.55;
+      else if (isTaper) total = peakMiles * 0.78;
+      else if (isPeak) total = peakMiles;
+      else {
+        const buildWeeks = Math.max(1, nWeeks - 3);
+        const t = i / buildWeeks;
+        total = currentMiles + (peakMiles - currentMiles) * Math.pow(t, 0.9);
+        if (i % 4 === 3 && i !== buildWeeks - 1) total *= 0.82; // down week
+      }
+      total = Math.max(currentMiles * 0.5, Math.round(total));
+      totalMiles += total;
+
+      // Distribute across days.
+      const days = DAY_NAMES.map((name, di) => ({ dayIdx: di, day: name, type: runDays.has(di) ? "Easy" : "Rest", miles: 0, desc: "" }));
+      let long = isRaceWeek ? r2(Math.min(total * 0.18, 6)) : r2(total * (daysPerWeek >= 5 ? 0.22 : 0.27));
+      let q1 = isRaceWeek ? r2(total * 0.22) : r2(total * 0.15);
+      let q2 = nQuality === 2 && !isRaceWeek ? r2(total * 0.12) : 0;
+      let remaining = total - long - q1 - q2;
+      const easyDays = [...runDays].filter((d) => d !== longDay && d !== q1Day && (nQuality === 2 ? d !== q2Day : true));
+      const perEasy = easyDays.length ? r2(remaining / easyDays.length) : 0;
+      easyDays.forEach((d, idx) => { days[d].miles = idx === easyDays.length - 1 ? r2(remaining - perEasy * (easyDays.length - 1)) : perEasy; });
+      days[longDay].miles = long;
+      days[q1Day].miles = q1;
+      if (nQuality === 2 && !isRaceWeek) days[q2Day].miles = q2;
+
+      // Descriptions.
+      const phase = isRaceWeek ? "Race" : isTaper ? "Taper" : isPeak || total >= peakMiles * 0.95 ? "Peak" : "Build";
+      const th = paces ? `~${formatClock(paces.threshold)}/mi` : "comfortably hard";
+      const iv = paces ? `~${formatClock(paces.interval)}/mi` : "3K–5K effort";
+      const ep = paces ? `~${formatClock(paces.easy)}/mi` : "conversational";
+      const tempoMin = Math.max(15, Math.min(30, Math.round(q1 * 7)));
+      if (isRaceWeek) {
+        days[q1Day].type = "Quality — Sharpen";
+        days[q1Day].desc = `Race-pace sharpening: 4–6 × 400m at goal pace (${iv}), full recovery.`;
+        days[longDay].type = "Pre-race";
+        days[longDay].desc = "Shakeout: 20 min very easy + 4 strides. Nothing new.";
+      } else {
+        days[q1Day].type = "Quality — Threshold";
+        days[q1Day].desc = phase === "Peak" ? `Tempo ${tempoMin} min @ threshold (${th}) + 4×200 fast.` : `Tempo ${tempoMin} min @ threshold (${th}) inside an easy run.`;
+        if (nQuality === 2) {
+          days[q2Day].type = "Quality — Intervals";
+          days[q2Day].desc = phase === "Peak" ? `6 × 800m @ ${iv}, 2:30 jog. Last one faster.` : `5 × 600m hills or ${iv} reps, walk/jog recovery.`;
+        }
+      }
+      days.forEach((d) => { if (d.type === "Easy" && d.miles > 0) d.desc = `Easy ${ep}`; else if (d.type === "Rest") d.desc = daysPerWeek < 7 ? "Off / cross-train" : "Off"; });
+      if (isRaceWeek) {
+        days[raceDay].type = "RACE";
+        days[raceDay].miles = Math.max(3.1, r2(total * 0.25));
+        days[raceDay].desc = `RACE DAY — ${raceName}. Even splits, controlled first km.`;
+      }
+
+      const wStart = new Date(startMon); wStart.setDate(startMon.getDate() + i * 7);
+      weeks.push({
+        n: i + 1, phase, total,
+        startISO: wStart.toISOString().split("T")[0],
+        days: days.map(({ day, type, miles, desc }) => ({ day, type, miles, desc })),
+      });
+    }
+
+    return {
+      raceName, weeks, totalMiles: Math.round(totalMiles), peakMiles,
+      assumptions: "~8% weekly build, down week every 4th week, 3-week peak/taper into race day. Miles are guidance — adjust for how you actually respond.",
+    };
   }
 
   // =====================================================================
@@ -683,6 +936,10 @@
     // simulation + advanced analysis
     projectOntoCourse, athleteProjectedTime, teamEntrants, simulateMeet,
     teamStatewideComparison, advancedTips,
+    // expected teams / meet outlook
+    meetExpectedTeams, listUpcomingMeets,
+    // split coach + mileage planning
+    personalRiegelExponent, splitPlan, mileagePlan,
     // constants
     MILE_M, KNOWN_DISTANCES,
   };

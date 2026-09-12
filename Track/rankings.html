@@ -140,6 +140,58 @@
   .stat-item { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 12px 16px; text-align: center; }
   .stat-value { font-size: 1.5rem; font-weight: 800; color: var(--text-primary); }
   .stat-label { font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px; }
+  /* Keep every individual/team leaderboard in the same app-list language as
+     CrossCountry/rankings.html and CrossCountry/meet.html. */
+  .results-container {
+    background: var(--bg-primary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: 0 2px 8px var(--shadow-light);
+    gap: 0;
+  }
+  .results-container .result-card {
+    display: grid;
+    grid-template-columns: 48px 1fr 120px;
+    min-height: 68px;
+    border: 0;
+    border-bottom: 1px solid var(--border);
+    border-radius: 0;
+    box-shadow: none;
+    transform: none;
+    background: var(--bg-primary);
+  }
+  .results-container .result-card:last-child { border-bottom: 0; }
+  .results-container .result-card:hover { background: var(--bg-secondary); border-color: var(--border); box-shadow: none; transform: none; }
+  .results-container .result-rank {
+    width: auto;
+    padding: 8px;
+    background: var(--text-primary);
+    color: var(--bg-primary);
+    font-size: 1.05rem;
+  }
+  .results-container .result-rank-medal { font-size: 1rem; }
+  .results-container .result-content { padding: 12px; gap: 3px; }
+  .results-container .result-title { font-size: 1.02rem; }
+  .results-container .result-info { gap: 10px; font-size: .74rem; color: var(--text-tertiary); }
+  .results-container .result-time {
+    min-width: 0;
+    padding: 12px 16px 12px 8px;
+    background: transparent;
+    border-left: 0;
+    align-items: flex-end;
+  }
+  .results-container .result-time-label { font-size: .68rem; color: var(--text-tertiary); }
+  .results-container .result-time-value { font-size: 1.15rem; }
+  .results-container .result-time-sub { font-size: .68rem; color: var(--text-tertiary); }
+  .results-container .team-scorers { gap: 4px; }
+  .results-container .team-scorer { border-radius: 4px; padding: 2px 6px; font-size: .65rem; }
+  @media (max-width: 600px) {
+    .results-container .result-card { grid-template-columns: 38px 1fr 78px; }
+    .results-container .result-content { padding: 10px 8px; }
+    .results-container .result-time { padding-right: 10px; }
+    .results-container .result-time-sub { max-width: 70px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  }
 </style>
 
   <script src="/assets/theme-toggle.js" defer></script>
@@ -217,7 +269,7 @@
       <div class="stat-item"><div class="stat-value" id="stat-schools">0</div><div class="stat-label">Schools</div></div>
     </div>
 
-    <div id="rankings-container" class="results-container">
+    <div id="rankings-container" class="results-container app-list">
       <div class="empty-state">
         <div class="empty-state-icon">📊</div>
         <p>Select event and filters above, then click Load to view rankings.</p>
@@ -655,7 +707,7 @@
     const limit = getLimit();
     const shown = limit === Infinity ? ordered : ordered.slice(0, limit);
 
-    rankingsContainer.innerHTML = shown.map((result, index) => {
+    rankingsContainer.innerHTML = `<div class="list-header">Individual Rankings</div>${shown.map((result, index) => {
       const rank = index + 1;
       const medal = getMedalIcon(rank);
       const enForRow = resultEventName(result, eventName);
@@ -685,22 +737,13 @@
       }
 
       return `
-        <div class="result-card${rankClass}">
-          <div class="result-rank">
-            <div class="result-rank-number">
-              ${medal ? `<div class="result-rank-medal">${medal}</div>` : ''}
-              <div>#${rank}</div>
-            </div>
+        <div class="list-item">
+          <div class="item-place">${medal ? `${medal}<br>` : ''}#${rank}</div>
+          <div class="item-details">
+            <div class="item-name">${titleContent}</div>
+            <div class="item-meta"><i class="fas fa-school"></i> ${result.athlete?.school || '—'} · <i class="fas fa-flag"></i> ${result.meet?.name || '—'}${isAllEvents ? ` · <i class="fas fa-stopwatch"></i> ${enForRow}` : ''}</div>
           </div>
-          <div class="result-content">
-            <div class="result-title">${titleContent}</div>
-            <div class="result-info">
-              <div class="result-info-item"><i class="fas fa-school"></i><span>${result.athlete?.school || '—'}</span></div>
-              <div class="result-info-item"><i class="fas fa-flag"></i><span>${result.meet?.name || '—'}</span></div>
-              ${eventTag}
-            </div>
-          </div>
-          <div class="result-time">${scoreBlock}</div>
+          <div class="item-score"><div class="score-stack">${scoreBlock}</div></div>
         </div>`;
     }).join('');
   }
@@ -779,7 +822,7 @@
     const limit = getLimit();
     const shown = limit === Infinity ? teams : teams.slice(0, limit);
 
-    rankingsContainer.innerHTML = shown.map((team, index) => {
+    rankingsContainer.innerHTML = `<div class="list-header">Team Standings</div>${shown.map((team, index) => {
       const rank = index + 1;
       const medal = getMedalIcon(rank);
       const rankClass = rank <= 3 ? ` rank-${rank}` : '';
@@ -789,22 +832,13 @@
       const incomplete = team.complete ? '' : ` <span style="font-size:0.72rem;color:var(--text-secondary);font-weight:600;">(${team.scorers.length}/${TEAM_SCORERS} scorers)</span>`;
 
       return `
-        <div class="result-card${rankClass}">
-          <div class="result-rank">
-            <div class="result-rank-number">
-              ${medal ? `<div class="result-rank-medal">${medal}</div>` : ''}
-              <div>#${rank}</div>
-            </div>
+        <div class="list-item">
+          <div class="item-place">${medal ? `${medal}<br>` : ''}#${rank}</div>
+          <div class="item-details">
+            <div class="item-name">${team.school}${incomplete}</div>
+            <div class="item-meta">${scorerChips}</div>
           </div>
-          <div class="result-content">
-            <div class="result-title">${team.school}${incomplete}</div>
-            <div class="team-scorers">${scorerChips}</div>
-          </div>
-          <div class="result-time">
-            <div class="result-time-label">Team Score</div>
-            <div class="result-time-value">${team.total}</div>
-            <div class="result-time-sub">top ${team.scorers.length}</div>
-          </div>
+          <div class="item-score"><div class="score-stack"><span class="score-rating">${team.total}</span><span class="score-predicted">Team score · top ${team.scorers.length}</span></div></div>
         </div>`;
     }).join('');
   }
