@@ -170,7 +170,14 @@
         db.ref("crosscountry/results").once("value")
       ]);
 
-      meetsSnap.forEach(c => { const m = { key: c.key, ...c.val() }; if (m.slug) state.meets[m.slug] = m; });
+      // Imported meet names often carry stray whitespace, which reads badly in
+      // prose and row labels, so normalize it once here.
+      meetsSnap.forEach(c => {
+        const m = { key: c.key, ...c.val() };
+        if (!m.slug) return;
+        if (m.name) m.name = String(m.name).trim();
+        state.meets[m.slug] = m;
+      });
       schoolsSnap.forEach(c => { const s = { key: c.key, ...c.val() }; if (s.slug) state.schools[s.slug] = s; });
       coursesSnap.forEach(c => { const o = { key: c.key, ...c.val() }; if (o.slug) state.courses[o.slug] = o; });
       if (newsSnap && newsSnap.exists()) {
@@ -224,8 +231,17 @@
 
   /* ---------------- derived analytics ---------------- */
 
+  // A missing school record must never surface a raw slug to readers:
+  // "greenbrier-west" reads as "Greenbrier West".
+  function prettySchoolSlug(slug) {
+    return String(slug || "").split(/[-_]+/).filter(Boolean)
+      .map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+  }
+
   function schoolNameOf(slug) {
-    return (state.schools[slug] || {}).name || slug || "Unknown";
+    const name = (state.schools[slug] || {}).name;
+    if (name) return name;
+    return prettySchoolSlug(slug) || "Unknown";
   }
 
   // Resolve an expected-teams entry (slug OR freeform name) to a school slug.
@@ -328,7 +344,10 @@
     // school-season watch list, and they have no title to chase.
     return list
       .filter(e => e.best != null && !isNonCompetitive(e.bestRaw.meet_slug))
-      .filter(e => e.school_slug && e.school_slug !== "unattached" && e.classification)
+      // classify() falls back to the truthy string "UNA", so the old
+      // `&& e.classification` check let out-of-state and unmapped schools
+      // through with their slug as a display name.
+      .filter(e => e.school_slug && e.school_slug !== "unattached" && e.classification && e.classification !== "UNA")
       .sort((a, b) => b.best - a.best);
   }
 
@@ -447,14 +466,24 @@
     state.weatherTotal = total;
   }
 
+  // "2026-09-12" reads badly inside a story sentence, but raw ISO values are
+  // what the meets store, so the token renders as "Sat, Sep 12".
+  function formatShortDate(value) {
+    const d = new Date(String(value || "").slice(0, 10) + "T12:00:00");
+    if (isNaN(d)) return String(value || "date TBD");
+    return d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+  }
+
   function buildStoryStats() {
     const improved = [...state.mostImproved.M, ...state.mostImproved.F]
       .filter(e => e && e.delta != null).sort((a, b) => b.delta - a.delta)[0] || null;
     const boys = state.watch.M[0] || null;
     const girls = state.watch.F[0] || null;
     const next = state.upcoming[0] || null;
-    const rated = state.results.filter(r => r.msm != null).length;
-    const schools = new Set(state.results.filter(r => r.school_slug && seasonOf(r) === currentSeason()).map(r => r.school_slug));
+    // Scoped to West Virginia meets so the headline figures match the WV-only
+    // watch lists, divisionals, and state-of-the-state cards.
+    const rated = state.results.filter(r => r.msm != null && r.state === "WV").length;
+    const schools = new Set(state.results.filter(r => r.msm != null && r.school_slug && r.state === "WV" && seasonOf(r) === currentSeason()).map(r => r.school_slug));
     state.storyStats = {
       most_improved_name: improved ? improved.name : "The next breakthrough star",
       most_improved_school: improved ? improved.school : "West Virginia",
@@ -469,7 +498,7 @@
       top_girls_school: girls ? girls.school : "—",
       top_girls_rating: girls ? String(girls.best) : "—",
       next_meet: next ? next.name : "the next meet",
-      next_meet_date: next ? String(next.date).slice(0, 10) : "date TBD",
+      next_meet_date: next ? formatShortDate(next.date) : "date TBD",
       next_meet_location: next ? (next.location || "West Virginia") : "West Virginia",
       upcoming_meets: String(state.upcoming.length),
       rated_performances: rated.toLocaleString(),
@@ -489,12 +518,386 @@
     state.divisional = computeDivisional(thisYear);
     computeUpcoming();
     computeWeatherCoverage();
+    buildTeamIndex();
+    buildMeetIndex();
     buildStoryStats();
   }
 
+  /* =====================================================================
+     STAT LIBRARY — teams, meets, and projections as draggable stats
+     =====================================================================
+     The news desk drags a stat into a story and gets back a token such as
+     {{team:morgantown:M.power}}. Tokens resolve to the live number here, so a
+     published story keeps reporting current data instead of a stale snapshot. */
+
+  function formatTime(sec) {
+    const n = Number(sec);
+    if (!isFinite(n) || n <= 0) return "—";
+    const m = Math.floor(n / 60);
+    return `${m}:${(n - m * 60).toFixed(1).padStart(4, "0")}`;
+  }
+
+  const num = (value) => (value == null ? "—" : Number(value).toLocaleString("en-US"));
+
+  // Team power = sum of a school's five best current-season ratings, per gender
+  // (the same rule the divisional tables use).
+  function buildTeamIndex() {
+    const index = {};
+    ["M", "F"].forEach(gender => {
+      state.watch[gender].forEach(e => {
+        if (!e.school_slug) return;
+        const team = index[e.school_slug] || (index[e.school_slug] = {
+          slug: e.school_slug,
+          name: e.school,
+          classification: e.classification && e.classification !== "UNA" ? e.classification : "",
+          M: { rated: 0, scorers: 0, power: 0, top: "", topRating: null },
+          F: { rated: 0, scorers: 0, power: 0, top: "", topRating: null }
+        });
+        const side = team[gender];
+        side.rated += 1;
+        if (side.topRating == null || e.best > side.topRating) { side.topRating = e.best; side.top = e.name; }
+        side.ratings = (side.ratings || []).concat(e.best);
+      });
+    });
+    Object.values(index).forEach(team => {
+      ["M", "F"].forEach(gender => {
+        const side = team[gender];
+        const top = (side.ratings || []).sort((a, b) => b - a).slice(0, 5);
+        side.scorers = top.length;
+        side.power = top.reduce((s, v) => s + v, 0);
+        delete side.ratings;
+      });
+    });
+    // Ranks let the auto-drafted prose read like a real preview
+    // ("the No. 1 boys team power in the state", "No. 2 in Class AAA").
+    ["M", "F"].forEach(gender => {
+      const ranked = Object.values(index).filter(t => t[gender].scorers).sort((a, b) => b[gender].power - a[gender].power);
+      const seenClass = {};
+      ranked.forEach((team, i) => {
+        team[gender].powerRank = i + 1;
+        const cls = team.classification || "unclassified";
+        seenClass[cls] = (seenClass[cls] || 0) + 1;
+        team[gender].classRank = seenClass[cls];
+      });
+    });
+    state.teamIndex = index;
+  }
+
+  // Meet summary: field size, result count, and the top-rated boy/girl.
+  function buildMeetIndex() {
+    const index = {};
+    state.results.forEach(r => {
+      if (!r.meet_slug) return;
+      const meet = index[r.meet_slug] || (index[r.meet_slug] = { schools: {}, count: 0, M: null, F: null });
+      if (r.school_slug) meet.schools[r.school_slug] = true;
+      meet.count += 1;
+      if (r.msm == null || (r.gender !== "M" && r.gender !== "F")) return;
+      const side = meet[r.gender];
+      if (!side || r.msm > side.msm) {
+        meet[r.gender] = {
+          name: r.athlete_name, school: schoolNameOf(r.school_slug), school_slug: r.school_slug,
+          msm: r.msm, timeSec: r.timeSec
+        };
+      }
+    });
+    state.meetIndex = index;
+  }
+
+  function teamStat(slug, spec) {
+    const team = state.teamIndex[slug];
+    if (!team) return null;
+    const [first, second] = String(spec || "").split(".");
+    if (!second) {
+      if (first === "name") return team.name;
+      if (first === "class") return team.classification || "unclassified";
+      if (first === "athletes") return String(team.M.rated + team.F.rated);
+      return null;
+    }
+    const side = team[first === "F" ? "F" : "M"];
+    switch (second) {
+      case "power": return side.scorers ? num(side.power) : "—";
+      case "top": return side.top || "—";
+      case "top_rating": return side.topRating == null ? "—" : num(side.topRating);
+      case "rated": return num(side.rated);
+      case "power_rank": return side.powerRank ? `No. ${side.powerRank}` : "—";
+      case "class_rank": return side.classRank ? `No. ${side.classRank}` : "—";
+      default: return null;
+    }
+  }
+
+  function meetStat(slug, spec) {
+    const meet = state.meets[slug];
+    if (!meet) return null;
+    const summary = state.meetIndex[slug];
+    const [first, second] = String(spec || "").split(".");
+    if (!second) {
+      if (first === "name") return meet.name || slug;
+      if (first === "date") return formatShortDate(meet.date);
+      if (first === "location") return meet.location || "—";
+      if (first === "field") {
+        if (summary) return num(Object.keys(summary.schools).length);
+        return Array.isArray(meet.expected_teams) ? num(meet.expected_teams.length) : "—";
+      }
+      if (first === "results") return num(summary ? summary.count : 0);
+      return null;
+    }
+    const winner = summary ? summary[first === "F" ? "F" : "M"] : null;
+    switch (second) {
+      case "winner": return winner ? winner.name : "—";
+      case "winner_school": return winner ? winner.school : "—";
+      case "winner_rating": return winner ? num(winner.msm) : "—";
+      case "winner_time": return winner ? formatTime(winner.timeSec) : "—";
+      default: return null;
+    }
+  }
+
+  // Projections are the expensive stat, so each meet/division pair is computed
+  // once and cached (including failures, so a hopeless meet is not retried).
+  const projectionCache = {};
+
+  // "Current form" for a projection: the most recent meets the target meet's
+  // expected teams actually raced.
+  function defaultSimulationSources(targetSlug, gender) {
+    const expected = new Set(simulationExpectedTeams(targetSlug, gender).map(t => t.slug));
+    const latest = {};
+    state.results.forEach(r => {
+      if (!r.meet_slug || r.timeSec == null) return;
+      if (expected.size && !(r.school_slug && expected.has(r.school_slug))) return;
+      if (!latest[r.meet_slug] || latest[r.meet_slug] < r.date) latest[r.meet_slug] = r.date;
+    });
+    return Object.keys(latest)
+      .sort((a, b) => String(latest[b]).localeCompare(String(latest[a])))
+      .slice(0, 3);
+  }
+
+  function simulationSnapshot(targetSlug, gender) {
+    const g = gender === "F" ? "F" : "M";
+    const key = `${targetSlug}|${g}`;
+    if (!(key in projectionCache)) {
+      let snapshot = null;
+      try {
+        const sim = simulateNewsMeet({
+          targetMeetSlug: targetSlug, gender: g, basis: "recent",
+          sourceMeetSlugs: defaultSimulationSources(targetSlug, g)
+        });
+        if (sim && !sim.error) {
+          const ranked = sim.teams.filter(t => t.complete);
+          const winner = ranked[0] || null;
+          const runnerUp = ranked[1] || null;
+          const top = sim.field[0] || null;
+          snapshot = {
+            meet: sim.targetMeetName, gender: g,
+            winner: winner ? winner.school : "—",
+            score: winner ? num(winner.score) : "—",
+            runner_up: runnerUp ? runnerUp.school : "—",
+            teams: num(sim.completeTeams),
+            runners: num(sim.field.length),
+            top: top ? top.name : "—",
+            top_school: top ? top.school : "—",
+            top_time: top ? formatTime(top.timeSec) : "—"
+          };
+        }
+      } catch (err) {
+        snapshot = null;
+      }
+      projectionCache[key] = snapshot;
+    }
+    return projectionCache[key];
+  }
+
+  function simStat(targetSlug, gender, metric) {
+    const snapshot = simulationSnapshot(targetSlug, gender);
+    if (!snapshot) return null;
+    return Object.prototype.hasOwnProperty.call(snapshot, metric) ? snapshot[metric] : null;
+  }
+
+  function resolveLibraryToken(key) {
+    const parts = String(key || "").split(":");
+    if (parts.length < 3) return null;
+    if (parts[0] === "team") return teamStat(parts[1], parts[2]);
+    if (parts[0] === "meet") return meetStat(parts[1], parts[2]);
+    if (parts[0] === "sim") {
+      const [gender, metric] = String(parts[2] || "").split(".");
+      return simStat(parts[1], gender, metric);
+    }
+    return null;
+  }
+
+  // Grouped source data for the news desk. Teams and meets are cheap; sims are
+  // requested per meet through simulationStats() so nothing heavy loads up front.
+  function statLibrary() {
+    const teams = Object.values(state.teamIndex)
+      .sort((a, b) => Math.max(b.M.power, b.F.power) - Math.max(a.M.power, a.F.power))
+      .map(team => {
+        const stats = [];
+        ["M", "F"].forEach(gender => {
+          const side = team[gender];
+          if (!side.rated) return;
+          const who = gender === "F" ? "Girls" : "Boys";
+          if (side.scorers) stats.push({ label: `${who} team power`, token: `{{team:${team.slug}:${gender}.power}}`, value: num(side.power) });
+          if (side.powerRank) stats.push({ label: `${who} state rank`, token: `{{team:${team.slug}:${gender}.power_rank}}`, value: `No. ${side.powerRank}` });
+          if (side.classRank && team.classification) stats.push({ label: `${who} ${team.classification} rank`, token: `{{team:${team.slug}:${gender}.class_rank}}`, value: `No. ${side.classRank}` });
+          stats.push({ label: `${who} top runner`, token: `{{team:${team.slug}:${gender}.top}}`, value: side.top || "—" });
+          if (side.topRating != null) stats.push({ label: `${who} top rating`, token: `{{team:${team.slug}:${gender}.top_rating}}`, value: num(side.topRating) });
+          stats.push({ label: `${who} rated athletes`, token: `{{team:${team.slug}:${gender}.rated}}`, value: num(side.rated) });
+        });
+        stats.push({ label: "Class", token: `{{team:${team.slug}:class}}`, value: team.classification || "unclassified" });
+        return {
+          id: team.slug, name: team.name, logo: team.slug,
+          meta: team.classification ? `Class ${team.classification}` : "Unmapped",
+          stats: stats.filter(stat => stat.value && stat.value !== "—")
+        };
+      })
+      .filter(team => team.stats.length);
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const meets = Object.values(state.meets)
+      .filter(m => m.slug)
+      .map(m => {
+        const summary = state.meetIndex[m.slug];
+        const d = m.date ? new Date(String(m.date).slice(0, 10) + "T12:00:00") : null;
+        // Compare calendar days, not instants: a meet yesterday must read -1,
+        // not 0, or it would count as upcoming in the projection list.
+        const dayDiff = d && !isNaN(d)
+          ? Math.round((Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) - Date.UTC(today.getFullYear(), today.getMonth(), today.getDate())) / 86400000)
+          : null;
+        const stats = [
+          { label: "Name", token: `{{meet:${m.slug}:name}}`, value: m.name || m.slug },
+          { label: "Date", token: `{{meet:${m.slug}:date}}`, value: formatShortDate(m.date) },
+          { label: "Location", token: `{{meet:${m.slug}:location}}`, value: m.location || "—" },
+          { label: "Field size", token: `{{meet:${m.slug}:field}}`, value: num(summary ? Object.keys(summary.schools).length : (Array.isArray(m.expected_teams) ? m.expected_teams.length : 0)) },
+          { label: "Rated results", token: `{{meet:${m.slug}:results}}`, value: num(summary ? summary.count : 0) }
+        ];
+        ["M", "F"].forEach(gender => {
+          const winner = summary ? summary[gender] : null;
+          if (!winner) return;
+          const who = gender === "F" ? "Girls" : "Boys";
+          stats.push({ label: `${who} winner`, token: `{{meet:${m.slug}:${gender}.winner}}`, value: winner.name });
+          stats.push({ label: `${who} winner's school`, token: `{{meet:${m.slug}:${gender}.winner_school}}`, value: winner.school });
+          stats.push({ label: `${who} winner's rating`, token: `{{meet:${m.slug}:${gender}.winner_rating}}`, value: num(winner.msm) });
+          stats.push({ label: `${who} winner's time`, token: `{{meet:${m.slug}:${gender}.winner_time}}`, value: formatTime(winner.timeSec) });
+        });
+        const when = dayDiff == null ? "Undated" : dayDiff > 0 ? "Upcoming" : dayDiff === 0 ? "Today" : `${Math.abs(dayDiff)} days ago`;
+        return {
+          id: m.slug, name: m.name || m.slug,
+          meta: [formatShortDate(m.date), when, m.state === "OUT" ? "out of state" : ""].filter(Boolean).join(" · "),
+          dayDiff: dayDiff == null ? 9999 : dayDiff,
+          stats: stats.filter(stat => stat.value && stat.value !== "—")
+        };
+      })
+      // Upcoming meets first (soonest first), then the most recent results.
+      .sort((a, b) => {
+        const rank = (m) => (m.dayDiff >= 0 ? 0 : 1);
+        if (rank(a) !== rank(b)) return rank(a) - rank(b);
+        return rank(a) === 0 ? a.dayDiff - b.dayDiff : b.dayDiff - a.dayDiff;
+      });
+
+    return { teams, meets };
+  }
+
+  /* ---------------- auto-drafted lead paragraphs ---------------- */
+  // The news desk's "Draft this story for me" button. Every number that has a
+  // token is written as one, so a drafted story keeps reporting live data.
+  function teamDraft(slug) {
+    const team = state.teamIndex[slug];
+    if (!team) return "";
+    const lines = [];
+    ["M", "F"].forEach(gender => {
+      const side = team[gender];
+      if (!side || !side.rated) return;
+      const who = gender === "F" ? "girls" : "boys";
+      const token = `{{team:${slug}:${gender}.`;
+      if (side.scorers) {
+        const stateRank = side.powerRank ? `the No. ${side.powerRank}` : "the";
+        const sameRank = side.powerRank && side.classRank === side.powerRank;
+        const classRank = side.classRank && team.classification
+          ? ` (${sameRank ? `also No. ${side.classRank} in` : `No. ${side.classRank} of`} Class ${team.classification})`
+          : "";
+        lines.push(`${team.name} ${who} carry ${stateRank} team power rating in West Virginia${classRank} at ${token}power}} — the sum of their five best MSM ratings — led by ${token}top}} at ${token}top_rating}}.`);
+      } else {
+        lines.push(`${team.name} has ${token}rated}} rated ${who} this season so far, paced by ${token}top}} at ${token}top_rating}}.`);
+      }
+    });
+    return lines.join(" ");
+  }
+
+  function meetDraft(slug) {
+    const meet = state.meets[slug];
+    if (!meet) return "";
+    const summary = state.meetIndex[slug];
+    const token = `{{meet:${slug}:`;
+    if (summary && (summary.M || summary.F)) {
+      const parts = [`${token}name}} (${token}date}}) drew ${token}field}} teams and produced ${token}results}} rated MSM performances.`];
+      if (summary.M) parts.push(`${summary.M.name} of ${summary.M.school} won the boys race in ${token}M.winner_time}} at ${token}M.winner_rating}} MSM.`);
+      if (summary.F) parts.push(`${summary.F.name} of ${summary.F.school} took the girls race in ${token}F.winner_time}} at ${token}F.winner_rating}} MSM.`);
+      return parts.join(" ");
+    }
+    if (meet.date) {
+      return `${token}name}} is on the calendar for ${token}date}} at ${token}location}}, with ${token}field}} teams in the expected field.`;
+    }
+    return `${token}name}} is on the season calendar at ${token}location}}.`;
+  }
+
+  function simulationDraft(meetSlug) {
+    if (!state.meets[meetSlug]) return "";
+    const name = `{{meet:${meetSlug}:name}}`;
+    const date = `{{meet:${meetSlug}:date}}`;
+    const parts = [];
+    ["M", "F"].forEach(gender => {
+      const snapshot = simulationSnapshot(meetSlug, gender);
+      if (!snapshot || snapshot.winner === "—" || snapshot.score === "—") return;
+      const who = gender === "F" ? "girls" : "boys";
+      const token = `{{sim:${meetSlug}:${gender}.`;
+      const chase = snapshot.runner_up && snapshot.runner_up !== "—" ? `, ahead of ${token}runner_up}}` : "";
+      parts.push(`Projecting current form onto ${name} (${date}): ${token}winner}} takes the ${who} title with a ${token}score}}-point total${chase}, and ${token}top}} projects as the individual winner in ${token}top_time}}.`);
+    });
+    if (!parts.length) return "";
+    return parts.join(" ");
+  }
+
+  // group: "team" | "meet" | "sim", id: the row's id in the news desk library.
+  function storyDraft(group, id) {
+    if (group === "team") return teamDraft(id);
+    if (group === "meet") return meetDraft(id);
+    if (group === "sim") return simulationDraft(id);
+    return "";
+  }
+
+  // One target meet, both divisions: the rows the news desk can drag from.
+  function simulationStats(meetSlug) {
+    const meet = state.meets[meetSlug];
+    if (!meet) return null;
+    const stats = [];
+    ["M", "F"].forEach(gender => {
+      const snapshot = simulationSnapshot(meetSlug, gender);
+      if (!snapshot) return;
+      const who = gender === "F" ? "Girls" : "Boys";
+      // "—" means the division cannot be projected yet, so it is not offered.
+      const add = (label, metric, value) => {
+        if (value == null || value === "—" || value === "") return;
+        stats.push({ label: `${who} ${label}`, token: `{{sim:${meetSlug}:${gender}.${metric}}}`, value: String(value) });
+      };
+      add("projected winner", "winner", snapshot.winner);
+      add("winning score", "score", snapshot.score);
+      add("projected runner-up", "runner_up", snapshot.runner_up);
+      add("projected individual winner", "top", snapshot.top);
+      add("individual winner's time", "top_time", snapshot.top_time);
+      add("projected runners", "runners", snapshot.runners);
+      add("scoring teams", "teams", snapshot.teams);
+    });
+    if (!stats.length) return null;
+    return { id: meetSlug, name: meet.name || meetSlug, meta: formatShortDate(meet.date), stats };
+  }
+
+  // Tokens come in two flavours: the headline keys in storyStats
+  // ({{next_meet}}) and library keys such as {{team:morgantown:M.power}}.
+  // Unknown tokens are returned untouched so typos are visible in the copy.
   function resolveStoryTokens(text) {
-    return String(text || "").replace(/\{\{\s*([a-z0-9_]+)\s*\}\}/gi, (full, key) => {
-      return Object.prototype.hasOwnProperty.call(state.storyStats, key) ? state.storyStats[key] : full;
+    return String(text || "").replace(/\{\{\s*([a-z0-9_:.-]+)\s*\}\}/gi, (full, key) => {
+      if (Object.prototype.hasOwnProperty.call(state.storyStats, key)) return state.storyStats[key];
+      const value = resolveLibraryToken(key);
+      return value == null ? full : String(value);
     });
   }
 
@@ -652,7 +1055,7 @@
       };
     }).sort((a, b) => (a.score == null ? 9999 : a.score) - (b.score == null ? 9999 : b.score) || (a.teamAvg || 999999) - (b.teamAvg || 999999));
     return {
-      targetMeetSlug, targetMeetName: target.name || targetSlug,
+      targetMeetSlug: targetSlug, targetMeetName: target.name || targetSlug,
       gender, targetCourse, targetDistance, basis, sourceMeetSlugs: sourceSlugs,
       sourceResultCount: rows.length, field, teams: teamRows,
       completeTeams: teamRows.filter(t => t.complete).length,
@@ -674,6 +1077,9 @@
     resolveStoryTokens,
     simulationMeetOptions,
     simulationExpectedTeams,
-    simulateNewsMeet
+    simulateNewsMeet,
+    statLibrary,
+    simulationStats,
+    storyDraft
   };
 })();

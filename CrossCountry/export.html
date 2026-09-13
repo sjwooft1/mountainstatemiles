@@ -161,6 +161,7 @@
                     <th>Time</th>
                     <th>Place</th>
                     <th>Distance</th>
+                    <th>State</th>
                 </tr>
             </thead>
             <tbody id="tableBody">
@@ -225,6 +226,7 @@
                 distance: result.distance || result.event || "",
                 division: String(result.division || "").trim().toUpperCase(),
                 timestamp: result.timestamp || "",
+                state: result.state || "",
             };
         }
 
@@ -365,6 +367,7 @@
                     <td>${r.time || "-"}</td>
                     <td>${r.placement ?? "-"}</td>
                     <td>${r.distance || "-"}</td>
+                    <td>${r.state || "-"}</td>
                 </tr>
             `).join("");
         }
@@ -397,7 +400,7 @@
             }
             
             // Standard Cross Country CSV headers matching display columns
-            const cols = ["date", "meetName", "category", "athleteName", "schoolName", "gender", "time", "placement", "distance"];
+            const cols = ["date", "meetName", "category", "athleteName", "schoolName", "gender", "time", "placement", "distance", "state"];
             const lines = [cols.join(",")];
             
             filteredRows.forEach(row => {

@@ -429,6 +429,261 @@
       color: var(--text-secondary);
     }
 
+    /* ============================================
+       Export Menu (dropdown)
+       ============================================ */
+    .export-menu-wrap { position: relative; }
+    .export-toggle-btn {
+      background: var(--text-primary);
+      color: var(--bg-primary);
+      border-color: var(--text-primary);
+    }
+    .export-toggle-btn:hover { opacity: 0.9; border-color: var(--text-primary); }
+    .export-menu {
+      position: absolute;
+      top: calc(100% + 8px);
+      right: 0;
+      min-width: 240px;
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: 0 8px 24px var(--shadow-light);
+      overflow: hidden;
+      z-index: 40;
+      display: none;
+    }
+    .export-menu.open { display: block; }
+    .export-menu-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      padding: 12px 14px;
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid var(--border);
+      color: var(--text-primary);
+      font-size: 0.88rem;
+      font-weight: 600;
+      text-align: left;
+      cursor: pointer;
+    }
+    .export-menu-item:last-child { border-bottom: none; }
+    .export-menu-item:hover { background: var(--bg-secondary); }
+    .export-menu-item .emi-icon { font-size: 1.05rem; width: 22px; text-align: center; flex-shrink: 0; }
+    .export-menu-item .emi-text { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+    .export-menu-item .emi-title { color: var(--text-primary); }
+    .export-menu-item .emi-sub { font-size: 0.72rem; font-weight: 500; color: var(--text-tertiary); white-space: normal; }
+
+    /* ============================================
+       Coach Analysis Panel
+       ============================================ */
+    .analysis-card {
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: 0 2px 8px var(--shadow-light);
+      margin-bottom: 24px;
+      overflow: hidden;
+    }
+    .analysis-card .list-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .analysis-card-body { padding: 16px; }
+
+    .storyline-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+    }
+    .storyline-item {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+    }
+    .storyline-item .si-label {
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      font-weight: 800;
+      letter-spacing: 0.03em;
+      color: var(--text-tertiary);
+      margin-bottom: 6px;
+    }
+    .storyline-item .si-text {
+      font-size: 0.92rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      line-height: 1.4;
+    }
+    .storyline-item .si-text b { color: var(--xc-primary, var(--text-primary)); }
+
+    .pack-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .pack-row:last-child { border-bottom: none; }
+    .pack-rank {
+      width: 22px;
+      flex-shrink: 0;
+      font-weight: 800;
+      color: var(--text-tertiary);
+      font-size: 0.85rem;
+    }
+    .pack-label {
+      width: 130px;
+      flex-shrink: 0;
+      min-width: 0;
+    }
+    .pack-label .pl-name {
+      font-weight: 700;
+      font-size: 0.85rem;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .pack-label .pl-sub {
+      font-size: 0.68rem;
+      color: var(--text-tertiary);
+      font-weight: 600;
+    }
+    .pack-track {
+      flex: 1;
+      height: 20px;
+      background: var(--bg-secondary);
+      border-radius: 6px;
+      position: relative;
+      overflow: hidden;
+      min-width: 60px;
+    }
+    .pack-fill {
+      position: absolute;
+      top: 0; left: 0; bottom: 0;
+      border-radius: 6px;
+      background: var(--xc-primary, #0284c7);
+      opacity: 0.85;
+      min-width: 3px;
+    }
+    .pack-split-label {
+      width: 64px;
+      flex-shrink: 0;
+      text-align: right;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--text-secondary);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .h2h-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+    .h2h-controls select {
+      flex: 1;
+      min-width: 140px;
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      font-weight: 600;
+      font-size: 0.85rem;
+    }
+    .h2h-vs {
+      font-weight: 800;
+      color: var(--text-tertiary);
+      font-size: 0.8rem;
+    }
+    .h2h-table { width: 100%; border-collapse: collapse; }
+    .h2h-table th {
+      text-align: left;
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      color: var(--text-tertiary);
+      padding: 6px 8px;
+      border-bottom: 1px solid var(--border);
+    }
+    .h2h-table th.h2h-num, .h2h-table td.h2h-num { text-align: center; }
+    .h2h-table td {
+      padding: 8px;
+      font-size: 0.85rem;
+      color: var(--text-primary);
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+    .h2h-table tr:last-child td { border-bottom: none; }
+    .h2h-win { font-weight: 800; color: var(--xc-primary, #0284c7); }
+    .h2h-summary {
+      margin-top: 12px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      background: var(--bg-secondary);
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      text-align: center;
+    }
+
+    .displacer-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.85rem;
+    }
+    .displacer-item:last-child { border-bottom: none; }
+    .displacer-place {
+      width: 26px;
+      flex-shrink: 0;
+      text-align: center;
+      font-weight: 800;
+      color: var(--text-tertiary);
+    }
+    .displacer-item .d-name { font-weight: 700; color: var(--text-primary); }
+    .displacer-item .d-school { color: var(--text-secondary); font-size: 0.78rem; }
+    .displacer-tag {
+      margin-left: auto;
+      font-size: 0.68rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      color: var(--text-tertiary);
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 3px 6px;
+      white-space: nowrap;
+    }
+
+    /* Toast (used for Copy Recap confirmation) */
+    #msm-toast {
+      position: fixed;
+      left: 50%;
+      bottom: 28px;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--text-primary);
+      color: var(--bg-primary);
+      padding: 10px 18px;
+      border-radius: 30px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      box-shadow: 0 8px 24px var(--shadow-light);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s, transform 0.2s;
+      z-index: 100;
+    }
+    #msm-toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
     /* Print Stylesheet */
     @media print {
       body { background: #fff !important; color: #000 !important; }
@@ -476,6 +731,7 @@
             <button class="app-tab active" id="view-all-btn">All Results</button>
             <button class="app-tab" id="view-teams-btn">Team Scores</button>
             <button class="app-tab" id="view-indiv-btn">Individual</button>
+            <button class="app-tab" id="view-analysis-btn">📈 Coach Analysis</button>
           </div>
         </div>
 
@@ -495,15 +751,43 @@
           <select id="team-export-select" class="action-btn" onchange="renderTableForSelection()" style="outline: none;">
               <option value="all">All Teams</option>
           </select>
-          <button class="action-btn" onclick="exportToCSV()">📊 CSV</button>
-          <button class="action-btn" onclick="exportResultsPDF()">📄 PDF</button>
-          <button class="action-btn" onclick="window.print()">🖨️ Print</button>
+          <div class="export-menu-wrap" id="export-menu-wrap">
+            <button class="action-btn export-toggle-btn" id="export-toggle-btn" onclick="toggleExportMenu()">⬇️ Export</button>
+            <div class="export-menu" id="export-menu">
+              <button class="export-menu-item" onclick="exportResultsPDF(); closeExportMenu();">
+                <span class="emi-icon">📄</span>
+                <span class="emi-text"><span class="emi-title">Coach's Report (PDF)</span><span class="emi-sub">Branded recap with storyline & score chart</span></span>
+              </button>
+              <button class="export-menu-item" onclick="exportToCSV(); closeExportMenu();">
+                <span class="emi-icon">📊</span>
+                <span class="emi-text"><span class="emi-title">Spreadsheet (CSV)</span><span class="emi-sub">Open in Excel or Google Sheets</span></span>
+              </button>
+              <button class="export-menu-item" onclick="exportRawDataJSON(); closeExportMenu();">
+                <span class="emi-icon">🗂️</span>
+                <span class="emi-text"><span class="emi-title">Raw Data (JSON)</span><span class="emi-sub">For your own stats tools</span></span>
+              </button>
+              <button class="export-menu-item" onclick="exportShareCard(); closeExportMenu();">
+                <span class="emi-icon">🖼️</span>
+                <span class="emi-text"><span class="emi-title">Share Card (Image)</span><span class="emi-sub">Postable graphic for team chat/socials</span></span>
+              </button>
+              <button class="export-menu-item" onclick="copyRecapToClipboard(); closeExportMenu();">
+                <span class="emi-icon">📋</span>
+                <span class="emi-text"><span class="emi-title">Copy Recap Text</span><span class="emi-sub">Paste into a text or email</span></span>
+              </button>
+              <button class="export-menu-item" onclick="window.print(); closeExportMenu();">
+                <span class="emi-icon">🖨️</span>
+                <span class="emi-text"><span class="emi-title">Print</span><span class="emi-sub">Printer-friendly results</span></span>
+              </button>
+            </div>
+          </div>
         </div>
 
       </div>
 
     <div id="results-box"></div>
   </main>
+
+  <div id="msm-toast"></div>
 
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
@@ -522,6 +806,18 @@
       const minutes = Math.floor(totalSeconds / 60);
       const seconds = totalSeconds % 60;
       return `${minutes}:${seconds.toFixed(2).padStart(5, '0')}`;
+    }
+
+    // Text for a scorer badge: the athlete's actual finish PLACE (not the points
+    // they contributed). Displacement scoring can make those two numbers differ
+    // (non-scorers still consume a place), so when they diverge we show the real
+    // place plus the points earned in parentheses for clarity.
+    function scorerBadgeText(a) {
+      const place = a.place != null && a.place !== '' ? a.place : (a.scoringPlace != null ? a.scoringPlace : '-');
+      if (a.scoringPlace != null && parseInt(a.place) !== a.scoringPlace) {
+        return `#${place} (${a.scoringPlace}pt${a.scoringPlace === 1 ? '' : 's'})`;
+      }
+      return `#${place}`;
     }
 
     function calculatePacePerMile(totalSeconds, distanceMeters) {
@@ -611,7 +907,12 @@
     let activeRaceType = null;
     let currentFilteredResults = [];
     let currentTeamScores = [];   // team standings for the active race (post-filter)
-    let activeViewMode = 'all'; // 'all', 'teams', 'indiv'
+    let activeViewMode = 'all'; // 'all', 'teams', 'indiv', 'analysis'
+    let currentRaceData = [];        // FULL field for the active race (unfiltered by search/team select) — used for analysis
+    let currentFullTeamScores = [];  // FULL team standings for the active race (unfiltered by team select) — used for analysis
+    let currentIsRelay = false;
+    let h2hTeamA = null;
+    let h2hTeamB = null;
 
     // ==========================================
     // 3. MAIN INITIALIZATION
@@ -768,12 +1069,37 @@
       const btnAll = document.getElementById('view-all-btn');
       const btnTeams = document.getElementById('view-teams-btn');
       const btnIndiv = document.getElementById('view-indiv-btn');
+      const btnAnalysis = document.getElementById('view-analysis-btn');
 
-      const resetViewBtns = () => [btnAll, btnTeams, btnIndiv].forEach(b => b.classList.remove('active'));
+      const resetViewBtns = () => [btnAll, btnTeams, btnIndiv, btnAnalysis].forEach(b => b.classList.remove('active'));
 
       btnAll.addEventListener('click', () => { resetViewBtns(); btnAll.classList.add('active'); activeViewMode = 'all'; renderTableForSelection(); });
       btnTeams.addEventListener('click', () => { resetViewBtns(); btnTeams.classList.add('active'); activeViewMode = 'teams'; renderTableForSelection(); });
       btnIndiv.addEventListener('click', () => { resetViewBtns(); btnIndiv.classList.add('active'); activeViewMode = 'indiv'; renderTableForSelection(); });
+      btnAnalysis.addEventListener('click', () => { resetViewBtns(); btnAnalysis.classList.add('active'); activeViewMode = 'analysis'; h2hTeamA = null; h2hTeamB = null; renderTableForSelection(); });
+
+      // Close the export dropdown on outside click / Escape.
+      document.addEventListener('click', (e) => {
+        const wrap = document.getElementById('export-menu-wrap');
+        if (wrap && !wrap.contains(e.target)) closeExportMenu();
+      });
+      document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeExportMenu(); });
+    }
+
+    function toggleExportMenu() {
+      document.getElementById('export-menu')?.classList.toggle('open');
+    }
+    function closeExportMenu() {
+      document.getElementById('export-menu')?.classList.remove('open');
+    }
+
+    function showToast(message) {
+      const toast = document.getElementById('msm-toast');
+      if (!toast) return;
+      toast.textContent = message;
+      toast.classList.add('show');
+      clearTimeout(toast._hideTimer);
+      toast._hideTimer = setTimeout(() => toast.classList.remove('show'), 2400);
     }
 
     function setupGenderTabs() {
@@ -842,6 +1168,12 @@
         // 4. Update the Export Dropdown with the teams in this race
         updateExportDropdown(teamScores);
 
+        // Stash the FULL (unfiltered) field + standings for the Coach Analysis panel,
+        // so analysis always reflects the whole race regardless of search/team filter.
+        currentRaceData = raceData;
+        currentFullTeamScores = teamScores;
+        currentIsRelay = relay;
+
         // 5. NOW apply search and team filters for what is displayed and exported
         let filteredData = raceData;
         if (query) {
@@ -880,6 +1212,13 @@
           const indivSection = document.createElement('div');
           indivSection.innerHTML = renderResultsTableHTML(filteredData, distance);
           resultsBox.appendChild(indivSection);
+        }
+
+        if (activeViewMode === 'analysis') {
+          const analysisSection = document.createElement('div');
+          analysisSection.innerHTML = renderAnalysisHTML(teamScores, raceData, relay, distance);
+          resultsBox.appendChild(analysisSection);
+          setupHeadToHeadControls(teamScores, relay);
         }
     }
 
@@ -1055,7 +1394,7 @@
             // Relay: show each leg's time. Normal meet: show each scorer's place.
             const scorersHtml = team.isRelay
               ? team.athletes.map(a => `<span class="scorer-badge">${formatTime(parseFloat(a.time))}</span>`).join('')
-              : team.athletes.map(a => `<span class="scorer-badge">#${a.scoringPlace != null ? a.scoringPlace : a.place}</span>`).join('');
+              : team.athletes.map(a => `<span class="scorer-badge">${scorerBadgeText(a)}</span>`).join('');
 
             // Relay score is a total time; normal score is points.
             const scoreDisplay = team.isRelay ? formatTime(team.score) : team.score;
@@ -1127,6 +1466,244 @@
     }
 
     // ==========================================
+    // COACH ANALYSIS
+    // ==========================================
+
+    // Builds the "storyline" cards: winner/margin, closest battle, tightest pack,
+    // fastest lineup. Works for both standard scoring and relay (total-time) races.
+    function buildStorylineCards(teamScores, relay) {
+      if (!teamScores || teamScores.length === 0) return '';
+      const cards = [];
+      const fmtScore = t => relay ? formatTime(t.score) : `${t.score} pts`;
+
+      if (teamScores.length >= 2) {
+        const [first, second] = teamScores;
+        const margin = relay ? (second.score - first.score) : (second.score - first.score);
+        const marginText = relay ? `by ${formatTime(margin)}` : `by ${margin} point${margin === 1 ? '' : 's'}`;
+        cards.push({
+          label: relay ? '🏆 Winning Squad' : '🏆 Team Champion',
+          text: `<b>${first.school}</b> ${marginText === 'by 0 points' || marginText === 'by 0:00.00' ? '(tie at the top!)' : `takes it ${marginText}`} over ${second.school} (${fmtScore(first)} to ${fmtScore(second)}).`
+        });
+
+        // Closest consecutive margin anywhere in the standings.
+        let closest = null;
+        for (let i = 0; i < teamScores.length - 1; i++) {
+          const gap = teamScores[i + 1].score - teamScores[i].score;
+          if (closest === null || gap < closest.gap) closest = { gap, a: teamScores[i], b: teamScores[i + 1], rank: i + 1 };
+        }
+        if (closest && closest.gap > 0) {
+          const gapText = relay ? formatTime(closest.gap) : `${closest.gap} pt${closest.gap === 1 ? '' : 's'}`;
+          cards.push({
+            label: '🔥 Closest Battle',
+            text: `<b>${closest.a.school}</b> edges <b>${closest.b.school}</b> by just ${gapText} for ${closest.rank === 1 ? '1st place' : `the #${closest.rank} spot`}.`
+          });
+        }
+      }
+
+      const withSplit = teamScores.filter(t => t.teamSplit > 0);
+      if (withSplit.length > 0) {
+        const tightest = withSplit.reduce((a, b) => (a.teamSplit < b.teamSplit ? a : b));
+        cards.push({
+          label: relay ? '📦 Most Even Legs' : '📦 Tightest Pack',
+          text: `<b>${tightest.school}</b> ${relay ? 'ran the most even set of legs' : 'ran the tightest pack'} — just ${formatTime(tightest.teamSplit)} ${relay ? 'between fastest & slowest leg' : 'from 1st to 5th scorer'}.`
+        });
+      }
+
+      const withAvg = teamScores.filter(t => t.teamAvg > 0);
+      if (withAvg.length > 0) {
+        const fastest = withAvg.reduce((a, b) => (a.teamAvg < b.teamAvg ? a : b));
+        cards.push({
+          label: relay ? '⚡ Fastest Avg Leg' : '⚡ Fastest Avg Runner',
+          text: `<b>${fastest.school}</b> posted the fastest team average at ${formatTime(fastest.teamAvg)}${relay ? ' per leg' : ''}.`
+        });
+      }
+
+      if (cards.length === 0) return '';
+      return `<div class="storyline-grid">${cards.map(c => `
+        <div class="storyline-item">
+          <div class="si-label">${c.label}</div>
+          <div class="si-text">${c.text}</div>
+        </div>`).join('')}</div>`;
+    }
+
+    // Horizontal "pack spread" chart — visualizes how tight each team's 1st-to-5th
+    // scorer gap is (or fastest-to-slowest leg, for relays). Coaches use pack
+    // tightness as a leading indicator of team consistency and racing IQ.
+    function buildPackChart(teamScores, relay) {
+      const withSplit = teamScores.filter(t => t.teamSplit > 0);
+      if (withSplit.length === 0) {
+        return '<div style="padding:16px; text-align:center; color:var(--text-secondary); font-size:0.85rem;">Not enough finish-time data to chart pack spread for this race.</div>';
+      }
+      const maxSplit = Math.max(...withSplit.map(t => t.teamSplit), 1);
+      const rows = withSplit.map((t, i) => {
+        const widthPct = Math.max((t.teamSplit / maxSplit) * 100, 2);
+        return `
+        <div class="pack-row">
+          <div class="pack-rank">${i + 1}</div>
+          <div class="pack-label">
+            <div class="pl-name">${t.school}</div>
+            <div class="pl-sub">Avg ${formatTime(t.teamAvg)}</div>
+          </div>
+          <div class="pack-track"><div class="pack-fill" style="width:${widthPct}%;"></div></div>
+          <div class="pack-split-label">${formatTime(t.teamSplit)}</div>
+        </div>`;
+      }).join('');
+      return `<div style="padding: 4px 16px 8px;">${rows}</div>`;
+    }
+
+    // Runners who didn't score for a team but finished inside the scoring pack —
+    // i.e. they "displaced" opposing scorers to worse points. Useful for coaches
+    // sizing up which unattached/JV/incomplete-team runners affected the outcome.
+    function buildDisplacers(raceData, teamScores) {
+      const scoringSchools = new Set(teamScores.map(t => t.school));
+      const scorerPlaces = raceData.filter(r => r.scoringPlace).map(r => parseInt(r.place) || 0);
+      if (scorerPlaces.length === 0) return '<div style="padding:16px; text-align:center; color:var(--text-secondary); font-size:0.85rem;">No displacement data available.</div>';
+      const maxScorerPlace = Math.max(...scorerPlaces);
+
+      const displacers = raceData
+        .filter(r => !r.scoringPlace && (parseInt(r.place) || 9999) <= maxScorerPlace)
+        .sort((a, b) => (parseInt(a.place) || 9999) - (parseInt(b.place) || 9999))
+        .slice(0, 6);
+
+      if (displacers.length === 0) {
+        return '<div style="padding:16px; text-align:center; color:var(--text-secondary); font-size:0.85rem;">No non-scoring runners affected the scoring pack in this race.</div>';
+      }
+
+      const rows = displacers.map(r => {
+        const school = normalizeSchoolName(r.school_name || r.school || 'Unknown');
+        const tag = scoringSchools.has(school) ? '7th+ Runner' : 'Unscored Team';
+        return `
+        <div class="displacer-item">
+          <div class="displacer-place">${r.place || '-'}</div>
+          <div>
+            <div class="d-name">${r.athlete_name || r.name || 'Unknown'}</div>
+            <div class="d-school">${r.school_name || r.school || 'Unknown'}</div>
+          </div>
+          <div class="displacer-tag">${tag}</div>
+        </div>`;
+      }).join('');
+
+      return `<div style="padding: 4px 16px 8px;">${rows}</div>
+      <div style="padding: 0 16px 14px; font-size:0.75rem; color:var(--text-tertiary);">These runners finished ahead of at least one opposing scorer, pushing that scorer's points down the field.</div>`;
+    }
+
+    // Recomputes a true two-team "dual meet" score using only these two teams'
+    // scoring runners (individual) or squads' total time (relay) — shows coaches
+    // exactly how the matchup would have gone as a standalone dual.
+    function renderHeadToHead(teamAName, teamBName, teamScores, relay) {
+      const container = document.getElementById('h2h-result');
+      if (!container) return;
+      const teamA = teamScores.find(t => t.school === teamAName);
+      const teamB = teamScores.find(t => t.school === teamBName);
+      if (!teamA || !teamB || teamAName === teamBName) {
+        container.innerHTML = '<div style="padding:12px; text-align:center; color:var(--text-secondary); font-size:0.85rem;">Pick two different teams to compare.</div>';
+        return;
+      }
+
+      if (relay) {
+        const aFaster = teamA.score <= teamB.score;
+        container.innerHTML = `
+          <table class="h2h-table">
+            <thead><tr><th>Squad</th><th class="h2h-num">Total Time</th><th class="h2h-num">Avg Leg</th></tr></thead>
+            <tbody>
+              <tr><td class="${aFaster ? 'h2h-win' : ''}">${teamA.school}</td><td class="h2h-num ${aFaster ? 'h2h-win' : ''}">${formatTime(teamA.score)}</td><td class="h2h-num">${formatTime(teamA.teamAvg)}</td></tr>
+              <tr><td class="${!aFaster ? 'h2h-win' : ''}">${teamB.school}</td><td class="h2h-num ${!aFaster ? 'h2h-win' : ''}">${formatTime(teamB.score)}</td><td class="h2h-num">${formatTime(teamB.teamAvg)}</td></tr>
+            </tbody>
+          </table>
+          <div class="h2h-summary">${aFaster ? teamA.school : teamB.school} would win this head-to-head by ${formatTime(Math.abs(teamA.score - teamB.score))}.</div>`;
+        return;
+      }
+
+      const combined = [
+        ...teamA.athletes.map(a => ({ ...a, _team: 'A' })),
+        ...teamB.athletes.map(a => ({ ...a, _team: 'B' }))
+      ].sort((x, y) => (parseFloat(x.time) || 99999) - (parseFloat(y.time) || 99999));
+
+      let scoreA = 0, scoreB = 0;
+      const rows = combined.map((r, idx) => {
+        const dualPlace = idx + 1;
+        if (r._team === 'A') scoreA += dualPlace; else scoreB += dualPlace;
+        const winCls = r._team === 'A' ? 'h2h-win' : '';
+        return `<tr>
+          <td class="h2h-num">${dualPlace}</td>
+          <td>${r.athlete_name || r.name || 'Unknown'}</td>
+          <td class="${r._team === 'A' ? 'h2h-win' : ''}">${r._team === 'A' ? teamA.school : teamB.school}</td>
+          <td class="h2h-num">${formatTime(parseFloat(r.time) || 0)}</td>
+        </tr>`;
+      }).join('');
+
+      const aWins = scoreA < scoreB;
+      const tie = scoreA === scoreB;
+      container.innerHTML = `
+        <table class="h2h-table">
+          <thead><tr><th class="h2h-num">Dual #</th><th>Runner</th><th>Team</th><th class="h2h-num">Time</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+        <div class="h2h-summary">${tie ? `Dead even — both teams score ${scoreA}.` : `${aWins ? teamA.school : teamB.school} wins the dual ${Math.min(scoreA, scoreB)}–${Math.max(scoreA, scoreB)}.`}</div>`;
+    }
+
+    function updateHeadToHead() {
+      const selA = document.getElementById('h2h-team-a');
+      const selB = document.getElementById('h2h-team-b');
+      if (!selA || !selB) return;
+      h2hTeamA = selA.value;
+      h2hTeamB = selB.value;
+      renderHeadToHead(h2hTeamA, h2hTeamB, currentFullTeamScores, currentIsRelay);
+    }
+
+    function setupHeadToHeadControls(teamScores, relay) {
+      const selA = document.getElementById('h2h-team-a');
+      const selB = document.getElementById('h2h-team-b');
+      if (!selA || !selB || teamScores.length < 2) return;
+      if (!h2hTeamA || !teamScores.some(t => t.school === h2hTeamA)) h2hTeamA = teamScores[0].school;
+      if (!h2hTeamB || !teamScores.some(t => t.school === h2hTeamB) || h2hTeamB === h2hTeamA) {
+        h2hTeamB = (teamScores[1] && teamScores[1].school !== h2hTeamA) ? teamScores[1].school : (teamScores[0].school === h2hTeamA && teamScores[1] ? teamScores[1].school : teamScores[0].school);
+      }
+      selA.value = h2hTeamA;
+      selB.value = h2hTeamB;
+      renderHeadToHead(h2hTeamA, h2hTeamB, teamScores, relay);
+    }
+
+    function renderAnalysisHTML(teamScores, raceData, relay, distanceMeters) {
+      if (!teamScores || teamScores.length === 0) {
+        return '<div style="text-align:center; padding:20px; color:var(--text-secondary);">Coach Analysis needs at least one scoring team (5+ finishers) for this race.</div>';
+      }
+
+      const storyline = buildStorylineCards(teamScores, relay);
+      const packChart = buildPackChart(teamScores, relay);
+
+      const teamOptions = teamScores.map(t => `<option value="${t.school.replace(/"/g, '&quot;')}">${t.school}</option>`).join('');
+      const h2hSection = teamScores.length >= 2 ? `
+        <div class="analysis-card">
+          <div class="list-header">🥊 Head-to-Head Dual</div>
+          <div class="analysis-card-body">
+            <div class="h2h-controls">
+              <select id="h2h-team-a" onchange="updateHeadToHead()">${teamOptions}</select>
+              <span class="h2h-vs">VS</span>
+              <select id="h2h-team-b" onchange="updateHeadToHead()">${teamOptions}</select>
+            </div>
+            <div id="h2h-result"></div>
+          </div>
+        </div>` : '';
+
+      const displacersSection = relay ? '' : `
+        <div class="analysis-card">
+          <div class="list-header">🚧 Key Displacers</div>
+          ${buildDisplacers(raceData, teamScores)}
+        </div>`;
+
+      return `
+        ${storyline ? `<div class="analysis-card"><div class="list-header">📖 Race Storyline</div><div class="analysis-card-body">${storyline}</div></div>` : ''}
+        <div class="analysis-card">
+          <div class="list-header">📦 ${relay ? 'Leg Spread' : 'Team Pack Spread'} (tighter bar = tighter pack)</div>
+          ${packChart}
+        </div>
+        ${h2hSection}
+        ${displacersSection}
+      `;
+    }
+
+    // ==========================================
     // EXPORT UTILITIES (CSV/PDF)
     // ==========================================
 
@@ -1158,7 +1735,7 @@
           rows.push(['Team Standings'].map(csvCell));
           rows.push(['Place', 'School', 'Score', 'Team Avg', 'Team Split', 'Scoring Top 5'].map(csvCell));
           currentTeamScores.forEach((t, i) => {
-            const scorers = t.athletes.map(a => `#${a.scoringPlace != null ? a.scoringPlace : a.place} ${a.athlete_name || a.name || ''}`).join('; ');
+            const scorers = t.athletes.map(a => `${scorerBadgeText(a)} ${a.athlete_name || a.name || ''}`).join('; ');
             rows.push([i + 1, t.school, t.score, formatTime(t.teamAvg), formatTime(t.teamSplit), scorers].map(csvCell));
           });
         }
@@ -1189,6 +1766,177 @@
       // Prepend a UTF-8 BOM so Excel opens accented names correctly.
       const csv = '﻿' + rows.map(cols => cols.join(',')).join('\r\n');
       downloadBlob(`${exportFilenameStem()}.csv`, 'text/csv;charset=utf-8;', csv);
+    }
+
+    // Raw JSON export — everything currently computed for the race (full field +
+    // full team standings, independent of the search/team-select filters) so a
+    // coach can pull it into their own spreadsheet, Python notebook, etc.
+    function exportRawDataJSON() {
+      const hasData = (currentRaceData && currentRaceData.length > 0) || (currentFullTeamScores && currentFullTeamScores.length > 0);
+      if (!hasData) return alert("No results to export.");
+
+      const payload = {
+        meet: currentMeetData ? {
+          name: currentMeetData.name,
+          date: currentMeetData.date,
+          location: currentMeetData.location
+        } : null,
+        gender: activeGender === 'M' ? 'Boys' : 'Girls',
+        raceType: activeRaceType,
+        isRelay: currentIsRelay,
+        exportedAt: new Date().toISOString(),
+        teamStandings: currentFullTeamScores,
+        results: currentRaceData
+      };
+      downloadBlob(`${exportFilenameStem()}.json`, 'application/json;charset=utf-8;', JSON.stringify(payload, null, 2));
+    }
+
+    // Builds a short plain-text recap of the race for pasting into a text
+    // message, email, or team group chat.
+    function buildRecapText() {
+      const meetName = currentMeetData?.name || document.getElementById("meet-title")?.textContent || "Meet Results";
+      const genderText = activeGender === 'M' ? 'Boys' : 'Girls';
+      const lines = [`${meetName} — ${genderText} ${activeRaceType || ''}`.trim(), ''];
+
+      if (currentFullTeamScores && currentFullTeamScores.length > 0) {
+        lines.push(currentIsRelay ? 'Relay Standings:' : 'Team Standings:');
+        currentFullTeamScores.slice(0, 10).forEach((t, i) => {
+          lines.push(`${i + 1}. ${t.school} — ${currentIsRelay ? formatTime(t.score) : `${t.score} pts`}`);
+        });
+        lines.push('');
+      }
+
+      if (currentRaceData && currentRaceData.length > 0) {
+        lines.push('Top Individual Finishers:');
+        currentRaceData.slice(0, 5).forEach(r => {
+          const name = r.athlete_name || r.name || 'Unknown';
+          const school = r.school_name || r.school || '';
+          lines.push(`${r.place || '-'}. ${name} (${school}) — ${formatTime(parseFloat(r.time) || 0)}`);
+        });
+      }
+
+      return lines.join('\n');
+    }
+
+    async function copyRecapToClipboard() {
+      const hasData = (currentRaceData && currentRaceData.length > 0) || (currentFullTeamScores && currentFullTeamScores.length > 0);
+      if (!hasData) return alert("No results to copy.");
+      const text = buildRecapText();
+      try {
+        await navigator.clipboard.writeText(text);
+        showToast('✅ Recap copied to clipboard!');
+      } catch (e) {
+        console.warn('Clipboard write failed, falling back to download.', e);
+        downloadBlob(`${exportFilenameStem()}_recap.txt`, 'text/plain;charset=utf-8;', text);
+        showToast('Clipboard unavailable — downloaded a text file instead.');
+      }
+    }
+
+    // Draws a shareable 1200x630 results "card" (social/group-chat size) with the
+    // meet name, race, and top teams/finishers, then downloads it as a PNG — or
+    // hands it to the native share sheet on mobile when available.
+    async function exportShareCard() {
+      const hasData = (currentRaceData && currentRaceData.length > 0) || (currentFullTeamScores && currentFullTeamScores.length > 0);
+      if (!hasData) return alert("No results to share.");
+
+      const bc = getBrandColorRgbArray();
+      const brand = `rgb(${bc[0]}, ${bc[1]}, ${bc[2]})`;
+      const W = 1200, H = 630;
+      const canvas = document.createElement('canvas');
+      canvas.width = W; canvas.height = H;
+      const ctx = canvas.getContext('2d');
+
+      // Background gradient.
+      const grad = ctx.createLinearGradient(0, 0, W, H);
+      grad.addColorStop(0, brand);
+      grad.addColorStop(1, '#0b1220');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, W, H);
+
+      // Header text.
+      const meetName = currentMeetData?.name || document.getElementById("meet-title")?.textContent || "Meet Results";
+      const genderText = activeGender === 'M' ? 'Boys' : 'Girls';
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '700 22px Helvetica, Arial, sans-serif';
+      ctx.fillText('MOUNTAIN STATE MILES', 56, 58);
+      ctx.font = '800 44px Helvetica, Arial, sans-serif';
+      wrapCanvasText(ctx, meetName, 56, 112, 1080, 48);
+      ctx.font = '600 24px Helvetica, Arial, sans-serif';
+      ctx.fillStyle = 'rgba(255,255,255,0.85)';
+      ctx.fillText(`${genderText} ${activeRaceType || ''}`.trim(), 56, 172);
+
+      // Divider.
+      ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+      ctx.beginPath(); ctx.moveTo(56, 196); ctx.lineTo(W - 56, 196); ctx.stroke();
+
+      let y = 240;
+      if (currentFullTeamScores && currentFullTeamScores.length > 0) {
+        ctx.font = '700 20px Helvetica, Arial, sans-serif';
+        ctx.fillStyle = 'rgba(255,255,255,0.7)';
+        ctx.fillText(currentIsRelay ? 'RELAY STANDINGS' : 'TEAM STANDINGS', 56, y);
+        y += 36;
+        currentFullTeamScores.slice(0, 5).forEach((t, i) => {
+          ctx.font = '800 30px Helvetica, Arial, sans-serif';
+          ctx.fillStyle = '#ffffff';
+          ctx.fillText(`${i + 1}.`, 56, y);
+          ctx.font = '700 28px Helvetica, Arial, sans-serif';
+          ctx.fillText(t.school, 110, y);
+          const scoreText = currentIsRelay ? formatTime(t.score) : `${t.score} pts`;
+          ctx.font = '800 28px Helvetica, Arial, sans-serif';
+          ctx.textAlign = 'right';
+          ctx.fillText(scoreText, W - 56, y);
+          ctx.textAlign = 'left';
+          y += 44;
+        });
+      }
+
+      // Footer.
+      ctx.font = '600 18px Helvetica, Arial, sans-serif';
+      ctx.fillStyle = 'rgba(255,255,255,0.6)';
+      ctx.fillText(formatMeetDate(currentMeetData?.date) + (currentMeetData?.location ? ` • ${currentMeetData.location}` : ''), 56, H - 40);
+
+      const filename = `${exportFilenameStem()}_share.png`;
+      canvas.toBlob(async (blob) => {
+        if (!blob) return;
+        if (navigator.canShare && navigator.canShare({ files: [new File([blob], filename, { type: 'image/png' })] })) {
+          try {
+            await navigator.share({
+              files: [new File([blob], filename, { type: 'image/png' })],
+              title: meetName,
+              text: `${meetName} — ${genderText} results`
+            });
+            return;
+          } catch (e) { /* user cancelled or share failed — fall back to download */ }
+        }
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      }, 'image/png');
+    }
+
+    // Simple word-wrap helper for the canvas share card title.
+    function wrapCanvasText(ctx, text, x, y, maxWidth, lineHeight) {
+      const words = String(text).split(' ');
+      let line = '';
+      let curY = y;
+      let linesDrawn = 0;
+      for (let i = 0; i < words.length; i++) {
+        const testLine = line + words[i] + ' ';
+        if (ctx.measureText(testLine).width > maxWidth && line !== '' && linesDrawn < 1) {
+          ctx.fillText(line, x, curY);
+          line = words[i] + ' ';
+          curY += lineHeight;
+          linesDrawn++;
+        } else {
+          line = testLine;
+        }
+      }
+      ctx.fillText(line, x, curY);
     }
 
     async function exportResultsPDF() {
@@ -1265,8 +2013,47 @@
         }
       };
 
-      // 4. Generate the Tables
+      // 4. Coach's Report extras: storyline blurb + a quick score-comparison bar
+      //    chart, drawn straight from the FULL (unfiltered) standings so the
+      //    story reflects the whole race even if a single team is selected below.
       let startY = 30; // Push table down to clear the new 24px header
+
+      if (currentFullTeamScores && currentFullTeamScores.length >= 2 && activeViewMode !== 'indiv') {
+        const top = currentFullTeamScores[0];
+        const second = currentFullTeamScores[1];
+        const margin = second.score - top.score;
+        const marginText = relay
+          ? `by ${formatTime(margin)} over ${second.school}`
+          : `by ${margin} point${margin === 1 ? '' : 's'} over ${second.school}`;
+
+        doc.setTextColor(60, 60, 60);
+        doc.setFont('helvetica', 'italic');
+        doc.setFontSize(10.5);
+        doc.text(`${top.school} wins it ${marginText}.`, 14, startY);
+        startY += 8;
+
+        // Mini horizontal bar chart comparing the top teams (lower score bar = leader).
+        const chartTeams = currentFullTeamScores.slice(0, 6);
+        const maxScore = Math.max(...chartTeams.map(t => t.score), 1);
+        const chartX = 14, chartW = 120, rowH = 6.2;
+        chartTeams.forEach((t, i) => {
+          const rowY = startY + i * rowH;
+          const barW = Math.max((t.score / maxScore) * chartW, 2);
+          doc.setFillColor(230, 230, 230);
+          doc.rect(chartX + 46, rowY - 3.6, chartW, 4.6, 'F');
+          doc.setFillColor(bc[0], bc[1], bc[2]);
+          doc.rect(chartX + 46, rowY - 3.6, barW, 4.6, 'F');
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(8);
+          doc.setTextColor(30, 30, 30);
+          doc.text(String(t.school).slice(0, 24), chartX, rowY);
+          doc.setFont('helvetica', 'normal');
+          doc.text(relay ? formatTime(t.score) : String(t.score), chartX + 46 + chartW + 4, rowY);
+        });
+        startY += chartTeams.length * rowH + 8;
+      }
+
+      // 5. Generate the Tables
 
       // Draw Team / Relay Scores Table (if applicable and not hidden)
       if (hasTeams && activeViewMode !== 'indiv') {
@@ -1284,7 +2071,7 @@
         } else {
           doc.autoTable({
               head: [['Place', 'School', 'Score', 'Avg / Split', 'Scoring Top 5']],
-              body: currentTeamScores.map((t, i) => [i + 1, t.school, t.score, `${formatTime(t.teamAvg)} / ${formatTime(t.teamSplit)}`, t.athletes.map(a => `#${a.scoringPlace||a.place} ${a.athlete_name||a.name}`).join(', ')]),
+              body: currentTeamScores.map((t, i) => [i + 1, t.school, t.score, `${formatTime(t.teamAvg)} / ${formatTime(t.teamSplit)}`, t.athletes.map(a => `${scorerBadgeText(a)} ${a.athlete_name||a.name}`).join(', ')]),
               startY: startY,
               margin: { top: 30 },
               styles: { fontSize: 8 },

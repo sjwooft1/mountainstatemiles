@@ -9,11 +9,41 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
+    /* Native controls (date pickers, selects, scrollbars) follow the theme. */
+    html[data-theme="dark"]{color-scheme:dark}
+    html[data-theme="light"]{color-scheme:light}
+    @media (prefers-color-scheme: dark){html:not([data-theme="light"]){color-scheme:dark}}
     .desk-main{max-width:1120px;margin:0 auto;padding:2rem 1.25rem 5rem}.desk-head{margin-bottom:1.5rem}.desk-head h1{margin:0 0 .35rem;font-size:clamp(1.7rem,4vw,2.4rem)}.desk-head p{margin:0;color:var(--text-secondary)}
     .desk-tabs{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1.2rem;border-bottom:1px solid var(--border);padding-bottom:.7rem}.desk-tab{border:1px solid var(--border);border-radius:99px;background:var(--bg-primary);color:var(--text-secondary);padding:.55rem 1rem;font-weight:800;cursor:pointer}.desk-tab.active{background:var(--primary);border-color:var(--primary);color:#fff}.desk-panel{display:none}.desk-panel.active{display:block}
     .desk-card{background:var(--bg-primary);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem;margin-bottom:1rem;box-shadow:0 5px 18px var(--shadow-light)}.desk-card h2{font-size:1.15rem;margin:0 0 .3rem}.desk-card .help{color:var(--text-secondary);font-size:.84rem;line-height:1.5;margin:.2rem 0 1rem}.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem}@media(max-width:700px){.form-grid{grid-template-columns:1fr}}.field{display:flex;flex-direction:column;gap:.35rem}.field.full{grid-column:1/-1}.field label{font-weight:800;font-size:.82rem}.field input,.field select,.field textarea{font:inherit;border:1px solid var(--border);border-radius:var(--radius-md);background:var(--bg-secondary);color:var(--text-primary);padding:.7rem .8rem}.field textarea{min-height:125px;resize:vertical}.field textarea.story-body{min-height:260px}.checkline{display:flex;gap:.55rem;align-items:center;font-size:.88rem;font-weight:700}.button-row{display:flex;gap:.6rem;flex-wrap:wrap;margin-top:1rem}.desk-btn{border:0;border-radius:var(--radius-md);padding:.7rem 1rem;font:inherit;font-weight:800;cursor:pointer;background:var(--primary);color:#fff}.desk-btn.secondary{background:var(--bg-secondary);color:var(--text-primary);border:1px solid var(--border)}.desk-btn.gold{background:var(--msm-gold);color:#3a2c05}.desk-btn:disabled{opacity:.5;cursor:not-allowed}
     .token-box{background:var(--bg-secondary);border:1px dashed var(--border);border-radius:var(--radius-md);padding:.85rem}.token-box strong{display:block;font-size:.82rem;margin-bottom:.45rem}.token-list{display:flex;flex-wrap:wrap;gap:.4rem}.token{border:1px solid var(--border);border-radius:99px;background:var(--bg-primary);color:var(--text-secondary);padding:.32rem .58rem;font:inherit;font-size:.73rem;font-weight:800;cursor:pointer}.token:hover{border-color:var(--primary);color:var(--primary)}
-    .story-preview{border-radius:var(--radius-lg);padding:1.35rem;background:linear-gradient(140deg,var(--bg-dark),#1e4235);color:var(--msm-cream);min-height:170px}.story-preview .preview-kicker{color:var(--msm-gold);font-size:.7rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase}.story-preview h3{font-size:1.45rem;line-height:1.15;margin:.4rem 0}.story-preview .preview-dek{color:rgba(251,247,239,.8);font-weight:700}.story-preview .preview-body{color:rgba(251,247,239,.78);font-size:.88rem;line-height:1.55;white-space:pre-line}.story-preview .preview-stats{display:flex;gap:.4rem;flex-wrap:wrap;margin-top:.8rem}.story-preview .preview-stats span{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);padding:.3rem .55rem;border-radius:99px;font-size:.72rem;font-weight:800}.alert{display:none;border-radius:var(--radius-md);padding:.75rem 1rem;margin-bottom:1rem;font-weight:700}.alert.show{display:block}.alert.success{background:rgba(63,125,99,.14);color:var(--primary)}.alert.error{background:rgba(198,91,70,.14);color:var(--danger)}.article-row{display:flex;justify-content:space-between;gap:1rem;align-items:flex-start;border-bottom:1px solid var(--border-light);padding:1rem 0}.article-row:last-child{border-bottom:0}.article-row h3{margin:0 0 .3rem;font-size:1rem}.article-row p{margin:0;color:var(--text-secondary);font-size:.86rem;line-height:1.45}.article-meta{color:var(--text-tertiary);font-size:.74rem}.article-row .delete{background:transparent;color:var(--danger);border:1px solid var(--border);padding:.4rem .6rem;border-radius:var(--radius-sm);font-weight:800;cursor:pointer;white-space:nowrap}
+    /* The preview sits on a dark card in both themes, so it uses a fixed cream. */
+    .story-preview{border-radius:var(--radius-lg);padding:1.35rem;background:linear-gradient(140deg,var(--bg-dark),#1e4235);color:#fbf7ef;min-height:170px}.story-preview .preview-kicker{color:var(--msm-gold);font-size:.7rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase}.story-preview h3{font-size:1.45rem;line-height:1.15;margin:.4rem 0}.story-preview .preview-dek{color:rgba(251,247,239,.8);font-weight:700}.story-preview .preview-body{color:rgba(251,247,239,.78);font-size:.88rem;line-height:1.55;white-space:pre-line}.story-preview .preview-stats{display:flex;gap:.4rem;flex-wrap:wrap;margin-top:.8rem}.story-preview .preview-stats span{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);padding:.3rem .55rem;border-radius:99px;font-size:.72rem;font-weight:800}.alert{display:none;border-radius:var(--radius-md);padding:.75rem 1rem;margin-bottom:1rem;font-weight:700}.alert.show{display:block}.alert.success{background:rgba(63,125,99,.14);color:var(--primary)}.alert.error{background:rgba(198,91,70,.14);color:var(--danger)}.article-row{display:flex;justify-content:space-between;gap:1rem;align-items:flex-start;border-bottom:1px solid var(--border-light);padding:1rem 0}.article-row:last-child{border-bottom:0}.article-row h3{margin:0 0 .3rem;font-size:1rem}.article-row p{margin:0;color:var(--text-secondary);font-size:.86rem;line-height:1.45}.article-meta{color:var(--text-tertiary);font-size:.74rem}    .article-row .delete{background:transparent;color:var(--danger);border:1px solid var(--border);padding:.4rem .6rem;border-radius:var(--radius-sm);font-weight:800;cursor:pointer;white-space:nowrap}
+    /* ---- Drag & drop data library ---- */
+    .library-controls{display:flex;gap:.6rem;flex-wrap:wrap;align-items:center;margin:.7rem 0 .8rem}
+    .library-tabs{display:flex;gap:.35rem;flex-wrap:wrap}
+    .library-tab{border:1px solid var(--border);border-radius:99px;background:var(--bg-primary);color:var(--text-secondary);padding:.4rem .85rem;font:inherit;font-size:.8rem;font-weight:800;cursor:pointer}
+    .library-tab:hover{border-color:var(--primary);color:var(--primary)}
+    .library-tab.active{background:var(--msm-ink);border-color:var(--msm-ink);color:var(--msm-paper)}
+    .library-search{flex:1 1 220px;min-width:180px;font:inherit;border:1px solid var(--border);border-radius:var(--radius-md);background:var(--bg-secondary);color:var(--text-primary);padding:.55rem .7rem}
+    .library-list{display:flex;flex-direction:column;gap:.5rem;max-height:420px;overflow:auto;padding:.15rem}
+    .library-row{border:1px solid var(--border-light);border-radius:var(--radius-md);padding:.6rem .7rem;background:var(--bg-secondary)}
+    .library-row-head{display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem}
+    .library-row-head img{width:24px;height:24px;border-radius:50%;object-fit:contain;background:#fff;border:1px solid var(--border-light);flex-shrink:0}
+    .library-row-head b{font-size:.92rem;min-width:0}
+    .library-row-head .library-row-meta{color:var(--text-tertiary);font-size:.72rem;font-weight:700;margin-left:auto;text-align:right}
+    .draft-btn{border:1px solid var(--primary);border-radius:99px;background:transparent;color:var(--primary);font:inherit;font-size:.68rem;font-weight:800;padding:.28rem .6rem;cursor:pointer;white-space:nowrap;flex-shrink:0}
+    .draft-btn:hover{background:var(--primary);color:var(--msm-paper)}
+    .draft-btn:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+    .stat-chips{display:flex;flex-wrap:wrap;gap:.35rem}
+    .stat-chip{display:inline-flex;align-items:baseline;gap:.4rem;border:1px solid var(--border);border-radius:99px;background:var(--bg-primary);color:var(--text-primary);padding:.3rem .7rem;font:inherit;font-size:.76rem;font-weight:700;cursor:grab;text-align:left}
+    .stat-chip:hover{border-color:var(--primary)}
+    .stat-chip:active{cursor:grabbing}
+    .stat-chip:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+    .stat-chip .stat-chip-label{color:var(--text-tertiary);font-size:.62rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase}
+    .stat-chip .stat-chip-value{font-weight:800}
+    .library-empty{color:var(--text-tertiary);font-size:.85rem;padding:.7rem 0}
+    .drop-target{outline:2px dashed var(--primary);outline-offset:2px}
   </style>
   <script src="/assets/theme-toggle.js" defer></script>
   <script src="/assets/components.js" defer></script>
@@ -59,6 +89,19 @@
           </div>
         </form>
       </div>
+      <div id="library-slot-story">
+      <div class="desk-card" id="library-card">
+        <h2>Data library</h2>
+        <p class="help" id="library-help">Drag any chip onto a story field — or click it to drop the stat where your cursor is. Story fields keep the stat live: the public hub re-resolves it on every visit.</p>
+        <div class="library-controls">
+          <div class="library-tabs" id="library-groups" role="tablist" aria-label="Stat sources"></div>
+          <input id="library-search" class="library-search" type="search" placeholder="Search teams, meets, and upcoming meets…" aria-label="Search the data library">
+        </div>
+        <div class="library-list" id="library-list" aria-live="polite"></div>
+        <p class="help" id="library-note" style="margin:.6rem 0 0"></p>
+      </div>
+      </div>
+
       <div class="desk-card">
         <h2>Live preview</h2>
         <p class="help">Preview resolves the same tokens the public hub uses. The email button below generates a standalone table-based HTML email you can paste into your mail platform.</p>
@@ -81,6 +124,7 @@
           <div class="button-row"><button class="desk-btn" type="submit">Publish article</button><button class="desk-btn secondary" type="reset">Clear</button></div>
         </form>
       </div>
+      <div id="library-slot-article"></div>
     </section>
 
     <section id="manage-panel" class="desk-panel">
@@ -105,6 +149,11 @@
     const esc = value => String(value == null ? '' : value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     const storyFields = { kicker:'story-kicker', title:'story-title', dek:'story-dek', body:'story-body', author:'story-author' };
     let hub = null;
+    // Fields that accept dragged stats. Story fields keep the token live; article
+    // fields take the value as it reads right now (news items render as plain text).
+    const DROP_FIELDS = ['story-kicker','story-title','story-dek','story-body','story-author','article-title','article-content','article-highlights'];
+    const ARTICLE_FIELDS = new Set(['article-title','article-content','article-highlights']);
+    let lastFocusedField = document.getElementById('story-body');
 
     function alertDesk(message, type) {
       const el = document.getElementById('alert'); el.textContent = message; el.className = `alert show ${type}`;
@@ -118,17 +167,63 @@
         ['{{top_boys_name}}','top boys athlete'], ['{{top_boys_school}}','top boys school'], ['{{top_boys_rating}}','top boys rating'], ['{{top_girls_name}}','top girls athlete'], ['{{top_girls_school}}','top girls school'], ['{{top_girls_rating}}','top girls rating'],
         ['{{next_meet}}','next meet'], ['{{next_meet_date}}','next meet date'], ['{{next_meet_location}}','next meet location'], ['{{upcoming_meets}}','meets ahead'], ['{{rated_performances}}','rated performances'], ['{{schools_competing}}','schools competing'], ['{{current_season}}','season']
       ];
-      document.getElementById('story-tokens').innerHTML = keys.map(([token,label]) => `<button type="button" class="token" data-token="${token}" title="Insert ${label}">${token}</button>`).join('');
-      document.querySelectorAll('.token').forEach(button => button.addEventListener('click', () => insertToken(button.dataset.token)));
+      document.getElementById('story-tokens').innerHTML = keys.map(([token,label]) => {
+        const value = resolve(token);
+        return `<button type="button" class="token" draggable="true" data-token="${token}" data-value="${esc(value)}" title="Live headline stat (${esc(label)}) — drag it into your copy or click to insert it">${token}</button>`;
+      }).join('');
+      document.querySelectorAll('#story-tokens .token').forEach(button => button.addEventListener('click', () => insertStat(button.dataset.token, button.dataset.value)));
     }
-    function insertToken(token) {
-      const area = activeStoryField || document.getElementById('story-body');
-      area.focus();
-      const start = area.selectionStart == null ? area.value.length : area.selectionStart;
-      const end = area.selectionEnd == null ? start : area.selectionEnd;
-      area.value = area.value.slice(0,start) + token + area.value.slice(end);
-      area.selectionStart = area.selectionEnd = start + token.length;
-      renderStoryPreview();
+
+    // Story fields keep {{tokens}} so the hub re-resolves them on every visit.
+    // Article copy is stored as plain text, so it receives the value itself.
+    function fieldPrefersValue(field) { return !!field && ARTICLE_FIELDS.has(field.id); }
+
+    // Which field should receive a chip? Prefer the field you were last writing
+    // in, as long as it belongs to the panel you are working in.
+    function activeFieldForPanel() {
+      const panel = document.querySelector('.desk-panel.active');
+      if (panel && lastFocusedField && panel.contains(lastFocusedField)) return lastFocusedField;
+      const fallbackId = panel && panel.id === 'article-panel' ? 'article-content' : 'story-body';
+      return document.getElementById(fallbackId) || lastFocusedField;
+    }
+
+    function insertStat(token, value) {
+      const field = activeFieldForPanel();
+      if (field) insertAtPoint(field, fieldPrefersValue(field) ? value : token);
+    }
+
+    function insertAtPoint(el, text, clientX, clientY) {
+      const point = clientX == null ? null : caretFromPoint(el, clientX, clientY);
+      const start = point == null ? (el.selectionStart == null ? el.value.length : el.selectionStart) : point;
+      const end = point == null ? (el.selectionEnd == null ? start : el.selectionEnd) : point;
+      el.focus();
+      el.value = el.value.slice(0, start) + text + el.value.slice(end);
+      el.selectionStart = el.selectionEnd = start + text.length;
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+
+    // Where did the chip land? Line height and an average character width from
+    // the field's own computed font are close enough to place the caret.
+    function caretFromPoint(el, clientX, clientY) {
+      const rect = el.getBoundingClientRect();
+      if (clientX < rect.left - 80 || clientX > rect.right + 80) return null;
+      const style = getComputedStyle(el);
+      const lineHeight = parseFloat(style.lineHeight) || parseFloat(style.fontSize) * 1.4;
+      const padTop = parseFloat(style.paddingTop) || 0;
+      const padLeft = parseFloat(style.paddingLeft) || 0;
+      const area = el.tagName === 'TEXTAREA';
+      if (!area && (clientY < rect.top || clientY > rect.bottom)) return null;
+      const ctx = caretFromPoint.ctx || (caretFromPoint.ctx = document.createElement('canvas').getContext('2d'));
+      ctx.font = `${style.fontStyle} ${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+      const charWidth = ctx.measureText('abcdefghijklmnopqrstuvwxyz').width / 26 || parseFloat(style.fontSize) * 0.5;
+      const lines = el.value.split('\n');
+      const line = area
+        ? Math.max(0, Math.min(lines.length - 1, Math.floor((clientY - rect.top + el.scrollTop - padTop) / lineHeight)))
+        : 0;
+      const column = Math.max(0, Math.round((clientX - rect.left + (area ? 0 : el.scrollLeft) - padLeft) / charWidth));
+      let offset = 0;
+      for (let i = 0; i < line; i++) offset += lines[i].length + 1;
+      return offset + Math.min(column, lines[line].length);
     }
     function resolve(text) { return hub && typeof MSMHub.resolveStoryTokens === 'function' ? MSMHub.resolveStoryTokens(text) : text; }
     function currentStory() { return { kicker:document.getElementById('story-kicker').value, title:document.getElementById('story-title').value, dek:document.getElementById('story-dek').value, body:document.getElementById('story-body').value, author:document.getElementById('story-author').value, active:document.getElementById('story-active').checked }; }
@@ -164,24 +259,236 @@
     }
     async function deleteArticle(id) { if (!confirm('Delete this article?')) return; try { await newsDatabase.ref('news/' + id).remove(); alertDesk('Article deleted.', 'success'); loadArticles(); } catch(e) { alertDesk('Delete failed: ' + e.message, 'error'); } }
 
-    document.querySelectorAll('.desk-tab').forEach(tab => tab.addEventListener('click', () => { document.querySelectorAll('.desk-tab').forEach(t=>t.classList.remove('active')); document.querySelectorAll('.desk-panel').forEach(p=>p.classList.remove('active')); tab.classList.add('active'); document.getElementById(tab.dataset.panel + '-panel').classList.add('active'); if (tab.dataset.panel === 'manage') loadArticles(); }));
-    ['story-kicker','story-title','story-dek','story-body','story-author'].forEach(id => {
+    document.querySelectorAll('.desk-tab').forEach(tab => tab.addEventListener('click', () => { document.querySelectorAll('.desk-tab').forEach(t=>t.classList.remove('active')); document.querySelectorAll('.desk-panel').forEach(p=>p.classList.remove('active')); tab.classList.add('active'); document.getElementById(tab.dataset.panel + '-panel').classList.add('active'); if (tab.dataset.panel === 'manage') loadArticles(); else placeLibrary(tab.dataset.panel); }));
+    DROP_FIELDS.forEach(id => {
       const field = document.getElementById(id);
-      field.addEventListener('focus', () => { activeStoryField = field; });
+      if (!field) return;
+      field.addEventListener('focus', () => { lastFocusedField = field; if (!fieldPrefersValue(field)) activeStoryField = field; });
     });
+    setupDragAndDrop();
+
+    /* ============ Drag & drop data library ============ */
+    const LIBRARY_GROUPS = [
+      { id: 'team', label: 'Teams' },
+      { id: 'meet', label: 'Meets' },
+      { id: 'sim', label: 'Projections' }
+    ];
+    const LIBRARY_ROW_LIMIT = 30;
+    const SIM_MEET_LIMIT = 6;
+    let statData = null;          // MSMHub.statLibrary() result
+    let libraryGroup = 'team';
+    let libraryQuery = '';
+    let libraryToken = 0;         // invalidates list renders that finish late
+    const projectionRows = {};    // meet slug -> row (null = projection not possible)
+
+    function libraryMatches(text) {
+      const q = libraryQuery.trim().toLowerCase();
+      return !q || String(text == null ? '' : text).toLowerCase().includes(q);
+    }
+
+    function statChipHtml(stat) {
+      return `<button type="button" class="stat-chip" draggable="true" data-token="${esc(stat.token)}" data-value="${esc(stat.value)}" title="${esc(stat.label)}: ${esc(stat.value)} — drag onto a field, or click to insert it at the cursor"><span class="stat-chip-label">${esc(stat.label)}</span><span class="stat-chip-value">${esc(stat.value)}</span></button>`;
+    }
+
+    function libraryRowHtml(row) {
+      const logo = row.logo ? `<img src="/assets/team logos/${encodeURIComponent(row.logo)}.png" alt="" onerror="this.onerror=null;this.src='/assets/images/msmrunner.svg'">` : '';
+      const draft = `<button type="button" class="draft-btn" data-draft-group="${esc(libraryGroup)}" data-draft-id="${esc(row.id)}" title="Draft this story for me — writes a complete lead paragraph about ${esc(row.name)} from live MSM data">✍️ Draft this story</button>`;
+      return `<div class="library-row"><div class="library-row-head">${logo}<b>${esc(row.name)}</b><span class="library-row-meta">${esc(row.meta || '')}</span>${draft}</div><div class="stat-chips">${row.stats.map(statChipHtml).join('')}</div></div>`;
+    }
+
+    function setLibraryNote(text) { document.getElementById('library-note').textContent = text || ''; }
+
+    function renderLibrary() {
+      const list = document.getElementById('library-list');
+      if (!statData) { list.innerHTML = '<p class="library-empty">Loading live MSM data…</p>'; return; }
+      libraryToken++;
+      const rowsFor = (rows) => rows.slice(0, LIBRARY_ROW_LIMIT).map(libraryRowHtml).join('') || '<p class="library-empty">Nothing matches that search.</p>';
+      if (libraryGroup === 'team') {
+        const rows = statData.teams.filter(row => libraryMatches(row.name) || libraryMatches(row.meta) || libraryMatches(row.id));
+        list.innerHTML = rowsFor(rows);
+        setLibraryNote(`Showing ${Math.min(rows.length, LIBRARY_ROW_LIMIT)} of ${rows.length} teams — type above to narrow, then drag any chip into your copy.`);
+        return;
+      }
+      if (libraryGroup === 'meet') {
+        const rows = statData.meets.filter(row => libraryMatches(row.name) || libraryMatches(row.meta));
+        list.innerHTML = rowsFor(rows);
+        setLibraryNote(`Showing ${Math.min(rows.length, LIBRARY_ROW_LIMIT)} of ${rows.length} meets — winners, field size, and rated results for every meet on record.`);
+        return;
+      }
+      renderProjectionRows();
+    }
+
+    // Projections are the expensive stat, so they are built one meet at a time
+    // (each yield keeps the editor responsive) and cached afterwards.
+    function renderProjectionRows() {
+      const list = document.getElementById('library-list');
+      const searching = libraryQuery.trim().length > 0;
+      // Upcoming meets first; if the calendar is done, the newest results are
+      // still the most useful thing to project.
+      const upcoming = statData.meets.filter(row => row.dayDiff >= 0);
+      const pool = searching
+        ? statData.meets.filter(row => libraryMatches(row.name))
+        : (upcoming.length ? upcoming : statData.meets.filter(row => row.dayDiff != null));
+      const picks = pool.slice(0, SIM_MEET_LIMIT);
+      if (!picks.length) { list.innerHTML = '<p class="library-empty">No meet matches that search.</p>'; setLibraryNote(''); return; }
+      const token = libraryToken;
+      const paint = () => {
+        const rows = picks.map(m => projectionRows[m.id]).filter(Boolean);
+        if (rows.length) list.innerHTML = rows.map(libraryRowHtml).join('');
+        else list.innerHTML = '<p class="library-empty">Projecting current form…</p>';
+      };
+      paint();
+      setLibraryNote(searching
+        ? `Projecting the meets that match your search (${picks.length} so far).`
+        : (upcoming.length
+            ? 'Showing the next upcoming meets. Each projection uses recent form from meets those teams actually raced.'
+            : 'No meets are upcoming yet, so these project the most recent results. Each projection uses the recent form of the teams expected at that meet.'));
+      let cursor = 0;
+      const step = () => {
+        if (token !== libraryToken) return;
+        while (cursor < picks.length && Object.prototype.hasOwnProperty.call(projectionRows, picks[cursor].id)) cursor++;
+        if (cursor >= picks.length) {
+          paint();
+          setLibraryNote(searching
+            ? 'Projected the meets that match your search.'
+            : (upcoming.length ? 'Showing the next upcoming meets, projected from current form.' : 'Showing the most recent meets, projected from current form.'));
+          return;
+        }
+        const meet = picks[cursor++];
+        projectionRows[meet.id] = MSMHub.simulationStats ? MSMHub.simulationStats(meet.id) : null;
+        paint();
+        setTimeout(step, 0);
+      };
+      setTimeout(step, 0);
+    }
+
+    function setupLibrary() {
+      document.getElementById('library-groups').innerHTML = LIBRARY_GROUPS
+        .map(group => `<button type="button" role="tab" class="library-tab${group.id === libraryGroup ? ' active' : ''}" data-group="${group.id}" aria-selected="${group.id === libraryGroup}">${group.label}</button>`)
+        .join('');
+      document.querySelectorAll('.library-tab').forEach(button => button.addEventListener('click', () => {
+        libraryGroup = button.dataset.group;
+        document.querySelectorAll('.library-tab').forEach(b => { b.classList.toggle('active', b === button); b.setAttribute('aria-selected', String(b === button)); });
+        renderLibrary();
+      }));
+      document.getElementById('library-search').addEventListener('input', event => { libraryQuery = event.target.value; renderLibrary(); });
+      renderLibrary();
+    }
+
+    // The library follows the tab you are working in so the same chips feed the
+    // story editor (live tokens) and the article editor (values).
+    function placeLibrary(panelName) {
+      const card = document.getElementById('library-card');
+      const slot = document.getElementById(panelName === 'article' ? 'library-slot-article' : 'library-slot-story');
+      if (slot && card.parentElement !== slot) slot.appendChild(card);
+      document.getElementById('library-help').textContent = panelName === 'article'
+        ? 'Drag any chip onto the article content or key points — or click it to drop the value at your cursor. Published articles are plain text, so they capture the stat as it reads right now. “Draft this story” writes a whole lead paragraph about that row.'
+        : 'Drag any chip onto a story field — or click it to drop the stat where your cursor is. Story fields keep the stat live: the public hub re-resolves it on every visit. “Draft this story” writes a whole lead paragraph about that row.';
+      renderLibrary();
+    }
+
+    function findChip(token) {
+      if (!token) return null;
+      return [...document.querySelectorAll('[data-token]')].find(el => el.dataset.token === token) || null;
+    }
+
+    // "Draft this story for me": the engine writes a lead paragraph in prose with
+    // a live token behind every number. It reuses the chip rules — story fields
+    // keep the tokens (the hub re-resolves them), article fields take today's
+    // values — and never overwrites work in progress: a non-empty field gets the
+    // paragraph at the caret instead.
+    function draftStory(group, id) {
+      if (!hub || typeof MSMHub.storyDraft !== 'function') { alertDesk('Live MSM data is still loading — try again in a moment.', 'error'); return; }
+      let text = '';
+      try { text = MSMHub.storyDraft(group, id) || ''; } catch (e) { console.warn('Draft failed:', e); }
+      if (!text) { alertDesk('Not enough rated data for that ' + (group === 'sim' ? 'projection' : group) + ' yet — try another row.', 'error'); return; }
+      const field = activeFieldForPanel();
+      if (!field) { alertDesk('Open the story or article editor first.', 'error'); return; }
+      const payload = fieldPrefersValue(field) ? resolve(text) : text;
+      if (field.value.trim()) {
+        const atTop = field.selectionStart == null || field.selectionStart === 0;
+        insertAtPoint(field, atTop ? payload + '\n\n' : '\n\n' + payload);
+      } else {
+        field.value = payload;
+        field.focus();
+        field.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+      alertDesk(fieldPrefersValue(field) ? 'Lead paragraph drafted with the numbers as they read today.' : 'Lead paragraph drafted — the stats stay live on the hub.', 'success');
+    }
+
+    function insertFromChip(chip, field, clientX, clientY) {
+      if (!chip || !field) return;
+      const value = chip.dataset.value == null ? chip.dataset.token : chip.dataset.value;
+      insertAtPoint(field, fieldPrefersValue(field) ? value : chip.dataset.token, clientX, clientY);
+    }
+
+    function setupDragAndDrop() {
+      document.addEventListener('dragstart', event => {
+        const chip = event.target.closest ? event.target.closest('[data-token]') : null;
+        if (!chip || !event.dataTransfer) return;
+        event.dataTransfer.setData('text/plain', chip.dataset.token);
+        event.dataTransfer.effectAllowed = 'copy';
+      });
+      // Click (or keyboard) is the accessible fallback for dragging: the stat
+      // lands at the cursor of the field you were last writing in.
+      document.addEventListener('click', event => {
+        const target = event.target;
+        if (!target || !target.closest) return;
+        const draft = target.closest('.draft-btn');
+        if (draft) { draftStory(draft.dataset.draftGroup, draft.dataset.draftId); return; }
+        const chip = target.closest('.stat-chip');
+        if (!chip) return;
+        insertFromChip(chip, activeFieldForPanel());
+      });
+      DROP_FIELDS.forEach(id => {
+        const field = document.getElementById(id);
+        if (!field) return;
+        field.addEventListener('dragover', event => {
+          event.preventDefault();
+          event.stopPropagation();
+          if (event.dataTransfer) event.dataTransfer.dropEffect = 'copy';
+          field.classList.add('drop-target');
+        });
+        field.addEventListener('dragleave', () => field.classList.remove('drop-target'));
+        field.addEventListener('drop', event => {
+          event.preventDefault();
+          event.stopPropagation();
+          field.classList.remove('drop-target');
+          const token = event.dataTransfer ? event.dataTransfer.getData('text/plain') : '';
+          insertFromChip(findChip(token), field, event.clientX, event.clientY);
+        });
+      });
+      // Dropping on a card drops into whichever field you were last writing in.
+      document.querySelectorAll('.desk-card').forEach(card => {
+        card.addEventListener('dragover', event => {
+          event.preventDefault();
+          card.classList.add('drop-target');
+        });
+        card.addEventListener('dragleave', event => { if (!card.contains(event.relatedTarget)) card.classList.remove('drop-target'); });
+        card.addEventListener('drop', event => {
+          event.preventDefault();
+          card.classList.remove('drop-target');
+          const token = event.dataTransfer ? event.dataTransfer.getData('text/plain') : '';
+          insertFromChip(findChip(token), activeFieldForPanel(), event.clientX, event.clientY);
+        });
+      });
+    }
     document.getElementById('story-form').addEventListener('input', renderStoryPreview);
     document.getElementById('story-refresh').addEventListener('click', loadSavedStory);
     document.getElementById('story-form').addEventListener('submit', async e => { e.preventDefault(); try { const story=currentStory(); story.updatedAt=new Date().toISOString(); await newsDatabase.ref('featuredStory').set(story); alertDesk('Featured story saved and live on the hub.', 'success'); } catch(err) { alertDesk('Could not save featured story. Admin authentication may be required: ' + err.message, 'error'); } });
     document.getElementById('email-export').addEventListener('click', () => { const story=currentStory(); if (!story.title.trim()) return alertDesk('Add a headline before generating the email.', 'error'); download('msm-story-of-the-week.html', storyEmailHtml(story)); alertDesk('HTML email downloaded.', 'success'); });
     document.getElementById('article-form').addEventListener('submit', async e => { e.preventDefault(); try { const highlights=document.getElementById('article-highlights').value.split('\n').map(x=>x.trim()).filter(Boolean); await newsDatabase.ref('news').push({ title:document.getElementById('article-title').value.trim(), date:document.getElementById('article-date').value, category:document.getElementById('article-category').value, content:document.getElementById('article-content').value, highlights, createdAt:new Date().toISOString() }); alertDesk('Article published.', 'success'); e.target.reset(); document.getElementById('article-date').value=todayString(); } catch(err) { alertDesk('Could not publish article: ' + err.message, 'error'); } });
 
-    document.getElementById('article-date').value=todayString(); tokenList();
+    document.getElementById('article-date').value=todayString(); tokenList(); setupLibrary();
     (async () => {
       try {
         // Reads are public; authentication is only needed if Firebase rules
         // require it for publishing. Do not block the live editor on an
         // optional anonymous-auth provider that may be disabled.
         await MSMHub.load(); hub=MSMHub;
+        statData = MSMHub.statLibrary ? MSMHub.statLibrary() : null;
+        tokenList();      // refresh headline chips now that the stats resolved
+        renderLibrary();
       } catch(e) { console.warn('Live stats unavailable:',e); }
       await loadSavedStory(); renderStoryPreview(); document.dispatchEvent(new Event('MSMDataLoaded'));
     })();
