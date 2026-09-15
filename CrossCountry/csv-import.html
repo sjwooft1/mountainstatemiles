@@ -183,7 +183,7 @@
 <script src="/assets/msm-loader.js"></script>
     <div class="container">
         <h1>Cross Country Meet Import Engine</h1>
-        <p class="subtitle">Run the <code>anet.js</code> bookmarklet on an Athletic.net results page, copy the CSV it generates, then paste it below to import straight into a meet. Expected columns: <code>event_name,place,grade,athlete_name,mark,school,heat,gender</code>. An optional 9th column <code>relay_team</code> (e.g. "Morgantown A") tags relay squads so meet.html can sum each squad's leg times.</p>
+        <p class="subtitle">Run the <code>anet.js</code> bookmarklet on an Athletic.net results page, copy the CSV it generates, then paste it below to import straight into a meet. Expected columns: <code>event_name,place,grade,athlete_name,mark,school,heat,gender</code>. An optional 9th column <code>relay_team</code> (e.g. "Morgantown A") tags relay squads so meet.html can sum each squad's leg times. The <code>grade</code> column is also written to each athlete's roster record on every import, so class years stay current (and is saved on each result for meet.html's Grade column).</p>
 
         <div class="card">
             <div class="card-header-row">
@@ -305,7 +305,6 @@
     <script src="firebase-config.js"></script>
     <script src="/scripts/results-filter.js"></script>
 <script src="firebase-helpers.js"></script>
-    <script src="/scripts/autoImport_snippet.js" defer></script>`
     <script>
         // NOTE: CC_PREFIX is already declared globally by firebase-helpers.js (loaded above) -
         // it must NOT be redeclared here with const/let, or the browser throws
@@ -341,6 +340,7 @@
                 this.schoolSlugToName = {};
                 this.schoolSlugToState = {};
                 this.athletesCache = {};
+                this.athleteGradesCache = {};
                 this.meets = [];
                 this.meetImportedGroups = [];
                 this.meetImportedKeySet = new Set();
@@ -374,6 +374,9 @@
                         const a = s.val();
                         const key = `${(a.school_slug || '').toLowerCase()}|${(a.name || '').trim().toLowerCase()}`;
                         this.athletesCache[key] = s.key;
+                        // Remember the stored graduation year so imports only write when it changes.
+                        const storedGradYear = parseInt(a.grade ?? a.grad_year, 10);
+                        this.athleteGradesCache[key] = isNaN(storedGradYear) ? null : storedGradYear;
                     });
 
                     console.log("XC Import Engine initialized.");
@@ -689,18 +692,83 @@
                 return { slug: this.slugify(rawSchoolName), matched: false, state: hintState || homeState };
             }
 
-            // Best-effort graduation year estimate from a literal grade level (e.g. "11", "SR"),
-            // used only when creating a brand-new athlete record during import.
-            estimateGradYear(literalGrade) {
+            // The academic year a date belongs to: the calendar year that season's senior
+            // class graduates in. The cross country season starts in August, so a meet on
+            // 2026-09-15 belongs to the 2026-27 school year and graduates into 2027.
+            // Dates are read numerically from "YYYY-MM-DD" so a UTC-parsed date can't slide
+            // into the previous month (and therefore the previous season) in western timezones.
+            academicYearFor(referenceDate) {
+                let year = null, month = null;
+                if (typeof referenceDate === 'string') {
+                    const m = referenceDate.match(/^(\d{4})-(\d{1,2})/);
+                    if (m) { year = parseInt(m[1], 10); month = parseInt(m[2], 10) - 1; }
+                }
+                if (year === null) {
+                    if (!referenceDate) {
+                        const now = new Date();
+                        year = now.getFullYear(); month = now.getMonth();
+                    } else {
+                        const d = new Date(referenceDate);
+                        if (isNaN(d.getTime())) { year = new Date().getFullYear(); month = new Date().getMonth(); }
+                        else { year = d.getFullYear(); month = d.getMonth(); }
+                    }
+                }
+                return month >= 7 ? year + 1 : year;
+            }
+
+            // Best-effort graduation year from a literal grade level (e.g. "11", "SR").
+            // `referenceDate` anchors the estimate to the season the grade was reported in,
+            // so re-importing an older meet doesn't stamp today's cohort year onto a past
+            // athlete. Defaults to today when the meet has no date.
+            estimateGradYear(literalGrade, referenceDate) {
                 if (!literalGrade) return null;
                 const t = String(literalGrade).trim().toUpperCase().replace(/(ST|ND|RD|TH)$/, "");
-                const currentYear = new Date().getFullYear();
-                const currentMonth = new Date().getMonth();
-                const academicYear = currentMonth >= 7 ? currentYear + 1 : currentYear;
+                const academicYear = this.academicYearFor(referenceDate);
 
-                const map = { "9": 3, "FR": 3, "FROSH": 3, "10": 2, "SO": 2, "11": 1, "JR": 1, "12": 0, "SR": 0 };
+                const map = { "9": 3, "FR": 3, "FROSH": 3, "10": 2, "SO": 2, "SOPH": 2, "11": 1, "JR": 1, "12": 0, "SR": 0 };
                 if (map[t] !== undefined) return academicYear + map[t];
                 return null;
+            }
+
+            // Grade column of the preview table: the literal grade exactly as scraped, plus
+            // the class year it resolves to (the value actually stored on the athlete), so a
+            // bad grade column is visible before committing.
+            gradeCell(r) {
+                const label = r.grade ? String(r.grade).trim() : '';
+                if (!label) return '<span style="color:var(--text-muted)">—</span>';
+                if (!r.grad_year) return label;
+                return `${label}<br><span style="font-size:0.7rem;color:var(--text-muted)" title="Estimated graduation year">Class of ${r.grad_year}</span>`;
+            }
+
+            // Meet date for grade anchoring. Falls back to null (= today) when unknown.
+            meetDateForSlug(meetSlug) {
+                const meet = (this.meets || []).find(m => m.slug === meetSlug);
+                return meet && meet.date ? meet.date : null;
+            }
+
+            /**
+             * Refresh an existing athlete's stored graduation year from the grade column of
+             * the CSV row being imported. The grade column on an Athletic.net export is
+             * always the athlete's CURRENT grade, so re-importing any race should leave the
+             * roster at least as accurate as the scrape. Comparing against the cached value
+             * first keeps this a no-op (zero writes) when nothing has changed.
+             */
+            async syncAthleteGrade(athleteId, cacheKey, gradYear) {
+                if (!athleteId || !gradYear) return false;
+                if (this.athleteGradesCache[cacheKey] === gradYear) return false;
+                const previous = this.athleteGradesCache[cacheKey] || null;
+                try {
+                    await window.firebaseDatabase.ref(`${CC_PREFIX}/athletes/${athleteId}`).update({
+                        grade: gradYear,
+                        updated_at: new Date().toISOString(),
+                    });
+                    this.athleteGradesCache[cacheKey] = gradYear;
+                    console.log(`Grade refreshed for ${cacheKey}: ${previous || 'unset'} -> ${gradYear}`);
+                    return true;
+                } catch (e) {
+                    console.error("Athlete grade update failed:", e);
+                    return false;
+                }
             }
 
             // CSV Parser (handles quoted fields with embedded commas, matches anet.js output)
@@ -790,6 +858,7 @@
                         distance,
                         place,
                         grade,
+                        grad_year: this.estimateGradYear(grade, this.meetDateForSlug(meetSlug)),
                         athlete_name: athleteName,
                         mark,
                         time_seconds: timeSeconds,
@@ -895,7 +964,7 @@
                         <td>${r.school_raw}${!r.school_matched ? ` <span style="color:var(--warning);font-size:0.7rem;">(${r.school_slug})</span>` : ''}</td>
                         <td>${relayCell}</td>
                         <td>${stateBadge}</td>
-                        <td>${r.grade || '—'}</td>
+                        <td>${this.gradeCell(r)}</td>
                         <td>${r.place || '—'}</td>
                         <td><strong>${r.mark}</strong></td>
                     </tr>
@@ -922,16 +991,19 @@
 
                 const nowIso = new Date().toISOString();
                 let newAthletesCreated = 0;
+                let gradesUpdated = 0;
+                // Anchor every grade in this batch to the meet's season.
+                const meetDate = this.meetDateForSlug(toImport[0].meet_slug);
 
                 for (let i = 0; i < toImport.length; i++) {
                     const row = toImport[i];
                     const rowState = row.state || HOME_STATE;
                     const safeName = (row.athlete_name || "Unknown").trim().toLowerCase();
                     const cacheKey = `${row.school_slug}|${safeName}`;
+                    const gradYear = row.grad_year || this.estimateGradYear(row.grade, meetDate);
 
                     let athleteId = this.athletesCache[cacheKey];
                     if (!athleteId) {
-                        const gradYear = this.estimateGradYear(row.grade);
                         const newAthlete = {
                             name: row.athlete_name,
                             school_slug: row.school_slug,
@@ -946,10 +1018,14 @@
                             const newAth = await window.firebaseDatabase.ref(`${CC_PREFIX}/athletes`).push(newAthlete);
                             athleteId = newAth.key;
                             this.athletesCache[cacheKey] = athleteId;
+                            this.athleteGradesCache[cacheKey] = gradYear || null;
                             newAthletesCreated++;
                         } catch (e) {
                             console.error("Athlete creation failed:", e);
                         }
+                    } else if (await this.syncAthleteGrade(athleteId, cacheKey, gradYear)) {
+                        // Known athlete: keep their roster grade current with this scrape.
+                        gradesUpdated++;
                     }
 
                     const resultData = {
@@ -964,6 +1040,8 @@
                         meet_slug: row.meet_slug,
                         created_at: nowIso,
                     };
+                    // Denormalised onto the result so meet.html can label the class without a join.
+                    if (gradYear) resultData.grad_year = gradYear;
                     // Only store relay_team when present, so normal meets stay clean.
                     if (row.relay_team) resultData.relay_team = row.relay_team;
 
@@ -980,6 +1058,7 @@
                 const oosCount = toImport.filter(r => (r.state || HOME_STATE) !== HOME_STATE).length;
                 alert(`Successfully imported ${toImport.length} results!` +
                     (newAthletesCreated > 0 ? ` (${newAthletesCreated} new athlete${newAthletesCreated === 1 ? '' : 's'} added to the roster.)` : '') +
+                    (gradesUpdated > 0 ? ` Grade updated for ${gradesUpdated} existing athlete${gradesUpdated === 1 ? '' : 's'}.` : '') +
                     (oosCount > 0 ? ` ${oosCount} out-of-state result${oosCount === 1 ? '' : 's'} were saved for scoring but will not appear in WV rankings.` : ''));
 
                 await this.loadImportedEventsForMeet(this.currentMeetSlug);
@@ -1013,7 +1092,7 @@
            * @param {string} csvText      scraper CSV, columns:
            *                              event_name,place,grade,athlete_name,mark,school,heat,gender[,relay_team]
            * @param {object} opts         { defaultDistance=5000, defaultGender='M', homeState='WV' }
-           * @returns {Promise<object>}   {status, imported, skipped, newAthletes, unmatchedSchools, outOfState, meetSlug}
+           * @returns {Promise<object>}   {status, imported, skipped, newAthletes, gradesUpdated, unmatchedSchools, outOfState, meetSlug}
            */
           window.autoImport = async function (meetSlug, csvText, opts) {
             opts = opts || {};
@@ -1038,6 +1117,9 @@
               const sel = document.getElementById('meetHomeState');
               if (sel) sel.value = homeStateOverride;
             }
+
+            // Grades are anchored to the season the meet happened in, not to today.
+            const meetDate = imp.meetDateForSlug(meetSlug);
 
             // --- parse rows exactly like parseData(), minus the DOM/UI bits ---
             const rows = [];
@@ -1073,6 +1155,7 @@
                 distance: distance,
                 place: place,
                 grade: grade,
+                grad_year: imp.estimateGradYear(grade, meetDate),
                 athlete_name: athleteName,
                 time_seconds: timeSeconds,
                 school_slug: schoolMatch.slug,
@@ -1096,15 +1179,16 @@
             const nowIso = new Date().toISOString();
             let newAthletes = 0;
             let imported = 0;
+            let gradesUpdated = 0;
 
             for (const row of valid) {
               const rowState = row.state || HOME_STATE;
               const safeName = (row.athlete_name || 'Unknown').trim().toLowerCase();
               const cacheKey = `${row.school_slug}|${safeName}`;
+              const gradYear = row.grad_year || imp.estimateGradYear(row.grade, meetDate);
 
               let athleteId = imp.athletesCache[cacheKey];
               if (!athleteId) {
-                const gradYear = imp.estimateGradYear(row.grade);
                 const newAthlete = {
                   name: row.athlete_name,
                   school_slug: row.school_slug,
@@ -1118,10 +1202,13 @@
                   const ref = await window.firebaseDatabase.ref(`${CC_PREFIX}/athletes`).push(newAthlete);
                   athleteId = ref.key;
                   imp.athletesCache[cacheKey] = athleteId;
+                  imp.athleteGradesCache[cacheKey] = gradYear || null;
                   newAthletes++;
                 } catch (e) {
                   console.error('athlete create failed:', e);
                 }
+              } else if (await imp.syncAthleteGrade(athleteId, cacheKey, gradYear)) {
+                gradesUpdated++;
               }
 
               const resultData = {
@@ -1136,6 +1223,7 @@
                 meet_slug: row.meet_slug,
                 created_at: nowIso,
               };
+              if (gradYear) resultData.grad_year = gradYear;
               if (row.relay_team) resultData.relay_team = row.relay_team;
               try {
                 await window.firebaseDatabase.ref(`${CC_PREFIX}/results`).push(resultData);
@@ -1151,6 +1239,7 @@
               imported: imported,
               skipped: skipped,
               newAthletes: newAthletes,
+              gradesUpdated: gradesUpdated,
               unmatchedSchools: unmatchedSchools,
               outOfState: outOfState,
             };
@@ -1162,6 +1251,13 @@
         const importer = new XCMeetImporter();
         window.importer = importer;
         importer.init();
+
+        // Attach the headless window.autoImport(...) entry point the scraper driver calls.
+        // NOTE: /scripts/autoImport_snippet.js is a stale paste-in copy of this same function
+        // and used to be loaded in this page as well - being deferred, it ran *after* this
+        // script and silently replaced the newer implementation above (losing grade sync and
+        // the out-of-state disambiguation along with it). This page is now the source of truth.
+        attachAutoImport();
     </script>
 
 

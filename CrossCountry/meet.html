@@ -827,12 +827,92 @@
       return formatTime(secondsPerMile);
     }
 
-    function formatGrade(gradYear) {
-      if (!gradYear) return '';
-      const currentSeasonYear = 2025;
-      const diff = gradYear - (currentSeasonYear + 1);
+    // The academic year a date belongs to: the calendar year that season's senior class
+    // graduates in. Cross country runs August-November, so 2026-09-15 belongs to the 2026-27
+    // school year (academic year 2027). Dates are read numerically out of "YYYY-MM-DD" so a
+    // UTC-parsed date can't slide into the previous month - and so the previous season -
+    // in western timezones. This used to be hard-coded to the 2025 season, which labelled
+    // every athlete a year too young once the 2026 season started.
+    function academicYearFor(referenceDate) {
+      if (typeof referenceDate === 'string') {
+        const m = referenceDate.match(/^(\d{4})-(\d{1,2})/);
+        if (m) {
+          const year = parseInt(m[1], 10);
+          return parseInt(m[2], 10) - 1 >= 7 ? year + 1 : year;
+        }
+      }
+      const d = referenceDate ? new Date(referenceDate) : new Date();
+      const now = isNaN(d.getTime()) ? new Date() : d;
+      return now.getMonth() >= 7 ? now.getFullYear() + 1 : now.getFullYear();
+    }
+
+    // The loaded meet's date - the season a grade is shown against. Results are labelled with
+    // the class each athlete was in AT THAT MEET (the 2025 state meet shows its seniors as
+    // 12s even though they have since graduated).
+    let meetGradeReference = null;
+
+    // Turns whatever a result row carries (a graduation year like 2027, or a literal class
+    // label like "11"/"SR" from older imports) into a grade for the given season.
+    function formatGrade(value, referenceDate) {
+      if (value == null || value === '') return '';
+      const literal = String(value).trim().toUpperCase().replace(/(ST|ND|RD|TH)$/, '');
+      if (/^([6-9]|1[0-2])$/.test(literal)) return literal;              // already a grade level
+      const literalMap = { FR: '9', FROSH: '9', SO: '10', SOPH: '10', JR: '11', SR: '12' };
+      if (literalMap[literal]) return literalMap[literal];
+
+      const gradYear = parseInt(literal, 10);
+      if (!gradYear || !isFinite(gradYear)) return '';
       const gradeMap = { 0: '12', 1: '11', 2: '10', 3: '9', 4: '8', 5: '7', 6: '6' };
-      return gradeMap[diff] || gradYear;
+      const diff = gradYear - academicYearFor(referenceDate);
+      // A negative diff means the athlete had already graduated by this meet's season:
+      // leave it blank rather than inventing a class for someone who wasn't there.
+      return gradeMap[diff] || '';
+    }
+
+    // ------------------------------------------------------------------
+    // Class year lookup
+    // ------------------------------------------------------------------
+    // Imports started saving `grad_year` on each result row in 2026. Older meets have no
+    // grade on the row itself, so those fall back to the athlete roster — loaded lazily, and
+    // only when a meet actually contains a runner with no grade of their own.
+    let athleteGradeIndex = null;
+
+    function gradeIndexKey(schoolSlug, name) {
+      return `${String(schoolSlug || '').trim().toLowerCase()}|${String(name || '').trim().toLowerCase()}`;
+    }
+
+    async function loadAthleteGradeIndexIfNeeded(results) {
+      if (athleteGradeIndex) return;
+      const needsRoster = (results || []).some(r => !r.grad_year && !r.gradYear && !r.grade);
+      if (!needsRoster) { athleteGradeIndex = {}; return; }
+      try {
+        const snapshot = await window.firebaseDatabase.ref(`${CC_PREFIX}/athletes`).once('value');
+        const index = {};
+        snapshot.forEach(child => {
+          const a = child.val() || {};
+          const gradYear = parseInt(a.grade ?? a.grad_year, 10);
+          if (!gradYear || isNaN(gradYear)) return;
+          index[gradeIndexKey(a.school_slug, a.name)] = gradYear;
+        });
+        athleteGradeIndex = index;
+      } catch (err) {
+        console.warn('Roster grade lookup unavailable — showing results without class years.', err);
+        athleteGradeIndex = {};
+      }
+    }
+
+    // Grade label for a result/runner row: the row's own class year first, then the roster.
+    // Defaults to the loaded meet's season, so every table, CSV and PDF export agrees.
+    function gradeLabelFor(row, referenceDate) {
+      if (!row) return '';
+      const ref = referenceDate || meetGradeReference;
+      const own = row.grad_year || row.gradYear || row.grade;
+      if (own) return formatGrade(own, ref);
+      if (athleteGradeIndex) {
+        const hit = athleteGradeIndex[gradeIndexKey(row.school_slug, row.athlete_name || row.name)];
+        if (hit) return formatGrade(hit, ref);
+      }
+      return '';
     }
 
     function slugify(name) {
@@ -1017,6 +1097,13 @@
             r.school_name = schoolSlugToName[r.school_slug] || r.school_slug;
           }
         });
+
+        // Grades are shown as of this meet's season, so anchor them to the meet date.
+        meetGradeReference = currentMeetData.date || null;
+
+        // Resolve class years before anything renders (tables, CSV and PDF exports all read
+        // the prepared rows). No extra read when every result already carries a grade.
+        await loadAthleteGradeIndexIfNeeded(allResults);
 
         // Populate Top Stats
         const uniqueRaces = new Set(allResults.map(r => r.normalizedRaceType)).size;
@@ -1436,7 +1523,7 @@
             const athleteHref = `athlete.html?name=${encodeURIComponent(athleteName)}&school=${encodeURIComponent(schoolSlug)}`;
 
             const logoUrl = `/assets/team logos/${schoolSlug}.png`;
-            const grade = formatGrade(runner.gradYear || runner.grade);
+            const grade = gradeLabelFor(runner);
             const pace = calculatePacePerMile(timeSeconds, distanceMeters);
 
             // Build the meta string (e.g., "+1pts • Yr: 10 • Pace: 5:45").
@@ -1753,7 +1840,7 @@
           const row = [
             r.place || '',
             r.athlete_name || r.name || '',
-            formatGrade(r.gradYear || r.grade),
+            gradeLabelFor(r),
             r.school_name || r.school || '',
             formatTime(t),
             calculatePacePerMile(t, distance)
@@ -2096,7 +2183,7 @@
                 const pace = calculatePacePerMile(t, distance);
                 return relay
                   ? [r.place || '-', r.athlete_name || r.name || '', r.relay_team || '', school, formatTime(t), pace]
-                  : [r.place || '-', r.athlete_name || r.name || '', formatGrade(r.gradYear || r.grade), school, formatTime(t), pace];
+                  : [r.place || '-', r.athlete_name || r.name || '', gradeLabelFor(r), school, formatTime(t), pace];
               }),
               startY: startY,
               margin: { top: 30 },
