@@ -251,7 +251,10 @@
     let scheduleBySlug = {}; // slug -> { upcomingCount, nextMeetDate, nextMeetName, totalMeets }
     const colorCache = {};
 
-    function extractMainColor(logoUrl) {
+    // Only about a quarter of the team marks are vectors, so a missing .svg is
+    // the norm: resolving null lets the caller try the .png before settling for
+    // the site's default colour.
+    function colorFromLogo(logoUrl) {
       if (colorCache[logoUrl]) return Promise.resolve(colorCache[logoUrl]);
       return new Promise(resolve => {
         const img = new window.Image();
@@ -280,7 +283,7 @@
               if (v > maxCount) { maxCount = v; bestColors = [k.split(',').map(Number)]; }
               else if (v === maxCount) bestColors.push(k.split(',').map(Number));
             });
-            let col = [44, 95, 125];
+            let col = null;
             if (bestColors.length && maxCount > 0) {
               if (bestColors.length === 1) col = bestColors[0];
               else {
@@ -289,13 +292,26 @@
                 col = col.map(v => Math.round(v / bestColors.length));
               }
             }
+            if (!col) { resolve(null); return; }
             const rgb = `rgb(${col.join(',')})`;
             colorCache[logoUrl] = rgb;
             resolve(rgb);
-          } catch (e) { resolve('#18212e'); }
+          } catch (e) { resolve(null); }
         };
-        img.onerror = () => resolve('#18212e');
+        img.onerror = () => resolve(null);
       });
+    }
+
+    // Walk the crest formats the way the image itself does, so a card is only
+    // left grey when neither an .svg nor a .png could be read.
+    const DEFAULT_SCHOOL_COLOR = '#3f7d63';
+    async function extractMainColor(slug) {
+      for (const ext of ['svg', 'png']) {
+        const path = `/assets/team logos/${slug}.${ext}`;
+        const rgb = await colorFromLogo(path);
+        if (rgb) return rgb;
+      }
+      return DEFAULT_SCHOOL_COLOR;
     }
 
     function daysFromToday(dateStr) {
@@ -428,19 +444,22 @@
             metaHtml += `<span class="meet-chip"><i class="fa-regular fa-calendar"></i> No meets scheduled</span>`;
           }
 
+          // A few imported school names carry stray whitespace, which shows up
+          // as an indented card title.
+          const displayName = String(s.name || '').trim();
           card.innerHTML = `
             
             <img 
               src="${logoUrl}" 
-              alt="${s.name} Logo" 
+              alt="${displayName} Logo" 
               onerror="this.onerror=null; this.src='${fallbackLogo}'; this.onerror=() => { this.onerror=null; this.src='${sFallbackLogo}'; };">
               
-            <h3>${s.name}</h3>
+            <h3>${displayName}</h3>
             ${s.city ? `<span class="school-card-city">${s.city}</span>` : ''}
             <div class="school-card-meta">${metaHtml}</div>
           `;
 
-          extractMainColor(logoUrl).then(col => {
+          extractMainColor(s.slug).then(col => {
             card.style.setProperty('--school-main', col);
             card.style.setProperty('--school-glow', col.replace('rgb', 'rgba').replace(')', ',0.35)'));
             card.style.background = `linear-gradient(127deg, ${col.replace('rgb', 'rgba').replace(')', ',0.14)')} 0%, var(--bg-primary) 65%)`;

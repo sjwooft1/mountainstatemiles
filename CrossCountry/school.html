@@ -4,7 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>School – Mountain State Miles</title>
-  <meta name="description" content="Team roster, upcoming schedule, expected opponents, course info, and performance results — Mountain State Miles." />
+  <meta name="description" content="Team roster, ratings, schedule, course info, results, and an auto-generated team newsletter — Mountain State Miles." />
+  <meta name="theme-color" content="#3f7d63" id="meta-theme-color" />
   <link rel="icon" type="image/png" href="assets/Favicon Generator/favicon-96x96.png" sizes="96x96" />
   <link rel="icon" type="image/svg+xml" href="assets/Favicon Generator/favicon.svg" />
   <link rel="shortcut icon" href="assets/Favicon Generator/favicon.ico" />
@@ -12,29 +13,62 @@
   <link rel="manifest" href="assets/Favicon Generator/site.webmanifest" />
   <link rel="stylesheet" href="/assets/main.css" />
 
+  <!-- Fraunces + Nunito are imported by main.css; warm the connection only. -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
   <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.7.1/jspdf.plugin.autotable.min.js"></script>
-  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
   <script src="/assets/theme-toggle.js" defer></script>
   <script src="/assets/components.js" defer></script>
   <script src="school-analytics.js" defer></script>
+  <!-- The rating engine + hub model behind every MSM number on this page. -->
+  <script src="/scripts/msm-rating.js" defer></script>
+  <script src="/scripts/hub-engine.js" defer></script>
 
   <style>
     /* ================================================
        School profile — MSM styling. Extends main.css.
+
+       Everything is keyed to the school's own colour,
+       extracted from its logo and exposed as:
+         --team         the raw brand colour
+         --team-text    a readable variant for body copy
+         --team-ink     text colour to place ON the brand colour
+         --team-soft/-softer/-line/-glow   tints and edges
        ================================================ */
+
+    /* Brand variables live on :root so the inline values written by
+       applyTeamVars() win — a rule on .school-page would shadow them. */
+    :root {
+      --team: var(--msm-pine);
+      --team-text: var(--msm-pine);
+      --team-ink: #fff;
+      --team-fill: var(--msm-pine);
+      --team-soft: rgba(63,125,99,0.10);
+      --team-softer: rgba(63,125,99,0.05);
+      --team-line: rgba(63,125,99,0.32);
+      --team-glow: rgba(63,125,99,0.22);
+    }
 
     @keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
     @keyframes toastIn { from { opacity: 0; transform: translateX(12px); } to { opacity: 1; transform: translateX(0); } }
     @keyframes shimmer { to { transform: translateX(100%); } }
 
+    /* ---- The team bar: a stripe of school colour under the header ---- */
+    .team-bar {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 5px;
+      z-index: 60;
+      background: linear-gradient(90deg, var(--team) 0%, var(--team) 38%, rgba(0,0,0,0) 100%);
+      pointer-events: none;
+    }
+
+    /* ---- Section chrome ---- */
     .section-block { margin: 0 0 3.5rem; }
     .section-head {
       display: flex;
@@ -43,7 +77,12 @@
       flex-wrap: wrap;
       gap: 0.75rem;
       margin-bottom: 1.25rem;
+      cursor: pointer;
+      user-select: none;
     }
+    .section-head .export-row,
+    .section-head .roster-search,
+    .section-head .nl-toolbar { cursor: default; }
     .section-heading {
       font-family: var(--font-display);
       font-size: 1.6rem;
@@ -53,18 +92,46 @@
       display: flex;
       align-items: center;
       gap: 10px;
+      padding-bottom: 2px;
     }
     .section-heading::before {
       content: '';
       display: inline-block;
       width: 4px; height: 1.15em;
-      background: var(--team-color, var(--text-primary));
+      background: var(--team);
       border-radius: 2px;
     }
-    .section-heading i { color: var(--team-color, var(--text-primary)); font-size: 1.2rem; }
-    .section-sub { color: var(--text-tertiary); font-size: 0.85rem; margin-top: 2px; }
+    .section-heading i { color: var(--team-text); font-size: 1.2rem; }
+    .section-sub { color: var(--text-tertiary); font-size: 0.85rem; margin-top: 2px; max-width: 62ch; }
 
-    .export-row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .section-toggle {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 30px; height: 30px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg-primary);
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.2s;
+      flex-shrink: 0;
+    }
+    .section-toggle:hover { border-color: var(--team); color: var(--team-text); }
+    .section-toggle i { transition: transform 0.2s; font-size: 0.85rem; }
+    .section-block.is-collapsed .section-toggle i { transform: rotate(-90deg); }
+    .section-block .section-body {
+      overflow: hidden;
+      max-height: 8000px;
+      opacity: 1;
+      transition: max-height 0.3s ease, opacity 0.2s ease, margin 0.2s ease;
+    }
+    .section-block.is-collapsed .section-body {
+      max-height: 0;
+      opacity: 0;
+      pointer-events: none;
+      margin: 0;
+    }
+
+    /* ---- Buttons ---- */
     .xbtn {
       display: inline-flex; align-items: center; gap: 6px;
       padding: 8px 14px;
@@ -80,134 +147,204 @@
       text-decoration: none;
     }
     .xbtn:hover {
-      border-color: var(--team-color, var(--text-primary));
-      background: var(--team-color, var(--text-primary));
-      color: #fff;
+      border-color: var(--team);
+      background: var(--team);
+      color: var(--team-ink);
     }
     .xbtn i { font-size: 0.78rem; }
     .xbtn.xbtn-primary {
-      background: var(--team-color, var(--text-primary));
-      color: #fff;
+      background: var(--team-fill);
+      color: var(--team-ink);
       border-color: transparent;
     }
     .xbtn.xbtn-primary:hover { opacity: 0.88; }
+    .xbtn[disabled] { opacity: 0.5; cursor: not-allowed; }
+    .export-row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .eyebrow {
+      font-size: 0.68rem; font-weight: 800; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--text-tertiary);
+    }
 
-    /* ---- Season filter panel (matches rankings.html) ---- */
+    /* ---- Section quick-nav ---- */
+    .section-nav { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; margin: 0 auto 30px; }
+    .section-nav-tab {
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 0.85rem; font-weight: 600;
+      background: var(--bg-secondary);
+      color: var(--text-secondary);
+      border: 1px solid var(--border);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .section-nav-tab:hover { border-color: var(--team); color: var(--team-text); }
+    .section-nav-tab.is-off { opacity: 0.5; }
+    .section-nav-actions { display: flex; justify-content: center; gap: 14px; margin: -18px 0 30px; }
+    .section-nav-actions button {
+      background: none; border: none; cursor: pointer;
+      font-size: 0.78rem; font-weight: 600;
+      color: var(--text-tertiary);
+      text-decoration: underline; text-underline-offset: 2px;
+    }
+    .section-nav-actions button:hover { color: var(--team-text); }
+
+    /* ---- Season filter ---- */
     #season-control-panel {
-      background: var(--bg-secondary, #f8fafc);
-      border: 1px solid var(--border, #e2e8f0);
-      border-radius: 12px;
-      padding: 18px 20px;
-      margin-bottom: 2.5rem;
+      background: linear-gradient(120deg, var(--team-softer), transparent 60%), var(--bg-secondary);
+      border: 1px solid var(--team-line);
+      border-radius: 14px;
+      padding: 16px 20px;
+      margin-bottom: 2.25rem;
     }
-    .season-filter-row {
-      display: flex;
-      align-items: flex-end;
-      gap: 16px;
-      flex-wrap: wrap;
-    }
-    .season-filter-item {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      min-width: 200px;
-    }
+    .season-filter-row { display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap; }
+    .season-filter-item { display: flex; flex-direction: column; gap: 6px; min-width: 200px; }
     .season-filter-item label {
-      font-size: 0.75rem;
-      font-weight: 700;
-      color: var(--text-secondary, #64748b);
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
+      font-size: 0.75rem; font-weight: 700; color: var(--text-secondary);
+      text-transform: uppercase; letter-spacing: 0.05em;
     }
     .season-filter-item select {
-      width: 100%;
-      padding: 10px 12px;
+      width: 100%; padding: 10px 12px;
       border-radius: 8px;
-      border: 1px solid var(--border, #cbd5e1);
-      background-color: var(--bg-primary, #ffffff);
-      color: var(--text-primary, #0f172a);
-      font-size: 0.9rem;
-      cursor: pointer;
-      outline: none;
+      border: 1px solid var(--border);
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      font-size: 0.9rem; cursor: pointer; outline: none;
       transition: border-color 0.2s;
+      color-scheme: light dark;
     }
-    .season-filter-item select:focus {
-      border-color: var(--team-color, #0284c7);
-    }
-    .season-filter-note {
-      font-size: 0.8rem;
-      color: var(--text-tertiary);
-      margin-left: auto;
-      align-self: center;
-    }
+    .season-filter-item select:focus { border-color: var(--team); }
+    .season-filter-note { font-size: 0.8rem; color: var(--text-tertiary); margin-left: auto; align-self: center; }
 
     /* ---- Hero ---- */
     .school-hero {
       position: relative;
-      border-radius: 24px;
-      overflow:visible;
-      
-      text-align: center;
-      margin-bottom: 3rem;
+      overflow: hidden;
+      border: 1px solid var(--team-line);
+      border-radius: 26px;
+      background:
+        radial-gradient(120% 150% at 0% 0%, var(--team-soft) 0%, transparent 60%),
+        var(--bg-primary);
+      box-shadow: 0 18px 46px var(--team-glow);
+      padding: clamp(24px, 4vw, 46px);
+      margin: 14px 0 2.5rem;
       animation: fadeUp 0.4s ease both;
-      margin-top: 10px
     }
+    .hero-watermark {
+      position: absolute;
+      right: -40px; bottom: -70px;
+      width: min(46vw, 420px);
+      opacity: 0.08;
+      pointer-events: none;
+      user-select: none;
+    }
+    /* A dark logo on a dark card disappears, so it is inverted for the dark
+       theme and simply faded for the light one. */
+    [data-theme="dark"] .hero-watermark { opacity: 0.18; filter: invert(1) grayscale(0.25); }
+    .hero-top { display: flex; gap: clamp(18px, 3vw, 34px); align-items: center; flex-wrap: wrap; position: relative; }
     .school-hero-logo-wrap {
-      width: 20vmax; height: 20vmax;
-      margin: 0 auto 18px;
+      width: clamp(104px, 15vw, 168px);
+      height: clamp(104px, 15vw, 168px);
+      flex-shrink: 0;
       border-radius: 50%;
       display: flex; align-items: center; justify-content: center;
-      overflow: visible;              /* clip anything past the circle */
-      background: #fff;              /* consistent backdrop behind transparent logos */
+      background: #fff;
+      border: 4px solid var(--team);
+      box-shadow: 0 12px 30px var(--team-glow);
     }
-    .school-hero-logo {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;           /* whole logo fits inside the 128px circle */
-      padding: 14px;                 /* uniform breathing room */
-      box-sizing: border-box;
-    }
-
-
+    .school-hero-logo { width: 100%; height: 100%; object-fit: contain; padding: 16px; box-sizing: border-box; }
+    .hero-text { min-width: 0; flex: 1 1 320px; }
     .school-hero-name {
       font-family: var(--font-display);
-      color: var(--text-primary);      
-      font-size: 3.5rem;
-      font-weight: 500;
+      color: var(--text-primary);
+      font-size: clamp(2.1rem, 5.2vw, 3.4rem);
+      font-weight: 700;
+      line-height: 1.02;
+      margin: 6px 0 8px;
+      overflow-wrap: anywhere;
     }
-    .school-hero-sub {
-      color: var(--text-secondary);
-      font-size: 1.05rem;
-      font-weight: 500;
-      margin-bottom: 18px;
-    }
-    .school-hero-chips {
-      display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;
-      margin-bottom: 24px;
-    }
+    .school-hero-sub { color: var(--text-secondary); font-size: 1.02rem; font-weight: 500; margin-bottom: 14px; }
+    .school-hero-chips { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 18px; }
     .hero-chip {
       display: inline-flex; align-items: center; gap: 6px;
-      padding: 6px 14px;
-      border: 1px solid var(--border);
+      padding: 6px 13px;
+      border: 1px solid var(--team-line);
       border-radius: 20px;
-      font-size: 0.82rem;
-      font-weight: 600;
+      font-size: 0.8rem; font-weight: 600;
       color: var(--text-secondary);
       background: var(--bg-primary);
     }
-    .hero-chip i { color: var(--team-color, var(--text-primary)); font-size: 0.75rem; }
-    .school-hero-actions {
-      display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;
+    .hero-chip i { color: var(--team-text); font-size: 0.74rem; }
+    .hero-chip.is-class { border-color: var(--team); color: var(--team-text); }
+    .school-hero-actions { display: flex; gap: 10px; flex-wrap: wrap; position: relative; }
+
+    /* ---- Snapshot strip: filled by the MSM engine ---- */
+    .snapshot-strip {
+      position: relative;
+      margin-top: 26px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      gap: 1px;
+      background: var(--team-line);
+      border: 1px solid var(--team-line);
+      border-radius: 16px;
+      overflow: hidden;
     }
+    .snapshot-item { background: var(--bg-primary); padding: 14px 16px; display: flex; flex-direction: column; gap: 3px; }
+    .snapshot-item .snapshot-label {
+      font-size: 0.68rem; font-weight: 800; letter-spacing: 0.08em;
+      text-transform: uppercase; color: var(--team-text);
+    }
+    .snapshot-item .snapshot-value { font-family: var(--font-display); font-size: 1.35rem; font-weight: 800; color: var(--text-primary); line-height: 1.15; }
+    .snapshot-item.is-text .snapshot-value {
+      font-size: 1rem; font-weight: 700;
+      display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .snapshot-item .snapshot-sub { font-size: 0.74rem; color: var(--text-tertiary); line-height: 1.35; }
+    .snapshot-item.is-loading .snapshot-value { color: var(--text-tertiary); }
 
     /* ---- Stats ---- */
     .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 1rem; }
-    .stat-card { position: relative; overflow: hidden; }
-    .stat-card i {
-      position: absolute; top: 12px; right: 14px;
-      font-size: 1.3rem; opacity: 0.35;
+    /* main.css gives .stat-card white text for a solid brand-coloured card, but
+       this page repaints the card with --bg-primary, which left every statistic
+       (here and in the Coach & Athlete Insights panel) invisible in light mode. */
+    .stat-card {
+      color: var(--text-primary);
+      position: relative;
+      overflow: hidden;
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      border-top: 3px solid var(--team);
+      border-radius: var(--radius-lg);
+      padding: 16px 18px;
+      transition: box-shadow var(--transition), border-color var(--transition), transform var(--transition);
     }
-    .stat-label { display: flex; align-items: center; gap: 6px; }
+    .stat-card:hover { box-shadow: 0 10px 26px var(--shadow-light); transform: translateY(-2px); }
+    .stat-card::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(140deg, var(--team-softer), transparent 55%);
+      pointer-events: none;
+    }
+    .stat-label { display: flex; align-items: center; gap: 6px; position: relative; }
+
+    /* ---- Roster ---- */
+    .roster-search {
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      font-size: 0.85rem;
+      min-width: 220px;
+    }
+    .roster-search:focus { outline: none; border-color: var(--team); }
+    .grad-badge {
+      padding: 2px 8px; border-radius: 12px;
+      background: var(--team-softer);
+      border: 1px solid var(--team-line);
+      font-size: 0.78rem; font-weight: 600;
+    }
 
     /* ---- Schedule ---- */
     .schedule-grid { display: flex; flex-direction: column; gap: 16px; }
@@ -216,56 +353,34 @@
       gap: 20px;
       background: var(--bg-primary);
       border: 1px solid var(--border);
+      border-left: 4px solid var(--team);
       border-radius: var(--radius-lg);
       padding: 20px;
       animation: fadeUp 0.35s ease both;
       transition: box-shadow var(--transition), border-color var(--transition);
     }
-    .schedule-card:hover { border-color: var(--team-color, var(--text-primary)); box-shadow: 0 8px 22px var(--shadow-light); }
+    .schedule-card:hover { box-shadow: 0 10px 26px var(--team-glow); }
     .schedule-date {
       flex-shrink: 0;
       width: 76px; height: 76px;
       border-radius: var(--radius-lg);
-      background: var(--team-color, var(--text-primary));
-      color: #fff;
+      background: var(--team);
+      color: var(--team-ink);
       display: flex; flex-direction: column; align-items: center; justify-content: center;
     }
-    .schedule-date-month { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.85; }
+    .schedule-date-month { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.9; }
     .schedule-date-day { font-family: var(--font-display); font-size: 1.9rem; font-weight: 800; line-height: 1; }
     .schedule-body { flex: 1; min-width: 0; }
     .schedule-countdown {
       display: inline-block;
       font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
-      color: var(--team-color, var(--text-primary));
+      color: var(--team-text);
       margin-bottom: 4px;
     }
     .schedule-meet-name { font-size: 1.25rem; font-weight: 800; margin-bottom: 4px; }
     .schedule-meet-name a { color: var(--text-primary); text-decoration: none; }
     .schedule-meet-name a:hover { text-decoration: underline; }
     .schedule-location { color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
-
-    .course-info-panel {
-      background: var(--bg-secondary);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-md);
-      padding: 12px 14px;
-      margin-bottom: 14px;
-    }
-    .course-info-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
-    .course-info-name { font-weight: 700; font-size: 0.92rem; display: flex; align-items: center; gap: 6px; }
-    .course-info-stats { display: flex; gap: 14px; flex-wrap: wrap; font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 6px; }
-    .course-info-stats span { display: flex; align-items: center; gap: 5px; }
-    .course-info-desc { font-size: 0.82rem; color: var(--text-tertiary); margin-bottom: 8px; line-height: 1.5; }
-    .course-info-link { font-size: 0.8rem; font-weight: 700; color: var(--team-color, var(--text-primary)); text-decoration: none; display: inline-flex; align-items: center; gap: 5px; }
-    .course-info-link:hover { text-decoration: underline; }
-    .course-info-missing { font-size: 0.82rem; color: var(--text-tertiary); font-style: italic; margin-bottom: 0; }
-
-    .diff-pill { padding: 3px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
-    .diff-easy { background: rgba(16,185,129,0.15); color: var(--success); }
-    .diff-medium { background: rgba(245,158,11,0.15); color: var(--warning); }
-    .diff-hard { background: rgba(239,68,68,0.15); color: var(--danger); }
-    .diff-none { background: var(--border-light); color: var(--text-tertiary); }
-
     .schedule-teams-label { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-tertiary); margin-bottom: 6px; }
     .schedule-teams-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
     .team-chip {
@@ -276,23 +391,44 @@
       border: 1px solid var(--border);
       text-decoration: none;
       color: var(--text-primary);
-      font-size: 0.78rem;
-      font-weight: 600;
+      font-size: 0.78rem; font-weight: 600;
     }
-    .team-chip.self { border-color: var(--team-color, var(--text-primary)); background: var(--team-glow, rgba(0,0,0,0.08)); }
+    .team-chip.self { border-color: var(--team); background: var(--team-soft); }
     .team-chip img { width: 20px; height: 20px; border-radius: 50%; object-fit: contain; background: #fff; }
     .schedule-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    .course-info-panel {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--team);
+      border-radius: var(--radius-md);
+      padding: 12px 14px;
+      margin-bottom: 14px;
+    }
+    .course-info-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+    .course-info-name { font-weight: 700; font-size: 0.92rem; display: flex; align-items: center; gap: 6px; }
+    .course-info-stats { display: flex; gap: 14px; flex-wrap: wrap; font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 6px; }
+    .course-info-stats span { display: flex; align-items: center; gap: 5px; }
+    .course-info-desc { font-size: 0.82rem; color: var(--text-tertiary); margin-bottom: 8px; line-height: 1.5; }
+    .course-info-link { font-size: 0.8rem; font-weight: 700; color: var(--team-text); text-decoration: none; display: inline-flex; align-items: center; gap: 5px; }
+    .course-info-link:hover { text-decoration: underline; }
+    .course-info-missing { font-size: 0.82rem; color: var(--text-tertiary); font-style: italic; margin-bottom: 0; }
+
+    .diff-pill { padding: 3px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+    .diff-easy { background: rgba(16,185,129,0.15); color: var(--success, #10b981); }
+    .diff-medium { background: rgba(245,158,11,0.15); color: var(--warning, #f59e0b); }
+    .diff-hard { background: rgba(239,68,68,0.15); color: var(--danger, #ef4444); }
+    .diff-none { background: var(--border-light); color: var(--text-tertiary); }
 
     /* ---- Performance ---- */
     .performance-list { display: flex; flex-direction: column; gap: 16px; }
     .performance-card {
-      margin-left: 10px;
       background: var(--bg-primary);
       border: 1px solid var(--border);
+      border-left: 4px solid var(--team);
       border-radius: var(--radius-lg);
       padding: 18px 20px;
       animation: fadeUp 0.35s ease both;
-      min-width: 50vw
     }
     .performance-card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
     .performance-card-head h3 { font-size: 1.15rem; font-weight: 800; margin-bottom: 2px; }
@@ -300,23 +436,41 @@
     .performance-card-head h3 a:hover { text-decoration: underline; }
     .performance-date { color: var(--text-tertiary); font-size: 0.82rem; display: flex; align-items: center; gap: 6px; }
     .performance-badges { display: flex; gap: 8px; flex-wrap: wrap; }
-    .pr-flame { color: var(--warning); margin-left: 4px; }
+    .pr-flame { color: var(--warning, #f59e0b); margin-left: 4px; }
     .gender-pill { padding: 2px 8px; border-radius: 20px; font-size: 0.7rem; font-weight: 700; }
     .gender-pill.m { background: rgba(59,130,246,0.15); color: #3b82f6; }
     .gender-pill.f { background: rgba(236,72,153,0.15); color: #ec4899; }
-    .scorer-tag { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--team-color, var(--text-primary)); border: 1px solid var(--team-color, var(--text-primary)); border-radius: 10px; padding: 1px 6px; margin-left: 6px; }
+    .relay-tag {
+      font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
+      color: var(--text-tertiary); border: 1px solid var(--border); border-radius: 10px;
+      padding: 1px 6px; margin-left: 6px;
+    }
+    .scorer-tag {
+      font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
+      color: var(--team-text); border: 1px solid var(--team-line); border-radius: 10px;
+      padding: 1px 6px; margin-left: 6px;
+    }
     .show-more-wrap { text-align: center; margin-top: 6px; }
 
-    /* ---- Roster ---- */
-    .roster-search { padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--bg-primary); color: var(--text-primary); font-family: var(--font-sans); font-size: 0.85rem; min-width: 220px; }
-    .roster-search:focus { outline: none; border-color: var(--team-color, var(--text-primary)); }
-    .grad-badge { padding: 2px 8px; border-radius: 12px; background: var(--bg-secondary); border: 1px solid var(--border); font-size: 0.78rem; font-weight: 600; }
+    /* ---- Tables ---- */
+    .results-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    .results-table th {
+      text-align: left;
+      font-size: 0.72rem; letter-spacing: 0.05em; text-transform: uppercase;
+      color: var(--text-tertiary);
+      padding: 8px 10px;
+      background: var(--team-softer);
+      border-bottom: 2px solid var(--team-line);
+    }
+    .results-table td { padding: 8px 10px; border-bottom: 1px solid var(--border-light, var(--border)); }
+    .results-table tbody tr { transition: background 0.15s; }
+    .results-table tbody tr:hover { background: var(--team-softer); }
 
     /* ---- Chart ---- */
-    .chart-card { background: var(--bg-primary); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 22px; }
+    .chart-card { background: var(--bg-primary); border: 1px solid var(--border); border-top: 3px solid var(--team); border-radius: var(--radius-lg); padding: 22px; }
     .chart-wrap-lg { position: relative; height: 340px; }
 
-    /* ---- Skeleton / loading ---- */
+    /* ---- Skeleton / status ---- */
     .skeleton-block {
       background: var(--bg-primary);
       border: 1px solid var(--border);
@@ -328,10 +482,111 @@
     .skeleton-block::after {
       content: '';
       position: absolute; inset: 0;
-      background: linear-gradient(90deg, transparent, var(--border-light), transparent);
+      background: linear-gradient(90deg, transparent, var(--team-soft), transparent);
       transform: translateX(-100%);
       animation: shimmer 1.4s infinite;
     }
+    .status-card {
+      display: flex; align-items: center; gap: 12px;
+      background: var(--bg-primary);
+      border: 1px dashed var(--team-line);
+      border-radius: var(--radius-lg);
+      padding: 18px 20px;
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+    }
+    .status-card i { color: var(--team-text); font-size: 1.1rem; }
+    .status-card .xbtn { margin-left: auto; }
+    .spinner { animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ================================================
+       NEWSLETTER
+       ================================================ */
+    .newsletter {
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 14px 40px var(--shadow-light);
+    }
+    .nl-masthead {
+      display: flex; align-items: center; gap: 16px;
+      padding: 20px 22px;
+      background: linear-gradient(115deg, var(--team) 0%, var(--team) 55%, color-mix(in srgb, var(--team) 55%, black) 100%);
+      color: var(--team-ink);
+    }
+    .nl-crest {
+      width: 62px; height: 62px; flex-shrink: 0;
+      border-radius: 50%;
+      background: #fff;
+      display: flex; align-items: center; justify-content: center;
+      padding: 6px; box-sizing: border-box;
+    }
+    .nl-crest img { width: 100%; height: 100%; object-fit: contain; }
+    .nl-masthead-text { min-width: 0; }
+    .nl-kicker { font-size: 0.68rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; opacity: 0.9; }
+    /* main.css colours headings from --text-primary, which would leave the
+       school name dark on the school's own colour. */
+    .nl-school { font-family: var(--font-display); color: inherit; font-size: clamp(1.5rem, 3.2vw, 2.1rem); font-weight: 800; margin: 2px 0 4px; line-height: 1.05; }
+    .nl-meta { font-size: 0.76rem; opacity: 0.92; }
+    .nl-subject {
+      display: flex; align-items: baseline; gap: 10px;
+      padding: 14px 22px;
+      background: var(--team-softer);
+      border-bottom: 1px solid var(--team-line);
+      font-size: 0.95rem; color: var(--text-primary);
+      flex-wrap: wrap;
+    }
+    .nl-facts {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 1px;
+      background: var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+    .nl-fact { background: var(--bg-primary); padding: 14px 18px; }
+    .nl-fact .nl-fact-label { font-size: 0.66rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--team-text); }
+    .nl-fact .nl-fact-value { font-family: var(--font-display); font-size: 1.3rem; font-weight: 800; color: var(--text-primary); margin: 2px 0; }
+    .nl-fact .nl-fact-sub { font-size: 0.74rem; color: var(--text-tertiary); line-height: 1.35; }
+    .nl-body { padding: 6px 22px 22px; }
+    .nl-section { padding: 18px 0; border-bottom: 1px solid var(--border-light, var(--border)); }
+    .nl-section:last-child { border-bottom: none; }
+    .nl-section h4 {
+      display: flex; align-items: center; gap: 8px;
+      font-family: var(--font-display);
+      font-size: 1.08rem; font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+    }
+    .nl-section h4 i { color: var(--team-text); font-size: 0.95rem; }
+    .nl-section h5 {
+      font-size: 0.78rem; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase;
+      color: var(--text-tertiary);
+      margin: 14px 0 6px;
+    }
+    .nl-section p { color: var(--text-secondary); font-size: 0.92rem; line-height: 1.68; margin-bottom: 10px; }
+    .nl-section p:last-child { margin-bottom: 0; }
+    .nl-bullets { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+    .nl-bullets li {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--team);
+      border-radius: var(--radius-md);
+      padding: 10px 14px;
+    }
+    .nl-bullet-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+    .nl-bullet-name { font-weight: 700; color: var(--text-primary); text-decoration: none; }
+    .nl-bullet-name:hover { color: var(--team-text); text-decoration: underline; }
+    .nl-bullet-meta { font-size: 0.7rem; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; color: var(--team-text); margin-left: auto; }
+    .nl-bullet-detail { font-size: 0.82rem; color: var(--text-tertiary); margin-top: 3px; line-height: 1.5; }
+    .nl-footer {
+      padding: 14px 22px;
+      background: var(--bg-secondary);
+      border-top: 1px solid var(--border);
+      font-size: 0.75rem; color: var(--text-tertiary);
+    }
+    .nl-footer b { color: var(--text-secondary); }
 
     /* ---- Toast ---- */
     .toast-tray { position: fixed; bottom: 20px; right: 20px; display: flex; flex-direction: column; gap: 6px; z-index: 9999; pointer-events: none; }
@@ -339,191 +594,146 @@
       background: var(--bg-dark, #000); color: #fff;
       padding: 10px 16px; border-radius: var(--radius-lg);
       font-size: 0.82rem; font-weight: 500;
-      border-left: 3px solid var(--team-color, var(--text-primary));
+      border-left: 3px solid var(--team);
       pointer-events: auto;
       animation: toastIn 0.2s ease;
       box-shadow: 0 4px 16px rgba(0,0,0,0.2);
     }
 
-    @media (max-width: 640px) {
+    @media (max-width: 700px) {
       .schedule-card { flex-direction: column; }
       .schedule-date { flex-direction: row; width: 100%; height: auto; padding: 8px; gap: 8px; }
       .season-filter-item { min-width: 100%; }
       .season-filter-note { margin-left: 0; }
+      .nl-masthead { flex-direction: column; align-items: flex-start; text-align: left; }
+      .nl-bullet-meta { margin-left: 0; }
     }
 
-    /* ================================================
-       SECTION QUICK-NAV + COLLAPSIBLE SECTIONS
-       (mirrors rankings.html's tab/pill/filter-panel look)
-       ================================================ */
-    .section-nav {
-      display: flex;
-      justify-content: center;
-      gap: 8px;
-      flex-wrap: wrap;
-      margin: 0 auto 28px;
+    /* Printing a school profile is almost always printing its newsletter. */
+    @media print {
+      #global-header, #global-footer, .toast-tray, .team-bar,
+      .school-page > *:not(#newsletter-section),
+      #newsletter-section > .section-head { display: none !important; }
+      .section-block { margin: 0; }
+      .section-block.is-collapsed .section-body { max-height: none; opacity: 1; pointer-events: auto; }
+      .newsletter { border: none; box-shadow: none; }
+      .nl-masthead { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     }
-    .section-nav-tab {
-      padding: 8px 16px;
-      border-radius: 20px;
-      font-size: 0.85rem;
-      font-weight: 600;
-      background: var(--bg-secondary, #f8fafc);
-      color: var(--text-secondary);
-      border: 1px solid var(--border);
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    .section-nav-tab:hover { border-color: var(--team-color, var(--text-primary)); color: var(--text-primary); }
-    .section-nav-tab.is-off { opacity: 0.55; text-decoration: line-through; }
-    .section-nav-actions {
-      display: flex;
-      justify-content: center;
-      gap: 14px;
-      margin: -16px 0 30px;
-    }
-    .section-nav-actions button {
-      background: none; border: none; cursor: pointer;
-      font-size: 0.78rem; font-weight: 600;
-      color: var(--text-tertiary);
-      text-decoration: underline;
-      text-underline-offset: 2px;
-    }
-    .section-nav-actions button:hover { color: var(--team-color, var(--text-primary)); }
-
-    .section-toggle {
-      display: inline-flex; align-items: center; justify-content: center;
-      width: 30px; height: 30px;
-      border-radius: 8px;
-      border: 1px solid var(--border);
-      background: var(--bg-primary);
-      color: var(--text-secondary);
-      cursor: pointer;
-      transition: all 0.2s;
-      flex-shrink: 0;
-    }
-    .section-toggle:hover { border-color: var(--team-color, var(--text-primary)); color: var(--team-color, var(--text-primary)); }
-    .section-toggle i { transition: transform 0.2s; font-size: 0.85rem; }
-    .section-block.is-collapsed .section-toggle i { transform: rotate(-90deg); }
-    .section-block .section-body {
-      overflow: hidden;
-      max-height: 6000px;
-      opacity: 1;
-      transition: max-height 0.3s ease, opacity 0.2s ease, margin 0.2s ease;
-    }
-    .section-block.is-collapsed .section-body {
-      max-height: 0;
-      opacity: 0;
-      pointer-events: none;
-      margin: 0;
-    }
-    .section-head { cursor: pointer; user-select: none; }
-    .section-head .export-row,
-    .section-head .roster-search { cursor: default; }
-
-    /* ---- Table polish (zebra + hover, matches rankings' list-item feel) ---- */
-    .results-table tbody tr { transition: background 0.15s; }
-    .results-table tbody tr:hover { background: var(--bg-secondary, #f8fafc); }
-    .results-table tbody tr:nth-child(even) { background: var(--bg-secondary, rgba(0,0,0,0.015)); }
-    .results-table tbody tr:nth-child(even):hover { background: var(--border-light, #eef2f7); }
-    .results-table thead th {
-      position: sticky; top: 0;
-      background: var(--bg-primary);
-    }
-
-    /* ---- Stat cards: card treatment consistent with rankings' list-items ---- */
-    .stat-card {
-      background: var(--bg-primary);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-lg, 12px);
-      padding: 16px 18px;
-      transition: box-shadow var(--transition), border-color var(--transition);
-    }
-    .stat-card:hover { border-color: var(--team-color, var(--text-primary)); box-shadow: 0 8px 22px var(--shadow-light); }
-
-    /* ---- Section heading underline accent, matching rankings' h2 style ---- */
-    .section-heading { padding-bottom: 2px; }
   </style>
 </head>
 <body>
 
   <div id="global-header"></div>
 
-<script src="/assets/msm-loader.js"></script>
-<main class="content-section">
+  <main class="content-section school-page">
+    <div class="team-bar" aria-hidden="true"></div>
+
     <!-- HERO -->
     <header class="school-hero" id="school-hero">
-      <div class="school-hero-logo-wrap">
-        <img id="school-logo" class="school-hero-logo" src="" alt="School Logo" style="display: none;"
-             onerror="this.onerror=null; this.src='/assets/images/logob.svg'; this.style.display='block';">
+      <img class="hero-watermark" id="hero-watermark" src="" alt="" aria-hidden="true" style="display:none;">
+      <div class="hero-top">
+        <div class="school-hero-logo-wrap">
+          <img id="school-logo" class="school-hero-logo" src="" alt="" style="display: none;">
+        </div>
+        <div class="hero-text">
+          <span class="eyebrow" id="school-class-kicker">Mountain State Miles</span>
+          <h1 id="school-name" class="school-hero-name">School Profile</h1>
+          <p id="school-info" class="school-hero-sub">Loading school information…</p>
+          <div class="school-hero-chips" id="school-hero-chips"></div>
+          <!-- filled with the school's class once its classification loads -->
+          <div class="school-hero-actions">
+            <button class="xbtn xbtn-primary" id="btn-jump-newsletter" type="button"><i class="fa-solid fa-envelope-open-text"></i> Team Newsletter</button>
+            <button class="xbtn" id="btn-export-schedule" type="button"><i class="fa-solid fa-calendar-days"></i> Schedule PDF</button>
+            <button class="xbtn" id="btn-export-performance" type="button"><i class="fa-solid fa-chart-line"></i> Performance PDF</button>
+            <button class="xbtn" id="btn-print" type="button"><i class="fa-solid fa-print"></i> Print</button>
+          </div>
+        </div>
       </div>
-      <p id="school-name" class="school-hero-name">School Profile</p>
-      <p id="school-info" class="school-hero-sub">Loading school information...</p>
-      <div class="school-hero-chips" id="school-hero-chips"></div>
-      <div class="school-hero-actions">
-        <button class="xbtn xbtn-primary" id="btn-export-schedule" type="button"><i class="fa-solid fa-calendar-days"></i> Export Schedule (PDF)</button>
-        <button class="xbtn" id="btn-export-performance" type="button"><i class="fa-solid fa-chart-line"></i> Export Performance (PDF)</button>
-        <button class="xbtn" id="btn-print" type="button"><i class="fa-solid fa-print"></i> Print</button>
-      </div>
+      <div class="snapshot-strip" id="snapshot-strip"></div>
     </header>
 
     <!-- SEASON FILTER -->
     <section id="season-control-panel">
       <div class="season-filter-row">
         <div class="season-filter-item">
-          <label>Season</label>
+          <label for="season-filter">Season</label>
           <select id="season-filter" onchange="setSeason(this.value)"></select>
         </div>
         <p class="season-filter-note" id="season-filter-note">Scopes stats, results, and trends to the selected season.</p>
       </div>
     </section>
 
-    <!-- SECTION QUICK-NAV: jump to / show-hide any section -->
-    <nav class="section-nav" id="section-nav">
-      <button class="section-nav-tab" data-target="stats-section">Team Statistics</button>
-      <button class="section-nav-tab" data-target="schedule-section">Upcoming Schedule</button>
-      <button class="section-nav-tab" data-target="performance-section">Performance Results</button>
-      <button class="section-nav-tab" data-target="roster-section">Current Roster</button>
-      <button class="section-nav-tab" data-target="trends-section">Season Trends</button>
+    <!-- SECTION QUICK-NAV -->
+    <nav class="section-nav" id="section-nav" aria-label="Sections">
+      <button class="section-nav-tab" data-target="newsletter-section">Newsletter</button>
+      <button class="section-nav-tab" data-target="stats-section">Statistics</button>
+      <button class="section-nav-tab" data-target="schedule-section">Schedule</button>
+      <button class="section-nav-tab" data-target="performance-section">Results</button>
+      <button class="section-nav-tab" data-target="roster-section">Roster</button>
+      <button class="section-nav-tab" data-target="trends-section">Trends</button>
     </nav>
     <div class="section-nav-actions">
       <button type="button" onclick="setAllSections(false)">Expand all</button>
       <button type="button" onclick="setAllSections(true)">Collapse all</button>
     </div>
 
+    <!-- TEAM NEWSLETTER -->
+    <section class="section-block" id="newsletter-section">
+      <div class="section-head" onclick="toggleSection('newsletter-section')">
+        <div>
+          <h2 class="section-heading"><i class="fa-solid fa-envelope-open-text"></i> Team Newsletter</h2>
+          <p class="section-sub">Auto-generated from every rated performance this season — where the squads stand, the athletes behind it, last time out, and what is next.</p>
+        </div>
+        <div class="export-row nl-toolbar" onclick="event.stopPropagation()">
+          <button class="xbtn" id="btn-nl-regen" type="button"><i class="fa-solid fa-rotate"></i> Regenerate</button>
+          <button class="xbtn" id="btn-nl-copy" type="button" disabled><i class="fa-regular fa-copy"></i> Copy text</button>
+          <button class="xbtn" id="btn-nl-html" type="button" disabled><i class="fa-solid fa-code"></i> Download HTML</button>
+          <button class="xbtn" id="btn-nl-email" type="button" disabled><i class="fa-regular fa-paper-plane"></i> Email</button>
+          <button class="xbtn" id="btn-nl-print" type="button" disabled><i class="fa-solid fa-print"></i> Print</button>
+          <button class="section-toggle" type="button" aria-label="Toggle Team Newsletter"><i class="fa-solid fa-chevron-down"></i></button>
+        </div>
+      </div>
+      <div class="section-body">
+        <div id="newsletter-body"></div>
+      </div>
+    </section>
+
     <!-- TEAM STATISTICS -->
     <section class="section-block" id="stats-section">
       <div class="section-head" onclick="toggleSection('stats-section')">
-        <h2 class="section-heading"><i class="fa-solid fa-ranking-star"></i> Team Statistics</h2>
+        <div>
+          <h2 class="section-heading"><i class="fa-solid fa-ranking-star"></i> Team Statistics</h2>
+          <p class="section-sub">Season-scoped totals straight from this school's recorded results.</p>
+        </div>
         <button class="section-toggle" type="button" aria-label="Toggle Team Statistics"><i class="fa-solid fa-chevron-down"></i></button>
       </div>
       <div class="section-body">
-      <div class="stats-grid">
-        <div class="stat-card">
-          <div class="stat-label"><i class="fa-solid fa-stopwatch"></i> Average Team Time</div>
-          <div class="stat-value" id="avg-time">--:--</div>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-label"><i class="fa-solid fa-stopwatch"></i> Average Team Time</div>
+            <div class="stat-value" id="avg-time">--:--</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label"><i class="fa-solid fa-people-group"></i> Roster Size</div>
+            <div class="stat-value" id="total-athletes">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label"><i class="fa-solid fa-bolt"></i> Season Bests</div>
+            <div class="stat-value" id="pr-count">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label"><i class="fa-solid fa-flag-checkered"></i> Meet Appearances</div>
+            <div class="stat-value" id="meet-count">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label"><i class="fa-solid fa-medal"></i> Best Time</div>
+            <div class="stat-value" id="best-time">--:--</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label"><i class="fa-solid fa-bolt-lightning"></i> Fastest Athlete</div>
+            <div class="stat-value" id="fastest-athlete">--</div>
+          </div>
         </div>
-        <div class="stat-card">
-          <div class="stat-label"><i class="fa-solid fa-people-group"></i> Total Athletes</div>
-          <div class="stat-value" id="total-athletes">0</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label"><i class="fa-solid fa-bolt"></i> Personal Records Set</div>
-          <div class="stat-value" id="pr-count">0</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label"><i class="fa-solid fa-flag-checkered"></i> Meet Appearances</div>
-          <div class="stat-value" id="meet-count">0</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label"><i class="fa-solid fa-medal"></i> Best Team Performance</div>
-          <div class="stat-value" id="best-time">--:--</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label"><i class="fa-solid fa-bolt-lightning"></i> Fastest Athlete</div>
-          <div class="stat-value" id="fastest-athlete">--</div>
-        </div>
-      </div>
       </div>
     </section>
 
@@ -532,20 +742,20 @@
       <div class="section-head" onclick="toggleSection('schedule-section')">
         <div>
           <h2 class="section-heading"><i class="fa-solid fa-calendar-days"></i> Upcoming Schedule</h2>
-          <p class="section-sub">Meets this team is expected to compete in, with opponents and course info for coaches.</p>
+          <p class="section-sub">Meets this team is expected to compete in, with opponents and course detail for coaches.</p>
         </div>
-        <div class="export-row">
-          <button class="xbtn" onclick="event.stopPropagation(); exportSchedulePDF()" type="button"><i class="fa-solid fa-file-pdf"></i> Export PDF</button>
+        <div class="export-row" onclick="event.stopPropagation()">
+          <button class="xbtn" onclick="exportSchedulePDF()" type="button"><i class="fa-solid fa-file-pdf"></i> Export PDF</button>
           <button class="section-toggle" type="button" aria-label="Toggle Upcoming Schedule"><i class="fa-solid fa-chevron-down"></i></button>
         </div>
       </div>
       <div class="section-body">
-      <div id="schedule-loading">
-        <div class="skeleton-block" style="margin-bottom:12px;"></div>
-        <div class="skeleton-block"></div>
-      </div>
-      <p class="loading-message" id="schedule-empty" style="display:none;">No upcoming meets are currently scheduled for this team. Check back once the season schedule is published.</p>
-      <div class="schedule-grid" id="schedule-list"></div>
+        <div id="schedule-loading">
+          <div class="skeleton-block" style="margin-bottom:12px;"></div>
+          <div class="skeleton-block"></div>
+        </div>
+        <p class="loading-message" id="schedule-empty" style="display:none;">No upcoming meets are currently scheduled for this team. Check back once the season schedule is published.</p>
+        <div class="schedule-grid" id="schedule-list"></div>
       </div>
     </section>
 
@@ -554,20 +764,20 @@
       <div class="section-head" onclick="toggleSection('performance-section')">
         <div>
           <h2 class="section-heading"><i class="fa-solid fa-chart-simple"></i> Performance Results</h2>
-          <p class="section-sub">Post-meet results, team scoring, and personal records by race.</p>
+          <p class="section-sub">Post-meet results, scoring runners, and season bests by race.</p>
         </div>
-        <div class="export-row">
-          <button class="xbtn" onclick="event.stopPropagation(); exportPerformancePDF()" type="button"><i class="fa-solid fa-file-pdf"></i> Export PDF</button>
+        <div class="export-row" onclick="event.stopPropagation()">
+          <button class="xbtn" onclick="exportPerformancePDF()" type="button"><i class="fa-solid fa-file-pdf"></i> Export PDF</button>
           <button class="section-toggle" type="button" aria-label="Toggle Performance Results"><i class="fa-solid fa-chevron-down"></i></button>
         </div>
       </div>
       <div class="section-body">
-      <div id="meets-loading" class="loading-message">Loading recent meet results...</div>
-      <div id="meets-empty" class="loading-message" style="display:none;">No meet results found for this school in the database.</div>
-      <div id="meets-list" class="performance-list"></div>
-      <div class="show-more-wrap" id="performance-show-more-wrap" style="display:none;">
-        <button class="xbtn" id="performance-show-more" type="button">Show older meets</button>
-      </div>
+        <div id="meets-loading" class="loading-message">Loading recent meet results…</div>
+        <div id="meets-empty" class="loading-message" style="display:none;">No meet results found for this school in the database.</div>
+        <div id="meets-list" class="performance-list"></div>
+        <div class="show-more-wrap" id="performance-show-more-wrap" style="display:none;">
+          <button class="xbtn" id="performance-show-more" type="button">Show older meets</button>
+        </div>
       </div>
     </section>
 
@@ -579,37 +789,40 @@
         <button class="section-toggle" type="button" aria-label="Toggle Current Roster"><i class="fa-solid fa-chevron-down"></i></button>
       </div>
       <div class="section-body">
-      <div id="roster-loading" class="loading-message">Loading roster...</div>
-      <div id="no-athletes" class="loading-message" style="display: none;">No athletes found for this school.</div>
-      <div id="roster-grid" class="table-container" style="display: none;"></div>
+        <div id="roster-loading" class="loading-message">Loading roster…</div>
+        <div id="no-athletes" class="loading-message" style="display: none;">No athletes found for this school.</div>
+        <div id="roster-grid" class="table-container" style="display: none;"></div>
       </div>
     </section>
 
     <!-- SEASON TRENDS -->
     <section class="section-block is-collapsed" id="trends-section">
       <div class="section-head" onclick="toggleSection('trends-section')">
-        <h2 class="section-heading"><i class="fa-solid fa-chart-area"></i> Season Performance Trends</h2>
+        <div>
+          <h2 class="section-heading"><i class="fa-solid fa-chart-area"></i> Season Trends</h2>
+          <p class="section-sub">Team average and best time, meet by meet.</p>
+        </div>
         <button class="section-toggle" type="button" aria-label="Toggle Season Trends"><i class="fa-solid fa-chevron-down"></i></button>
       </div>
       <div class="section-body">
-      <div class="chart-card">
-        <div class="chart-wrap-lg"><canvas id="trendsChart"></canvas></div>
-        <p class="loading-message" id="trends-empty" style="display:none; text-align:center;">Not enough recorded meets yet to chart a season trend.</p>
-      </div>
+        <div class="chart-card">
+          <div class="chart-wrap-lg"><canvas id="trendsChart"></canvas></div>
+          <p class="loading-message" id="trends-empty" style="display:none; text-align:center;">Not enough recorded meets yet to chart a season trend.</p>
+        </div>
       </div>
     </section>
 
   </main>
-<div class="toast-tray" id="toastTray"></div>
 
-<!-- Firebase SDK -->
+  <div class="toast-tray" id="toastTray"></div>
+
+  <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-analytics-compat.js"></script>
-  <!-- Firebase Configuration -->
   <script src="firebase-config.js"></script>
   <script src="/scripts/results-filter.js"></script>
-<script src="firebase-helpers.js"></script>
+  <script src="firebase-helpers.js"></script>
 
   <script>
     // ==========================================
@@ -624,12 +837,23 @@
     let seasonResults = [];        // schoolResults scoped to currentSeason
     let currentSeason = 'all';     // 'all' or a four-digit year string
     let rosterData = [];
-    let personalBestMap = {}; // athlete key -> best time (seconds)
+    let personalBestMap = {};      // athlete key -> best time (seconds) this season
+    let seasonalBestCount = 0;     // athletes currently at their fastest time
     let upcomingScheduleData = []; // resolved for PDF export
     let performanceMeetsSorted = []; // grouped meets, desc by date, for rendering + export
     let performanceMeetsVisible = 6;
     let trendsChartInstance = null;
-    let teamColorRgb = 'rgb(20,20,20)';
+
+    // Team branding
+    let teamColorRgb = 'rgb(63,125,99)';
+    let teamRgb = [63, 125, 99];
+    let teamLogoUrl = '';   // whichever crest format actually resolved
+
+    // Newsletter / MSM engine
+    let hubState = 'idle';         // idle | loading | ready | failed
+    let newsletter = null;
+
+    const FALLBACK_LOGO = '/assets/images/logob.svg';
 
     // ==========================================
     // UTILITIES
@@ -664,14 +888,14 @@
 
     function formatDateLong(dateStr) {
       if (!dateStr) return 'Date Unknown';
-      const d = new Date(dateStr + 'T00:00:00');
+      const d = new Date(String(dateStr).slice(0, 10) + 'T00:00:00');
       if (isNaN(d.getTime())) return dateStr;
       return d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
     }
 
     function daysUntilLabel(dateStr) {
       const today = new Date(); today.setHours(0, 0, 0, 0);
-      const target = new Date(dateStr + 'T00:00:00');
+      const target = new Date(String(dateStr).slice(0, 10) + 'T00:00:00');
       if (isNaN(target.getTime())) return '';
       const diff = Math.round((target - today) / 86400000);
       if (diff === 0) return 'Today';
@@ -694,10 +918,19 @@
       a.href = URL.createObjectURL(new Blob([content], { type }));
       a.download = name;
       a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 4000);
     }
 
     function athleteKey(r) {
       return r.athlete_slug || r.athlete_id || r.athlete_name || r.name;
+    }
+
+    // Relay legs belong on the schedule and in the results list, but they are
+    // not cross country performances: a 2 km leg must not become this team's
+    // "best time" and must not drag the team average, so every aggregate below
+    // skips them while the list still shows them, flagged.
+    function isRelayRow(r) {
+      return /relay/i.test(String(r.race_type || ''));
     }
 
     // Resolve the season (year) a result belongs to, inheriting the meet date if needed.
@@ -708,15 +941,19 @@
       return isNaN(d.getTime()) ? null : d.getFullYear();
     }
 
-    // Human-readable label for the active season, reused by exports.
     function seasonLabel() {
       return currentSeason === 'all' ? 'All-Time' : `${currentSeason} Season`;
     }
 
     // ==========================================
-    // COLOR EXTRACTION (team branding)
+    // TEAM BRANDING
     // ==========================================
-    function extractMainColor(logoUrl) {
+    // The logo is the school's identity, so the page's colour is read from the
+    // logo itself and pushed into CSS custom properties that every section
+    // consumes (accents, tints, borders, glows, and text on brand colour).
+    // Resolves null when the logo cannot be read, so the caller can try the next
+    // format instead of settling for a default colour.
+    function colorFromLogo(logoUrl) {
       return new Promise(resolve => {
         const img = new window.Image();
         img.crossOrigin = 'Anonymous';
@@ -732,10 +969,10 @@
             for (let i = 0; i < data.length; i += 4) {
               const r = data[i], g = data[i + 1], b = data[i + 2], a = data[i + 3];
               if (a < 120) continue;
-              if (r > 230 && g > 230 && b > 230) continue;
-              if (r < 28 && g < 28 && b < 28) continue;
+              if (r > 230 && g > 230 && b > 230) continue;   // white background
+              if (r < 28 && g < 28 && b < 28) continue;      // near-black outlines
               const max = Math.max(r, g, b), min = Math.min(r, g, b);
-              if (max - min < 18) continue;
+              if (max - min < 18) continue;                  // greys carry no identity
               const key = `${Math.round(r / 12) * 12},${Math.round(g / 12) * 12},${Math.round(b / 12) * 12}`;
               hist[key] = (hist[key] || 0) + 1;
             }
@@ -744,7 +981,7 @@
               if (v > maxCount) { maxCount = v; bestColors = [k.split(',').map(Number)]; }
               else if (v === maxCount) bestColors.push(k.split(',').map(Number));
             });
-            let col = [20, 20, 20];
+            let col = null;
             if (bestColors.length && maxCount > 0) {
               if (bestColors.length === 1) col = bestColors[0];
               else {
@@ -753,49 +990,127 @@
                 col = col.map(v => Math.round(v / bestColors.length));
               }
             }
-            resolve(`rgb(${col.join(',')})`);
-          } catch (e) { resolve('rgb(20,20,20)'); }
+            resolve(col);
+          } catch (e) { resolve(null); }
         };
-        img.onerror = () => resolve('rgb(20,20,20)');
+        img.onerror = () => resolve(null);
       });
     }
 
-    function applyTeamColor(rgb) {
-      teamColorRgb = rgb;
-      const root = document.documentElement;
-      root.style.setProperty('--team-color', rgb);
-      root.style.setProperty('--team-glow', rgb.replace('rgb', 'rgba').replace(')', ',0.28)'));
+    // Only 21 of the ~90 team marks are vectors, so walk the formats until one
+    // yields a colour, then fall back to the site's pine.
+    async function extractTeamColor() {
+      for (const path of teamLogoPaths()) {
+        const rgb = await colorFromLogo(path);
+        if (rgb) return rgb;
+      }
+      return [63, 125, 99];
     }
+
+    function teamLogoPaths() {
+      return [`/assets/team logos/${schoolSlug}.svg`, `/assets/team logos/${schoolSlug}.png`];
+    }
+
+    // Once the hero has settled on a format, offer that one first so the
+    // newsletter crest never flashes the generic mark.
+    function firstLogoPath() {
+      const [svgPath, pngPath] = teamLogoPaths();
+      return teamLogoUrl === pngPath ? pngPath : svgPath;
+    }
+
+    function secondLogoPath() {
+      const [svgPath, pngPath] = teamLogoPaths();
+      return teamLogoUrl === pngPath ? '' : pngPath;
+    }
+
+    function mixRgb(rgb, target, amount) {
+      return rgb.map((v, i) => Math.round(v + (target[i] - v) * amount));
+    }
+
+    function applyTeamColor(rgb) {
+      teamRgb = rgb;
+      applyTeamVars();
+    }
+
+    function applyTeamVars() {
+      const dark = document.documentElement.getAttribute('data-theme') === 'dark';
+      const [r, g, b] = teamRgb;
+      const lum = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+      // Body copy needs to stay legible: lighten a dark brand colour on dark
+      // backgrounds, darken a bright one on light backgrounds.
+      const text = dark
+        ? mixRgb(teamRgb, [255, 255, 255], lum < 0.4 ? 0.55 : 0.3)
+        : mixRgb(teamRgb, [20, 18, 14], lum > 0.72 ? 0.5 : 0.08);
+      // Solid fills need to stay visible on a dark page, where a near-black
+      // school colour would otherwise read as an empty button.
+      const fill = dark && lum < 0.28 ? mixRgb(teamRgb, [255, 255, 255], 0.22) : teamRgb;
+      teamColorRgb = `rgb(${r},${g},${b})`;
+      const root = document.documentElement.style;
+      root.setProperty('--team', `rgb(${r},${g},${b})`);
+      root.setProperty('--team-fill', `rgb(${fill.join(',')})`);
+      root.setProperty('--team-text', `rgb(${text.join(',')})`);
+      root.setProperty('--team-ink', lum > 0.62 ? '#17140f' : '#ffffff');
+      root.setProperty('--team-soft', `rgba(${r},${g},${b},${dark ? 0.20 : 0.10})`);
+      root.setProperty('--team-softer', `rgba(${r},${g},${b},${dark ? 0.12 : 0.05})`);
+      root.setProperty('--team-line', `rgba(${r},${g},${b},${dark ? 0.45 : 0.32})`);
+      root.setProperty('--team-glow', `rgba(${r},${g},${b},${dark ? 0.30 : 0.22})`);
+      const meta = document.getElementById('meta-theme-color');
+      if (meta) meta.setAttribute('content', `rgb(${r},${g},${b})`);
+    }
+
+    // Crest fallback chain: SVG -> PNG -> the generic mark. The resolved URL is
+    // remembered so later renders (the newsletter) reuse the format that worked.
+    function brandLogoFallback(img) {
+      const next = img.dataset.fallback;
+      if (next) {
+        img.dataset.fallback = '';
+        img.src = next;
+        if (img.id === 'school-logo') teamLogoUrl = next;
+        return;
+      }
+      img.onerror = null;
+      img.src = FALLBACK_LOGO;
+      if (img.id === 'school-logo') teamLogoUrl = FALLBACK_LOGO;
+    }
+    window.brandLogoFallback = brandLogoFallback;
+
+    // The theme toggle flips `data-theme` on <html>, so the brand variants that
+    // depend on light/dark are recomputed when that happens.
+    new MutationObserver(applyTeamVars).observe(document.documentElement, {
+      attributes: true, attributeFilter: ['data-theme']
+    });
 
     // ==========================================
     // HERO
     // ==========================================
     function setupHero(school) {
-      document.getElementById('school-name').textContent = school.name;
-      document.getElementById('school-info').textContent = `School in ${school.city || 'West Virginia'}`;
-      document.title = `${school.name} Profile – Mountain State Miles`;
+      const nameEl = document.getElementById('school-name');
+      const infoEl = document.getElementById('school-info');
+      nameEl.textContent = school.name;
+      infoEl.textContent = `${school.city ? school.city + ', West Virginia' : 'West Virginia'} · Cross Country & Track`;
+      document.title = `${school.name} – Mountain State Miles`;
+
+      const [svgPath, pngPath] = teamLogoPaths();
 
       const logoEl = document.getElementById('school-logo');
-      const svgPath = `/assets/team logos/${schoolSlug}.svg`;
-      const pngPath = `/assets/team logos/${schoolSlug}.png`;
-
-      logoEl.onerror = function () {
-        this.onerror = function () {
-          this.onerror = null;
-          this.src = '/assets/images/logob.svg';
-        };
-        this.src = pngPath;
-      };
-
+      const watermark = document.getElementById('hero-watermark');
+      logoEl.alt = `${school.name} crest`;
+      logoEl.dataset.fallback = pngPath;
+      logoEl.onerror = function () { brandLogoFallback(this); };
       logoEl.src = svgPath;
       logoEl.style.display = 'block';
+      watermark.dataset.fallback = pngPath;
+      watermark.onerror = function () { brandLogoFallback(this); };
+      watermark.src = svgPath;
+      watermark.style.display = 'block';
+      teamLogoUrl = svgPath;
 
-      extractMainColor(svgPath).then(applyTeamColor);
+      extractTeamColor().then(applyTeamColor);
     }
-
 
     function renderHeroChips(roster, upcomingCount) {
       const chipsEl = document.getElementById('school-hero-chips');
+      if (!chipsEl) return;
       const chips = [];
       if (schoolObj && schoolObj.city) {
         chips.push(`<span class="hero-chip"><i class="fa-solid fa-location-dot"></i> ${escapeHtml(schoolObj.city)}, WV</span>`);
@@ -803,6 +1118,66 @@
       chips.push(`<span class="hero-chip"><i class="fa-solid fa-people-group"></i> ${roster.length} Athlete${roster.length === 1 ? '' : 's'}</span>`);
       chips.push(`<span class="hero-chip"><i class="fa-solid fa-calendar-check"></i> ${upcomingCount} Upcoming Meet${upcomingCount === 1 ? '' : 's'}</span>`);
       chipsEl.innerHTML = chips.join('');
+    }
+
+    // Skeleton snapshot until the MSM engine answers, then real rank + power.
+    function renderSnapshotSkeleton() {
+      const strip = document.getElementById('snapshot-strip');
+      if (!strip) return;
+      strip.innerHTML = ['Boys team power', 'Girls team power', 'Top runner', 'Next meet'].map(label => `
+        <div class="snapshot-item is-loading">
+          <span class="snapshot-label">${label}</span>
+          <span class="snapshot-value">—</span>
+          <span class="snapshot-sub">Calculating MSM ratings…</span>
+        </div>`).join('');
+    }
+
+    function renderSnapshot() {
+      const strip = document.getElementById('snapshot-strip');
+      if (!strip || !window.MSMHub) return;
+      const facts = (newsletter && newsletter.facts) || [];
+      const byLabel = {};
+      facts.forEach(f => { byLabel[f.label] = f; });
+
+      const next = MSMHub.nextMeetForSchool(schoolSlug);
+      const klass = MSMHub.classify(schoolSlug);
+      document.getElementById('school-class-kicker').textContent =
+        klass && klass !== 'UNA' ? `Class ${klass} · Mountain State Miles` : 'Mountain State Miles';
+      const cards = [];
+      // The hub only publishes a team power for a complete five, so a squad
+      // with one to four rated runners reports its depth instead of a rating.
+      [['Boys', 'boys'], ['Girls', 'girls']].forEach(([who]) => {
+        const power = byLabel[`${who} team power`];
+        const depth = byLabel[`${who} rated runners`];
+        if (power) {
+          cards.push({ label: `${who} team power`, value: power.value, sub: power.sub });
+        } else {
+          cards.push({
+            label: `${who} rated runners`,
+            value: depth ? depth.value : '0',
+            sub: depth ? depth.sub : 'No rated results this season'
+          });
+        }
+      });
+      const topBoys = byLabel['Boys top runner'];
+      const topGirls = byLabel['Girls top runner'];
+      if (topBoys || topGirls) {
+        const top = topBoys || topGirls;
+        cards.push({ label: topBoys && topGirls ? 'Top runners' : (topBoys ? 'Top boy' : 'Top girl'), value: top.value, sub: top.sub });
+      }
+      cards.push({
+        text: true,
+        label: 'Next meet',
+        value: next ? next.name : 'None scheduled',
+        sub: next ? `${formatDateLong(next.date)}${next.location ? ' · ' + next.location : ''}` : 'The schedule updates automatically'
+      });
+
+      strip.innerHTML = cards.map(c => `
+        <div class="snapshot-item${c.text ? ' is-text' : ''}">
+          <span class="snapshot-label">${escapeHtml(c.label)}</span>
+          <span class="snapshot-value">${escapeHtml(c.value)}</span>
+          <span class="snapshot-sub">${escapeHtml(c.sub)}</span>
+        </div>`).join('');
     }
 
     // ==========================================
@@ -817,26 +1192,23 @@
         const tableHTML = `
           <table class="item-list">
             <thead>
-              <tr><th>Name</th><th>Gender</th><th>Graduation Year</th></tr>
+              <tr><th>Name</th><th>Gender</th><th>Class</th></tr>
             </thead>
             <tbody>
               ${roster.map(athlete => {
                 const name = athlete.athlete_name || athlete.name || 'Name Unknown';
-                let gradYear = athlete.grad_year || athlete.graduation_year || athlete.class;
-                gradYear = gradYear ? `C/o ${gradYear}` : 'N/A';
                 const genderCode = (athlete.gender || '').toUpperCase();
-                const gender = genderCode === 'M' ? 'Male' : (genderCode === 'F' ? 'Female' : 'N/A');
                 const genderPill = genderCode === 'M' || genderCode === 'F'
-                  ? `<span class="gender-pill ${genderCode.toLowerCase()}">${gender}</span>`
-                  : gender;
+                  ? `<span class="gender-pill ${genderCode.toLowerCase()}">${genderCode === 'M' ? 'Male' : 'Female'}</span>`
+                  : 'N/A';
                 const link = athlete.id
-                  ? `<a href="athlete.html?id=${athlete.id}" style="color: var(--team-color); font-weight: 600;">${escapeHtml(name)}</a>`
-                  : `<a href="athlete.html?name=${encodeURIComponent(name)}&school=${encodeURIComponent(schoolSlug)}" style="color: var(--team-color); font-weight: 600;">${escapeHtml(name)}</a>`;
+                  ? `<a href="athlete.html?id=${athlete.id}" style="color: var(--team-text); font-weight: 600;">${escapeHtml(name)}</a>`
+                  : `<a href="athlete.html?name=${encodeURIComponent(name)}&school=${encodeURIComponent(schoolSlug)}" style="color: var(--team-text); font-weight: 600;">${escapeHtml(name)}</a>`;
                 return `
                   <tr data-name="${escapeHtml(name.toLowerCase())}">
                     <td data-label="Name">${link}</td>
                     <td data-label="Gender">${genderPill}</td>
-                    <td data-label="Graduation Year"><span class="grad-badge">${gradYear}</span></td>
+                    <td data-label="Class"><span class="grad-badge">${escapeHtml(classLabelOf(athlete) || '—')}</span></td>
                   </tr>
                 `;
               }).join('')}
@@ -852,8 +1224,29 @@
       }
     }
 
+    // Athlete records store the graduation year in `grade` (a legacy quirk:
+    // `grad_year` is only used on result rows), so both are read here — as is a
+    // plain class number or "SR" from older imports.
+    function classLabelOf(athlete) {
+      const raw = athlete.grade != null ? athlete.grade
+        : (athlete.grad_year != null ? athlete.grad_year : athlete.classification_year);
+      if (raw == null || raw === '') return '';
+      const words = { 9: 'Freshman', 10: 'Sophomore', 11: 'Junior', 12: 'Senior' };
+      const codes = { FR: 'Freshman', SO: 'Sophomore', JR: 'Junior', SR: 'Senior' };
+      const num = parseInt(raw, 10);
+      if (!isNaN(num)) {
+        if (num >= 2000) {
+          const grade = 12 - (num - new Date().getFullYear());
+          return words[grade] ? `${words[grade]} · C/o ${num}` : `C/o ${num}`;
+        }
+        if (words[num]) return words[num];
+      }
+      return codes[String(raw).toUpperCase()] || String(raw);
+    }
+
     function wireRosterSearch() {
       const input = document.getElementById('roster-search');
+      if (!input) return;
       input.addEventListener('input', () => {
         const q = input.value.toLowerCase().trim();
         document.querySelectorAll('#roster-grid tbody tr').forEach(row => {
@@ -867,65 +1260,72 @@
     // TEAM STATISTICS
     // ==========================================
     function computeStats(results, roster) {
+      const set = (id, value) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = value;
+      };
+
       if (!results || results.length === 0) {
-        document.getElementById('total-athletes').textContent = roster ? roster.length : '0';
-        document.getElementById('avg-time').textContent = '--:--';
-        document.getElementById('pr-count').textContent = '0';
-        document.getElementById('meet-count').textContent = '0';
-        document.getElementById('best-time').textContent = '--:--';
-        document.getElementById('fastest-athlete').textContent = '--';
+        set('total-athletes', roster ? roster.length : '0');
+        set('avg-time', '--:--');
+        set('pr-count', '0');
+        set('meet-count', '0');
+        set('best-time', '--:--');
+        set('fastest-athlete', '--');
+        personalBestMap = {};
+        seasonalBestCount = 0;
         return;
       }
 
+      const comparable = results.filter(r => !isRelayRow(r));
       const uniqueAthletes = new Set(results.map(r => athleteKey(r)).filter(Boolean));
       const uniqueMeets = new Set(results.map(r => r.meet_slug).filter(Boolean));
-      const validTimes = results.map(r => parseFloat(r.time)).filter(t => !isNaN(t) && t > 0);
+      const validTimes = comparable.map(r => parseFloat(r.time)).filter(t => !isNaN(t) && t > 0);
 
       let avgTimeDisplay = '--:--';
       if (validTimes.length > 0) {
-        const avgSeconds = validTimes.reduce((a, b) => a + b, 0) / validTimes.length;
-        avgTimeDisplay = formatTime(avgSeconds);
+        avgTimeDisplay = formatTime(validTimes.reduce((a, b) => a + b, 0) / validTimes.length);
       }
 
       let bestTimeDisplay = '--:--';
       let fastestAthleteName = '--';
       if (validTimes.length > 0) {
         const bestTimeValue = Math.min(...validTimes);
-        const bestResult = results.find(r => parseFloat(r.time) === bestTimeValue);
+        const bestResult = comparable.find(r => parseFloat(r.time) === bestTimeValue);
         bestTimeDisplay = formatTime(bestTimeValue);
         fastestAthleteName = bestResult ? (bestResult.athlete_name || bestResult.name || '--') : '--';
       }
 
-      // Build personal-best map (scoped to the active season) for PR tagging in
-      // performance cards & exports.
+      // Season-best map, scoped to the active season, used for season-best tags
+      // in performance cards, exports, and the newsletter fact strip.
       personalBestMap = {};
-      results.forEach(r => {
+      comparable.forEach(r => {
         const key = athleteKey(r);
         const time = parseFloat(r.time);
         if (!key || isNaN(time) || time <= 0) return;
         if (!personalBestMap[key] || time < personalBestMap[key]) personalBestMap[key] = time;
       });
 
-      let prCount = 0;
-      results.forEach(r => {
+      seasonalBestCount = 0;
+      comparable.forEach(r => {
         const key = athleteKey(r);
         const time = parseFloat(r.time);
         if (!key || isNaN(time) || time <= 0) return;
-        if (time === personalBestMap[key]) prCount++;
+        if (time === personalBestMap[key]) seasonalBestCount++;
       });
 
-      // "Total Athletes" reflects the roster only when viewing all-time; a specific
-      // season shows the number of athletes who actually raced that season.
+      // "Roster size" reflects the roster when viewing all-time; a single season
+      // shows how many athletes actually raced it.
       const totalAthletes = currentSeason === 'all' && roster && roster.length
         ? roster.length
         : uniqueAthletes.size;
 
-      document.getElementById('total-athletes').textContent = totalAthletes;
-      document.getElementById('avg-time').textContent = avgTimeDisplay;
-      document.getElementById('pr-count').textContent = prCount;
-      document.getElementById('meet-count').textContent = uniqueMeets.size;
-      document.getElementById('best-time').textContent = bestTimeDisplay;
-      document.getElementById('fastest-athlete').textContent = fastestAthleteName;
+      set('total-athletes', totalAthletes);
+      set('avg-time', avgTimeDisplay);
+      set('pr-count', seasonalBestCount);
+      set('meet-count', uniqueMeets.size);
+      set('best-time', bestTimeDisplay);
+      set('fastest-athlete', fastestAthleteName);
     }
 
     // ==========================================
@@ -938,8 +1338,11 @@
 
       const todayStr = new Date().toISOString().slice(0, 10);
       const upcoming = allMeetsList
-        .filter(m => Array.isArray(m.expected_teams) && m.expected_teams.includes(schoolSlug) && m.date && m.date >= todayStr)
-        .sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+        .filter(m => {
+          const expected = Array.isArray(m.expected_teams) ? m.expected_teams : [];
+          return expected.includes(schoolSlug) && m.date && String(m.date).slice(0, 10) >= todayStr;
+        })
+        .sort((a, b) => String(a.date || '').localeCompare(String(b.date || '')));
 
       loadingEl.style.display = 'none';
 
@@ -949,7 +1352,6 @@
         return;
       }
 
-      // Resolve course info for unique course slugs
       const courseSlugs = [...new Set(upcoming.map(m => m.course_slug).filter(Boolean))];
       const courseEntries = await Promise.all(courseSlugs.map(async slug => {
         try { return [slug, await getCourseBySlug(slug)]; } catch (e) { return [slug, null]; }
@@ -959,7 +1361,7 @@
       upcomingScheduleData = [];
 
       listEl.innerHTML = upcoming.map(meet => {
-        const d = new Date((meet.date || '') + 'T00:00:00');
+        const d = new Date(String(meet.date).slice(0, 10) + 'T00:00:00');
         const month = isNaN(d.getTime()) ? '' : d.toLocaleDateString('en-US', { month: 'short' }).toUpperCase();
         const day = isNaN(d.getTime()) ? '?' : d.getDate();
         const course = meet.course_slug ? courseMap[meet.course_slug] : null;
@@ -990,12 +1392,12 @@
 
         const teams = meet.expected_teams.filter(Boolean);
         const opponentNames = teams.filter(sl => sl !== schoolSlug).map(sl => allSchoolsMap[sl] || sl.replace(/-/g, ' '));
-        const teamsChips = teams.map(sl => {
+        const teamsChips = teams.slice(0, 18).map(sl => {
           const isSelf = sl === schoolSlug;
           const name = allSchoolsMap[sl] || sl.replace(/-/g, ' ');
           const logoUrl = `/assets/team logos/${sl}.svg`;
           return `<a href="school.html?slug=${sl}" class="team-chip ${isSelf ? 'self' : ''}">
-            <img src="${logoUrl}" alt="" onerror="this.style.display='none';">${escapeHtml(name)}${isSelf ? ' <i class="fa-solid fa-check" style="font-size:0.65rem;"></i>' : ''}
+            <img src="${logoUrl}" alt="" loading="lazy" onerror="this.style.display='none';">${escapeHtml(name)}${isSelf ? ' <i class="fa-solid fa-check" style="font-size:0.65rem;"></i>' : ''}
           </a>`;
         }).join('');
 
@@ -1022,7 +1424,7 @@
               <div class="schedule-teams-label">Teams Expected (${teams.length})</div>
               <div class="schedule-teams-chips">${teamsChips}</div>
               <div class="schedule-actions">
-                <a class="xbtn" href="meet.html?slug=${meet.slug}"><i class="fa-solid fa-arrow-right"></i> View Meet Page</a>
+                <a class="xbtn" href="meet.html?slug=${meet.slug}"><i class="fa-solid fa-arrow-right"></i> View Meet</a>
                 <button class="xbtn" type="button" onclick="addToCalendar('${meet.slug}')"><i class="fa-regular fa-calendar-plus"></i> Add to Calendar</button>
               </div>
             </div>
@@ -1036,7 +1438,7 @@
     function addToCalendar(meetSlug) {
       const meet = meetsBySlug[meetSlug];
       if (!meet) { toast('Could not find meet details.'); return; }
-      const dateStr = (meet.date || '').replace(/-/g, '');
+      const dateStr = String(meet.date || '').slice(0, 10).replace(/-/g, '');
       const stamp = new Date().toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
       const ics = [
         'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Mountain State Miles//CrossCountry//EN', 'BEGIN:VEVENT',
@@ -1053,7 +1455,7 @@
     }
 
     // ==========================================
-    // PERFORMANCE RESULTS (post-meet)
+    // PERFORMANCE RESULTS
     // ==========================================
     function buildPerformanceMeets(results) {
       const meetsMap = {};
@@ -1083,10 +1485,13 @@
 
       meetsArray.forEach(meet => {
         meet.results.sort((a, b) => (parseFloat(a.time) || Infinity) - (parseFloat(b.time) || Infinity));
-        const validTimes = meet.results.map(r => parseFloat(r.time)).filter(t => !isNaN(t) && t > 0);
+        // Relays are excluded from the day's average/best so a meet's headline
+        // numbers describe the cross country races.
+        const timed = meet.results.filter(r => !isRelayRow(r));
+        const validTimes = timed.map(r => parseFloat(r.time)).filter(t => !isNaN(t) && t > 0);
         meet.avgTime = validTimes.length ? validTimes.reduce((a, b) => a + b, 0) / validTimes.length : null;
         meet.bestTime = validTimes.length ? Math.min(...validTimes) : null;
-        meet.bestResult = meet.results.find(r => parseFloat(r.time) === meet.bestTime) || null;
+        meet.bestResult = timed.find(r => parseFloat(r.time) === meet.bestTime) || null;
       });
 
       return meetsArray;
@@ -1119,30 +1524,31 @@
       function renderCards() {
         const visible = performanceMeetsSorted.slice(0, performanceMeetsVisible);
         listEl.innerHTML = visible.map(meet => {
-          // Scoring runners are the fastest 5 per gender (results are already
+          // Scoring runners are the fastest five per gender (results are already
           // sorted ascending by time), matching standard XC team-scoring rules.
           const byGender = { M: [], F: [], OTHER: [] };
           meet.results.forEach(r => {
             const g = (r.gender || '').toUpperCase();
             (byGender[g] || byGender.OTHER).push(r);
           });
-          const scoringSlugs = new Set();
+          const scoringKeys = new Set();
           ['M', 'F', 'OTHER'].forEach(g => {
-            byGender[g].slice(0, 5).forEach(r => scoringSlugs.add(athleteKey(r)));
+            byGender[g].slice(0, 5).forEach(r => scoringKeys.add(athleteKey(r)));
           });
           const rows = meet.results.map((r, idx) => {
             const time = parseFloat(r.time);
             const key = athleteKey(r);
-            const isPR = !isNaN(time) && time > 0 && personalBestMap[key] === time;
+            const relay = isRelayRow(r);
+            const isBest = !relay && !isNaN(time) && time > 0 && personalBestMap[key] === time;
             const genderCode = (r.gender || '').toUpperCase();
             const genderPill = genderCode === 'M' || genderCode === 'F'
               ? `<span class="gender-pill ${genderCode.toLowerCase()}">${genderCode}</span>`
               : '—';
-            const isScorer = scoringSlugs.has(key);
+            const isScorer = !relay && scoringKeys.has(key);
             return `
               <tr>
                 <td data-label="Place">${r.place || (idx + 1)}</td>
-                <td data-label="Athlete">${escapeHtml(r.athlete_name || r.name || 'Unknown')}${isScorer ? '<span class="scorer-tag">Scorer</span>' : ''}${isPR ? '<i class="fa-solid fa-fire pr-flame" title="Personal Record"></i>' : ''}</td>
+                <td data-label="Athlete">${escapeHtml(r.athlete_name || r.name || 'Unknown')}${relay ? '<span class="relay-tag">Relay</span>' : ''}${isScorer ? '<span class="scorer-tag">Scorer</span>' : ''}${isBest ? '<i class="fa-solid fa-fire pr-flame" title="Season best"></i>' : ''}</td>
                 <td data-label="Gender">${genderPill}</td>
                 <td data-label="Time">${formatTime(time)}</td>
               </tr>
@@ -1162,7 +1568,7 @@
                 </div>
               </div>
               <div class="table-container">
-                <table class="item-list">
+                <table class="results-table">
                   <thead><tr><th>Place</th><th>Athlete</th><th>Gender</th><th>Time</th></tr></thead>
                   <tbody>${rows}</tbody>
                 </table>
@@ -1188,6 +1594,271 @@
     }
 
     // ==========================================
+    // TEAM NEWSLETTER (MSM engine)
+    // ==========================================
+    // The heavy lifting lives in /scripts/hub-engine.js: it rates every
+    // performance in the state, builds per-team power and per-meet form, and
+    // hands back a finished newsletter. This page only loads it once the school's
+    // own data is already on screen, so nothing blocks the first paint.
+    function setNewsletterStatus(html) {
+      document.getElementById('newsletter-body').innerHTML = html;
+      setNewsletterToolbar(false);
+    }
+
+    function setNewsletterToolbar(enabled) {
+      ['btn-nl-copy', 'btn-nl-html', 'btn-nl-email', 'btn-nl-print'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.disabled = !enabled;
+      });
+    }
+
+    function newsletterLoadingMarkup() {
+      return `
+        <div class="status-card" role="status">
+          <i class="fa-solid fa-circle-notch spinner"></i>
+          <span>Compiling this season's MSM ratings — course, field and weather adjusted — to write the newsletter…</span>
+        </div>
+        <div class="skeleton-block" style="margin-top:14px;height:120px;"></div>
+        <div class="skeleton-block" style="margin-top:10px;height:160px;"></div>
+      `;
+    }
+
+    function newsletterErrorMarkup(message, canRetry) {
+      return `
+        <div class="status-card">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+          <span>${escapeHtml(message)}</span>
+          ${canRetry ? '<button class="xbtn" id="btn-nl-retry" type="button"><i class="fa-solid fa-rotate"></i> Try again</button>' : ''}
+        </div>`;
+    }
+
+    function ensureHub(force) {
+      if (hubState === 'loading') return;
+      if (hubState === 'ready' && !force) return;
+      if (!window.MSMHub || typeof MSMHub.load !== 'function') {
+        hubState = 'failed';
+        setNewsletterStatus(newsletterErrorMarkup('The MSM rating engine did not load. Check your connection and try again.', true));
+        return;
+      }
+      hubState = 'loading';
+      if (force) { newsletter = null; }
+      setNewsletterStatus(newsletterLoadingMarkup());
+      MSMHub.load()
+        .then(() => {
+          hubState = 'ready';
+          buildAndRenderNewsletter();
+        })
+        .catch(err => {
+          console.error('MSM hub failed to load:', err);
+          hubState = 'failed';
+          setNewsletterStatus(newsletterErrorMarkup('Could not build the newsletter right now.', true));
+        });
+    }
+
+    function buildAndRenderNewsletter() {
+      let model = null;
+      try {
+        model = MSMHub.teamNewsletter(schoolSlug, {
+          rosterCount: rosterData.length,
+          prCount: seasonalBestCount
+        });
+      } catch (err) {
+        console.error('Newsletter build failed:', err);
+      }
+      // The hero snapshot is useful even when there is nothing to publish yet
+      // (an upcoming meet, or a clear "no rated results" state), so it updates
+      // on both paths.
+      newsletter = model;
+      renderSnapshot();
+      if (!model) {
+        setNewsletterStatus(`
+          <div class="status-card">
+            <i class="fa-solid fa-clock-rotate-left"></i>
+            <span>No rated performances for ${escapeHtml((schoolObj && schoolObj.name) || 'this school')} yet this season. The newsletter writes itself as soon as results are imported.</span>
+          </div>`);
+        return;
+      }
+      renderNewsletter();
+      setNewsletterToolbar(true);
+    }
+
+    function renderNewsletter() {
+      const n = newsletter;
+      const body = document.getElementById('newsletter-body');
+      const generated = new Date(n.generated).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+      const sectionHtml = n.sections.map(section => {
+        const paragraphs = (section.paragraphs || []).map(p => `<p>${escapeHtml(p)}</p>`).join('');
+        const bullets = section.bullets && section.bullets.length ? `
+          <ul class="nl-bullets">
+            ${section.bullets.map(b => `
+              <li>
+                <div class="nl-bullet-head">
+                  <a class="nl-bullet-name" href="${escapeHtml(b.href || '#')}">${escapeHtml(b.name)}</a>
+                  <span class="nl-bullet-meta">${escapeHtml(b.meta || '')}</span>
+                </div>
+                ${b.detail ? `<div class="nl-bullet-detail">${escapeHtml(b.detail)}</div>` : ''}
+              </li>`).join('')}
+          </ul>` : '';
+        const subs = section.subSections && section.subSections.length ? section.subSections.map(sub => `
+          <h5>${escapeHtml(sub.heading)}</h5>
+          ${(sub.paragraphs || []).map(p => `<p>${escapeHtml(p)}</p>`).join('')}
+        `).join('') : '';
+        return `
+          <section class="nl-section">
+            <h4><i class="fa-solid ${escapeHtml(section.icon || 'fa-circle-info')}"></i> ${escapeHtml(section.heading)}</h4>
+            ${paragraphs}${bullets}${subs}
+          </section>`;
+      }).join('');
+
+      body.innerHTML = `
+        <article class="newsletter" id="newsletter-paper">
+          <header class="nl-masthead">
+            <div class="nl-crest">
+              <img src="${escapeHtml(firstLogoPath())}" data-fallback="${escapeHtml(secondLogoPath())}" alt="${escapeHtml(n.name)} crest" onerror="brandLogoFallback(this)">
+            </div>
+            <div class="nl-masthead-text">
+              <span class="nl-kicker">Mountain State Miles · Team Newsletter</span>
+              <h3 class="nl-school">${escapeHtml(n.name)}</h3>
+              <span class="nl-meta">${n.class ? 'Class ' + escapeHtml(n.class) + ' · ' : ''}${escapeHtml(n.season)} season · generated ${escapeHtml(generated)}</span>
+            </div>
+          </header>
+          <div class="nl-subject"><span class="eyebrow">Subject</span> <strong>${escapeHtml(n.subject)}</strong></div>
+          <div class="nl-facts">
+            ${n.facts.map(f => `
+              <div class="nl-fact">
+                <div class="nl-fact-label">${escapeHtml(f.label)}</div>
+                <div class="nl-fact-value">${escapeHtml(f.value)}</div>
+                <div class="nl-fact-sub">${escapeHtml(f.sub)}</div>
+              </div>`).join('')}
+          </div>
+          <div class="nl-body">${sectionHtml}</div>
+          <footer class="nl-footer">
+            Auto-generated by <b>Mountain State Miles</b> from MSM ratings — every performance adjusted for course difficulty, field strength and race-day weather.
+            Ratings update as results are imported, so regenerate this newsletter before you send it.
+          </footer>
+        </article>
+      `;
+    }
+
+    // ---- Newsletter exports ----
+    function newsletterPlainText(n) {
+      const lines = [];
+      lines.push(`${n.name} — Team Newsletter (${n.season})`);
+      lines.push('='.repeat(48));
+      lines.push(`Subject: ${n.subject}`);
+      if (n.class) lines.push(`Class ${n.class}`);
+      lines.push('');
+      lines.push('AT A GLANCE');
+      n.facts.forEach(f => lines.push(`- ${f.label}: ${f.value} (${f.sub})`));
+      n.sections.forEach(section => {
+        lines.push('');
+        lines.push(section.heading.toUpperCase());
+        lines.push('-'.repeat(section.heading.length));
+        (section.paragraphs || []).forEach(p => lines.push(p));
+        (section.bullets || []).forEach(b => {
+          lines.push(`* ${b.name} — ${b.meta}`);
+          if (b.detail) lines.push(`  ${b.detail}`);
+        });
+        (section.subSections || []).forEach(sub => {
+          lines.push('');
+          lines.push(`${sub.heading}:`);
+          (sub.paragraphs || []).forEach(p => lines.push(p));
+        });
+      });
+      lines.push('');
+      lines.push('Generated by Mountain State Miles — mountainstatemiles.com');
+      return lines.join('\n');
+    }
+
+    function newsletterEmailHtml(n) {
+      const shared = 'font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;';
+      const sectionBlocks = n.sections.map(section => {
+        const paragraphs = (section.paragraphs || [])
+          .map(p => `<p style="${shared}font-size:15px;line-height:1.65;color:#3c3730;margin:0 0 12px;">${escapeHtml(p)}</p>`).join('');
+        const bullets = section.bullets && section.bullets.length ? section.bullets.map(b => `
+          <tr><td style="padding:10px 0;border-bottom:1px solid #eee;">
+            <div style="${shared}font-size:15px;font-weight:700;color:#221f1a;">${escapeHtml(b.name)} <span style="font-weight:400;color:#8a8175;font-size:12px;text-transform:uppercase;letter-spacing:.05em;">${escapeHtml(b.meta || '')}</span></div>
+            ${b.detail ? `<div style="${shared}font-size:13px;color:#7c7468;line-height:1.5;margin-top:3px;">${escapeHtml(b.detail)}</div>` : ''}
+          </td></tr>`).join('') : '';
+        const subs = (section.subSections || []).map(sub => `
+          <p style="${shared}font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#8a8175;margin:16px 0 6px;">${escapeHtml(sub.heading)}</p>
+          ${(sub.paragraphs || []).map(p => `<p style="${shared}font-size:15px;line-height:1.65;color:#3c3730;margin:0 0 10px;">${escapeHtml(p)}</p>`).join('')}
+        `).join('');
+        return `
+          <tr><td style="padding:20px 0 4px;">
+            <h2 style="${shared}font-size:17px;color:#221f1a;margin:0 0 10px;border-left:4px solid ${teamColorRgb};padding-left:10px;">${escapeHtml(section.heading)}</h2>
+            ${paragraphs}
+            ${bullets ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0">${bullets}</table>` : ''}
+            ${subs}
+          </td></tr>`;
+      }).join('');
+
+      return `<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>${escapeHtml(n.name)} — Team Newsletter</title></head>
+<body style="margin:0;padding:24px 12px;background:#f6f2ea;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+    <tr><td align="center">
+      <table role="presentation" width="640" cellpadding="0" cellspacing="0" style="max-width:640px;width:100%;background:#fffdf8;border-radius:14px;overflow:hidden;border:1px solid #e6dfd2;">
+        <tr><td style="background:${teamColorRgb};padding:20px 24px;color:#fff;">
+          <div style="${shared}font-size:11px;letter-spacing:.12em;text-transform:uppercase;opacity:.9;">Mountain State Miles · Team Newsletter</div>
+          <div style="font-size:26px;font-weight:800;margin-top:4px;">${escapeHtml(n.name)}</div>
+          <div style="${shared}font-size:13px;opacity:.92;">${n.class ? 'Class ' + escapeHtml(n.class) + ' · ' : ''}${escapeHtml(n.season)} season</div>
+        </td></tr>
+        <tr><td style="padding:16px 24px;background:#f1ece1;${shared}font-size:15px;color:#221f1a;"><b>${escapeHtml(n.subject)}</b></td></tr>
+        <tr><td style="padding:0;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+            ${n.facts.map(f => `<tr>
+              <td style="padding:10px 24px;border-bottom:1px solid #eee;">
+                <div style="${shared}font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#8a8175;">${escapeHtml(f.label)}</div>
+                <div style="font-size:19px;font-weight:800;color:#221f1a;">${escapeHtml(f.value)}</div>
+                <div style="${shared}font-size:12px;color:#8a8175;">${escapeHtml(f.sub)}</div>
+              </td></tr>`).join('')}
+          </table>
+        </td></tr>
+        <tr><td style="padding:0 24px 8px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0">${sectionBlocks}</table></td></tr>
+        <tr><td style="${shared}padding:16px 24px;background:#f1ece1;font-size:12px;color:#8a8175;">
+          Auto-generated by <b>Mountain State Miles</b> from MSM ratings — course, field and weather adjusted.
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body></html>`;
+    }
+
+    function wireNewsletter() {
+      document.getElementById('btn-nl-regen').addEventListener('click', () => ensureHub(true));
+      document.getElementById('btn-nl-copy').addEventListener('click', async () => {
+        if (!newsletter) return;
+        const text = newsletterPlainText(newsletter);
+        try {
+          await navigator.clipboard.writeText(text);
+          toast('✓ Newsletter copied to clipboard');
+        } catch (e) {
+          dl(`${schoolSlug}_newsletter.txt`, 'text/plain;charset=utf-8', text);
+          toast('Clipboard unavailable — downloaded as .txt instead');
+        }
+      });
+      document.getElementById('btn-nl-html').addEventListener('click', () => {
+        if (!newsletter) return;
+        dl(`${schoolSlug}_newsletter.html`, 'text/html;charset=utf-8', newsletterEmailHtml(newsletter));
+        toast('✓ Email-ready newsletter downloaded');
+      });
+      document.getElementById('btn-nl-email').addEventListener('click', () => {
+        if (!newsletter) return;
+        const body = newsletterPlainText(newsletter);
+        const clipped = body.length > 1800 ? body.slice(0, 1800) + '\n\n[Full newsletter attached as HTML]' : body;
+        window.location.href = `mailto:?subject=${encodeURIComponent(newsletter.subject)}&body=${encodeURIComponent(clipped)}`;
+      });
+      document.getElementById('btn-nl-print').addEventListener('click', () => window.print());
+
+      // Retry buttons live inside injected status markup.
+      document.getElementById('newsletter-body').addEventListener('click', event => {
+        if (event.target.closest('#btn-nl-retry')) ensureHub(true);
+      });
+    }
+
+    // ==========================================
     // SEASON TRENDS CHART
     // ==========================================
     function renderTrendsChart() {
@@ -1197,7 +1868,7 @@
 
       const chronological = [...performanceMeetsSorted]
         .filter(m => m.date && m.avgTime)
-        .sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+        .sort((a, b) => String(a.date || '').localeCompare(String(b.date || '')));
 
       if (chronological.length < 2 || typeof Chart === 'undefined') {
         canvas.style.display = 'none';
@@ -1209,7 +1880,7 @@
       emptyEl.style.display = 'none';
 
       const labels = chronological.map(m => {
-        const d = new Date(m.date + 'T00:00:00');
+        const d = new Date(String(m.date).slice(0, 10) + 'T00:00:00');
         return isNaN(d.getTime()) ? m.date : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
       });
       const avgData = chronological.map(m => Math.round(m.avgTime * 100) / 100);
@@ -1230,9 +1901,7 @@
               data: avgData,
               borderColor: teamColorRgb,
               backgroundColor: teamColorRgb.replace('rgb', 'rgba').replace(')', ',0.12)'),
-              tension: 0.35,
-              fill: true,
-              pointRadius: 3
+              tension: 0.35, fill: true, pointRadius: 3
             },
             {
               label: 'Team Best',
@@ -1240,8 +1909,7 @@
               borderColor: dark ? '#ffffff' : '#000000',
               backgroundColor: 'transparent',
               borderDash: [6, 4],
-              tension: 0.35,
-              pointRadius: 3
+              tension: 0.35, pointRadius: 3
             }
           ]
         },
@@ -1250,11 +1918,7 @@
           maintainAspectRatio: false,
           plugins: {
             legend: { labels: { color: textColor } },
-            tooltip: {
-              callbacks: {
-                label: ctx => `${ctx.dataset.label}: ${formatTime(ctx.raw)}`
-              }
-            }
+            tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${formatTime(ctx.raw)}` } }
           },
           scales: {
             x: { grid: { color: gridColor }, ticks: { color: textColor } },
@@ -1275,19 +1939,16 @@
         .filter(y => y !== null && !isNaN(y))
         .sort((a, b) => b - a);
 
-      // Default to the most recent season with results; fall back to all-time.
       currentSeason = uniqueYears.length ? uniqueYears[0].toString() : 'all';
 
       let html = `<option value="all">All-Time</option>`;
       uniqueYears.forEach(year => {
-        const selected = year.toString() === currentSeason ? 'selected' : '';
-        html += `<option value="${year}" ${selected}>${year} Season</option>`;
+        html += `<option value="${year}" ${year.toString() === currentSeason ? 'selected' : ''}>${year} Season</option>`;
       });
       select.innerHTML = html;
       select.value = currentSeason;
     }
 
-    // Rebuild the season-scoped result set and re-render everything that depends on it.
     function applySeason() {
       if (currentSeason === 'all') {
         seasonResults = schoolResults.slice();
@@ -1305,43 +1966,45 @@
     function setSeason(value) {
       currentSeason = value;
       applySeason();
+      // The newsletter's facts are season-scoped, so refresh it when the season
+      // changes and the engine is already loaded.
+      if (hubState === 'ready') buildAndRenderNewsletter();
+      // Coach & Athlete Insights are scoped to the season too, so tell
+      // school-analytics.js (which owns that panel) to rebuild.
+      document.dispatchEvent(new CustomEvent('MSMSeasonChanged', { detail: { season: currentSeason } }));
     }
 
     // ==========================================
     // EXPORTS (PDF)
     // ==========================================
-
-    // Helper to parse the dynamically extracted "rgb(r,g,b)" into an array for jsPDF
     function getTeamColorRgbArray() {
-      const match = teamColorRgb.match(/\d+/g);
+      const match = String(teamColorRgb).match(/\d+/g);
       if (match && match.length >= 3) {
-        return [parseInt(match[0]), parseInt(match[1]), parseInt(match[2])];
+        return [parseInt(match[0], 10), parseInt(match[1], 10), parseInt(match[2], 10)];
       }
-      return [20, 20, 20]; // Default dark fallback if color extraction fails
+      return [63, 125, 99];
     }
 
-    // Shared branded page header for PDF exports (mirrors rankings.html): colored
-    // bar, logo, main title, and a subtitle line that surfaces the active season.
+    // Shared branded page header for PDF exports: coloured bar, logo, title, and
+    // a subtitle line that surfaces the active season.
     function makePdfHeader(doc, mainTitle, subtitle) {
       const brandColor = getTeamColorRgbArray();
       return function drawHeader() {
-        // 1. Branded top accent bar
         doc.setFillColor(brandColor[0], brandColor[1], brandColor[2]);
         doc.rect(0, 0, doc.internal.pageSize.getWidth(), 24, 'F');
 
         let textX = 14;
-        // 2. Safely add the school logo
         try {
           const logoImg = document.getElementById('school-logo');
-          if (logoImg && logoImg.complete && logoImg.naturalWidth > 0 && !logoImg.src.includes('logob.png')) {
+          const isFallback = logoImg && /\/logob\.(png|svg)$/.test(logoImg.src || '');
+          if (logoImg && logoImg.complete && logoImg.naturalWidth > 0 && !isFallback) {
             doc.addImage(logoImg, 'PNG', 14, 4, 16, 16);
             textX = 36;
           }
         } catch (e) {
-          console.error('Could not add logo to PDF:', e);
+          console.warn('Could not add logo to PDF:', e);
         }
 
-        // 3. Titles (white on the brand bar)
         doc.setFontSize(15);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(255, 255, 255);
@@ -1350,21 +2013,15 @@
         if (subtitle) {
           doc.setFontSize(10);
           doc.setFont('helvetica', 'normal');
-          doc.setTextColor(220, 220, 220);
+          doc.setTextColor(235, 235, 235);
           doc.text(subtitle, textX, 18);
         }
       };
     }
 
     function exportSchedulePDF() {
-      if (!upcomingScheduleData.length) {
-        toast('No upcoming meets to export yet.');
-        return;
-      }
-      if (typeof window.jspdf === 'undefined') {
-        toast('PDF library still loading — try again in a moment.');
-        return;
-      }
+      if (!upcomingScheduleData.length) { toast('No upcoming meets to export yet.'); return; }
+      if (typeof window.jspdf === 'undefined') { toast('PDF library still loading — try again in a moment.'); return; }
 
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF({ orientation: 'landscape' });
@@ -1374,40 +2031,28 @@
       const mainTitle = `${name} — Upcoming Schedule`;
       const subtitle = `Mountain State Miles  •  Generated ${new Date().toLocaleDateString()}  •  ${upcomingScheduleData.length} meet(s)`;
 
-      const tableHeaders = [['Date', 'Meet', 'Location', 'Distance', 'Difficulty', 'Surface', 'Opponents']];
-      const tableBody = upcomingScheduleData.map(m => [
-        m.dateDisplay,
-        m.name,
-        m.location || '—',
-        m.course && milesFromMeters(m.course.distance) ? `${milesFromMeters(m.course.distance)} mi` : (m.course && m.course.distance ? `${m.course.distance}m` : '—'),
-        m.course ? (m.course.difficulty || '—') : '—',
-        m.course && Array.isArray(m.course.surfaces) && m.course.surfaces.length ? m.course.surfaces.map(s => `${s.type} ${s.pct}%`).join(', ') : '—',
-        m.opponentNames.join(', ') || 'None expected at this time'
-      ]);
-
       doc.autoTable({
-        head: tableHeaders,
-        body: tableBody,
+        head: [['Date', 'Meet', 'Location', 'Distance', 'Difficulty', 'Surface', 'Opponents']],
+        body: upcomingScheduleData.map(m => [
+          m.dateDisplay,
+          m.name,
+          m.location || '—',
+          m.course && milesFromMeters(m.course.distance) ? `${milesFromMeters(m.course.distance)} mi` : (m.course && m.course.distance ? `${m.course.distance}m` : '—'),
+          m.course ? (m.course.difficulty || '—') : '—',
+          m.course && Array.isArray(m.course.surfaces) && m.course.surfaces.length ? m.course.surfaces.map(s => `${s.type} ${s.pct}%`).join(', ') : '—',
+          m.opponentNames.join(', ') || 'None expected at this time'
+        ]),
         startY: 30,
         margin: { top: 30 },
-        styles: {
-          fontSize: 8.5,
-          overflow: 'linebreak'
-        },
-        headStyles: {
-          fillColor: brandColor,
-          textColor: [255, 255, 255]
-        },
-        alternateRowStyles: {
-          fillColor: [245, 245, 245]
-        },
+        styles: { fontSize: 8.5, overflow: 'linebreak' },
+        headStyles: { fillColor: brandColor, textColor: [255, 255, 255] },
+        alternateRowStyles: { fillColor: [246, 243, 236] },
         didDrawPage: makePdfHeader(doc, mainTitle, subtitle)
       });
 
       doc.save(`${schoolSlug}_schedule.pdf`);
       toast('✓ Schedule exported as PDF');
     }
-
 
     function exportPerformancePDF() {
       if (!seasonResults.length) {
@@ -1421,20 +2066,18 @@
       const brandColor = getTeamColorRgbArray();
 
       const mainTitle = `${name} — Performance Report`;
-      const subParts = [
+      const subtitle = `Mountain State Miles  •  ${[
         seasonLabel(),
         `Avg ${document.getElementById('avg-time').textContent}`,
         `Best ${document.getElementById('best-time').textContent}`,
         `Generated ${new Date().toLocaleDateString()}`
-      ];
-      const subtitle = `Mountain State Miles  •  ${subParts.join('  •  ')}`;
+      ].join('  •  ')}`;
 
       const rows = [];
       performanceMeetsSorted.forEach(meet => {
         meet.results.forEach(r => {
           const time = parseFloat(r.time);
-          const key = athleteKey(r);
-          const isPR = !isNaN(time) && time > 0 && personalBestMap[key] === time;
+          const isBest = !isNaN(time) && time > 0 && personalBestMap[athleteKey(r)] === time;
           rows.push([
             formatDateLong(meet.date),
             meet.meet_name,
@@ -1442,23 +2085,71 @@
             (r.gender || '—').toUpperCase(),
             formatTime(time),
             r.place || '—',
-            isPR ? '★ PR' : ''
+            isBest ? '★ Best' : ''
           ]);
         });
       });
 
       doc.autoTable({
-        head: [['Date', 'Meet', 'Athlete', 'Gender', 'Time', 'Place', 'PR']],
+        head: [['Date', 'Meet', 'Athlete', 'Gender', 'Time', 'Place', 'Season best']],
         body: rows,
         startY: 30,
         margin: { top: 30 },
         styles: { fontSize: 8 },
         headStyles: { fillColor: brandColor, textColor: [255, 255, 255] },
-        alternateRowStyles: { fillColor: [245, 245, 245] },
+        alternateRowStyles: { fillColor: [246, 243, 236] },
         didDrawPage: makePdfHeader(doc, mainTitle, subtitle)
       });
       doc.save(`${schoolSlug}_performance_${currentSeason}.pdf`);
       toast('✓ Performance report exported as PDF');
+    }
+
+    // ==========================================
+    // COLLAPSIBLE SECTIONS / QUICK-NAV
+    // ==========================================
+    // 'msm-analytics-section' is injected by school-analytics.js, so it has no
+    // quick-nav tab — it just joins in Expand all / Collapse all.
+    const SECTION_IDS = ['newsletter-section', 'stats-section', 'schedule-section', 'performance-section', 'roster-section', 'msm-analytics-section', 'trends-section'];
+
+    function collapseStorageKey(id) {
+      return `msm_school_section_${id}`;
+    }
+
+    function syncNavTab(id) {
+      const sectionEl = document.getElementById(id);
+      const tab = document.querySelector(`.section-nav-tab[data-target="${id}"]`);
+      if (!sectionEl || !tab) return;
+      tab.classList.toggle('is-off', sectionEl.classList.contains('is-collapsed'));
+    }
+
+    function toggleSection(id, forceCollapsed = null) {
+      const sectionEl = document.getElementById(id);
+      if (!sectionEl) return;
+      const collapsed = forceCollapsed !== null ? forceCollapsed : !sectionEl.classList.contains('is-collapsed');
+      sectionEl.classList.toggle('is-collapsed', collapsed);
+      try { localStorage.setItem(collapseStorageKey(id), collapsed ? '1' : '0'); } catch (e) {}
+      syncNavTab(id);
+    }
+
+    function setAllSections(collapsed) {
+      SECTION_IDS.forEach(id => toggleSection(id, collapsed));
+    }
+
+    function initSectionNav() {
+      SECTION_IDS.forEach(id => {
+        let saved = null;
+        try { saved = localStorage.getItem(collapseStorageKey(id)); } catch (e) {}
+        if (saved !== null) toggleSection(id, saved === '1');
+        else syncNavTab(id);
+      });
+
+      document.querySelectorAll('.section-nav-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+          const id = tab.getAttribute('data-target');
+          toggleSection(id, false);
+          document.getElementById(id).scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+      });
     }
 
     // ==========================================
@@ -1471,9 +2162,17 @@
         const el = document.getElementById(id);
         if (el) el.style.display = 'none';
       });
+      setNewsletterStatus(newsletterErrorMarkup(message, false));
+      const strip = document.getElementById('snapshot-strip');
+      if (strip) strip.innerHTML = '';
+      ['btn-export-schedule', 'btn-export-performance'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.disabled = true;
+      });
     }
 
     async function init() {
+      renderSnapshotSkeleton();
       try {
         if (typeof getSchoolBySlug === 'undefined') {
           showFatalError('Error: Firebase helpers not loaded. Check script tags.');
@@ -1512,11 +2211,15 @@
         rosterData = roster || [];
         schoolResults = results || [];
 
+        // The class kicker comes straight off the school record, so the hero is
+        // complete before the ratings engine finishes loading.
+        if (schoolObj.classification) {
+          document.getElementById('school-class-kicker').textContent = `Class ${schoolObj.classification} · Mountain State Miles`;
+        }
+
         renderRoster(rosterData);
         wireRosterSearch();
 
-        // Build the season dropdown, then render stats/results/trends scoped to the
-        // default (most recent) season.
         populateSeasonFilter();
         applySeason();
 
@@ -1525,6 +2228,15 @@
         document.getElementById('btn-export-schedule').addEventListener('click', exportSchedulePDF);
         document.getElementById('btn-export-performance').addEventListener('click', exportPerformancePDF);
         document.getElementById('btn-print').addEventListener('click', () => window.print());
+        document.getElementById('btn-jump-newsletter').addEventListener('click', () => {
+          toggleSection('newsletter-section', false);
+          document.getElementById('newsletter-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+
+        // The newsletter is the page's marquee feature, but it needs the whole
+        // state's results to rate a team honestly. Start it once this page's own
+        // content is painted so it never delays the hero, schedule, or results.
+        setTimeout(() => ensureHub(false), 120);
       } catch (error) {
         console.error('Error initializing school page:', error);
         showFatalError('Could not connect to database.');
@@ -1533,55 +2245,15 @@
       }
     }
 
-    // ==========================================
-    // COLLAPSIBLE SECTIONS / QUICK-NAV
-    // ==========================================
-    const SECTION_IDS = ['stats-section', 'schedule-section', 'performance-section', 'roster-section', 'trends-section'];
-
-    function collapseStorageKey(id) {
-      return `msm_school_section_${id}`;
-    }
-
-    function syncNavTab(id) {
-      const sectionEl = document.getElementById(id);
-      const tab = document.querySelector(`.section-nav-tab[data-target="${id}"]`);
-      if (!sectionEl || !tab) return;
-      tab.classList.toggle('is-off', sectionEl.classList.contains('is-collapsed'));
-    }
-
-    function toggleSection(id, forceCollapsed = null) {
-      const sectionEl = document.getElementById(id);
-      if (!sectionEl) return;
-      const collapsed = forceCollapsed !== null ? forceCollapsed : !sectionEl.classList.contains('is-collapsed');
-      sectionEl.classList.toggle('is-collapsed', collapsed);
-      try { localStorage.setItem(collapseStorageKey(id), collapsed ? '1' : '0'); } catch (e) {}
-      syncNavTab(id);
-    }
-
-    function setAllSections(collapsed) {
-      SECTION_IDS.forEach(id => toggleSection(id, collapsed));
-    }
-
-    // Jumping to a section via the quick-nav always expands it first, then scrolls to it.
-    function initSectionNav() {
-      SECTION_IDS.forEach(id => {
-        let saved = null;
-        try { saved = localStorage.getItem(collapseStorageKey(id)); } catch (e) {}
-        if (saved !== null) toggleSection(id, saved === '1');
-        else syncNavTab(id);
-      });
-
-      document.querySelectorAll('.section-nav-tab').forEach(tab => {
-        tab.addEventListener('click', () => {
-          const id = tab.getAttribute('data-target');
-          toggleSection(id, false);
-          document.getElementById(id).scrollIntoView({ behavior: 'smooth', block: 'start' });
-        });
-      });
-    }
-
+    wireNewsletter();
     document.addEventListener('DOMContentLoaded', initSectionNav);
     document.addEventListener('DOMContentLoaded', init);
+    window.setSeason = setSeason;
+    window.toggleSection = toggleSection;
+    window.setAllSections = setAllSections;
+    window.addToCalendar = addToCalendar;
+    window.exportSchedulePDF = exportSchedulePDF;
+    window.exportPerformancePDF = exportPerformancePDF;
   </script>
 
   <div id="global-footer"></div>

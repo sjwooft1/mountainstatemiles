@@ -22,6 +22,14 @@
 
   /* ---------------- classification map ---------------- */
 
+  // WVSSAC 2025-26 enrollment classes (the four-class realignment). This map is
+  // the roster of WV schools the hub covers as well as their class, so a school
+  // missing here loses its team power, its divisional podium and its class
+  // badge everywhere at once. It used to list only 88 names -- 45 WV schools
+  // with five-plus rated runners (Frankfort, Weir, Scott, Logan, Poca, Westside,
+  // Ritchie County, Buffalo, River View, Petersburg, Berkeley Springs ...) were
+  // silently absent, so half the state had no power rating while rankings.html
+  // listed them. Keep it in step with the copy in rankings.html.
   const WV_CLASSIFICATION = {
     // ---- Class AAAA ----
     'Wheeling Park': 'AAAA', 'Morgantown': 'AAAA', 'University': 'AAAA', 'Hedgesville': 'AAAA',
@@ -40,11 +48,43 @@
     // ---- Class AA ----
     'Oak Glen': 'AA', 'Williamstown': 'AA', 'Ravenswood': 'AA', 'Moorefield': 'AA',
     'Philip Barbour': 'AA', 'Braxton County': 'AA', 'South Harrison': 'AA', 'Doddridge County': 'AA',
-    // ---- Class A (remaining smaller schools) ----
-    'Charleston Catholic': 'A', 'Wheeling Central': 'A', 'Magnolia': 'A', 'St. Marys': 'A',
-    'Wirt County': 'A', 'Calhoun County': 'A', 'Clay-Battelle': 'A', 'Clay Battelle': 'A',
-    'Tyler Consolidated': 'A', 'Cameron': 'A', 'Paden City': 'A', 'Valley Wetzel': 'A',
-    'Gilmer County': 'A', 'Calhoun': 'A'
+    'Bluefield': 'AA', 'Mingo Central': 'AA', 'Westside': 'AA', 'Wyoming East': 'AA',
+    'Liberty (Raleigh)': 'AA', 'Frankfort': 'AA', 'Midland Trail': 'AA', 'James Monroe': 'AA',
+    'Buffalo': 'AA', 'Poca': 'AA', 'Roane County': 'AA', 'Clay County': 'AA',
+    'Scott': 'AA', 'Logan': 'AA', 'Lincoln': 'AA', 'Sissonville': 'AA',
+    'Independence': 'AA', 'Wayne': 'AA', 'Berkeley Springs': 'AA', 'Tyler Consolidated': 'AA',
+    'Summers County': 'AA', 'River View': 'AA', 'Petersburg': 'AA', 'Weir': 'AA',
+    // ---- Class A ----
+    'Cameron': 'A', 'Madonna': 'A', 'Clay-Battelle': 'A', 'Valley': 'A',
+    'Magnolia': 'A', 'East Hardy': 'A', 'Tucker County': 'A', 'Pendleton County': 'A',
+    'Pocahontas County': 'A', 'Tygarts Valley': 'A', 'Montcalm': 'A', 'Mount View': 'A',
+    'Greenbrier West': 'A', 'Meadow Bridge': 'A', 'Richwood': 'A', 'Webster County': 'A',
+    'Man': 'A', 'Sherman': 'A', 'Tolsia': 'A', 'Tug Valley': 'A',
+    'Van': 'A', 'Calhoun County': 'A', 'Gilmer County': 'A', 'Wahama': 'A',
+    'Wirt County': 'A', 'Ritchie County': 'A', 'St. Marys': 'A', 'Wheeling Central Catholic': 'A',
+    'Trinity Christian': 'A', 'Hannan': 'A', 'Charleston Catholic': 'A', 'Notre Dame': 'A',
+    'Parkersburg Catholic': 'A', 'Greater Beckley Christian': 'A', 'Summit Christian': 'A',
+    'Paw Paw': 'A', 'Union': 'A', 'Pickens': 'A', 'Harman': 'A',
+    'Paden City': 'A',
+    // ---- Spelling variants that appear in imported data ----
+    'Clay Battelle': 'A', 'Calhoun': 'A', 'Valley Wetzel': 'A', 'Wheeling Central': 'A',
+    'Shady Springs': 'AAA', 'St Marys': 'A', 'St Albans': 'AAA', 'Princeton Senior': 'AAA',
+    'Braxton': 'AA', 'Chapmanville': 'AAA'
+  };
+
+  // Slugs whose name never matches a key above (the record is missing from the
+  // schools collection, so the hub only has the slug to work with).
+  const CLASS_SLUG_ALIASES = {
+    'mt-view': 'Mount View', 'chapmanville': 'Chapmanville Regional',
+    'liberty-raleigh': 'Liberty (Raleigh)', 'wyoming-east': 'Wyoming East',
+    'tygarts-valley': 'Tygarts Valley', 'meadow-bridge': 'Meadow Bridge',
+    'notre-dame': 'Notre Dame', 'river-view': 'River View',
+    'st-marys': 'St. Marys', 'st-albans': 'St. Albans',
+    'shady-springs': 'Shady Spring', 'princeton-senior': 'Princeton',
+    'braxton': 'Braxton County', 'clay-battelle': 'Clay-Battelle',
+    'calhoun': 'Calhoun County', 'valley-wetzel': 'Valley',
+    'wheeling-central': 'Wheeling Central Catholic', 'summit-christian-academy': 'Summit Christian',
+    'pendleton': 'Pendleton County', 'pocahontas': 'Pocahontas County'
   };
 
   function normalizeSchoolName(schoolName) {
@@ -53,16 +93,23 @@
     return n.split(/\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
   }
 
+  // Build once: normalized name -> class. Names are matched loosely, so
+  // "St. Marys High School", "st marys hs" and "St. Marys" all land on the same
+  // class, and a bare "Braxton" finds "Braxton County".
   let WV_CLASS_LOOKUP = null;
   function classificationOfName(schoolName) {
+    if (!schoolName) return null;
     if (!WV_CLASS_LOOKUP) {
       WV_CLASS_LOOKUP = {};
       Object.keys(WV_CLASSIFICATION).forEach(k => {
-        WV_CLASS_LOOKUP[norm(k)] = WV_CLASSIFICATION[k];
+        WV_CLASS_LOOKUP[normalizeSchoolName(k).toLowerCase()] = WV_CLASSIFICATION[k];
       });
     }
-    if (!schoolName) return null;
-    return WV_CLASS_LOOKUP[norm(schoolName)] || null;
+    const n = normalizeSchoolName(schoolName).toLowerCase();
+    return WV_CLASS_LOOKUP[n]
+      || WV_CLASS_LOOKUP[n + ' county']
+      || WV_CLASS_LOOKUP[n.replace(/\s+county$/, '')]
+      || null;
   }
 
   /* ---------------- state ---------------- */
@@ -78,10 +125,18 @@
     storyStats: {},   // live values used by authored story tokens
     results: [],      // normalized results with .msm rating
     mostImproved: { M: [], F: [] },
+    teamIndex: {},    // school slug -> per-gender power, ranks, ranked athletes
+    teamForm: {},     // school slug|gender -> meets raced, newest first
+    meetIndex: {},    // meet slug -> field, rated leader, finishers, team scores
     watch: { M: [], F: [] },
     divisional: {},   // 'AAAA'|'AAA'|'AA'|'A'|'UNA' -> { top:[], teams:[] }
     upcoming: [],
     recaps: [],
+    // Per-season rating models from MSMRating.buildSeasonModels(): the rating
+    // a performance carries, and the course factors a projection needs.
+    ratingModels: {},   // season -> { courseFactor, weatherFactor, ... }
+    ratingSeasons: [],  // seasons present in the data, ascending
+    ratingSeason: null, // season whose model is live (current when it has data)
     weatherApplied: 0,
     weatherTotal: 0
   };
@@ -151,6 +206,18 @@
     return currentSeason() - 1;
   }
 
+  // West Virginia meets only. The database carries full fields from big
+  // out-of-state invitationals (2,600+ rows of Pennsylvania and Ohio racing),
+  // and rankings.html has always ranked WV teams on WV results alone. Every
+  // power rating in the hub has to use the same rule, or a school that
+  // travelled out of state posts one number on the hub and another on the
+  // rankings page. Legacy rows with no `state` are assumed in-state, exactly
+  // as rankings.html and the coach portal assume.
+  const HOME_STATE = "WV";
+  function isInState(r) {
+    return (r && r.state ? String(r.state) : HOME_STATE).toUpperCase() === HOME_STATE;
+  }
+
   /* ---------------- model build ---------------- */
 
   async function load() {
@@ -198,7 +265,8 @@
           athlete_name: r.athlete_name,
           gender: (r.gender || "").toUpperCase() === "F" ? "F" : (r.gender || "").toUpperCase() === "M" ? "M" : "",
           school_slug: r.school_slug || "",
-          school_name: (state.schools[r.school_slug] || {}).name || "",
+          school_name: (state.schools[r.school_slug] || {}).name || (r.school_name || ""),
+          raw_school_name: r.school_name || "", // the importer's own spelling
           meet_slug: r.meet_slug || "",
           meet_name: meet.name || r.meet_slug || "",
           course_slug: r.course_slug || meet.course_slug || "",
@@ -213,12 +281,25 @@
         });
       });
 
-      // Build the shared rating model ONCE (all-time scope, matching the
-      // athlete profile pages) and rate every result.
-      await window.MSMRating.buildModel(raw, { meetsMap: state.meets, coursesMap: state.courses });
+      // Rate every performance against its OWN season's calibration and build
+      // the power ratings from the current season's racing. This is the team
+      // power rule the divisional tables, the newsletters and the drafts all
+      // quote ("sum of the five best ratings this season"), so the ratings it
+      // sums have to come from this season's model -- not an all-time blend.
+      const rated = await window.MSMRating.buildSeasonModels(raw, {
+        meetsMap: state.meets,
+        coursesMap: state.courses
+      });
+      state.ratingSeasons = rated.seasons;
+      state.ratingModels = rated.models;
+      state.ratingSeason = rated.season;
       raw.forEach(r => {
-        const res = window.MSMRating.ratingForResult(r);
+        const res = rated.rate(r);
         r.msm = res ? res.points : null;
+        // Cached so a projection built later still sees this performance's
+        // course/field/weather boost, whatever model is live by then.
+        r.boost = res ? res.boost : null;
+        r.ratingSeason = window.MSMRating.seasonOf(r);
       });
       state.results = raw;
 
@@ -262,7 +343,25 @@
 
   function classify(slug) {
     const name = schoolNameOf(slug);
-    return classificationOfName(name) || "UNA"; // UNA / unmapped
+    if (classificationOfName(name)) return classificationOfName(name);
+    // Fall back to the slug, which is all there is when the school record is
+    // missing from the schools collection.
+    // Only the curated slug aliases -- guessing a class from a bare slug would
+    // hand an out-of-state "Valley" or "Washington" a WV class it never earned.
+    const alias = CLASS_SLUG_ALIASES[norm(slug)];
+    return (alias && classificationOfName(alias)) || "UNA"; // UNA / unmapped
+  }
+
+  // Is this a WV school the hub should rank? Two signals, either one is enough:
+  // a record in the curated `schools` collection, or a WVSSAC class. Out-of-state
+  // schools that race WV invitationals have neither, which is what keeps
+  // "Fairland" and "Russell" out of the WV team power tables.
+  function isHomeSchool(slug) {
+    if (!slug) return false;
+    if (slug === "unattached") return false;
+    if (state.schools[slug]) return true;
+    const cls = classify(slug);
+    return !!cls && cls !== "UNA";
   }
 
   // Compare this season's median rating vs last season's, per athlete.
@@ -320,6 +419,18 @@
     state.results.forEach(r => {
       if (r.gender !== gender || r.msm == null || !r.date) return;
       if (seasonOf(r) !== currentSeason) return;
+      // WV-only, matching rankings.html's team standings and the "this season,
+      // in West Virginia" framing of the watch lists and divisional podiums.
+      if (!isInState(r)) return;
+      // A summer road 5K or an August time trial is a fitness marker, not the
+      // season itself, so out-of-season efforts never define an athlete's
+      // standing. The ATHLETE stays (they have a season to chase) -- only the
+      // out-of-season marks are ignored. Previously the whole athlete was
+      // dropped whenever their single best rating happened to come from one of
+      // those meets, which threw away every in-season race they ran and badly
+      // undercut school team power (University's boys read 1,407 instead of
+      // the 4,076 their in-season top five actually sums to).
+      if (isNonCompetitive(r.meet_slug)) return;
       const key = norm(r.athlete_name);
       const entry = byName[key] || (byName[key] = {
         name: r.athlete_name, gender,
@@ -338,16 +449,26 @@
       e.bestTime = e.bestRaw ? e.bestRaw.timeSec : null;
       e.bestMeet = e.bestRaw ? e.bestRaw.meet_name : "";
       e.bestDate = e.bestRaw ? e.bestRaw.date : "";
+      // Graduation year travels with the athlete so drafted copy and the
+      // generated newsletter can say "Junior" instead of guessing.
+      e.grade = e.bestRaw ? (e.bestRaw.grad_year || null) : null;
+      // Relay legs are rated like any other effort (the site has always shown
+      // them that way), but they are not cross country races, so the copy says
+      // so when an athlete's best rating came from one.
+      e.relay = e.bestRaw ? isRelayResult(e.bestRaw) : false;
     });
     // "Hot" = current-season best MSM rating, in-season races only.
-    // Unattached runners and unmapped schools are excluded: this is a
-    // school-season watch list, and they have no title to chase.
+    // Unattached runners and out-of-state schools are excluded: this is a
+    // school-season watch list, and they have no WV title to chase.
+    //
+    // A missing WVSSAC class must NOT exclude a school any more -- that put 45
+    // real WV teams (Weir, Scott, Logan, Frankfort, Ritchie County ...) outside
+    // every power rating on the hub. A curated record in the schools collection
+    // is enough to belong here; the class only decides which divisional table
+    // the team appears in.
     return list
-      .filter(e => e.best != null && !isNonCompetitive(e.bestRaw.meet_slug))
-      // classify() falls back to the truthy string "UNA", so the old
-      // `&& e.classification` check let out-of-state and unmapped schools
-      // through with their slug as a display name.
-      .filter(e => e.school_slug && e.school_slug !== "unattached" && e.classification && e.classification !== "UNA")
+      .filter(e => e.best != null)
+      .filter(e => isHomeSchool(e.school_slug))
       .sort((a, b) => b.best - a.best);
   }
 
@@ -370,12 +491,17 @@
           (teams[k] || (teams[k] = { school_slug: e.school_slug, gender: g, top: [] })).top.push(e.best);
         });
       }
+      // Same rule as the team index: five runners or no power rating. Short
+      // squads are still listed (readers want to know who is racing) but they
+      // sort below the complete teams and carry no score.
       const teamRows = Object.values(teams).map(t => ({
         school_slug: t.school_slug, gender: t.gender,
         school: schoolNameOf(t.school_slug),
-        power: t.top.slice(0, 5).reduce((s, v) => s + v, 0),
+        complete: t.top.length >= 5,
+        power: t.top.length >= 5 ? t.top.slice(0, 5).reduce((s, v) => s + v, 0) : null,
         runners: t.top.length
-      })).filter(t => t.runners >= 3).sort((a, b) => b.power - a.power);
+      })).filter(t => t.runners >= 3)
+        .sort((a, b) => (a.complete === b.complete ? (b.power == null ? 0 : b.power) - (a.power == null ? 0 : a.power) : (a.complete ? -1 : 1)));
       out[cls] = { watch: watch.slice(0, 12), teams: teamRows.slice(0, 8) };
     });
     return out;
@@ -456,10 +582,12 @@
     return { upcoming, recaps };
   }
 
-  // Count of rated results that got a weather boost (>1.0 factor).
+  // Count of current-season races that got a weather boost (>1.0 factor).
   function computeWeatherCoverage() {
-    const model = window.MSMRating.model || {};
-    const wx = model.weatherFactor || {};
+    const bySeason = state.ratingModels || {};
+    const season = bySeason[currentSeason()] ? currentSeason() : state.ratingSeason;
+    const wx = (bySeason[season] || {}).weatherFactor
+      || (window.MSMRating && window.MSMRating.model.weatherFactor) || {};
     let applied = 0, total = 0;
     for (const k in wx) { total++; if (wx[k] > 1.0) applied++; }
     state.weatherApplied = applied;
@@ -480,10 +608,12 @@
     const boys = state.watch.M[0] || null;
     const girls = state.watch.F[0] || null;
     const next = state.upcoming[0] || null;
-    // Scoped to West Virginia meets so the headline figures match the WV-only
-    // watch lists, divisionals, and state-of-the-state cards.
-    const rated = state.results.filter(r => r.msm != null && r.state === "WV").length;
-    const schools = new Set(state.results.filter(r => r.msm != null && r.school_slug && r.state === "WV" && seasonOf(r) === currentSeason()).map(r => r.school_slug));
+    // Scoped to West Virginia meets AND to the current season, so the headline
+    // figures match the WV-only, current-season watch lists and divisional
+    // tables they sit next to.
+    const season = currentSeason();
+    const rated = state.results.filter(r => r.msm != null && isInState(r) && seasonOf(r) === season).length;
+    const schools = new Set(state.results.filter(r => r.msm != null && r.school_slug && isInState(r) && seasonOf(r) === season).map(r => r.school_slug));
     state.storyStats = {
       most_improved_name: improved ? improved.name : "The next breakthrough star",
       most_improved_school: improved ? improved.school : "West Virginia",
@@ -518,8 +648,13 @@
     state.divisional = computeDivisional(thisYear);
     computeUpcoming();
     computeWeatherCoverage();
-    buildTeamIndex();
+    buildTeamIndex(thisYear);
     buildMeetIndex();
+    buildTeamForm();
+    // Both caches are keyed by data that just changed, so drop them rather
+    // than serving a stale answer from a previous build.
+    nextMeetCache = {};
+    Object.keys(projectionCache).forEach(key => delete projectionCache[key]);
     buildStoryStats();
   }
 
@@ -539,39 +674,136 @@
 
   const num = (value) => (value == null ? "—" : Number(value).toLocaleString("en-US"));
 
-  // Team power = sum of a school's five best current-season ratings, per gender
-  // (the same rule the divisional tables use).
-  function buildTeamIndex() {
+  // A margin rather than an absolute time: "+42.6s" or "+1:12.4".
+  function formatGap(sec) {
+    const n = Number(sec);
+    if (!isFinite(n)) return "—";
+    const sign = n < 0 ? "-" : "+";
+    const a = Math.abs(n);
+    const m = Math.floor(a / 60);
+    return m
+      ? `${sign}${m}:${(a - m * 60).toFixed(1).padStart(4, "0")}`
+      : `${sign}${a.toFixed(1)}s`;
+  }
+
+  // Team power = sum of a school's five best current-season ratings, per gender.
+  //
+  // Membership is decided PER PERFORMANCE, not per athlete. The watch list keys
+  // an athlete by name and keeps whichever school showed up first, which meant
+  // that one stray row -- typically a relay leg carrying the wrong school slug --
+  // handed a different school that athlete's best mark (and quietly cost the
+  // real school a scorer: Clay-Battelle's Jonathan Bowers was on East Fairmont's
+  // ledger because his first race of the season was). Here every rated row
+  // counts for the school it names, which is exactly how rankings.html groups
+  // its team standings, so both pages post the same number.
+  // The results table carries more than one slug for some schools -- a typo
+  // ("indepence" for Independence), a name variant ("braxton-county" beside
+  // "braxton") -- which split one team into two entries and left each with half
+  // a roster. Rows are filed under the school the `schools` collection knows,
+  // matched on a county-suffix-insensitive name, so a squad has one roster and
+  // one power rating. Unknown slugs are left alone rather than guessed at.
+  let SCHOOL_SLUG_BY_NAME = null;
+  function schoolNameKey(name) {
+    return normalizeSchoolName(name).toLowerCase().replace(/\s+county$/, '');
+  }
+  function slugForSchoolName(name) {
+    if (!name) return null;
+    if (!SCHOOL_SLUG_BY_NAME) {
+      SCHOOL_SLUG_BY_NAME = {};
+      Object.keys(state.schools).forEach(sl => {
+        const n = schoolNameKey((state.schools[sl] || {}).name || prettySchoolSlug(sl));
+        if (n && !SCHOOL_SLUG_BY_NAME[n]) SCHOOL_SLUG_BY_NAME[n] = sl;
+      });
+    }
+    return SCHOOL_SLUG_BY_NAME[schoolNameKey(name)] || null;
+  }
+  function canonicalSlugOf(slug, name) {
+    if (slug && state.schools[slug]) return slug;
+    return slugForSchoolName(name) || slugForSchoolName(prettySchoolSlug(slug)) || slug;
+  }
+
+  function buildTeamIndex(season) {
     const index = {};
     ["M", "F"].forEach(gender => {
-      state.watch[gender].forEach(e => {
-        if (!e.school_slug) return;
+      const seen = {}; // "school|athlete" -> the athlete's best row for that school
+      state.results.forEach(r => {
+        if (r.gender !== gender || r.msm == null || !r.date) return;
+        if (!r.athlete_name || !r.school_slug) return;
+        // Current season only: a power rating is built from this season's
+        // racing, so a 2025 state-meet mark can never top a 2026 list.
+        if (seasonOf(r) !== season) return;
+        if (!isInState(r) || isNonCompetitive(r.meet_slug)) return;
+        if (!isHomeSchool(r.school_slug)) return;
+        const slug = canonicalSlugOf(r.school_slug, r.raw_school_name || r.school_name);
+        const key = slug + "|" + norm(r.athlete_name);
+        const current = seen[key];
+        if (current) current.races++;
+        else seen[key] = {
+          school_slug: slug, school: schoolNameOf(slug),
+          classification: classify(slug),
+          name: r.athlete_name, rating: r.msm, timeSec: r.timeSec,
+          meet: r.meet_name || "", date: r.date, races: 1,
+          grade: r.grad_year || null, relay: isRelayResult(r)
+        };
+        if (current && r.msm > seen[key].rating) {
+          // A better mark moves the athlete's card, not their school.
+          seen[key].rating = r.msm; seen[key].timeSec = r.timeSec;
+          seen[key].meet = r.meet_name || ""; seen[key].date = r.date;
+          seen[key].grade = r.grad_year || null; seen[key].relay = isRelayResult(r);
+        }
+      });
+      Object.values(seen).forEach(e => {
         const team = index[e.school_slug] || (index[e.school_slug] = {
           slug: e.school_slug,
           name: e.school,
           classification: e.classification && e.classification !== "UNA" ? e.classification : "",
-          M: { rated: 0, scorers: 0, power: 0, top: "", topRating: null },
-          F: { rated: 0, scorers: 0, power: 0, top: "", topRating: null }
+          M: { rated: 0, scorers: 0, power: null, top: "", topRating: null, athletes: [] },
+          F: { rated: 0, scorers: 0, power: null, top: "", topRating: null, athletes: [] }
         });
         const side = team[gender];
         side.rated += 1;
-        if (side.topRating == null || e.best > side.topRating) { side.topRating = e.best; side.top = e.name; }
-        side.ratings = (side.ratings || []).concat(e.best);
+        if (side.topRating == null || e.rating > side.topRating) { side.topRating = e.rating; side.top = e.name; }
+        // The ranked roster is the raw material for prose that names real
+        // athletes (drafted articles, the team newsletter), so keep each
+        // runner's best mark, the meet it came at, and their class.
+        side.athletes.push({
+          name: e.name, rating: e.rating, timeSec: e.timeSec,
+          meet: e.meet, date: e.date, races: e.races,
+          grade: e.grade || null, relay: !!e.relay
+        });
       });
     });
     Object.values(index).forEach(team => {
       ["M", "F"].forEach(gender => {
         const side = team[gender];
-        const top = (side.ratings || []).sort((a, b) => b - a).slice(0, 5);
-        side.scorers = top.length;
-        side.power = top.reduce((s, v) => s + v, 0);
-        delete side.ratings;
+        side.athletes.sort((a, b) => b.rating - a.rating);
+        const five = side.athletes.slice(0, 5);
+        side.scorers = five.length;
+        // A team power rating is the sum of FIVE ratings -- that is the rule the
+        // divisional tables, the newsletters and rankings.html all quote. A
+        // three-runner squad summing three ratings is not comparable to a
+        // complete five (and ranking them together flattered short-handed
+        // teams), so an incomplete team has no power rating at all, only a
+        // running total the copy is free to mention as "so far".
+        side.complete = five.length === 5;
+        side.power = side.complete ? five.reduce((s, a) => s + a.rating, 0) : null;
+        side.partial = five.reduce((s, a) => s + a.rating, 0);
+        side.avg = side.power == null ? null : side.power / 5;
+        // Compression: the gap between a team's fastest and fifth scorer, in
+        // seconds. A tight spread is what turns five good runners into a
+        // low-scoring team, and it is worth a sentence in every write-up.
+        // The gap between the best and fifth-best rating on the roster. Ratings,
+        // not raw times: a squad's five marks come from different courses and
+        // distances, so seconds are not comparable across them.
+        side.spread = five.length >= 3 ? Math.round(five[0].rating - five[five.length - 1].rating) : null;
       });
     });
     // Ranks let the auto-drafted prose read like a real preview
     // ("the No. 1 boys team power in the state", "No. 2 in Class AAA").
     ["M", "F"].forEach(gender => {
-      const ranked = Object.values(index).filter(t => t[gender].scorers).sort((a, b) => b[gender].power - a[gender].power);
+      const ranked = Object.values(index)
+        .filter(t => t[gender].complete)
+        .sort((a, b) => b[gender].power - a[gender].power);
       const seenClass = {};
       ranked.forEach((team, i) => {
         team[gender].powerRank = i + 1;
@@ -583,24 +815,243 @@
     state.teamIndex = index;
   }
 
-  // Meet summary: field size, result count, and the top-rated boy/girl.
+  /* ---- races, not meets: places are per race, not per meet ---- */
+  // A meet runs several races (a class championship, varsity, JV, freshman),
+  // and every one of them numbers its places from 1. Treating a
+  // meet+gender as a single race makes a JV winner look like the meet winner
+  // and corrupts any place-sum team score, so races are the unit here.
+
+  function isRelayResult(r) {
+    return /relay/i.test(String(r.race_type || ""));
+  }
+
+  // Token-safe race key: "AAA/AAAA HS" -> "aaa-aaaa-hs".
+  function raceTagOf(raceType) {
+    const t = String(raceType || "").trim();
+    if (!t) return "open";
+    return t.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "open";
+  }
+
+  // Human label for prose: "Class AAA race", "junior varsity race".
+  function raceLabelOf(raceType) {
+    const t = String(raceType || "").trim();
+    if (!t) return "";
+    if (/^\d[\d,\s]*m(eters)?$/i.test(t)) return ""; // a distance, not a race name
+    const lower = t.toLowerCase();
+    if (lower === "open") return "open race";
+    if (lower === "jv" || lower === "junior varsity") return "junior varsity race";
+    if (lower === "freshman") return "freshman race";
+    if (lower === "hs junior" || lower === "junior") return "junior race";
+    if (lower === "varsity" || lower === "high school") return "varsity race";
+    if (/^a{1,4}$/.test(lower) || t.includes("/")) return `Class ${t.toUpperCase()} race`;
+    return `${t} race`;
+  }
+
+  // The race a meet's story hangs on: the most competitive one with enough
+  // scorers to produce a team score.
+  function primaryRaceOf(meetSlug, gender) {
+    const summary = state.meetIndex[meetSlug];
+    const races = summary && summary.races ? summary.races[gender] : null;
+    if (!races) return null;
+    const list = Object.values(races);
+    const scored = list.filter(r => r.finishers && r.finishers.length >= 5);
+    const pool = scored.length ? scored : list.filter(r => r.finishers && r.finishers.length);
+    if (!pool.length) return null;
+    return pool.slice().sort((a, b) =>
+      (a.winnerTimeSec || 1e9) - (b.winnerTimeSec || 1e9) || b.rows.length - a.rows.length
+    )[0];
+  }
+
+  // Per-meet form, per school and gender: the top five a team actually ran on
+  // a given day, with their ratings and times, taken from the race that team's
+  // varsity line ran. This is what lets the drafted copy and the newsletter
+  // talk about a team's week rather than its season average.
+  function buildTeamForm() {
+    const grouped = {};
+    state.results.forEach(r => {
+      if (!r.school_slug || r.school_slug === "unattached" || !r.meet_slug) return;
+      if (r.gender !== "M" && r.gender !== "F") return;
+      if (r.msm == null || seasonOf(r) !== currentSeason() || isNonCompetitive(r.meet_slug)) return;
+      if (isRelayResult(r)) return; // relay legs are not a cross country team race
+      const key = r.school_slug + "|" + r.gender;
+      const meets = grouped[key] || (grouped[key] = {});
+      const meet = meets[r.meet_slug] || (meets[r.meet_slug] = {
+        meet_slug: r.meet_slug, meet_name: r.meet_name, date: r.date, byRace: {}
+      });
+      const tag = raceTagOf(r.race_type);
+      (meet.byRace[tag] || (meet.byRace[tag] = [])).push({
+        name: r.athlete_name, msm: r.msm, timeSec: r.timeSec, place: r.place,
+        grade: r.grad_year || null, race_type: r.race_type || ""
+      });
+    });
+    const out = {};
+    Object.keys(grouped).forEach(key => {
+      const [slug, gender] = key.split("|");
+      const meets = Object.values(grouped[key])
+        .sort((a, b) => String(b.date).localeCompare(String(a.date)));
+      meets.forEach(m => {
+        // Prefer the meet's primary race, but fall back to whatever race this
+        // school actually filled if it did not run with the varsity crowd.
+        const primary = primaryRaceOf(m.meet_slug, gender);
+        const tags = Object.keys(m.byRace);
+        let chosen = primary && m.byRace[primary.tag] && m.byRace[primary.tag].length >= 5 ? primary.tag : null;
+        if (!chosen) chosen = tags.slice().sort((a, b) => m.byRace[b].length - m.byRace[a].length)[0];
+        const rows = m.byRace[chosen].slice();
+        rows.sort((a, b) => (a.place || 9999) - (b.place || 9999) || (a.timeSec || 1e9) - (b.timeSec || 1e9));
+        m.rows = rows;
+        m.race_type = rows[0].race_type;
+        m.race_label = raceLabelOf(rows[0].race_type);
+        m.top5 = rows.slice(0, 5);
+        m.avg = m.top5.length ? m.top5.reduce((s, x) => s + x.msm, 0) / m.top5.length : null;
+        m.leader = rows[0] || null;
+        delete m.byRace;
+      });
+      (out[slug] || (out[slug] = {}))[gender] = meets;
+    });
+    state.teamForm = out;
+  }
+
+  function teamFormOf(slug, gender) {
+    const entry = (state.teamForm || {})[slug];
+    return (entry && entry[gender === "F" ? "F" : "M"]) || [];
+  }
+
+  // The next meet on a school's own calendar, plus the strongest opponents
+  // already listed in that meet's expected field.
+  let nextMeetCache = {};
+  function nextMeetForSchool(slug) {
+    if (Object.prototype.hasOwnProperty.call(nextMeetCache, slug)) return nextMeetCache[slug];
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    let best = null;
+    for (const key in state.meets) {
+      const m = state.meets[key];
+      if (!m.date) continue;
+      const list = Array.isArray(m.expected_teams) ? m.expected_teams : (Array.isArray(m.teams) ? m.teams : []);
+      const mine = list.some(t => {
+        const raw = typeof t === "string" ? t : (t.slug || t.name || "");
+        const name = typeof t === "string" ? t : (t.name || raw);
+        return resolveSchoolSlug(typeof t === "object" ? t.slug : raw, name) === slug;
+      });
+      if (!mine) continue;
+      const d = new Date(String(m.date).slice(0, 10) + "T12:00:00");
+      if (isNaN(d) || d < today) continue;
+      if (!best || String(m.date) < String(best.date)) best = m;
+    }
+    if (!best) { nextMeetCache[slug] = null; return null; }
+
+    const seen = {};
+    const opponents = (Array.isArray(best.expected_teams) ? best.expected_teams : (Array.isArray(best.teams) ? best.teams : []))
+      .map(t => {
+        const raw = typeof t === "string" ? t : (t.slug || t.name || "");
+        const name = typeof t === "string" ? t : (t.name || raw);
+        const s = resolveSchoolSlug(typeof t === "object" ? t.slug : raw, name);
+        return s && s !== slug && !seen[s] && (seen[s] = true) ? { slug: s, name: schoolNameOf(s) } : null;
+      })
+      .filter(Boolean)
+      .map(t => {
+        const team = state.teamIndex[t.slug];
+        return { ...t, power: team ? Math.max(team.M.power || 0, team.F.power || 0) : 0 };
+      })
+      .sort((a, b) => b.power - a.power);
+
+    // The following meets come along too: a newsletter wants a short look
+    // ahead, not just the very next Saturday.
+    const ahead = Object.values(state.meets)
+      .filter(m => m.date && String(m.date) > String(best.date))
+      .filter(m => {
+        const list = Array.isArray(m.expected_teams) ? m.expected_teams : (Array.isArray(m.teams) ? m.teams : []);
+        return list.some(t => {
+          const raw = typeof t === "string" ? t : (t.slug || t.name || "");
+          const nm = typeof t === "string" ? t : (t.name || raw);
+          return resolveSchoolSlug(typeof t === "object" ? t.slug : raw, nm) === slug;
+        });
+      })
+      .sort((a, b) => String(a.date).localeCompare(String(b.date)))
+      .slice(0, 3)
+      .map(m => ({ slug: m.slug, name: m.name || m.slug, date: m.date, location: m.location || "" }));
+
+    const resolved = {
+      slug: best.slug, name: best.name || best.slug, date: best.date,
+      location: best.location || "", course_slug: best.course_slug || "",
+      expectedCount: Array.isArray(best.expected_teams) && best.expected_teams.length
+        ? best.expected_teams.length
+        : opponents.length + 1,
+      opponents: opponents.slice(0, 5),
+      upcoming: ahead
+    };
+    nextMeetCache[slug] = resolved;
+    return resolved;
+  }
+
+  // Meet summary: field size, result count, the top-rated boy/girl, and every
+  // race run that day with its finish order and team scoring.
   function buildMeetIndex() {
     const index = {};
+    const races = {};
     state.results.forEach(r => {
       if (!r.meet_slug) return;
-      const meet = index[r.meet_slug] || (index[r.meet_slug] = { schools: {}, count: 0, M: null, F: null });
+      const meet = index[r.meet_slug] || (index[r.meet_slug] = { schools: {}, count: 0, M: null, F: null, races: {}, primary: {} });
       if (r.school_slug) meet.schools[r.school_slug] = true;
       meet.count += 1;
-      if (r.msm == null || (r.gender !== "M" && r.gender !== "F")) return;
-      const side = meet[r.gender];
-      if (!side || r.msm > side.msm) {
-        meet[r.gender] = {
-          name: r.athlete_name, school: schoolNameOf(r.school_slug), school_slug: r.school_slug,
-          msm: r.msm, timeSec: r.timeSec
-        };
+      if (r.msm != null && (r.gender === "M" || r.gender === "F")) {
+        const side = meet[r.gender];
+        if (!side || r.msm > side.msm) {
+          meet[r.gender] = {
+            name: r.athlete_name, school: schoolNameOf(r.school_slug), school_slug: r.school_slug,
+            msm: r.msm, timeSec: r.timeSec
+          };
+        }
       }
+      if ((r.gender !== "M" && r.gender !== "F") || isRelayResult(r)) return;
+      const tag = raceTagOf(r.race_type);
+      const key = `${r.meet_slug}|${r.gender}|${tag}`;
+      const race = races[key] || (races[key] = {
+        meet: r.meet_slug, gender: r.gender, tag,
+        race_type: r.race_type || "", label: raceLabelOf(r.race_type), rows: []
+      });
+      race.rows.push(r);
     });
+
+    Object.keys(races).forEach(key => {
+      const race = races[key];
+      const byPlace = race.rows.slice().sort((a, b) => (a.place || 9999) - (b.place || 9999) || (a.timeSec || 1e9) - (b.timeSec || 1e9));
+      race.finishers = byPlace.slice(0, 5).map((r, i) => ({
+        place: r.place || i + 1,
+        name: r.athlete_name,
+        school: schoolNameOf(r.school_slug),
+        school_slug: r.school_slug,
+        msm: r.msm,
+        timeSec: r.timeSec
+      }));
+      race.winnerTimeSec = race.finishers.length ? race.finishers[0].timeSec : null;
+      // Place-sum scoring over each school's fastest five, the same rule the
+      // simulation uses, so a recap and a projection agree with each other.
+      const bySchool = {};
+      byPlace.forEach((r, i) => {
+        if (!r.school_slug || r.school_slug === "unattached") return;
+        (bySchool[r.school_slug] || (bySchool[r.school_slug] = [])).push(r.place || i + 1);
+      });
+      race.teamScores = Object.keys(bySchool)
+        .map(s => ({
+          school_slug: s, school: schoolNameOf(s),
+          runners: bySchool[s].length,
+          score: bySchool[s].length >= 5 ? bySchool[s].slice(0, 5).reduce((a, b) => a + b, 0) : null
+        }))
+        .filter(t => t.score != null)
+        .sort((a, b) => a.score - b.score);
+      const meet = index[race.meet];
+      (meet.races[race.gender] || (meet.races[race.gender] = {}))[race.tag] = race;
+    });
+
+    // The race a story leads with, per gender: resolved once, after every race
+    // has a finish order.
     state.meetIndex = index;
+    Object.keys(index).forEach(slug => {
+      ["M", "F"].forEach(gender => {
+        const primary = primaryRaceOf(slug, gender);
+        if (primary) index[slug].primary[gender] = primary;
+      });
+    });
   }
 
   function teamStat(slug, spec) {
@@ -611,16 +1062,110 @@
       if (first === "name") return team.name;
       if (first === "class") return team.classification || "unclassified";
       if (first === "athletes") return String(team.M.rated + team.F.rated);
+      if (first === "next_meet") { const n = nextMeetForSchool(slug); return n ? n.name : "—"; }
+      if (first === "next_meet_date") { const n = nextMeetForSchool(slug); return n ? formatShortDate(n.date) : "—"; }
+      if (first === "next_meet_location") { const n = nextMeetForSchool(slug); return n ? (n.location || "West Virginia") : "—"; }
+      if (first === "next_meet_opponents") {
+        const n = nextMeetForSchool(slug);
+        if (!n || !n.opponents.length) return "—";
+        const names = n.opponents.slice(0, 3).map(o => o.name);
+        if (names.length === 1) return names[0];
+        return names.slice(0, -1).join(", ") + " and " + names[names.length - 1];
+      }
       return null;
     }
-    const side = team[first === "F" ? "F" : "M"];
-    switch (second) {
-      case "power": return side.scorers ? num(side.power) : "—";
+    const gender = first === "F" ? "F" : "M";
+    const side = team[gender];
+    // "top_rating" is shorthand for the first runner, so one lookup handles
+    // star and depth alike.
+    const metric = second.replace(/^top_(rating|time|meet|races|grade|date)$/, "top1_$1");
+    // Numbered athletes: {{team:morgantown:M.top2_rating}} is the second-best
+    // runner on the roster, which is what makes it possible to write about a
+    // team's depth instead of only its star.
+    const depth = /^top([1-9])(?:_(rating|time|meet|races|school|grade|date))?$/.exec(metric);
+    if (depth) {
+      const athlete = side.athletes[Number(depth[1]) - 1];
+      if (!athlete) return "—";
+      switch (depth[2] || "name") {
+        case "name": return athlete.name;
+        case "rating": return num(athlete.rating);
+        case "time": return formatTime(athlete.timeSec);
+        case "meet": return athlete.meet || "—";
+        case "races": return String(athlete.races == null ? "—" : athlete.races);
+        case "date": return athlete.date ? formatShortDate(athlete.date) : "—";
+        case "school": return team.name;
+        case "grade": return classWordOf(athlete.grade) || "—";
+        default: return "—";
+      }
+    }
+    switch (metric) {
+      case "power": return side.complete ? num(side.power) : "—";
+      case "power_note": {
+        if (side.complete) return "complete five";
+        if (!side.rated) return "no rated runners";
+        return `${num(side.rated)} rated runner${side.rated === 1 ? "" : "s"} — needs five for a team power`;
+      }
+      case "avg": return side.avg == null ? "—" : num(Math.round(side.avg));
+      case "spread": return side.spread == null ? "—" : num(side.spread);
       case "top": return side.top || "—";
       case "top_rating": return side.topRating == null ? "—" : num(side.topRating);
       case "rated": return num(side.rated);
       case "power_rank": return side.powerRank ? `No. ${side.powerRank}` : "—";
       case "class_rank": return side.classRank ? `No. ${side.classRank}` : "—";
+      case "meets_raced": return String(teamFormOf(slug, gender).length);
+      case "last_meet": { const f = teamFormOf(slug, gender)[0]; return f ? f.meet_name : "—"; }
+      case "last_rating": {
+        const f = teamFormOf(slug, gender)[0];
+        return f && f.avg != null ? num(Math.round(f.avg)) : "—";
+      }
+      case "last_leader": {
+        const f = teamFormOf(slug, gender)[0];
+        return f && f.leader ? f.leader.name : "—";
+      }
+      case "last_leader_time": {
+        const f = teamFormOf(slug, gender)[0];
+        return f && f.leader ? formatTime(f.leader.timeSec) : "—";
+      }
+      case "trend": {
+        const forms = teamFormOf(slug, gender);
+        if (forms.length < 2 || forms[0].avg == null || forms[1].avg == null) return "—";
+        const delta = Math.round(forms[0].avg - forms[1].avg);
+        return (delta > 0 ? "+" : "") + delta;
+      }
+      default: return null;
+    }
+  }
+
+  // Everything that can only be answered by a single race: its finish order,
+  // its place-sum team scores, and the label that tells readers which of a
+  // meet's several races this is.
+  function meetRaceStat(gender, race, second) {
+    const teamScore = (place) => (race && race.teamScores ? race.teamScores[place] : null) || null;
+    const winner = race && race.finishers ? race.finishers[0] : null;
+    const finisherMatch = /^finisher([1-5])(?:_(school|time|rating))?$/.exec(second);
+    if (finisherMatch) {
+      const f = race && race.finishers ? race.finishers[Number(finisherMatch[1]) - 1] : null;
+      if (!f) return "—";
+      switch (finisherMatch[2] || "name") {
+        case "name": return f.name;
+        case "school": return f.school;
+        case "time": return f.timeSec == null ? "—" : formatTime(f.timeSec);
+        case "rating": return f.msm == null ? "—" : num(f.msm);
+        default: return "—";
+      }
+    }
+    switch (second) {
+      case "race_label": return race ? (race.label || "race") : "—";
+      case "race_type": return race ? (race.race_type || "—") : "—";
+      case "winner": return winner ? winner.name : "—";
+      case "winner_school": return winner ? winner.school : "—";
+      case "winner_time": return winner && winner.timeSec != null ? formatTime(winner.timeSec) : "—";
+      case "winner_rating": return winner && winner.msm != null ? num(winner.msm) : "—";
+      case "team_winner": { const t = teamScore(0); return t ? t.school : "—"; }
+      case "team_winner_score": { const t = teamScore(0); return t ? num(t.score) : "—"; }
+      case "team_runner_up": { const t = teamScore(1); return t ? t.school : "—"; }
+      case "team_runner_up_score": { const t = teamScore(1); return t ? num(t.score) : "—"; }
+      case "scoring_teams": return num(race && race.teamScores ? race.teamScores.length : 0);
       default: return null;
     }
   }
@@ -629,8 +1174,9 @@
     const meet = state.meets[slug];
     if (!meet) return null;
     const summary = state.meetIndex[slug];
-    const [first, second] = String(spec || "").split(".");
-    if (!second) {
+    const segments = String(spec || "").split(".");
+    const first = segments[0];
+    if (segments.length === 1) {
       if (first === "name") return meet.name || slug;
       if (first === "date") return formatShortDate(meet.date);
       if (first === "location") return meet.location || "—";
@@ -641,14 +1187,38 @@
       if (first === "results") return num(summary ? summary.count : 0);
       return null;
     }
-    const winner = summary ? summary[first === "F" ? "F" : "M"] : null;
-    switch (second) {
-      case "winner": return winner ? winner.name : "—";
-      case "winner_school": return winner ? winner.school : "—";
-      case "winner_rating": return winner ? num(winner.msm) : "—";
-      case "winner_time": return winner ? formatTime(winner.timeSec) : "—";
-      default: return null;
+    const gender = first === "F" ? "F" : "M";
+    // {{meet:slug:M.winner}} reads the race the story leads with;
+    // {{meet:slug:M.aaa.winner}} names a specific race at a multi-race meet.
+    if (segments.length > 2) {
+      const byRace = summary && summary.races ? summary.races[gender] : null;
+      const race = byRace ? byRace[segments[1]] : null;
+      if (!race) return null;
+      return meetRaceStat(gender, race, segments[2]);
     }
+    const second = segments[1];
+    const topRated = summary ? summary[gender] : null;
+    if (second === "top") return topRated ? topRated.name : "—";
+    if (second === "top_school") return topRated ? topRated.school : "—";
+    if (second === "top_rating") return topRated ? num(topRated.msm) : "—";
+    if (second === "top_time") return topRated ? formatTime(topRated.timeSec) : "—";
+    if (second === "races") {
+      const byRace = summary && summary.races ? summary.races[gender] : null;
+      return num(byRace ? Object.keys(byRace).length : 0);
+    }
+    const race = summary && summary.primary ? summary.primary[gender] || null : null;
+    if (!race) {
+      // No usable race (results that are relays, or an unattached-only field):
+      // fall back to the best rating of the day rather than a blank.
+      switch (second) {
+        case "winner": return topRated ? topRated.name : "—";
+        case "winner_school": return topRated ? topRated.school : "—";
+        case "winner_time": return topRated ? formatTime(topRated.timeSec) : "—";
+        case "winner_rating": return topRated ? num(topRated.msm) : "—";
+        default: break;
+      }
+    }
+    return meetRaceStat(gender, race, second);
   }
 
   // Projections are the expensive stat, so each meet/division pair is computed
@@ -685,17 +1255,32 @@
           const winner = ranked[0] || null;
           const runnerUp = ranked[1] || null;
           const top = sim.field[0] || null;
+          const second = sim.field[1] || null;
           snapshot = {
             meet: sim.targetMeetName, gender: g,
             winner: winner ? winner.school : "—",
             score: winner ? num(winner.score) : "—",
             runner_up: runnerUp ? runnerUp.school : "—",
+            runner_up_score: runnerUp ? num(runnerUp.score) : "—",
             teams: num(sim.completeTeams),
             runners: num(sim.field.length),
             top: top ? top.name : "—",
             top_school: top ? top.school : "—",
-            top_time: top ? formatTime(top.timeSec) : "—"
+            top_time: top ? formatTime(top.timeSec) : "—",
+            top2: second ? second.name : "—",
+            top2_school: second ? second.school : "—",
+            top2_time: second ? formatTime(second.timeSec) : "—",
+            winner_spread: winner && winner.spread15 != null ? formatGap(winner.spread15) : "—"
           };
+          // The winner's projected scoring five, addressable as
+          // {{sim:meet:M.winner2}} / .winner2_time so a preview can name the
+          // runners behind the team score instead of only the team total.
+          if (winner) {
+            winner.top5.forEach((e, i) => {
+              snapshot[`winner${i + 1}`] = e.name;
+              snapshot[`winner${i + 1}_time`] = formatTime(e.timeSec);
+            });
+          }
         }
       } catch (err) {
         snapshot = null;
@@ -727,21 +1312,30 @@
   // requested per meet through simulationStats() so nothing heavy loads up front.
   function statLibrary() {
     const teams = Object.values(state.teamIndex)
-      .sort((a, b) => Math.max(b.M.power, b.F.power) - Math.max(a.M.power, a.F.power))
+      .sort((a, b) => Math.max(b.M.power || 0, b.F.power || 0) - Math.max(a.M.power || 0, a.F.power || 0))
       .map(team => {
         const stats = [];
         ["M", "F"].forEach(gender => {
           const side = team[gender];
           if (!side.rated) return;
           const who = gender === "F" ? "Girls" : "Boys";
-          if (side.scorers) stats.push({ label: `${who} team power`, token: `{{team:${team.slug}:${gender}.power}}`, value: num(side.power) });
+          if (side.complete) stats.push({ label: `${who} team power`, token: `{{team:${team.slug}:${gender}.power}}`, value: num(side.power) });
+          else stats.push({ label: `${who} power status`, token: `{{team:${team.slug}:${gender}.power_note}}`, value: `${side.rated} rated — needs five` });
           if (side.powerRank) stats.push({ label: `${who} state rank`, token: `{{team:${team.slug}:${gender}.power_rank}}`, value: `No. ${side.powerRank}` });
           if (side.classRank && team.classification) stats.push({ label: `${who} ${team.classification} rank`, token: `{{team:${team.slug}:${gender}.class_rank}}`, value: `No. ${side.classRank}` });
           stats.push({ label: `${who} top runner`, token: `{{team:${team.slug}:${gender}.top}}`, value: side.top || "—" });
           if (side.topRating != null) stats.push({ label: `${who} top rating`, token: `{{team:${team.slug}:${gender}.top_rating}}`, value: num(side.topRating) });
           stats.push({ label: `${who} rated athletes`, token: `{{team:${team.slug}:${gender}.rated}}`, value: num(side.rated) });
+          if (side.avg != null) stats.push({ label: `${who} scoring average`, token: `{{team:${team.slug}:${gender}.avg}}`, value: num(Math.round(side.avg)) });
+          if (side.spread != null) stats.push({ label: `${who} power gap (1-5)`, token: `{{team:${team.slug}:${gender}.spread}}`, value: `${num(side.spread)} MSM` });
+          const lastForm = teamFormOf(team.slug, gender)[0];
+          if (lastForm) stats.push({ label: `${who} last meet`, token: `{{team:${team.slug}:${gender}.last_meet}}`, value: lastForm.meet_name });
+          const second = side.athletes[1];
+          if (second) stats.push({ label: `${who} second runner`, token: `{{team:${team.slug}:${gender}.top2}}`, value: second.name });
         });
         stats.push({ label: "Class", token: `{{team:${team.slug}:class}}`, value: team.classification || "unclassified" });
+        const upcoming = nextMeetForSchool(team.slug);
+        if (upcoming) stats.push({ label: "Next meet", token: `{{team:${team.slug}:next_meet}}`, value: upcoming.name });
         return {
           id: team.slug, name: team.name, logo: team.slug,
           meta: team.classification ? `Class ${team.classification}` : "Unmapped",
@@ -773,6 +1367,8 @@
           const winner = summary ? summary[gender] : null;
           if (!winner) return;
           const who = gender === "F" ? "Girls" : "Boys";
+          const race = summary && summary.primary ? summary.primary[gender] : null;
+          if (race && race.label) stats.push({ label: `${who} race`, token: `{{meet:${m.slug}:${gender}.race_label}}`, value: race.label });
           stats.push({ label: `${who} winner`, token: `{{meet:${m.slug}:${gender}.winner}}`, value: winner.name });
           stats.push({ label: `${who} winner's school`, token: `{{meet:${m.slug}:${gender}.winner_school}}`, value: winner.school });
           stats.push({ label: `${who} winner's rating`, token: `{{meet:${m.slug}:${gender}.winner_rating}}`, value: num(winner.msm) });
@@ -796,64 +1392,491 @@
     return { teams, meets };
   }
 
-  /* ---------------- auto-drafted lead paragraphs ---------------- */
-  // The news desk's "Draft this story for me" button. Every number that has a
-  // token is written as one, so a drafted story keeps reporting live data.
+  /* ---------------- auto-drafted articles ---------------- */
+  // The news desk's "Draft this story for me" button writes a whole article —
+  // lede, team picture, the athletes behind it, recent form, what comes next —
+  // and every number that has a token is written as one, so the copy keeps
+  // reporting live data instead of freezing on the day it was drafted.
+
+  // "A", "A and B", "A, B and C"
+  function nameList(names) {
+    const list = names.filter(Boolean);
+    if (!list.length) return "";
+    if (list.length === 1) return list[0];
+    if (list.length === 2) return `${list[0]} and ${list[1]}`;
+    return list.slice(0, -1).join(", ") + " and " + list[list.length - 1];
+  }
+
+  // Grad year -> "junior". Anchored to the season in progress, so a 2028
+  // graduate is a sophomore in 2026.
+  const CLASS_WORDS = { 9: "freshman", 10: "sophomore", 11: "junior", 12: "senior" };
+  function classWordOf(gradYear) {
+    const y = Number(gradYear);
+    if (!y) return "";
+    return CLASS_WORDS[12 - (y - currentSeason())] || "";
+  }
+
+  const WHO = { M: "boys", F: "girls" };
+
+  // The named-athletes paragraph. This is the part that makes a draft read like
+  // reporting rather than a table dump, so it names as many real runners as the
+  // roster supports, each with the meet their mark came at.
+  function athleteParagraph(slug, gender) {
+    const team = state.teamIndex[slug];
+    const side = team[gender];
+    const T = k => `{{team:${slug}:${gender}.${k}}}`;
+    const who = WHO[gender];
+    const a = side.athletes;
+    const sentences = [];
+    const relayNote = athlete => (athlete && athlete.relay ? " — a relay leg rather than a cross country race" : "");
+    if (a[0]) {
+      sentences.push(`${T("top")} leads the way at ${T("top_rating")} MSM, the highest rating on the ${who}' roster, set at ${T("top_meet")} in ${T("top_time")}` +
+        (classWordOf(a[0].grade) ? ` as a ${T("top_grade")}` : "") + relayNote(a[0]) + ".");
+    }
+    if (a[1]) {
+      sentences.push(`${T("top2")} is next at ${T("top2_rating")}, set at ${T("top2_meet")}` +
+        (classWordOf(a[1].grade) ? ` (${T("top2_grade")})` : "") + relayNote(a[1]) + ".");
+    }
+    if (a[2]) {
+      // Whatever is left of the scoring five, however deep the roster goes.
+      const rest = a.slice(2, 5).map((x, i) => `${T(`top${i + 3}`)} (${T(`top${i + 3}_rating`)})`);
+      sentences.push(rest.length > 1
+        ? `${nameList(rest)} fill out the back of the scoring five, so the ${who} are not a one-runner team.`
+        : `${rest[0]} is the next name to know.`);
+    }
+    return sentences.join(" ");
+  }
+
+  // One squad's chapter: where it stands, who got it there, how it ran last.
+  function teamGenderChapter(slug, gender) {
+    const team = state.teamIndex[slug];
+    const side = team[gender];
+    const who = WHO[gender];
+    const T = k => `{{team:${slug}:${gender}.${k}}}`;
+    const out = [];
+
+    // 1. The shape of the team score. The ranking itself is the lede's job, so
+    // this paragraph is about how the five is built.
+    const bits = [];
+    if (side.scorers >= 5) {
+      const classRank = side.classRank && team.classification
+        ? `, ${T("class_rank")} of Class ${team.classification}`
+        : "";
+      bits.push(`Their five-runner core averages ${T("avg")} MSM a scorer${classRank}, and ${T("spread")} MSM points separate their first and fifth scorers.`);
+      if (side.spread != null) {
+        bits.push(side.spread <= 130
+          ? `That is a tight pack, so an off day for one runner barely moves the team total — the single most useful thing a cross country team can have.`
+          : `The swing lives at the back of the five, which makes the fifth runner the one to watch on race day.`);
+      }
+      const formCount = teamFormOf(slug, gender).length;
+      if (formCount > 1) {
+        bits.push(`${T("rated")} ${who} have a rated performance this season across ${T("meets_raced")} meets, which is the depth that lets a coach rearrange the back half of the lineup.`);
+      } else {
+        bits.push(`${T("rated")} ${who} have a rated performance this season, which is the depth that lets a coach rearrange the back half of the lineup.`);
+      }
+    } else {
+      const tail = side.rated >= 2 ? `, ahead of ${T("top2")} at ${T("top2_rating")}` : "";
+      bits.push(`The ${who} are still building a team score: ${T("rated")} rated runner${side.rated === 1 ? "" : "s"} so far, led by ${T("top")} at ${T("top_rating")} MSM${tail}.`);
+      bits.push(`Five scorers is the number that decides cross country meets, so the weeks ahead are about putting a full five behind ${T("top")}.`);
+    }
+    out.push(bits.join(" "));
+
+    // 2. The athletes themselves.
+    const names = athleteParagraph(slug, gender);
+    if (names) out.push(names);
+
+    // 3. Most recent outing, with the shape of that day's top five.
+    const forms = teamFormOf(slug, gender);
+    const last = forms[0];
+    if (last) {
+      const trend = forms[1]
+        ? ` That is ${T("trend")} MSM on the five-runner average from the meet before.`
+        : "";
+      out.push(`Most recently at ${T("last_meet")}, the top five averaged ${T("last_rating")} MSM${last.leader ? `, with ${T("last_leader")} leading the group in ${T("last_leader_time")}` : ""}.` + trend);
+    }
+    return out;
+  }
+
+  // The ranking sentence that opens both the drafted article and the
+  // newsletter, so the two never drift apart.
+  function teamStandingSentence(slug) {
+    const team = state.teamIndex[slug];
+    if (!team) return "";
+    const genders = ["M", "F"].filter(g => team[g].rated > 0);
+    if (!genders.length) return "";
+    const phrases = genders.map(gender => {
+      const side = team[gender];
+      const t = k => `{{team:${slug}:${gender}.${k}}}`;
+      const standing = side.complete
+        ? `are ${side.powerRank ? t("power_rank") : "unranked"} in West Virginia on a ${t("power")}-point top five`
+        : `have ${t("rated")} rated runner${side.rated === 1 ? "" : "s"} led by ${t("top")}, and no team power rating until a fifth scorer emerges`;
+      return `${WHO[gender]} ${standing}`;
+    });
+    const squads = team.classification
+      ? (genders.length === 2 ? ` Both squads run in Class ${team.classification}.` : ` They run in Class ${team.classification}.`)
+      : "";
+    const lede = genders.length === 1
+      ? `${team.name}'s ${phrases[0]}.`
+      : `${team.name}'s ${phrases[0]}, and the ${phrases[1]}.`;
+    return `${lede}${squads}`;
+  }
+
   function teamDraft(slug) {
     const team = state.teamIndex[slug];
     if (!team) return "";
-    const lines = [];
-    ["M", "F"].forEach(gender => {
-      const side = team[gender];
-      if (!side || !side.rated) return;
-      const who = gender === "F" ? "girls" : "boys";
-      const token = `{{team:${slug}:${gender}.`;
-      if (side.scorers) {
-        const stateRank = side.powerRank ? `the No. ${side.powerRank}` : "the";
-        const sameRank = side.powerRank && side.classRank === side.powerRank;
-        const classRank = side.classRank && team.classification
-          ? ` (${sameRank ? `also No. ${side.classRank} in` : `No. ${side.classRank} of`} Class ${team.classification})`
-          : "";
-        lines.push(`${team.name} ${who} carry ${stateRank} team power rating in West Virginia${classRank} at ${token}power}} — the sum of their five best MSM ratings — led by ${token}top}} at ${token}top_rating}}.`);
-      } else {
-        lines.push(`${team.name} has ${token}rated}} rated ${who} this season so far, paced by ${token}top}} at ${token}top_rating}}.`);
-      }
+    const genders = ["M", "F"].filter(g => team[g].rated > 0);
+    if (!genders.length) return "";
+    const paragraphs = [];
+    const T = k => `{{team:${slug}:${k}}}`;
+
+    paragraphs.push(teamStandingSentence(slug));
+
+    genders.forEach(gender => {
+      paragraphs.push(...teamGenderChapter(slug, gender));
     });
-    return lines.join(" ");
+
+    // What is next, straight off the school's own calendar.
+    const next = nextMeetForSchool(slug);
+    if (next) {
+      const opponents = next.opponents.length
+        ? ` The expected field includes ${nameList(next.opponents.slice(0, 3).map(o => o.name))}.`
+        : "";
+      paragraphs.push(`Next up is ${T("next_meet")} on ${T("next_meet_date")} at ${T("next_meet_location")}.${opponents}`);
+    } else {
+      paragraphs.push(`No next meet is on the calendar for ${team.name} yet — the schedule will update as soon as it is published.`);
+    }
+
+    return paragraphs.join("\n\n");
   }
+
+  // Races that are not really the meet's headline: junior varsity, freshman
+  // and open races get a mention only when a meet has nothing else.
+  const LOWER_RACE = /junior varsity|freshman|open/i;
 
   function meetDraft(slug) {
     const meet = state.meets[slug];
     if (!meet) return "";
     const summary = state.meetIndex[slug];
-    const token = `{{meet:${slug}:`;
-    if (summary && (summary.M || summary.F)) {
-      const parts = [`${token}name}} (${token}date}}) drew ${token}field}} teams and produced ${token}results}} rated MSM performances.`];
-      if (summary.M) parts.push(`${summary.M.name} of ${summary.M.school} won the boys race in ${token}M.winner_time}} at ${token}M.winner_rating}} MSM.`);
-      if (summary.F) parts.push(`${summary.F.name} of ${summary.F.school} took the girls race in ${token}F.winner_time}} at ${token}F.winner_rating}} MSM.`);
-      return parts.join(" ");
+    const T = k => `{{meet:${slug}:${k}}}`;
+    const racesFor = (gender) => {
+      const byRace = summary && summary.races ? summary.races[gender] : null;
+      return byRace
+        ? Object.values(byRace)
+            .filter(r => r.finishers && r.finishers.length >= 3)
+            .sort((a, b) => (a.winnerTimeSec || 1e9) - (b.winnerTimeSec || 1e9))
+        : [];
+    };
+    const hasRace = ["M", "F"].some(g => racesFor(g).length);
+
+    if (!hasRace) {
+      if (meet.date) {
+        return [
+          `${T("name")} is on the calendar for ${T("date")} at ${T("location")}, with ${T("field")} teams in the expected field.`,
+          `Entries, the course preview and the projected team scores will land here once the meet is run.`
+        ].join("\n\n");
+      }
+      return `${T("name")} is on the season calendar at ${T("location")}.`;
     }
-    if (meet.date) {
-      return `${token}name}} is on the calendar for ${token}date}} at ${token}location}}, with ${token}field}} teams in the expected field.`;
+
+    const paragraphs = [
+      `${T("name")} drew ${T("field")} teams and produced ${T("results")} rated MSM performances on ${T("date")} at ${T("location")}.`
+    ];
+
+    ["M", "F"].forEach(gender => {
+      const races = racesFor(gender);
+      if (!races.length) return;
+      const who = WHO[gender];
+      // A class meet runs several varsity races (AAAA/AAA/AA/A) and each one is
+      // its own championship, so they are all reported — but JV and freshman
+      // races are only mentioned when there is nothing else to lead with.
+      const varsity = races.filter(r => !LOWER_RACE.test(r.label || ""));
+      const pool = varsity.length ? varsity : races.slice(0, 1);
+      // A championship meet runs one race per class: report them biggest class
+      // first (AAAA, AAA, AA, A) rather than in time order, which would shuffle
+      // classes together on a fast day.
+      const classRaces = pool.every(r => /^Class [A]+ race$/.test(r.label || ""));
+      const chosen = (classRaces
+        ? pool.slice().sort((a, b) => b.tag.length - a.tag.length || a.tag.localeCompare(b.tag))
+        : pool).slice(0, 4);
+      const multiple = chosen.length > 1;
+
+      chosen.forEach(race => {
+        const t = k => `{{meet:${slug}:${gender}.${race.tag}.${k}}}`;
+        const raceName = race.label ? `${race.label.replace(/ race$/, "")} ${who} race` : `${who} race`;
+        const label = multiple ? `${raceName} — ` : "";
+        const parts = [];
+        if (race.finishers[0]) {
+          parts.push(`${label}${t("winner")} of ${t("winner_school")} won in ${t("winner_time")} at ${t("winner_rating")} MSM`);
+        }
+        if (race.finishers[1] && race.finishers[2]) {
+          parts.push(`, with ${t("finisher2")} (${t("finisher2_school")}) second in ${t("finisher2_time")} and ${t("finisher3")} (${t("finisher3_school")}) third in ${t("finisher3_time")}`);
+        }
+        const top5 = race.finishers.slice(0, 5).map(f => f.name);
+        if (top5.length >= 3) parts.push(`. ${nameList(top5)} rounded out the individual top five`);
+        parts.push(".");
+        paragraphs.push(parts.join(""));
+
+        // Team scoring from the finish order in that race.
+        const scores = race.teamScores || [];
+        if (scores.length >= 3 && !LOWER_RACE.test(race.label || "")) {
+          const t2 = k => `{{meet:${slug}:${gender}.${race.tag}.${k}}}`;
+          let line = `${multiple ? `In the ${raceName}, ` : `In the ${who} team race, `}${t2("team_winner")} took the win with ${t2("team_winner_score")} points`;
+          if (scores[1]) line += `, ahead of ${t2("team_runner_up")} (${t2("team_runner_up_score")})`;
+          if (scores[2]) line += ` and ${scores[2].school} (${scores[2].score})`;
+          line += `. ${t2("scoring_teams")} schools put five scorers on the line.`;
+          paragraphs.push(line);
+        }
+      });
+    });
+
+    const topBoys = summary ? summary.M : null;
+    const topGirls = summary ? summary.F : null;
+    const bests = [topBoys, topGirls].filter(Boolean);
+    if (bests.length) {
+      paragraphs.push(`The highest-rated performances of the day came from ${nameList(bests.map(b => `${b.name} of ${b.school} (${b.msm == null ? "—" : num(b.msm)} MSM)`))}.`);
     }
-    return `${token}name}} is on the season calendar at ${token}location}}.`;
+
+    paragraphs.push(`Full results, ratings and course information for ${T("name")} are on the meet page. Everything above is drawn from MSM ratings, which normalize each performance for course difficulty, field strength and race-day weather so times from different courses are comparable.`);
+    return paragraphs.join("\n\n");
   }
 
   function simulationDraft(meetSlug) {
     if (!state.meets[meetSlug]) return "";
-    const name = `{{meet:${meetSlug}:name}}`;
-    const date = `{{meet:${meetSlug}:date}}`;
-    const parts = [];
+    const T = k => `{{meet:${meetSlug}:${k}}}`;
+    const paragraphs = [];
     ["M", "F"].forEach(gender => {
       const snapshot = simulationSnapshot(meetSlug, gender);
       if (!snapshot || snapshot.winner === "—" || snapshot.score === "—") return;
-      const who = gender === "F" ? "girls" : "boys";
-      const token = `{{sim:${meetSlug}:${gender}.`;
-      const chase = snapshot.runner_up && snapshot.runner_up !== "—" ? `, ahead of ${token}runner_up}}` : "";
-      parts.push(`Projecting current form onto ${name} (${date}): ${token}winner}} takes the ${who} title with a ${token}score}}-point total${chase}, and ${token}top}} projects as the individual winner in ${token}top_time}}.`);
+      const who = WHO[gender];
+      const S = k => `{{sim:${meetSlug}:${gender}.${k}}}`;
+      const bits = [
+        `${S("winner")} projects as the ${who} team champion at ${T("name")} with a ${S("score")}-point total`
+      ];
+      if (snapshot.runner_up && snapshot.runner_up !== "—") {
+        bits.push(snapshot.runner_up_score && snapshot.runner_up_score !== "—"
+          ? `, ahead of ${S("runner_up")} (${S("runner_up_score")})`
+          : `, ahead of ${S("runner_up")}`);
+      }
+      if (snapshot.top && snapshot.top !== "—") {
+        bits.push(`. ${S("top")} of ${S("top_school")} is the projected individual winner in ${S("top_time")}`);
+        if (snapshot.top2 && snapshot.top2 !== "—") bits.push(`, with ${S("top2")} of ${S("top2_school")} next across the line`);
+      }
+      bits.push(`. The projection covers ${S("runners")} runners from ${S("teams")} scoring teams`);
+      if (snapshot.winner_spread && snapshot.winner_spread !== "—") {
+        bits.push(`, and ${S("winner")}'s scoring five sits within ${S("winner_spread")} of each other`);
+      }
+      bits.push(`.`);
+      let line = bits.join("");
+      // The winner's projected five, named, because that is the part a coach
+      // actually argues with.
+      const five = [1, 2, 3, 4, 5].filter(i => snapshot[`winner${i}`]);
+      if (five.length >= 3) {
+        line += ` Projected scorers for ${S("winner")}: `;
+        line += five.map(i => `${S(`winner${i}`)} (${S(`winner${i}_time`)})`).join(", ") + ".";
+      }
+      paragraphs.push(line);
     });
-    if (!parts.length) return "";
-    return parts.join(" ");
+    if (!paragraphs.length) return "";
+    return [
+      `Projection preview for ${T("name")} (${T("date")}, ${T("location")}). Each athlete is projected from their last three races, adjusted for the courses, fields and conditions they ran in, then applied to the target venue.`,
+      ...paragraphs,
+      `Projections are a snapshot of current form. They update as soon as new results land.`
+    ].join("\n\n");
+  }
+
+  /* ---------------- auto-generated team newsletter ---------------- */
+  // One email's worth of everything about one school, written from live MSM
+  // data: where the squads stand, the athletes behind it, how the last meet
+  // went and what is next. The engine writes tokens and then resolves them
+  // before returning, because a newsletter is a snapshot document — an inbox
+  // cannot resolve {{...}} later.
+  function teamNewsletter(slug, options) {
+    options = options || {};
+    const school = state.schools[slug] || null;
+    const team = state.teamIndex[slug] || null;
+    const name = (school && school.name) || (team && team.name) || prettySchoolSlug(slug);
+    const genders = team ? ["M", "F"].filter(g => team[g].rated > 0) : [];
+    const next = nextMeetForSchool(slug);
+    if (!genders.length && !next) return null;
+
+    const tg = (gender, key) => `{{team:${slug}:${gender}.${key}}}`;
+    const facts = [];
+    const sections = [];
+
+    genders.forEach(gender => {
+      const side = team[gender];
+      const label = gender === "F" ? "Girls" : "Boys";
+      const bits = [];
+      if (side.complete) bits.push(`Team power ${tg(gender, "power")}`);
+      if (side.complete && side.powerRank) bits.push(tg(gender, "power_rank") + " in WV");
+      if (!side.complete && side.rated) bits.push(`Depth ${tg(gender, "rated")} rated (${tg(gender, "power_note")})`);
+      if (side.classRank && side.complete && team.classification) bits.push(tg(gender, "class_rank") + ` in Class ${team.classification}`);
+      // A fact labelled "team power" must actually BE a power rating -- five
+      // scorers summed. Short-handed squads get their count instead, so the
+      // school page never shows a three-runner total dressed up as a rating.
+      if (side.complete) {
+        facts.push({
+          label: `${label} team power`,
+          value: tg(gender, "power"),
+          sub: bits.slice(1).join(" · ") || `${tg(gender, "rated")} rated runners`
+        });
+      } else {
+        facts.push({
+          label: `${label} rated runners`,
+          value: tg(gender, "rated"),
+          sub: "team power needs a full five"
+        });
+      }
+      facts.push({
+        label: `${label} top runner`,
+        value: tg(gender, "top"),
+        sub: `${tg(gender, "top_rating")} MSM · ${tg(gender, "top_time")} at ${tg(gender, "top_meet")}`
+      });
+    });
+    facts.push({
+      label: "Rated athletes",
+      value: team ? String(team.M.rated + team.F.rated) : "0",
+      sub: options.rosterCount ? `${options.rosterCount} on the roster` : "this season"
+    });
+    if (options.prCount) {
+      facts.push({ label: "Season bests", value: String(options.prCount), sub: "athletes at their fastest time this season" });
+    }
+
+    // 1. Where the programme stands.
+    const outlook = [teamStandingSentence(slug)];
+    genders.forEach(gender => {
+      outlook.push(...teamGenderChapter(slug, gender));
+    });
+    if (outlook.length) sections.push({ heading: "Where they stand", icon: "fa-ranking-star", paragraphs: outlook });
+
+    // 2. The athletes to watch, named, with the meet each mark came at.
+    const watch = [];
+    genders.forEach(gender => {
+      const side = team[gender];
+      // Prefer genuine cross country marks: an athlete whose only rated effort
+      // is a relay leg is a poor "athlete to watch" unless the roster is thin.
+      const crossCountry = side.athletes.filter(a => !a.relay);
+      const pool = crossCountry.length >= 3 ? crossCountry : side.athletes;
+      pool.slice(0, 3).forEach(athlete => {
+        const label = gender === "F" ? "Girls" : "Boys";
+        const gradeWord = classWordOf(athlete.grade);
+        const achieved = [
+          athlete.meet || "an unrecorded meet",
+          athlete.date ? `(${formatShortDate(athlete.date)})` : ""
+        ].filter(Boolean).join(" ");
+        // Written from the athlete's own record rather than through a token:
+        // the list skips relay-only marks, so a positional token such as
+        // {{team:x:M.top3}} would name a different runner than the one shown.
+        watch.push({
+          name: athlete.name,
+          meta: `${label}${gradeWord ? ` · ${gradeWord}` : ""} · ${num(athlete.rating)} MSM`,
+          detail: `Best of ${athlete.timeSec == null ? "—" : formatTime(athlete.timeSec)} at ${achieved}, ` +
+            `${athlete.races == null ? "—" : athlete.races} rated race${athlete.races === 1 ? "" : "s"} this season` +
+            `${athlete.relay ? " (a relay leg)" : ""}.`,
+          href: `athlete.html?name=${encodeURIComponent(athlete.name)}&school=${encodeURIComponent(slug)}`
+        });
+      });
+    });
+    if (watch.length) sections.push({ heading: "Athletes to watch", icon: "fa-star", bullets: watch });
+
+    // 3. The last meet, with the scoring five that produced the team score.
+    const recaps = [];
+    genders.forEach(gender => {
+      const last = teamFormOf(slug, gender)[0];
+      if (!last || !last.top5.length) return;
+      const label = gender === "F" ? "girls" : "boys";
+      const scorers = last.top5.map(a => `#${a.place || "–"} ${a.name} (${formatTime(a.timeSec)})`).join(", ");
+      recaps.push({
+        heading: `${last.meet_name} — ${label}`,
+        paragraphs: [
+          `The top five averaged ${Math.round(last.avg)} MSM, led by ${last.leader ? last.leader.name : "the front group"}${last.leader && last.leader.place ? ` in ${placeLabel(last.leader.place)}` : ""}.`,
+          `Scoring five: ${scorers}.`
+        ]
+      });
+    });
+    if (recaps.length) {
+      sections.push({
+        heading: "Last time out",
+        icon: "fa-flag-checkered",
+        paragraphs: [],
+        subSections: recaps
+      });
+    }
+
+    // 4. What is next, from the school's own calendar.
+    if (next) {
+      const paragraphs = [
+        `Next up: ${next.name} on ${formatShortDate(next.date)}${next.location ? ` at ${next.location}` : ""}${next.expectedCount > 1 ? `, with ${next.expectedCount} teams in the expected field` : ""}.`
+      ];
+      if (next.opponents.length) {
+        paragraphs.push(`Look for ${nameList(next.opponents.slice(0, 3).map(o => o.name))} at the front of the field.`);
+      }
+      const after = (next.upcoming || []).slice(0, 2);
+      if (after.length) {
+        paragraphs.push(`After that: ${nameList(after.map(m => `${m.name} (${formatShortDate(m.date)})`))}.`);
+      }
+      sections.push({ heading: "Up next", icon: "fa-calendar-days", paragraphs });
+    } else {
+      sections.push({
+        heading: "Up next", icon: "fa-calendar-days",
+        paragraphs: [`No upcoming meets are on ${name}'s calendar yet. The schedule updates as soon as it is published.`]
+      });
+    }
+
+    // 5. How to read the numbers, so the newsletter explains itself.
+    sections.push({
+      heading: "How these numbers work", icon: "fa-circle-info",
+      paragraphs: [
+        "Every performance carries an MSM rating on a 1,000-point scale. A rating starts from the time, converts it to 5K pace, then adjusts for how hard the course was, how strong the field around it was, and the weather on the day — so a 17:30 on a mountain course outranks a 17:30 on a flat one. Team power is the sum of a school's five best ratings this season, the same rule that decides a cross country team score on the day."
+      ]
+    });
+
+    const topGender = genders.find(g => team[g].complete && team[g].powerRank) || genders.find(g => team[g].rated > 0);
+    const subject = topGender
+      ? `${name} ${WHO[topGender]} ${team[topGender].powerRank ? `No. ${team[topGender].powerRank} in WV` : "team update"}${next ? ` — ${next.name} next` : ""}`
+      : `${name} team update${next ? ` — ${next.name} next` : ""}`;
+
+    const raw = {
+      slug, name,
+      class: team && team.classification ? team.classification : "",
+      city: (school && school.city) || "",
+      season: String(currentSeason()),
+      generated: new Date().toISOString(),
+      subject,
+      preheader: genders.length
+        ? `${genders.map(g => {
+            const side = team[g];
+            const whose = g === "F" ? "Girls" : "Boys";
+            if (side.complete) return `${whose} power ${num(side.power)}`;
+            return `${whose} ${side.rated} rated runner${side.rated === 1 ? "" : "s"}`;
+          }).join(" · ")}${next ? ` · next: ${next.name} (${formatShortDate(next.date)})` : ""}`
+        : `Season update for ${name}`,
+      facts,
+      sections
+    };
+
+    // Resolve tokens everywhere, including inside nested sections, so callers
+    // (the school page, the email export) receive plain, email-safe text.
+    const resolveDeep = (value) => {
+      if (typeof value === "string") return resolveStoryTokens(value);
+      if (Array.isArray(value)) return value.map(resolveDeep);
+      if (value && typeof value === "object") {
+        const out = {};
+        Object.keys(value).forEach(key => { out[key] = resolveDeep(value[key]); });
+        return out;
+      }
+      return value;
+    };
+    return resolveDeep(raw);
+  }
+
+  // Ordinal for a finish place, used in newsletter recaps.
+  function placeLabel(place) {
+    const n = Number(place);
+    if (!n) return "";
+    const rem100 = n % 100;
+    const suffix = rem100 >= 11 && rem100 <= 13 ? "th" : ["th", "st", "nd", "rd"][n % 10] || "th";
+    return `${n}${suffix}`;
   }
 
   // group: "team" | "meet" | "sim", id: the row's id in the news desk library.
@@ -881,7 +1904,10 @@
       add("projected winner", "winner", snapshot.winner);
       add("winning score", "score", snapshot.score);
       add("projected runner-up", "runner_up", snapshot.runner_up);
+      add("runner-up score", "runner_up_score", snapshot.runner_up_score);
       add("projected individual winner", "top", snapshot.top);
+      add("second individual", "top2", snapshot.top2);
+      add("projected scoring five", "winner1", snapshot.winner1);
       add("individual winner's time", "top_time", snapshot.top_time);
       add("projected runners", "runners", snapshot.runners);
       add("scoring teams", "teams", snapshot.teams);
@@ -961,18 +1987,27 @@
     return out;
   }
 
+  // Course difficulty for a projection uses the most recent calibrated
+  // season (the current one whenever it has racing), so a simulation built
+  // from last season's races still scores on today's course factors.
   function simulationCourseFactor(courseSlug) {
-    return (courseSlug && window.MSMRating && window.MSMRating.model.courseFactor[courseSlug]) || 1;
+    if (!courseSlug) return 1;
+    const bySeason = state.ratingModels || {};
+    const latest = (state.ratingSeasons || [])[(state.ratingSeasons || []).length - 1];
+    const season = bySeason[state.ratingSeason] ? state.ratingSeason : latest;
+    const factors = season ? (bySeason[season] || {}).courseFactor : null;
+    return (factors && factors[courseSlug]) || 1;
   }
 
   function projectSimulationResult(r, targetCourseSlug, targetDistance) {
-    if (!r || r.timeSec == null || !window.MSMRating) return null;
-    const rating = window.MSMRating.ratingForResult(r);
+    if (!r || r.timeSec == null) return null;
+    // The performance's own boost was snapshotted when the model was built,
+    // so a result from another season still projects correctly.
+    const boost = r.boost > 0 ? r.boost : 1;
     const dist = Number(r.distance) > 0 ? Number(r.distance) : 5000;
     const raw5k = r.timeSec * Math.pow(5000 / dist, 1.06);
     // Rating factors are per-performance. Removing them prevents one easy
     // course, weak field, or favorable weather day from becoming a fake PR.
-    const boost = rating && rating.boost > 0 ? rating.boost : 1;
     const neutral5k = raw5k / boost;
     const target5k = neutral5k * simulationCourseFactor(targetCourseSlug);
     return target5k * Math.pow(Number(targetDistance || 5000) / 5000, 1.06);
@@ -998,6 +2033,9 @@
     const currentYear = currentSeason();
     const rows = state.results.filter(r => {
       if (r.gender !== gender || r.timeSec == null || !r.school_slug || r.school_slug === "unattached") return false;
+      // Relay legs are scored as relays, not as cross country: extrapolating a
+      // 2 km leg to 5K would invent a PR nobody ran.
+      if (isRelayResult(r)) return false;
       if (allowed) return allowed.has(r.meet_slug);
       return seasonOf(r) === currentYear && !isNonCompetitive(r.meet_slug);
     });
@@ -1071,6 +2109,7 @@
     schoolNameOf,
     classify,
     isNonCompetitive,
+    isInState,
     seasonOf,
     currentSeason,
     latestSeason,
@@ -1080,6 +2119,10 @@
     simulateNewsMeet,
     statLibrary,
     simulationStats,
-    storyDraft
+    storyDraft,
+    teamNewsletter,
+    teamFormOf,
+    nextMeetForSchool,
+    classWordOf
   };
 })();

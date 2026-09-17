@@ -267,6 +267,9 @@
         .app-list.hub-flush { margin: 0; border: 0; border-radius: 0; box-shadow: none; }
         .app-list.hub-flush > .list-item { min-height: 64px; }
         .app-list.hub-flush .item-meta, .app-list.hub-flush .item-school { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        /* A squad without five rated runners has no power rating to rank. */
+        .list-item.is-partial .item-score { color: var(--text-tertiary); font-weight: 700; }
+        .list-item.is-partial .tp-bar { display: none; }
 
         @media (max-width: 640px) {
             .hub-masthead { padding: 1.7rem 1.3rem 1.5rem; }
@@ -455,16 +458,17 @@
         /* ---- Masthead ---- */
         function renderMasthead(H) {
             const el = document.getElementById("mastheadStats");
-            // Masthead numbers describe West Virginia — the same scope as the
-            // watch lists, divisional tables, and state-of-the-state cards.
-            const wvResults = H.results.filter(r => r.msm != null && r.state === "WV");
+            // Masthead numbers describe THIS SEASON in West Virginia — the same
+            // scope as the watch lists, divisional tables, and state-of-the
+            // state cards (a rating is only ever a current-season number).
             const season = MSMHub.currentSeason();
+            const wvResults = H.results.filter(r => r.msm != null && r.state === "WV" && MSMHub.seasonOf(r) === season);
             const schoolsThisSeason = new Set(
-                wvResults.filter(r => MSMHub.seasonOf(r) === season && r.school_slug).map(r => r.school_slug)
+                wvResults.filter(r => r.school_slug).map(r => r.school_slug)
             ).size;
             const nextMeet = H.upcoming[0];
             el.innerHTML = `
-                <div class="masthead-stat"><b>${wvResults.length.toLocaleString()}</b><span>Rated WV performances</span></div>
+                <div class="masthead-stat"><b>${wvResults.length.toLocaleString()}</b><span>Rated WV performances · ${season}</span></div>
                 <div class="masthead-stat"><b>${schoolsThisSeason}</b><span>WV schools competing</span></div>
                 <div class="masthead-stat"><b>${H.upcoming.length}</b><span>Meets ahead</span></div>
                 <div class="masthead-stat">
@@ -494,7 +498,7 @@
                     : `${stats.rated_performances || "Thousands of"} performances are shaping the West Virginia cross country season — and the next chapter is already on the calendar.`,
                 body: automatic
                     ? `${automatic.name} moved from a ${automatic.prevRating} rating last season to ${automatic.curRating} this season across ${automatic.racesCur} rated races. That is the largest verified improvement on the current board. The next checkpoint is {{next_meet}}, scheduled for {{next_meet_date}}.`
-                    : `The live MSM board currently covers {{rated_performances}} rated performances from {{schools_competing}} schools. The next major date on the calendar is {{next_meet}} on {{next_meet_date}}.`,
+                    : `The live MSM board currently covers {{rated_performances}} rated performances from {{schools_competing}} schools this season. The next major date on the calendar is {{next_meet}} on {{next_meet_date}}.`,
                 author: "MSM Data Desk",
                 publishedAt: ""
             };
@@ -514,7 +518,7 @@
                 <article class="spotlight-hero">
                     <span class="label">${esc(story.kicker || "Story of the Week")}</span>
                     <div class="who">${esc(title)}</div>
-                    ${leadName ? `<span class="delta-badge"><i class="fas fa-arrow-up"></i> +${automatic.delta} MSM rating this season</span>` : `<div class="story-statline"><span><i class="fas fa-chart-line"></i> ${esc(stats.rated_performances || "Live stats") } rated performances</span><span><i class="fas fa-calendar"></i> ${esc(stats.upcoming_meets || "—")} meets ahead</span></div>`}
+                    ${leadName ? `<span class="delta-badge"><i class="fas fa-arrow-up"></i> +${automatic.delta} MSM rating this season</span>` : `<div class="story-statline"><span><i class="fas fa-chart-line"></i> ${esc(stats.rated_performances || "Live stats") } rated performances this season</span><span><i class="fas fa-calendar"></i> ${esc(stats.upcoming_meets || "—")} meets ahead</span></div>`}
                     ${dek ? `<p class="detail"><strong>${esc(dek)}</strong></p>` : ""}
                     <div class="detail">${storyParagraphs(body)}</div>
                     <div class="story-meta"><span class="story-live"><i class="fas fa-signal"></i> Live MSM stats</span>${story.author ? `<span>· ${esc(story.author)}</span>` : ""}${published ? `<span>· ${esc(published)}</span>` : ""}</div>
@@ -602,16 +606,20 @@
                         </div>
                         <div class="item-score">${e.best}</div>
                     </div>`).join("") || `<div class="empty-state">No rated athletes mapped to ${c} yet.</div>`;
-                const maxPower = d.teams.length ? d.teams[0].power : 1;
+                // Only complete fives carry a power rating, so the bar scale is
+                // set by the best COMPLETE team, never by a short squad.
+                const maxPower = (d.teams.find(t => t.complete) || {}).power || 1;
                 const teams = d.teams.slice(0, 6).map((t, j) => `
-                    <div class="list-item">
+                    <div class="list-item${t.complete ? "" : " is-partial"}">
                         <div class="item-place">${j + 1}</div>
                         <div class="item-avatar"><img class="team-logo" src="${logoOf(t.school_slug)}"${logoFallback} alt=""></div>
                         <div class="item-details">
                             <div class="item-name"><a href="${schoolHref(t.school_slug)}" style="color:inherit;text-decoration:none;">${esc(t.school)}</a></div>
-                            <div class="item-meta">${t.gender === "F" ? "Girls" : "Boys"} · top-5 sum · <span class="tp-bar"><i style="width:${Math.max(8, Math.round(t.power / maxPower * 100))}%"></i></span></div>
+                            <div class="item-meta">${t.gender === "F" ? "Girls" : "Boys"} · ${t.complete
+                                ? `top-5 sum · <span class="tp-bar"><i style="width:${Math.max(8, Math.round(t.power / maxPower * 100))}%"></i></span>`
+                                : `${t.runners} rated runner${t.runners === 1 ? "" : "s"} · needs five for a rating`}</div>
                         </div>
-                        <div class="item-score">${t.power}</div>
+                        <div class="item-score">${t.complete ? t.power : "—"}</div>
                     </div>`).join("") || `<div class="empty-state">Not enough mapped runners for team power yet.</div>`;
                 return `
                     <div class="div-panel${i === 0 ? " active" : ""}" data-cls="${c}" role="tabpanel" id="divPanel-${c}" aria-labelledby="divTab-${c}" tabindex="0">

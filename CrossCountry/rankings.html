@@ -398,6 +398,14 @@
         'Trinity Christian': 'A', 'Hannan': 'A', 'Charleston Catholic': 'A', 'Notre Dame': 'A',
         'Parkersburg Catholic': 'A', 'Greater Beckley Christian': 'A', 'Summit Christian': 'A',
         'Paw Paw': 'A', 'Union': 'A', 'Pickens': 'A', 'Harman': 'A',
+        'Paden City': 'A',
+
+        // ---- Spelling variants that appear in imported data ----
+        // (Kept in step with the same map in /scripts/hub-engine.js, so a
+        // school carries one class on the rankings page and on the hub.)
+        'Clay Battelle': 'A', 'Calhoun': 'A', 'Valley Wetzel': 'A', 'Wheeling Central': 'A',
+        'Shady Springs': 'AAA', 'St Marys': 'A', 'St Albans': 'AAA', 'Princeton Senior': 'AAA',
+        'Braxton': 'AA', 'Chapmanville': 'AAA'
       };
       // Pre-normalized (lowercased) lookup table, built once below via
       // normalizeSchoolName so classificationOf() matches loosely.
@@ -410,7 +418,11 @@
           });
         }
         if (!schoolName) return null;
-        return WV_CLASS_LOOKUP[normalizeSchoolName(schoolName).toLowerCase()] || null;
+        const n = normalizeSchoolName(schoolName).toLowerCase();
+        return WV_CLASS_LOOKUP[n]
+            || WV_CLASS_LOOKUP[n + ' county']
+            || WV_CLASS_LOOKUP[n.replace(/\s+county$/, '')]
+            || null;
       }
 
       // =========================================
@@ -854,9 +866,12 @@
               const complete = top5.length === 5;
               const nfhs = computeNFHSScore(top5, sorted, placeOf);
 
-              // Headline metric teams are ranked by: average MSM Rating of the
-              // top 5 in Dynamic mode (higher = better team), NFHS score in Raw
-              // mode (lower = better placings). Both need 5 complete scorers.
+              // Headline metric teams are ranked by: MSM team power -- the SUM
+              // of the top 5 ratings -- in Dynamic mode (higher = better team),
+              // NFHS score in Raw mode (lower = better placings). The sum is the
+              // same team-power rule the hub and the school pages quote, so a
+              // team shows one number across the whole site. Both modes need 5
+              // complete scorers to post a score.
               const metric = rankMode === 'dynamic'
                   ? (complete ? Math.round(top5.reduce((s, r) => s + ratingPoints(r), 0)) : -Infinity)
                   : nfhs.score;
@@ -883,7 +898,7 @@
           activeExportData = teamsToShow;
 
           const header = rankMode === 'dynamic'
-              ? 'Team Standings — MSM Rating (avg of top-5 ratings, higher is better) · NFHS score shown alongside'
+              ? 'Team Standings — MSM team power (sum of top-5 ratings, higher is better) · NFHS score shown alongside'
               : 'Team Standings — NFHS Score (sum of top-5 places, lower wins)';
           let html = `<div class="app-list"><div class="list-header">${header}</div>`;
           teamsToShow.forEach((t, i) => {
@@ -897,7 +912,7 @@
               } else if (rankMode === 'dynamic') {
                   metricDisplay = `<div class="score-stack">
                         <span class="score-rating">${fmtRating({ points: t.metric })}</span>
-                        <span class="score-predicted">avg rating · NFHS: ${t.nfhsScore} pts</span>
+                        <span class="score-predicted">team power · NFHS: ${t.nfhsScore} pts</span>
                     </div>`;
               } else {
                   metricDisplay = `<div class="score-stack">
@@ -1057,11 +1072,13 @@
                   else if (result.gender === 'F') femaleResults.push(resultWithExtras);
               });
 
-              // NOTE: MSMRating.buildModel() is called lazily, scoped to the
-              // selected season, from ensureModelForSeason() inside
-              // filterAndRender(). Building it here from the full multi-year
-              // `allResults` would let old seasons (2024, 2025, ...) contaminate
-              // this season's learned course-difficulty factors.
+              // NOTE: MSMRating.buildSeasonModels() is called lazily from
+              // ensureSeasonRatings() inside filterAndRender(). It scores every
+              // result against its OWN season's calibration (2026 races on the
+              // 2026 model, 2025 on the 2025 model), so a rating here is the
+              // same number the hub, the athlete profiles and the coach portal
+              // show, and the season filter can never contaminate a season's
+              // learned course-difficulty factors.
 
               populateFilters();
               maleResults.sort((a,b)=>a.time_in_seconds-b.time_in_seconds);
@@ -1075,21 +1092,27 @@
             }
           }
 
-      // Tracks which season the MSMRating engine's course-difficulty/ability
-      // model currently reflects, so it can be rebuilt whenever the season
-      // filter changes rather than staying calibrated on stale data.
-      let modelBuiltForSeason = undefined;
+      // Per-season ratings from the shared engine: built once per page load,
+      // then read back by result. The season filter chooses which rows to
+      // SHOW; it never changes a rating, because each performance is scored
+      // against its own season's model.
+      let seasonRatings = null;
 
-      async function ensureModelForSeason() {
-          if (modelBuiltForSeason === currentSeason) return;
-          // Scope calibration data to the selected season only -- mixing in
-          // prior seasons (2024, 2025, ...) would let old, unrelated races
-          // chronologically interleave with this season's replay.
-          const seasonScoped = currentSeason === 'all'
-              ? allResults
-              : allResults.filter(r => r.date && new Date(r.date).getFullYear().toString() === currentSeason);
-          await MSMRating.buildModel(seasonScoped, { meetsMap: meetsData, coursesMap: coursesData });
-          modelBuiltForSeason = currentSeason;
+      async function ensureSeasonRatings() {
+          if (seasonRatings) return;
+          seasonRatings = await MSMRating.buildSeasonModels(allResults, {
+              meetsMap: meetsData,
+              coursesMap: coursesData,
+              // Leave the selected season loaded ("all" keeps the latest).
+              season: currentSeason === 'all' ? undefined : currentSeason,
+              // A season is the calendar year a race was run -- the date this
+              // page filters and displays.
+              seasonOf: r => {
+                  if (!r || !r.date) return null;
+                  const y = new Date(r.date).getFullYear();
+                  return isNaN(y) ? null : String(y);
+              }
+          });
       }
 
       async function filterAndRender() {
@@ -1102,7 +1125,7 @@
           document.getElementById(targetSectionId).classList.remove('hidden');
           document.getElementById('no-rankings-message').classList.add('hidden');
 
-          if (rankMode === 'dynamic') await ensureModelForSeason();
+          if (rankMode === 'dynamic') await ensureSeasonRatings();
 
           let filteredResults = rawResults;
 
@@ -1145,12 +1168,12 @@
           if (rankMode === 'dynamic') {
               const scoringSet = filteredResults.filter(isInState);
 
-              if (wxStatus) wxStatus.innerHTML = 'MSM Rating active &middot; each result adjusted for course difficulty, field isolation, and race-day weather.';
+              if (wxStatus) wxStatus.innerHTML = `MSM Rating active &middot; each result adjusted for course difficulty, field isolation, and race-day weather (${currentSeason === 'all' ? 'every season scored against its own calibration' : currentSeason + ' season model'}).`;
 
               // Each result row gets the rating of THAT specific performance
               // (course + field + weather adjusted). The best of an athlete's
               // performances is their overall standing; dedupe below keeps it.
-              scoringSet.forEach(r => { r._msm = MSMRating.ratingForResult(r); });
+              scoringSet.forEach(r => { r._msm = seasonRatings ? seasonRatings.rate(r) : null; });
 
               let withRatings = scoringSet.filter(r => r._msm);
               // Higher points = better, so sort DESCENDING.
@@ -1180,7 +1203,14 @@
           results.forEach(r => {
               const name = (r.athlete_name || '').toLowerCase().trim();
               if (!name) return;
-              const athleteKey = `${(r.school_slug || '').toLowerCase().trim()}|${name}`;
+              // Keyed by athlete + SCHOOL NAME, because the team view groups by
+              // school name. Keying on the slug let one school that appears under
+              // two slugs ("independence" and "independence-hs") field the same
+              // athlete twice in one top five -- Independence posted -842 here
+              // against -2,086 everywhere else. Keying on the name alone is worse
+              // in the other direction: an athlete's best race then wins for a
+              // school they no longer run for, and a team quietly loses a scorer.
+              const athleteKey = `${normalizeSchoolName(r.school_name || r.school_slug || 'unknown').toLowerCase()}|${name}`;
               if (!bestMap.has(athleteKey)) {
                   bestMap.set(athleteKey, r);
               } else {

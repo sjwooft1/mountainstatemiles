@@ -13,8 +13,17 @@
 //  rating = round( 1000 + 3500 × (REF − adjustedPace) / REF )
 //  adjustedPace = rawPace5K ÷ (courseFactor × fieldFactor × weatherFactor)
 //
-//  The same engine backs the rankings page and the athlete/coach
-//  portal, so a rating is identical wherever it is shown.
+//  The same engine backs the rankings page, the news hub, the
+//  athlete/coach portal, so a rating is identical wherever it is
+//  shown.
+//
+//  SEASONS: course difficulty is learned per season from that
+//  season's results (a course plays differently as fields, weather
+//  and course setups change), so every performance is rated with its
+//  own season's calibration. buildSeasonModels() is the entry point
+//  for that: it scores each season's races while its model is live and
+//  leaves the current season loaded. Undated rows can be neither
+//  calibrated nor rated.
 // ============================================================
 
 (function () {
@@ -334,6 +343,7 @@
 
   // Rating for one specific performance (found by meet slug + distance).
   function ratingForResult(r) {
+    if (!r || !r.athlete_name || !r.gender) return null;
     const list = M.perfByAthlete[athleteKey(r)];
     if (!list) return null;
     const key = raceKey(r);
@@ -349,6 +359,88 @@
     };
   }
 
+  // --- Season scoping -------------------------------------------
+
+  // A season is the calendar year a race was run -- the same rule the
+  // rankings page, the hub, and the athlete profiles all filter on. Undated
+  // rows have no season (and are dropped by buildModel anyway).
+  function seasonOf(r) {
+    const d = r && (r.date || r.meet_date || r.race_date);
+    if (!d) return null;
+    const y = new Date(d).getFullYear();
+    return isNaN(y) ? null : String(y);
+  }
+
+  // The season in progress, as a string ("2026").
+  function currentSeason() {
+    return String(new Date().getFullYear());
+  }
+
+  // Rate every performance against its OWN season's calibration and hand back
+  // a snapshot of the results, so a rating is the same number everywhere on
+  // the site and every power rating is built from current-season racing.
+  //
+  // The live model (M) holds one season at a time, so this walks the seasons
+  // present in the data, scoring each set while its own calibration is
+  // active, and finishes with `opts.season` (default: the current season)
+  // loaded for any code that still reads window.MSMRating.model.
+  //
+  //   results   raw result rows, or rows mapped by opts.toRatingInput
+  //   opts.season        season to leave live (default: current calendar year)
+  //   opts.seasonOf      custom season resolver (default: calendar year)
+  //   opts.toRatingInput maps a raw row to the engine's input shape
+  //   opts.meetsMap / opts.coursesMap / opts.fetchWeather  -> buildModel
+  //
+  // Returns { season, seasons, models, rate(r), factorFor(season) }:
+  //   rate(r)  that performance's rating ({ points, boost, factors... }) or null
+  //   models[season]  that season's course/weather factors, for projections
+  async function buildSeasonModels(results, opts = {}) {
+    const seasonOfRow = opts.seasonOf || seasonOf;
+    const toInput = opts.toRatingInput || ((r) => r);
+    const wanted = opts.season != null ? String(opts.season) : currentSeason();
+
+    const groups = {}; // season -> raw rows
+    (results || []).forEach((r) => {
+      if (!r) return;
+      const s = seasonOfRow(r);
+      if (s == null) return;
+      (groups[s] || (groups[s] = [])).push(r);
+    });
+
+    const seasons = Object.keys(groups).sort();
+    // Every other season first, so the requested one ends up live.
+    const order = seasons.filter((s) => s !== wanted).concat(groups[wanted] ? [wanted] : []);
+    const snapshot = new WeakMap();
+    const models = {};
+
+    for (const season of order) {
+      const prepared = groups[season].map(toInput);
+      await buildModel(prepared, {
+        meetsMap: opts.meetsMap,
+        coursesMap: opts.coursesMap,
+        fetchWeather: opts.fetchWeather
+      });
+      models[season] = {
+        courseFactor: { ...M.courseFactor },
+        weatherFactor: { ...M.weatherFactor },
+        races: Object.keys(M.weatherFactor).length,
+        results: prepared.length
+      };
+      groups[season].forEach((r, i) => {
+        const res = ratingForResult(prepared[i]);
+        if (res) snapshot.set(r, res);
+      });
+    }
+
+    return {
+      season: groups[wanted] ? wanted : (seasons[seasons.length - 1] || null),
+      seasons,
+      models,
+      rate: (r) => (r && snapshot.get(r)) || null,
+      factorFor: (season) => (models[String(season)] || {}).courseFactor || {}
+    };
+  }
+
   // Format equivalent seconds into m:ss.s (lower = faster).
   function fmtTime(totalSeconds) {
     if (totalSeconds == null || isNaN(totalSeconds) || totalSeconds <= 0) return "";
@@ -360,6 +452,9 @@
 
   window.MSMRating = {
     buildModel,
+    buildSeasonModels,
+    seasonOf,
+    currentSeason,
     currentRating,
     ratingForResult,
     fmtTime,

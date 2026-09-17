@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>News Desk — Mountain State Miles</title>
   <link rel="stylesheet" href="/assets/main.css">
+  <!-- Fraunces + Nunito come from main.css; these just warm the connection. -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     /* Native controls (date pickers, selects, scrollbars) follow the theme. */
     html[data-theme="dark"]{color-scheme:dark}
@@ -50,7 +50,6 @@
 </head>
 <body>
   <div id="global-header"></div>
-  <script src="/assets/msm-loader.js"></script>
 
   <main class="desk-main">
     <header class="desk-head">
@@ -292,7 +291,7 @@
 
     function libraryRowHtml(row) {
       const logo = row.logo ? `<img src="/assets/team logos/${encodeURIComponent(row.logo)}.png" alt="" onerror="this.onerror=null;this.src='/assets/images/msmrunner.svg'">` : '';
-      const draft = `<button type="button" class="draft-btn" data-draft-group="${esc(libraryGroup)}" data-draft-id="${esc(row.id)}" title="Draft this story for me — writes a complete lead paragraph about ${esc(row.name)} from live MSM data">✍️ Draft this story</button>`;
+      const draft = `<button type="button" class="draft-btn" data-draft-group="${esc(libraryGroup)}" data-draft-id="${esc(row.id)}" title="Draft this story for me — writes a full article about ${esc(row.name)} from live MSM data: the lede, the team picture, the athletes behind it, recent form and what comes next">✍️ Draft this story</button>`;
       return `<div class="library-row"><div class="library-row-head">${logo}<b>${esc(row.name)}</b><span class="library-row-meta">${esc(row.meta || '')}</span>${draft}</div><div class="stat-chips">${row.stats.map(statChipHtml).join('')}</div></div>`;
     }
 
@@ -382,8 +381,8 @@
       const slot = document.getElementById(panelName === 'article' ? 'library-slot-article' : 'library-slot-story');
       if (slot && card.parentElement !== slot) slot.appendChild(card);
       document.getElementById('library-help').textContent = panelName === 'article'
-        ? 'Drag any chip onto the article content or key points — or click it to drop the value at your cursor. Published articles are plain text, so they capture the stat as it reads right now. “Draft this story” writes a whole lead paragraph about that row.'
-        : 'Drag any chip onto a story field — or click it to drop the stat where your cursor is. Story fields keep the stat live: the public hub re-resolves it on every visit. “Draft this story” writes a whole lead paragraph about that row.';
+        ? 'Drag any chip onto the article content or key points — or click it to drop the value at your cursor. Published articles are plain text, so they capture the stat as it reads right now. “Draft this story” writes a full article about that row: lede, team picture, named athletes, recent form and what is next.'
+        : 'Drag any chip onto a story field — or click it to drop the stat where your cursor is. Story fields keep the stat live: the public hub re-resolves it on every visit. “Draft this story” writes a full article about that row: lede, team picture, named athletes, recent form and what is next.';
       renderLibrary();
     }
 
@@ -402,6 +401,7 @@
       let text = '';
       try { text = MSMHub.storyDraft(group, id) || ''; } catch (e) { console.warn('Draft failed:', e); }
       if (!text) { alertDesk('Not enough rated data for that ' + (group === 'sim' ? 'projection' : group) + ' yet — try another row.', 'error'); return; }
+      const paragraphs = text.split(/\n{2,}/).filter(Boolean).length;
       const field = activeFieldForPanel();
       if (!field) { alertDesk('Open the story or article editor first.', 'error'); return; }
       const payload = fieldPrefersValue(field) ? resolve(text) : text;
@@ -413,7 +413,10 @@
         field.focus();
         field.dispatchEvent(new Event('input', { bubbles: true }));
       }
-      alertDesk(fieldPrefersValue(field) ? 'Lead paragraph drafted with the numbers as they read today.' : 'Lead paragraph drafted — the stats stay live on the hub.', 'success');
+      const noun = paragraphs > 1 ? `${paragraphs}-paragraph article` : 'Article';
+      alertDesk(fieldPrefersValue(field)
+        ? `${noun} drafted with the numbers as they read today.`
+        : `${noun} drafted — the stats stay live on the hub.`, 'success');
     }
 
     function insertFromChip(chip, field, clientX, clientY) {

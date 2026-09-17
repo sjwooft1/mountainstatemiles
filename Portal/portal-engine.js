@@ -104,6 +104,9 @@
     factors: { course: {}, field: {}, hill: {}, weather: {}, globalMedianPace: { M: null, F: null } },
     weatherApplied: 0, // count of meets weather was successfully applied to
     weatherTotal: 0,
+    ratingSeasons: [], // seasons present in the data, ascending
+    ratingSeason: null, // season whose model is live (current when it has racing)
+    ratingModels: {},  // season -> { courseFactor, weatherFactor, ... }
   };
 
   // =====================================================================
@@ -124,7 +127,11 @@
     };
   }
   function computeRating(r) {
-    const m = R().ratingForResult(toRatingInput(r));
+    // Ratings are snapshotted onto each row at load time (see load()), because
+    // the engine holds one season's model at a time and a dashboard view can
+    // span seasons. The live model is only a fallback for ad-hoc rows.
+    if (r && r._msm) return r._msm;
+    const m = r ? R().ratingForResult(toRatingInput(r)) : null;
     if (!m) return null;
     return {
       rating: m.points,
@@ -132,6 +139,16 @@
       fieldFactor: m.fieldFactor,
       weatherFactor: m.weatherFactor,
       boost: m.boost,
+    };
+  }
+  function toPortalRating(res) {
+    if (!res) return null;
+    return {
+      rating: res.points,
+      courseFactor: res.courseFactor,
+      fieldFactor: res.fieldFactor,
+      weatherFactor: res.weatherFactor,
+      boost: res.boost,
     };
   }
   function computeRatingValue(r) { const m = computeRating(r); return m ? m.rating : null; }
@@ -286,27 +303,37 @@
       });
     });
 
-    // Build the entire rating model in the shared engine (GPX hills,
-    // common-athlete course calibration, per-athlete pack field factor, and
-    // race-day weather). This is the SAME code rankings.html runs.
-    await window.MSMRating.buildModel(raw.map(toRatingInput), {
+    // Build the rating model in the shared engine (GPX hills, common-athlete
+    // course calibration, per-athlete pack field factor, and race-day weather)
+    // -- one calibration per season, so a 2025 race is scored on the 2025
+    // model and a 2026 race on the 2026 one. Same engine, same numbers as the
+    // hub, rankings.html and the athlete profiles.
+    const rated = await window.MSMRating.buildSeasonModels(raw, {
       meetsMap: state.meetsMap,
       coursesMap: state.coursesMap,
       fetchWeather: true,
+      toRatingInput,
+      seasonOf: (r) => yearOf(r) != null ? String(yearOf(r)) : null,
     });
-    // Mirror the shared model's factors for local use (simulator projections).
-    state.factors.course = R().model.courseFactor || {};
-    state.factors.weather = R().model.weatherFactor || {};
+    state.ratingSeasons = rated.seasons;
+    state.ratingSeason = rated.season;   // the season left live (current when it has racing)
+    state.ratingModels = rated.models;   // season -> { courseFactor, weatherFactor, ... }
+
+    // Mirror the live (current) season's factors for the simulator, which
+    // projects a target meet's course. Season-specific factors stay available
+    // through state.ratingModels[season].
+    const liveModel = rated.models[rated.season] || {};
+    state.factors.course = liveModel.courseFactor || {};
+    state.factors.weather = liveModel.weatherFactor || {};
     state.factors.hill = {}; // terrain is folded into courseFactor in the shared model
     const meetSlugs = [...new Set(raw.map((r) => r.meet_slug).filter(Boolean))];
     state.weatherTotal = meetSlugs.length;
     // weatherFactor is keyed by raceKey (meet|gender|distance), and >1 means applied.
     state.weatherApplied = Object.values(state.factors.weather).filter((f) => f > 1).length;
 
-
-
-    // Attach full rating detail + numeric rating to each result.
-    raw.forEach((r) => { r._msm = computeRating(r); r.msm = r._msm ? r._msm.rating : null; });
+    // Attach the full rating detail + numeric rating to each result, from the
+    // per-season snapshot (not the live model, which only covers one season).
+    raw.forEach((r) => { r._msm = toPortalRating(rated.rate(r)); r.msm = r._msm ? r._msm.rating : null; });
     raw.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
 
     state.results = raw;

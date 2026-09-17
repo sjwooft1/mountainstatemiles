@@ -809,7 +809,7 @@ const OUT_OF_SEASON_MEETS = ['chick-fil-a-5k', 'st-marys-5k', 'ymca-kennedy-cent
 
 let msmMeetsData = {};   // slug -> meet record (for dates/course)
 let msmCoursesData = {}; // slug -> course record
-let ratingModelReady = false;
+let ratingSeasons = null; // { season, seasons, models, rate() } from the shared engine
 
 function isNonCompetitive(meetSlug) {
   if (OUT_OF_SEASON_MEETS.includes(meetSlug)) return true;
@@ -840,22 +840,77 @@ function toRatingInput(r) {
   };
 }
 
-// Build the statewide model once per page load. Calibration mirrors
-// rankings.html: in-season races only, so fun runs don't skew difficulty.
+// The date a result's rating is anchored to: the meet's date, else when the
+// row was created. Works on raw Firebase rows and on mapped rows (sortDate).
+function resultDate(r) {
+  if (!r) return null;
+  if (r.sortDate) return r.sortDate;
+  const meet = msmMeetsData[r.meet_slug] || {};
+  return meet.date || r.created_at || null;
+}
+
+// A season is the calendar year a race was run, matching the rest of the site.
+function resultSeason(r) {
+  const d = resultDate(r);
+  if (!d) return null;
+  const y = new Date(d).getFullYear();
+  return isNaN(y) ? null : String(y);
+}
+
+// Build the statewide model once per page load, one calibration per season, so
+// every performance shown here carries the same rating it carries on the hub,
+// the rankings page, and the coach portal -- each scored against its own
+// season's course/field/weather model.
 async function buildRatingModel(rawRows) {
-  if (ratingModelReady || !window.MSMRating) return;
-  await window.MSMRating.buildModel(rawRows.map(toRatingInput), {
+  if (ratingSeasons || !window.MSMRating) return;
+  ratingSeasons = await window.MSMRating.buildSeasonModels(rawRows, {
     meetsMap: msmMeetsData,
-    coursesMap: msmCoursesData
+    coursesMap: msmCoursesData,
+    toRatingInput,
+    seasonOf: resultSeason
   });
-  ratingModelReady = true;
+}
+
+// The rating (points + factors) this exact result carries, or null.
+function ratingInfoFor(r) {
+  return (ratingSeasons && ratingSeasons.rate(r)) || null;
 }
 
 // MSM rating (1000-point scale) for one result, or null if unscorable.
 function computeMsmRating(r) {
-  if (!window.MSMRating) return null;
-  const res = window.MSMRating.ratingForResult(r);
+  const res = ratingInfoFor(r);
   return res ? res.points : null;
+}
+
+// Best-rated performance per athlete, per season and per gender -- plus a
+// career board. Built from the same per-season ratings the tables show, so a
+// state rank is a real rank among the runners of that season.
+function buildStateBoards(rows) {
+  const bySeason = {}; // season -> gender -> athleteKey -> best points
+  const career = { M: {}, F: {} };
+  rows.forEach(r => {
+    if (r.gender !== 'M' && r.gender !== 'F') return;
+    const res = ratingInfoFor(r);
+    if (!res) return;
+    const key = norm(r.athlete_name);
+    if (!key) return;
+    const season = resultSeason(r);
+    if (season) {
+      const board = (bySeason[season] || (bySeason[season] = { M: {}, F: {} }))[r.gender];
+      if (!board[key] || res.points > board[key]) board[key] = res.points;
+    }
+    const c = career[r.gender];
+    if (!c[key] || res.points > c[key]) c[key] = res.points;
+  });
+  return { bySeason, career };
+}
+
+// 1-based rank of `best` inside a board of { athleteKey: points }.
+function rankInBoard(board, best) {
+  if (!board || best == null) return null;
+  const values = Object.values(board);
+  if (!values.length) return null;
+  return { rank: values.filter(v => v > best).length + 1, total: values.length };
 }
 
 /* ═══════════════════════════════════════════════════
@@ -875,9 +930,13 @@ let allResults = [];
 let pbs        = {};
 let gCharts    = {};
 
-let athleteBestMsm = null;   // best MSM rating for this athlete
+let athleteBestMsm = null;   // headline MSM rating (current season when they have one)
+let athleteSeasonMsm = null; // best rating in the current season
+let athleteCareerMsm = null; // best rating of their career
 let athleteStateRank = null; // 1-based rank among same-gender athletes statewide
 let athleteStateTotal = null;
+let athleteStatSeason = null; // season the headline rating covers (null = career)
+let athleteRankScope = null;  // 'season' | 'career' | null
 let athleteSchools = [];     // [{ slug, name, count }]
 
 let tFiltered  = [];
@@ -995,30 +1054,39 @@ async function loadAthlete() {
 
     schoolName = (schoolsMap[schoolSlug] && schoolsMap[schoolSlug].name) || schoolSlug || '';
 
-    /* --- Build the shared rating model ONCE from every result statewide
-           (in-season calibration, exactly like rankings.html). --- */
+    /* --- Build the shared rating model ONCE, per season, from every
+           statewide result -- the same engine and the same rule the hub,
+           rankings.html and the portal use. --- */
     await buildRatingModel(rawResults);
 
-    // Rate this athlete's in-scope results via the shared model.
+    // Rate this athlete's in-scope results with each performance's own
+    // season calibration.
     allResults = matched.map(r => {
       const meet = meetsMap[r.meet_slug] || {};
       const timeSec = Number(r.time);
       const distanceVal = Number(r.distance);
-      const input = toRatingInput(r);
       return {
         ...r,
         meet,
         timeSec: isNaN(timeSec) ? null : timeSec,
         distanceVal: isNaN(distanceVal) ? null : distanceVal,
-        msm: computeMsmRating(input),
+        msm: computeMsmRating(r),
+        season: resultSeason(r),
         sortDate: meet.date || r.created_at || ''
       };
     });
     allResults.sort((a, b) => (b.sortDate || '').localeCompare(a.sortDate || ''));
 
-    // ---- This athlete's best MSM rating ----
+    // ---- Best MSM rating: the current season first, career as the fallback
+    //      for a profile with no current-season racing yet ----
+    const currentSeasonKey = (window.MSMRating && window.MSMRating.currentSeason()) || String(new Date().getFullYear());
+    const seasonRatings = allResults.filter(r => r.season === currentSeasonKey && r.msm != null).map(r => r.msm);
     const myRatings = allResults.map(r => r.msm).filter(v => v != null);
-    athleteBestMsm = myRatings.length ? Math.max(...myRatings) : null;
+    athleteSeasonMsm = seasonRatings.length ? Math.max(...seasonRatings) : null;
+    athleteCareerMsm = myRatings.length ? Math.max(...myRatings) : null;
+    const seasonScoped = athleteSeasonMsm != null;
+    athleteBestMsm = seasonScoped ? athleteSeasonMsm : athleteCareerMsm;
+    athleteStatSeason = seasonScoped ? currentSeasonKey : null;
 
     // ---- Gender: roster record first, else best-scored result ----
     const gender = (athlete && athlete.gender)
@@ -1026,23 +1094,25 @@ async function loadAthlete() {
       || (allResults.find(r => r.gender) || {}).gender
       || '';
 
-    // ---- Statewide rank: best MSM rating per athlete (same gender), all-time.
-    //      One pass over the model's per-athlete performances, so every
-    //      runner's rating is computed exactly once (rankings.html parity).
-    if (athleteBestMsm != null && (gender === 'M' || gender === 'F')) {
-      const bestByAthlete = new Map(); // normName -> best rating
-      const model = window.MSMRating.model || {};
-      const perfLists = model.perfByAthlete || {};
-      for (const aKey in perfLists) {
-        if (!aKey.startsWith(gender + '|')) continue;
-        let best = null;
-        perfLists[aKey].forEach(p => { if (best == null || p.points > best) best = p.points; });
-        if (best != null) bestByAthlete.set(aKey, best);
+    // ---- Statewide rank: the current season's board first (career as the
+    //      fallback). Built in one pass over the per-season ratings, so every
+    //      runner is scored exactly once.
+    const boards = buildStateBoards(rawResults);
+    if ((gender === 'M' || gender === 'F')) {
+      const seasonBoard = (boards.bySeason[currentSeasonKey] || {})[gender];
+      const seasonRank = seasonScoped ? rankInBoard(seasonBoard, athleteBestMsm) : null;
+      if (seasonRank) {
+        athleteStateRank = seasonRank.rank;
+        athleteStateTotal = seasonRank.total;
+        athleteRankScope = 'season';
+      } else {
+        const careerRank = rankInBoard(boards.career[gender], athleteCareerMsm);
+        if (careerRank) {
+          athleteStateRank = careerRank.rank;
+          athleteStateTotal = careerRank.total;
+          athleteRankScope = 'career';
+        }
       }
-      const ranked = [...bestByAthlete.values()].sort((a, b) => b - a);
-      athleteStateTotal = ranked.length;
-      // Rank = number of athletes strictly better + 1.
-      athleteStateRank = ranked.filter(v => v > athleteBestMsm).length + 1;
     }
 
     // ---- Schools this athlete has results for (transfer history) ----
@@ -1096,12 +1166,17 @@ async function loadAthlete() {
     const rankDisplay = athleteStateRank != null
       ? `${athleteStateRank}<span class="rank-suffix">${ordinal(athleteStateRank)}</span>`
       : '—';
+    // The headline numbers are current-season numbers whenever this athlete has
+    // raced this season, and say so; a profile with no current-season racing
+    // falls back to (and labels) career marks instead of showing a blank.
+    const msmScope = athleteStatSeason || 'Career';
+    const rankScope = athleteRankScope === 'season' ? (athleteStatSeason || 'Season') : 'Career';
     const rankLabel = (athleteStateRank != null && genderLabel)
-      ? `${genderLabel} State Rank`
+      ? `${genderLabel} ${rankScope} State Rank`
       : 'State Rank';
 
     document.getElementById('heroSummary').innerHTML = `
-      <div class="hero-stat-box msm-highlight"><div class="hero-stat-num">${athleteBestMsm != null ? athleteBestMsm : '—'}</div><div class="hero-stat-lbl">Best MSM Rating</div></div>
+      <div class="hero-stat-box msm-highlight"><div class="hero-stat-num">${athleteBestMsm != null ? athleteBestMsm : '—'}</div><div class="hero-stat-lbl">${msmScope} Best MSM</div></div>
       <div class="hero-stat-box msm-highlight"><div class="hero-stat-num">${rankDisplay}</div><div class="hero-stat-lbl">${rankLabel}</div></div>
       <div class="hero-stat-box"><div class="hero-stat-num">${allResults.length}</div><div class="hero-stat-lbl">Races</div></div>
       <div class="hero-stat-box"><div class="hero-stat-num">${bestTimeDisplay}</div><div class="hero-stat-lbl">${bestLabel}</div></div>
@@ -1569,8 +1644,8 @@ function exportPBsPDF() {
   doc.setFontSize(18); doc.setFont('helvetica','bold');
   doc.text(`${name} — Personal Bests`, 14, 20);
   doc.setFontSize(9); doc.setFont('helvetica','normal');
-  const rankLine = athleteStateRank != null ? ` · State Rank ${athleteStateRank}${ord(athleteStateRank)}` : '';
-  doc.text(`Mountain State Miles · ${new Date().toLocaleDateString()}${athleteBestMsm!=null?` · Best MSM ${athleteBestMsm}`:''}${rankLine}`, 14, 27);
+  const rankLine = athleteStateRank != null ? ` · ${athleteRankScope === 'season' ? athleteStatSeason + ' ' : 'Career '}State Rank ${athleteStateRank}${ord(athleteStateRank)}` : '';
+  doc.text(`Mountain State Miles · ${new Date().toLocaleDateString()}${athleteBestMsm!=null?` · ${athleteStatSeason || 'Career'} Best MSM ${athleteBestMsm}`:''}${rankLine}`, 14, 27);
   doc.autoTable({
     head:[['Distance','Personal Best','MSM Rating']],
     body: Object.values(pbs).map(pb=>[distanceLabel(pb.distance),formatTime(pb.timeSec), (pb.raw&&pb.raw.msm!=null)?pb.raw.msm:'—']),
@@ -1611,8 +1686,8 @@ function exportResultsPDF() {
   doc.setFontSize(18); doc.setFont('helvetica','bold');
   doc.text(`${name} — Results`, 14, 16);
   doc.setFontSize(9); doc.setFont('helvetica','normal');
-  const rankLine = athleteStateRank != null ? ` · State Rank ${athleteStateRank}${ord(athleteStateRank)}` : '';
-  doc.text(`Mountain State Miles · ${new Date().toLocaleDateString()} · ${tFiltered.length} results${athleteBestMsm!=null?` · Best MSM ${athleteBestMsm}`:''}${rankLine}`, 14, 23);
+  const rankLine = athleteStateRank != null ? ` · ${athleteRankScope === 'season' ? athleteStatSeason + ' ' : 'Career '}State Rank ${athleteStateRank}${ord(athleteStateRank)}` : '';
+  doc.text(`Mountain State Miles · ${new Date().toLocaleDateString()} · ${tFiltered.length} results${athleteBestMsm!=null?` · ${athleteStatSeason || 'Career'} Best MSM ${athleteBestMsm}`:''}${rankLine}`, 14, 23);
   doc.autoTable({
     head:[['Date','Division','Time','MSM Rating','Meet','Place']],
     body: resultRows(),
