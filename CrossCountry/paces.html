@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Training Pace Calculator | Mountain State Miles</title>
+
+  <link rel="icon" type="image/png" href="assets/Favicon Generator/favicon-96x96.png" sizes="96x96" />
+  <link rel="icon" type="image/svg+xml" href="assets/Favicon Generator/favicon.svg" />
+  <link rel="shortcut icon" href="assets/Favicon Generator/favicon.ico" />
+  <link rel="apple-touch-icon" sizes="180x180" href="assets/Favicon Generator/apple-touch-icon.png" />
+  <link rel="manifest" href="assets/Favicon Generator/site.webmanifest" />
+
+  <meta name="description" content="Training pace calculator for WV cross country coaches — CV, Threshold and Tempo paces from a season best, with PDF & CSV export. Mountain State Miles." />
+  <meta name="keywords" content="WVXC, running paces, critical velocity, threshold pace, tempo pace, cross country training, Mountain State Miles" />
+
+  <link rel="stylesheet" href="/assets/main.css" />
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.7.1/jspdf.plugin.autotable.min.js"></script>
+  <script src="/assets/components.js" defer></script>
+  <script src="/assets/theme-toggle.js" defer></script>
+
+  <style>
+    /* 'Aqeon Demo' is loaded site-wide by /assets/main.css — the local @font-face here
+       pointed at a path that doesn't exist and 404'd on every load. */
+    :root {
+      --font-display: 'Aqeon Demo', sans-serif;
+      --radius-lg: 14px;
+      --radius-md: 8px;
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+
+    .content-section { max-width: 1100px; margin: 0 auto; padding: 30px 16px; }
+
+    .calc-header {
+      background: var(--bg-primary);
+      padding: 24px 16px;
+      text-align: center;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border);
+      margin-bottom: 24px;
+      box-shadow: 0 4px 16px var(--shadow-light);
+    }
+    .calc-title {
+      font-family: var(--font-display);
+      font-size: clamp(2rem, 6vw, 3rem);
+      font-weight: 800;
+      color: var(--text-primary);
+      margin: 0 0 8px;
+      line-height: 1.1;
+    }
+    .calc-subtitle { font-size: 0.95rem; color: var(--text-secondary); font-weight: 500; }
+
+    .controls {
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 8px var(--shadow-light);
+    }
+    .control-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; }
+    .field { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 160px; }
+    .field label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; font-weight: 800; color: var(--text-tertiary); }
+    .field select, .field input {
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      font-size: 0.95rem;
+      outline: none;
+    }
+    .field select:focus, .field input:focus { border-color: var(--text-primary); }
+    .field.check { flex-direction: row; align-items: center; gap: 8px; min-width: 0; }
+    .field.check label { text-transform: none; font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); letter-spacing: 0; }
+
+    .btn {
+      padding: 10px 18px;
+      border-radius: 10px;
+      border: 1px solid var(--text-primary);
+      background: var(--text-primary);
+      color: var(--bg-primary);
+      font-weight: 700;
+      font-size: 0.9rem;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .btn:hover { opacity: 0.9; }
+    .btn.secondary { background: var(--bg-secondary); color: var(--text-primary); border-color: var(--border); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .manual-details { margin-top: 14px; border-top: 1px solid var(--border); padding-top: 14px; }
+    .manual-details summary { cursor: pointer; font-weight: 700; color: var(--text-primary); font-size: 0.9rem; }
+
+    .app-tabs { display: flex; border-bottom: 2px solid var(--border); margin-bottom: 16px; overflow-x: auto; }
+    .app-tab {
+      padding: 12px 20px; font-size: 0.95rem; font-weight: 600; color: var(--text-secondary);
+      background: transparent; border: none; white-space: nowrap; cursor: pointer; position: relative;
+    }
+    .app-tab.active { color: var(--text-primary); }
+    .app-tab.active::after { content: ''; position: absolute; bottom: -2px; left: 0; width: 100%; height: 2px; background: var(--text-primary); }
+
+    .utility-bar { display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
+    .search-box { flex: 1; min-width: 200px; position: relative; }
+    .search-box input {
+      width: 100%; padding: 12px 16px 12px 40px; border-radius: 12px; border: 1px solid var(--border);
+      background: var(--bg-secondary); color: var(--text-primary); font-size: 0.95rem; outline: none;
+    }
+    .search-box i { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-tertiary); font-style: normal; }
+
+    .export-menu-wrap { position: relative; }
+    .export-toggle-btn { background: var(--text-primary); color: var(--bg-primary); border-color: var(--text-primary); }
+    .export-menu {
+      position: absolute; top: calc(100% + 8px); right: 0; min-width: 240px;
+      background: var(--bg-primary); border: 1px solid var(--border); border-radius: 12px;
+      box-shadow: 0 8px 24px var(--shadow-light); overflow: hidden; z-index: 40; display: none;
+    }
+    .export-menu.open { display: block; }
+    .export-menu-item {
+      display: flex; align-items: center; gap: 10px; width: 100%; padding: 12px 14px;
+      background: transparent; border: none; border-bottom: 1px solid var(--border);
+      color: var(--text-primary); font-size: 0.88rem; font-weight: 600; text-align: left; cursor: pointer;
+    }
+    .export-menu-item:last-child { border-bottom: none; }
+    .export-menu-item:hover { background: var(--bg-secondary); }
+    .export-menu-item .emi-icon { font-size: 1.05rem; width: 22px; text-align: center; flex-shrink: 0; }
+    .export-menu-item .emi-title { color: var(--text-primary); }
+    .export-menu-item .emi-sub { font-size: 0.72rem; font-weight: 500; color: var(--text-tertiary); }
+
+    .table-card {
+      background: var(--bg-primary); border: 1px solid var(--border); border-radius: 12px;
+      overflow: hidden; margin-bottom: 32px; box-shadow: 0 2px 8px var(--shadow-light);
+    }
+    .table-header {
+      padding: 14px 16px; font-weight: 800; color: var(--text-primary);
+      border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; gap: 8px;
+    }
+    .table-scroll { overflow-x: auto; }
+    table.paces { width: 100%; border-collapse: collapse; min-width: 960px; }
+    table.paces thead th {
+      text-align: left; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.03em;
+      color: var(--text-tertiary); padding: 10px 12px; border-bottom: 1px solid var(--border); white-space: nowrap;
+    }
+    table.paces td {
+      padding: 11px 12px; font-size: 0.9rem; color: var(--text-primary); border-bottom: 1px solid var(--border);
+      white-space: nowrap; font-variant-numeric: tabular-nums;
+    }
+    table.paces tbody tr:last-child td { border-bottom: none; }
+    table.paces tbody tr:hover { background: var(--bg-secondary); }
+    table.paces .col-name { font-weight: 700; }
+    table.paces .col-sb { font-weight: 800; }
+    table.paces .muted { color: var(--text-secondary); font-weight: 600; }
+    .row-src { font-size: 0.62rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.03em;
+      color: var(--text-tertiary); border: 1px solid var(--border); border-radius: 5px; padding: 1px 5px; margin-left: 6px; }
+
+    .status-msg { text-align: center; padding: 30px 20px; color: var(--text-secondary); }
+    .error-msg { text-align: center; color: var(--danger, #ef4444); padding: 16px; background: rgba(239,68,68,0.1); border-radius: 8px; margin-bottom: 16px; }
+
+    .method-note { font-size: 0.8rem; color: var(--text-tertiary); margin-top: 10px; line-height: 1.5; }
+
+    #msm-toast {
+      position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%) translateY(20px);
+      background: var(--text-primary); color: var(--bg-primary); padding: 10px 18px; border-radius: 30px;
+      font-size: 0.85rem; font-weight: 700; box-shadow: 0 8px 24px var(--shadow-light);
+      opacity: 0; pointer-events: none; transition: opacity 0.2s, transform 0.2s; z-index: 100;
+    }
+    #msm-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    @media print {
+      body { background: #fff !important; color: #000 !important; }
+      #global-header, #global-footer, .controls, .utility-bar, .app-tabs { display: none !important; }
+      .table-card { box-shadow: none; border: 1px solid #ccc; }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div id="global-header"></div>
+  <script src="/assets/msm-loader.js"></script>
+
+  <main class="content-section">
+
+    <div class="calc-header">
+      <h1 class="calc-title">Training Pace Calculator</h1>
+      <div class="calc-subtitle">Load a roster or enter a time — get CV, Threshold &amp; Tempo paces, then export a coach's report.</div>
+    </div>
+
+    <div id="error" class="error-msg" style="display:none;"></div>
+
+    <div class="controls">
+      <div class="control-row">
+        <div class="field">
+          <label for="school-select">School</label>
+          <select id="school-select"><option value="">Loading schools…</option></select>
+        </div>
+        <div class="field">
+          <label for="distance-select">Season best distance</label>
+          <select id="distance-select">
+            <option value="5000">5K (5000m)</option>
+            <option value="3200">3200m</option>
+            <option value="3000">3K (3000m)</option>
+            <option value="1600">1600m</option>
+            <option value="all">All / best fitness</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="season-select">Season</label>
+          <select id="season-select" disabled>
+            <option value="all">All-Time</option>
+          </select>
+        </div>
+        <div class="field" style="flex:0 0 auto; min-width:0;">
+          <label>&nbsp;</label>
+          <button class="btn" id="load-btn">Load roster</button>
+        </div>
+      </div>
+
+      <details class="manual-details">
+        <summary>➕ Add an athlete manually</summary>
+        <div class="control-row" style="margin-top:12px;">
+          <div class="field"><label for="m-name">Name</label><input id="m-name" type="text" placeholder="Athlete name" /></div>
+          <div class="field" style="flex:0 0 120px;"><label for="m-gender">Gender</label>
+            <select id="m-gender"><option value="M">Boys</option><option value="F">Girls</option></select>
+          </div>
+          <div class="field" style="flex:0 0 140px;"><label for="m-time">Time (mm:ss.ss)</label><input id="m-time" type="text" placeholder="18:49.70" /></div>
+          <div class="field" style="flex:0 0 130px;"><label for="m-dist">Distance (m)</label><input id="m-dist" type="number" value="5000" /></div>
+          <div class="field" style="flex:0 0 auto; min-width:0;"><label>&nbsp;</label><button class="btn secondary" id="m-add">Add</button></div>
+        </div>
+      </details>
+      <div class="method-note">
+        Paces use the Tinman/Critical-Velocity model, calibrated to Final Surge across the fitness range.
+        Each athlete's season best is their best-fitness performance at the selected distance <b>within the chosen season</b>
+        (a season is the calendar year the race was run — the same filter the rankings page uses).
+        Class years are taken from the result row, falling back to the school's athlete roster, and are shown for the season the race was run in. Ranges show <b>fast–slow</b>.
+        <b>Race Pace</b> is what the athlete actually ran — the season best straight off the clock, per mile and per kilometre.
+      </div>
+    </div>
+
+    <div class="app-tabs" id="gender-tabs">
+      <button class="app-tab active" data-g="all">All</button>
+      <button class="app-tab" data-g="M">Boys</button>
+      <button class="app-tab" data-g="F">Girls</button>
+    </div>
+
+    <div class="utility-bar">
+      <div class="search-box"><i>🔍</i><input type="text" id="search-input" placeholder="Search athlete…" /></div>
+      <div class="export-menu-wrap" id="export-menu-wrap">
+        <button class="btn export-toggle-btn" id="export-toggle-btn" disabled>⬇️ Export</button>
+        <div class="export-menu" id="export-menu">
+          <button class="export-menu-item" data-act="pdf">
+            <span class="emi-icon">📄</span>
+            <span class="emi-text"><span class="emi-title">Coach's Report (PDF)</span><span class="emi-sub">Branded pace sheet, landscape</span></span>
+          </button>
+          <button class="export-menu-item" data-act="csv">
+            <span class="emi-icon">📊</span>
+            <span class="emi-text"><span class="emi-title">Spreadsheet (CSV)</span><span class="emi-sub">Fast &amp; slow split into columns</span></span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="results-box">
+      <div class="status-msg">Pick a school and press <b>Load roster</b>, or add an athlete manually.</div>
+    </div>
+  </main>
+
+  <div id="msm-toast"></div>
+
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="firebase-helpers.js"></script>
+
+  <script>
+  // ==========================================================
+  //  PACE MODEL  (table interpolation, calibrated to Final Surge)
+  //  Reproduces 13 official anchor rows exactly (VDOT 31.6–60.6) and
+  //  linearly interpolates everyone in between — matches the coaches'
+  //  spreadsheet to the tenth of a second.
+  // ==========================================================
+  const KM_FACTOR = 0.6213712;   // 1000m / 1609.34
+  const M8_FACTOR = 0.497097;    // 800m  / 1609.34
+  const METERS_PER_MILE = 1609.34;
+
+  // Race pace = the time they actually ran, scaled to a target distance
+  // (per mile = ×1609.34/dist, per km = ×1000/dist).
+  function racePaceSec(timeSec, distM, targetMeters) {
+    if (!timeSec || timeSec <= 0 || !distM) return NaN;
+    return timeSec * targetMeters / distM;
+  }
+
+
+  // Fitness score from a race time + distance (Daniels/Gilbert VDOT).
+  function vdotFrom(timeSec, distM) {
+    if (!timeSec || timeSec <= 0 || !distM) return NaN;
+    const v = distM * 60 / timeSec;                 // m/min
+    const vo2 = -4.6 + 0.182258 * v + 0.000104 * v * v;
+    const tMin = timeSec / 60;
+    const pct = 0.8 + 0.1894393 * Math.exp(-0.012778 * tMin) + 0.2989558 * Math.exp(-0.1932605 * tMin);
+    return vo2 / pct;
+  }
+
+  // Calibration anchors — official Final Surge values, ascending VDOT.
+  // Pace values are seconds per mile. (CV 1000 / 800 derive from CV mile.)
+  const CAL_V = [31.627931, 34.51214, 38.857658, 41.242814, 42.828496, 44.617447, 48.058677, 51.230021, 52.35578, 54.028442, 55.251727, 59.444774, 60.562754];
+  const CAL = {
+    cvF:  [570.22, 532.24, 484.31, 464.86, 448, 433.5, 408.3, 387.73, 380.97, 371.37, 364.68, 343.62, 338.45],
+    cvS:  [583.11, 544.26, 495.26, 475.37, 458.12, 443.29, 417.52, 396.49, 389.75, 379.76, 372.92, 351.38, 346.09],
+    thrF: [593.9, 554.34, 504.42, 484.16, 466.6, 451.5, 425.25, 403.83, 396.78, 386.79, 379.82, 357.89, 352.5],
+    thrS: [610.96, 570.27, 518.92, 498.08, 480.01, 464.47, 437.47, 415.43, 408.18, 397.9, 390.73, 368.17, 362.63],
+    tmpF: [626.06, 584.35, 531.74, 510.38, 491.87, 475.94, 448.28, 425.7, 418.27, 407.73, 400.39, 377.27, 371.6],
+    tmpS: [658.94, 615.04, 559.66, 537.19, 517.7, 510.94, 471.82, 448.05, 440.24, 429.15, 421.42, 397.08, 391.1]
+  };
+
+  // Linear interpolation of a pace column against VDOT (extrapolates past the ends).
+  function interp(vdot, ys) {
+    const xs = CAL_V, n = xs.length;
+    let r = 0;
+    for (let k = 0; k < n; k++) if (xs[k] <= vdot) r = k;
+    if (r > n - 2) r = n - 2;
+    const xl = xs[r], xh = xs[r + 1], yl = ys[r], yh = ys[r + 1];
+    return yl + (yh - yl) * (vdot - xl) / (xh - xl);
+  }
+
+  // Round on total hundredths first, then split into m/s, so a value like
+  // 359.996 carries to 6:00.00 instead of printing 5:60.00.
+  function splitTime(sec) {
+    const total = Math.round(sec * 100);
+    return [Math.floor(total / 6000), (total % 6000) / 100];
+  }
+  function fmtPace(sec) {
+    if (!isFinite(sec) || sec <= 0) return '—';
+    const t = splitTime(sec);
+    return t[0] + ':' + t[1].toFixed(2).padStart(5, '0');
+  }
+  function fmtRange(fastSec, slowSec) { return fmtPace(fastSec) + '–' + fmtPace(slowSec); }
+  function fmtSB(sec) {
+    if (!isFinite(sec) || sec <= 0) return '—';
+    const t = splitTime(sec);
+    return t[0] + ':' + t[1].toFixed(2).padStart(5, '0');
+  }
+
+  // All ten paces for one athlete, from their VDOT.
+  function computePaces(vdot) {
+    const cvF = interp(vdot, CAL.cvF), cvS = interp(vdot, CAL.cvS);
+    return {
+      cvMile:  [cvF, cvS],
+      thrMile: [interp(vdot, CAL.thrF), interp(vdot, CAL.thrS)],
+      tmpMile: [interp(vdot, CAL.tmpF), interp(vdot, CAL.tmpS)],
+      cv1000:  [cvF * KM_FACTOR, cvS * KM_FACTOR],
+      cv800:   [cvF * M8_FACTOR, cvS * M8_FACTOR]
+    };
+  }
+
+
+  let loadedAthletes = [], manualAthletes = [], schoolSlugToName = {}, activeGender = 'all';
+
+  // Everything the current school returned, kept around so switching season or distance
+  // re-derives the table from memory instead of hitting the database again.
+  let schoolResults = [];
+  let schoolResultsSlug = '';
+  let currentSeason = 'all';
+  let seasonTouched = false;      // true once the user picks a season themselves
+  let athleteGradeIndex = null;   // school+name -> grad year, for rows that carry no class of their own
+  let meetsBySlug = {};           // meet_slug -> meet record; result rows carry no date of their own
+
+  function normGender(r) {
+    const g = String(r.gender || '').trim().toUpperCase();
+    if (['M','BOYS','BOY','MALE','B'].includes(g)) return 'M';
+    if (['F','GIRLS','GIRL','FEMALE','G'].includes(g)) return 'F';
+    return 'M';
+  }
+
+  // ------------------------------------------------------------------
+  // Season + class year (same rules as rankings.html and meet.html)
+  // ------------------------------------------------------------------
+  // A season is the calendar year a race was run. Dates are read numerically out of
+  // "YYYY-MM-DD" first so a UTC-parsed date can't slide into the previous year in
+  // western timezones.
+  // Result rows don't carry a date — the date belongs to the meet they were run at, so it's
+  // resolved through the meet record (same fallback rankings.html uses).
+  function resultDate(row) {
+    if (!row) return null;
+    if (row.date) return row.date;
+    const meet = meetsBySlug[row.meet_slug];
+    return (meet && meet.date) || null;
+  }
+
+  function meetNameOf(row) {
+    const meet = row && meetsBySlug[row.meet_slug];
+    return (meet && meet.name) || (row && row.meet_name) || '';
+  }
+
+  function seasonYearOf(date) {
+    if (!date) return null;
+    const m = String(date).match(/^(\d{4})/);
+    if (m) return m[1];
+    const d = new Date(date);
+    return isNaN(d.getTime()) ? null : String(d.getFullYear());
+  }
+
+  // The academic year a date belongs to: the calendar year that season's senior class
+  // graduates in. Cross country runs August-November, so 2026-09-15 belongs to the
+  // 2026-27 school year (academic year 2027).
+  function academicYearFor(referenceDate) {
+    if (typeof referenceDate === 'string') {
+      const m = referenceDate.match(/^(\d{4})-(\d{1,2})/);
+      if (m) {
+        const year = parseInt(m[1], 10);
+        return parseInt(m[2], 10) - 1 >= 7 ? year + 1 : year;
+      }
+    }
+    const d = referenceDate ? new Date(referenceDate) : new Date();
+    const now = isNaN(d.getTime()) ? new Date() : d;
+    return now.getMonth() >= 7 ? now.getFullYear() + 1 : now.getFullYear();
+  }
+
+  // Turns whatever a row carries (a graduation year like 2027, or a literal class label
+  // like "11"/"SR" from older imports) into a class year for the given season.
+  function formatGrade(value, referenceDate) {
+    if (value == null || value === '') return '';
+    const literal = String(value).trim().toUpperCase().replace(/(ST|ND|RD|TH)$/, '');
+    if (/^([6-9]|1[0-2])$/.test(literal)) return literal;              // already a class level
+    const literalMap = { FR:'9', FROSH:'9', SO:'10', SOPH:'10', JR:'11', SR:'12' };
+    if (literalMap[literal]) return literalMap[literal];
+
+    const gradYear = parseInt(literal, 10);
+    if (!gradYear || !isFinite(gradYear)) return '';
+    const gradeMap = { 0:'12', 1:'11', 2:'10', 3:'9', 4:'8', 5:'7', 6:'6' };
+    // A negative diff means the athlete had already graduated by that season: leave it
+    // blank rather than inventing a class for someone who wasn't there.
+    return gradeMap[gradYear - academicYearFor(referenceDate)] || '';
+  }
+
+  function gradeIndexKey(schoolSlug, name) {
+    return `${String(schoolSlug || '').trim().toLowerCase()}|${String(name || '').trim().toLowerCase()}`;
+  }
+
+  // Result rows from before the 2026 imports carry no class of their own, so fall back to the
+  // athlete roster (crosscountry/athletes) — loaded once per page, and only when a row is
+  // actually missing a class year. Roster records store the graduation year in `grade`
+  // (confusingly); older ones use `grad_year`.
+  async function loadAthleteGradeIndex() {
+    if (athleteGradeIndex) return;
+    try {
+      const snapshot = await window.firebaseDatabase.ref('crosscountry/athletes').once('value');
+      const bySchoolName = {}, byName = {};
+      snapshot.forEach(child => {
+        const a = child.val() || {};
+        const gradYear = parseInt(a.grade ?? a.grad_year, 10);
+        if (!gradYear || isNaN(gradYear)) return;
+        const name = gradeIndexKey('', a.name).slice(1);
+        if (!name) return;
+        bySchoolName[gradeIndexKey(a.school_slug, a.name)] = gradYear;
+        // Name-only fallback, kept only while it stays unambiguous: two athletes sharing a
+        // name at different schools must not inherit each other's graduation year.
+        if (byName[name] === undefined) byName[name] = gradYear;
+        else if (byName[name] !== gradYear) byName[name] = null;
+      });
+      athleteGradeIndex = { bySchoolName, byName };
+    } catch (err) {
+      console.warn('Roster grade lookup unavailable — showing results without class years.', err);
+      athleteGradeIndex = { bySchoolName: {}, byName: {} };
+    }
+  }
+
+  // Class year for a result row: the row's own class first, then the roster, always read
+  // against the season the race was run in (a 2025 race shows that year's seniors as 12s).
+  function gradeLabelFor(row) {
+    if (!row) return '';
+    const ref = resultDate(row);
+    const own = row.grad_year || row.gradYear || row.grade;
+    if (own) return formatGrade(own, ref);
+    if (athleteGradeIndex) {
+      const name = gradeIndexKey('', row.athlete_name || row.name).slice(1);
+      const hit = athleteGradeIndex.bySchoolName[gradeIndexKey(row.school_slug, row.athlete_name || row.name)]
+        ?? athleteGradeIndex.byName[name];
+      if (hit) return formatGrade(hit, ref);
+    }
+    return '';
+  }
+  function toSeconds(t) { return typeof t === 'number' ? t : window.parseTimeToSeconds(t); }
+  function showError(msg) { const e = document.getElementById('error'); e.style.display = 'block'; e.textContent = msg; }
+  function clearError() { document.getElementById('error').style.display = 'none'; }
+  function showToast(msg) {
+    const t = document.getElementById('msm-toast'); if (!t) return;
+    t.textContent = msg; t.classList.add('show');
+    clearTimeout(t._timer); t._timer = setTimeout(() => t.classList.remove('show'), 2400);
+  }
+
+  window.addEventListener('DOMContentLoaded', async () => {
+    try {
+      const schools = await window.getAllSchools();
+      const sel = document.getElementById('school-select');
+      sel.innerHTML = '<option value="">Select a school…</option>';
+      (schools || []).forEach(s => {
+        schoolSlugToName[s.slug || ''] = s.name || s.slug;
+        const o = document.createElement('option');
+        o.value = s.slug || ''; o.textContent = s.name || s.slug;
+        sel.appendChild(o);
+      });
+      if (!schools || schools.length === 0) sel.innerHTML = '<option value="">No schools found</option>';
+    } catch (e) {
+      console.error(e);
+      showError('Could not load schools from the database. You can still add athletes manually.');
+      document.getElementById('school-select').innerHTML = '<option value="">Unavailable — use manual entry</option>';
+    }
+
+    // Meets carry the date a result was run on, which is what the season filter keys off.
+    try {
+      (await window.getMeets() || []).forEach(m => { if (m && m.slug) meetsBySlug[m.slug] = m; });
+    } catch (e) {
+      console.warn('Meet dates unavailable — season filtering will fall back to All-Time.', e);
+    }
+
+    document.getElementById('load-btn').addEventListener('click', loadRoster);
+    document.getElementById('m-add').addEventListener('click', addManual);
+    document.getElementById('search-input').addEventListener('input', render);
+
+    // Season / distance changes re-derive the table from the results already loaded, so
+    // switching seasons never costs another database read.
+    document.getElementById('season-select').addEventListener('change', (e) => {
+      currentSeason = e.target.value;
+      seasonTouched = true;
+      if (schoolResults.length) { computeAthletes(); render(); }
+    });
+    document.getElementById('distance-select').addEventListener('change', () => {
+      if (schoolResults.length) { computeAthletes(); render(); }
+    });
+
+    document.querySelectorAll('#gender-tabs .app-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('#gender-tabs .app-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active'); activeGender = tab.dataset.g; render();
+      });
+    });
+
+    document.getElementById('export-toggle-btn').addEventListener('click', () => {
+      document.getElementById('export-menu').classList.toggle('open');
+    });
+    document.addEventListener('click', (e) => {
+      const w = document.getElementById('export-menu-wrap');
+      if (w && !w.contains(e.target)) document.getElementById('export-menu').classList.remove('open');
+    });
+    document.querySelectorAll('.export-menu-item').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.getElementById('export-menu').classList.remove('open');
+        if (btn.dataset.act === 'pdf') exportPDF(); else exportCSV();
+      });
+    });
+  });
+
+  async function loadRoster() {
+    clearError();
+    const slug = document.getElementById('school-select').value;
+    if (!slug) { showError('Pick a school first (or add athletes manually).'); return; }
+    const btn = document.getElementById('load-btn');
+    btn.disabled = true; btn.textContent = 'Loading…';
+    const switchingSchool = slug !== schoolResultsSlug;
+    try {
+      const results = await window.getResultsBySchool(slug) || [];
+      schoolResultsSlug = slug;
+      schoolResults = results;
+      // The roster index is school-independent, so it survives a school switch.
+      if (switchingSchool) { seasonTouched = false; currentSeason = 'all'; }
+
+      if (results.length === 0) {
+        loadedAthletes = []; populateSeasonSelect(); render();
+        showError('No results found for ' + (schoolSlugToName[slug] || slug) + '. Try another school or add athletes manually.');
+        return;
+      }
+
+      // Class years come off the result rows themselves; only reach for the athlete roster
+      // when some row predates the grad_year field (same rule meet.html uses).
+      const needsRoster = results.some(r => !r.grad_year && !r.gradYear && !r.grade);
+      if (needsRoster) await loadAthleteGradeIndex();
+
+      populateSeasonSelect();
+      computeAthletes();
+
+      if (loadedAthletes.length === 0) {
+        const distSel = document.getElementById('distance-select').value;
+        showError('No ' + (currentSeason === 'all' ? '' : currentSeason + ' ')
+          + (distSel === 'all' ? '' : distSel + 'm ')
+          + 'results found for ' + (schoolSlugToName[slug] || slug) + '. Try "All-Time" or "All / best fitness".');
+      } else {
+        showToast('Loaded ' + loadedAthletes.length + ' athletes from ' + (schoolSlugToName[slug] || slug) + '.');
+      }
+      render();
+    } catch (e) {
+      console.error(e); showError('Error loading roster: ' + e.message);
+    } finally {
+      btn.disabled = false; btn.textContent = 'Load roster';
+    }
+  }
+
+  // Season dropdown, filled from the seasons this school actually has results in. Defaults
+  // to the current season when the school ran in it, otherwise the most recent season it has.
+  function populateSeasonSelect() {
+    const sel = document.getElementById('season-select');
+    const years = [...new Set(schoolResults.map(r => seasonYearOf(resultDate(r))).filter(Boolean))]
+      .sort((a, b) => b - a);
+
+    if (years.length === 0) {
+      currentSeason = 'all';
+      sel.innerHTML = '<option value="all">All-Time</option>';
+      sel.value = 'all';
+      sel.disabled = schoolResults.length === 0;
+      return;
+    }
+
+    const thisYear = String(new Date().getFullYear());
+    if (!seasonTouched || (currentSeason !== 'all' && !years.includes(currentSeason))) {
+      currentSeason = years.includes(thisYear) ? thisYear : years[0];
+    }
+
+    let html = `<option value="all">All-Time</option>`;
+    years.forEach(y => {
+      html += `<option value="${y}"${y === currentSeason ? ' selected' : ''}>${y} Season</option>`;
+    });
+    sel.innerHTML = html;
+    sel.value = currentSeason;
+    sel.disabled = false;
+  }
+
+  // Best fitness per athlete within the selected season + distance.
+  function computeAthletes() {
+    const slug = schoolResultsSlug;
+    const distSel = document.getElementById('distance-select').value;
+    const wantDist = distSel === 'all' ? null : parseInt(distSel, 10);
+    const inSeason = currentSeason === 'all'
+      ? schoolResults
+      : schoolResults.filter(r => seasonYearOf(resultDate(r)) === currentSeason);
+
+    const best = {};
+    inSeason.forEach(r => {
+      const timeSec = toSeconds(r.time);
+      if (!timeSec || timeSec <= 0) return;
+      const dist = parseFloat(r.distance) || 5000;
+      if (wantDist && Math.round(dist) !== wantDist) return;
+      const v = vdotFrom(timeSec, dist);
+      if (!isFinite(v)) return;
+      const key = String(r.athlete_name || r.name || '').trim().toLowerCase();
+      if (!key) return;
+      if (!best[key] || v > best[key].vdot) best[key] = { row: r, timeSec, dist, vdot: v };
+    });
+
+    loadedAthletes = Object.values(best).map(b => ({
+      name: b.row.athlete_name || b.row.name || 'Unknown',
+      gender: normGender(b.row),
+      grade: gradeLabelFor(b.row),
+      school: b.row.school_name || schoolSlugToName[slug] || b.row.school || '',
+      timeSec: b.timeSec, dist: b.dist, vdot: b.vdot,
+      date: resultDate(b.row) || '', meet: meetNameOf(b.row), source: 'DB'
+    }));
+  }
+
+  function addManual() {
+    clearError();
+    const name = document.getElementById('m-name').value.trim();
+    const gender = document.getElementById('m-gender').value;
+    const timeSec = toSeconds(document.getElementById('m-time').value.trim());
+    const dist = parseFloat(document.getElementById('m-dist').value) || 5000;
+    if (!name) { showError('Enter a name for the manual athlete.'); return; }
+    if (!timeSec || isNaN(timeSec) || timeSec <= 0) { showError('Enter a valid time like 18:49.70.'); return; }
+    manualAthletes.push({ name, gender, grade: '', school: 'Manual entry', timeSec, dist, vdot: vdotFrom(timeSec, dist), source: 'MANUAL' });
+    document.getElementById('m-name').value = ''; document.getElementById('m-time').value = '';
+    showToast('Added ' + name + '.'); render();
+  }
+
+  function currentAthletes() {
+    const query = (document.getElementById('search-input').value || '').toLowerCase().trim();
+    let list = loadedAthletes.concat(manualAthletes);
+    if (activeGender !== 'all') list = list.filter(a => a.gender === activeGender);
+    if (query) list = list.filter(a => (a.name || '').toLowerCase().includes(query));
+    return list.slice().sort((a, b) => b.vdot - a.vdot);
+  }
+
+  function render() {
+    const box = document.getElementById('results-box');
+    const list = currentAthletes();
+    document.getElementById('export-toggle-btn').disabled = list.length === 0;
+    if (list.length === 0) {
+      box.innerHTML = '<div class="status-msg">No athletes yet. Load a school roster or add one manually.</div>';
+      return;
+    }
+    let rows = '';
+    list.forEach((a, i) => {
+      const p = computePaces(a.vdot);
+      const distTag = Math.round(a.dist) === 5000 ? '' : ' <span class="muted">(' + Math.round(a.dist) + 'm)</span>';
+      // Under All-Time, name the season the season best actually came from.
+      const sbYear = seasonYearOf(a.date);
+      const seasonTag = (currentSeason === 'all' && sbYear) ? ' <span class="muted">' + sbYear + '</span>' : '';
+      const sbTitle = a.meet ? ' title="' + escapeHtml(a.meet + (a.date ? ' — ' + a.date : '')) + '"' : '';
+      rows += '<tr>'
+        + '<td class="muted">' + (i + 1) + '</td>'
+        + '<td class="col-name">' + escapeHtml(a.name) + (a.source === 'MANUAL' ? '<span class="row-src">manual</span>' : '') + '</td>'
+        + '<td class="muted">' + (a.grade || '—') + '</td>'
+        + '<td class="col-sb"' + sbTitle + '>' + fmtSB(a.timeSec) + distTag + seasonTag + '</td>'
+        + '<td>' + fmtPace(racePaceSec(a.timeSec, a.dist, METERS_PER_MILE)) + '</td>'
+        + '<td>' + fmtPace(racePaceSec(a.timeSec, a.dist, 1000)) + '</td>'
+        + '<td>' + fmtRange(p.cvMile[0], p.cvMile[1]) + '</td>'
+        + '<td>' + fmtRange(p.thrMile[0], p.thrMile[1]) + '</td>'
+        + '<td>' + fmtRange(p.tmpMile[0], p.tmpMile[1]) + '</td>'
+        + '<td>' + fmtRange(p.cv1000[0], p.cv1000[1]) + '</td>'
+        + '<td>' + fmtRange(p.cv800[0], p.cv800[1]) + '</td>'
+        + '</tr>';
+    });
+    box.innerHTML =
+      '<div class="table-card">'
+      + '<div class="table-header"><span>Training Paces</span><span class="muted" style="font-weight:600;font-size:0.8rem;">'
+      + list.length + ' athletes • ' + escapeHtml(seasonText()) + ' • fast–slow</span></div>'
+      + '<div class="table-scroll"><table class="paces"><thead><tr>'
+      + '<th>#</th><th>Athlete</th><th>Yr</th><th>Season Best</th>'
+      + '<th>Race Pace /mi</th><th>Race Pace /km</th>'
+      + '<th>CV Mile</th><th>Threshold Mile</th><th>Tempo Mile</th><th>CV 1000</th><th>CV 800</th>'
+      + '</tr></thead><tbody>' + rows + '</tbody></table></div></div>';
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+  }
+
+  function getBrandColorRgbArray() {
+    try {
+      const cssVar = getComputedStyle(document.documentElement).getPropertyValue('--xc-primary').trim();
+      const m = cssVar.match(/\d+/g);
+      if (m && m.length >= 3) return [parseInt(m[0]), parseInt(m[1]), parseInt(m[2])];
+    } catch (e) {}
+    return [2, 132, 199];
+  }
+  function slugify(name) { return String(name || '').toLowerCase().trim().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''); }
+  function seasonText() { return currentSeason === 'all' ? 'All-Time' : currentSeason + ' Season'; }
+  function exportContext() {
+    const schoolSel = document.getElementById('school-select');
+    const schoolName = schoolSel.value ? (schoolSlugToName[schoolSel.value] || schoolSel.value)
+                      : (manualAthletes.length ? 'Manual List' : 'Roster');
+    const genderText = activeGender === 'M' ? 'Boys' : activeGender === 'F' ? 'Girls' : 'All Athletes';
+    return { schoolName, genderText, seasonText: seasonText() };
+  }
+  function downloadBlob(filename, mime, content) {
+    const blob = new Blob([content], { type: mime });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url; link.download = filename;
+    document.body.appendChild(link); link.click(); document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
+
+  function exportCSV() {
+    const list = currentAthletes();
+    if (list.length === 0) return;
+    const { schoolName, genderText, seasonText: seasonLabel } = exportContext();
+    const head = ['Athlete','Class','Gender','Season Best','Race Dist (m)','Race Pace /Mile','Race Pace /KM',
+      'CV Mile Fast','CV Mile Slow','Thr Mile Fast','Thr Mile Slow',
+      'Tempo Mile Fast','Tempo Mile Slow','CV 1000 Fast','CV 1000 Slow','CV 800 Fast','CV 800 Slow'];
+    const csvCell = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
+    const rows = [['Training Paces', schoolName, genderText, seasonLabel].map(csvCell), head.map(csvCell)];
+    list.forEach(a => {
+      const p = computePaces(a.vdot);
+      rows.push([
+        a.name, a.grade || '', a.gender, fmtSB(a.timeSec), Math.round(a.dist),
+        fmtPace(racePaceSec(a.timeSec, a.dist, METERS_PER_MILE)),
+        fmtPace(racePaceSec(a.timeSec, a.dist, 1000)),
+        fmtPace(p.cvMile[0]), fmtPace(p.cvMile[1]),
+        fmtPace(p.thrMile[0]), fmtPace(p.thrMile[1]),
+        fmtPace(p.tmpMile[0]), fmtPace(p.tmpMile[1]),
+        fmtPace(p.cv1000[0]), fmtPace(p.cv1000[1]),
+        fmtPace(p.cv800[0]), fmtPace(p.cv800[1])
+      ].map(csvCell));
+    });
+    const csv = '\ufeff' + rows.map(c => c.join(',')).join('\r\n');
+    downloadBlob(slugify(schoolName + '-' + genderText + '-' + seasonLabel) + '-paces.csv', 'text/csv;charset=utf-8;', csv);
+  }
+
+  async function exportPDF() {
+    const list = currentAthletes();
+    if (list.length === 0) return;
+    if (typeof window.jspdf === 'undefined') { alert('PDF library is still loading — try again in a second.'); return; }
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'landscape' });
+    const bc = getBrandColorRgbArray();
+    const { schoolName, genderText, seasonText: seasonLabel } = exportContext();
+    const title = schoolName + ' — ' + genderText + ' Training Paces';
+    const getBase64 = async (url) => {
+      try {
+        const res = await fetch(url); const blob = await res.blob();
+        return await new Promise(resolve => { const fr = new FileReader(); fr.onloadend = () => resolve(fr.result); fr.onerror = () => resolve(null); fr.readAsDataURL(blob); });
+      } catch (e) { return null; }
+    };
+    const logo = await getBase64('assets/images/logo.png');
+    const drawHeader = () => {
+      doc.setFillColor(bc[0], bc[1], bc[2]);
+      doc.rect(0, 0, doc.internal.pageSize.getWidth(), 24, 'F');
+      let x = 14;
+      if (logo) { try { doc.addImage(logo, 'PNG', 14, 4, 16, 16); x = 36; } catch (e) {} }
+      doc.setFontSize(15); doc.setFont('helvetica', 'bold'); doc.setTextColor(255, 255, 255);
+      doc.text(title, x, 11);
+      doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(225, 225, 225);
+      doc.text('CV / Threshold / Tempo paces — ' + seasonLabel + ' — fast–slow — Mountain State Miles', x, 18);
+    };
+    doc.autoTable({
+      head: [['#', 'Athlete', 'Yr', 'Season Best', 'Race Pace /mi', 'Race Pace /km', 'CV Mile', 'Threshold Mile', 'Tempo Mile', 'CV 1000', 'CV 800']],
+      body: list.map((a, i) => {
+        const p = computePaces(a.vdot);
+        return [i + 1, a.name, a.grade || '', fmtSB(a.timeSec),
+          fmtPace(racePaceSec(a.timeSec, a.dist, METERS_PER_MILE)),
+          fmtPace(racePaceSec(a.timeSec, a.dist, 1000)),
+          fmtRange(p.cvMile[0], p.cvMile[1]), fmtRange(p.thrMile[0], p.thrMile[1]),
+          fmtRange(p.tmpMile[0], p.tmpMile[1]), fmtRange(p.cv1000[0], p.cv1000[1]), fmtRange(p.cv800[0], p.cv800[1])];
+      }),
+      startY: 22, margin: { top: 22 },
+      styles: { fontSize: 8, cellPadding: 2 },
+      headStyles: { fillColor: bc, textColor: [255, 255, 255] },
+      alternateRowStyles: { fillColor: [245, 245, 245] },
+      didDrawPage: drawHeader
+    });
+    doc.save(slugify(title + ' ' + seasonLabel) + '.pdf');
+  }
+  </script>
+
+  <div id="global-footer"></div>
+
+</body>
+</html>

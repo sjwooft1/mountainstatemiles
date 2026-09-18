@@ -18,6 +18,7 @@ const BASE_LINKS = [
       { name: 'Courses', url: 'CrossCountry/courses/course%20viewer.html' },
       { name: 'Portal', url: '/Portal/portal.html' },
       { name: 'Track Home', url: '/Track/index.html' },
+      { name: 'Training Paces', url: '/CrossCountry/paces.html' },
     ],
     track: [
       { name: 'Track Meets', url: '/Track/meets.html' },
