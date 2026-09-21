@@ -3,11 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Course | Mountain State Miles</title>
+<title>Courses | Mountain State Miles</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<!--
+  The shared /assets/main.css is loaded BEFORE the page styles below on purpose.
+  It defines generic .card / .btn / .hero rules; loading it first lets this page's
+  own rules win on equal specificity so the layout here is deterministic instead
+  of depending on which sheet happened to load last.
+-->
+<link rel="stylesheet" href="/assets/main.css" />
 <style>
   :root{
     --bg:#0b0e13;
@@ -23,6 +30,8 @@
     --summit:#f2a65a;
     --creek:#4f8bf0;
     --danger:#e8654f;
+    --up:#e8654f;
+    --down:#4fb0e0;
     --radius:14px;
     --maxw:1180px;
   }
@@ -35,7 +44,10 @@
     --text:#1c2128;
     --text-dim:#5b6270;
     --text-faint:#8a90a0;
+    --trail:#1f9e7d;
     --trail-dim:#c9f0e3;
+    --up:#d1533c;
+    --down:#2f7dd6;
   }
 
   *{box-sizing:border-box;}
@@ -45,12 +57,10 @@
     color:var(--text);
     font-family:'Inter',system-ui,sans-serif;
     -webkit-font-smoothing:antialiased;
-    transition:background .25s ease,color .25s ease;
   }
   a{color:inherit;text-decoration:none;}
   .mono{font-family:'JetBrains Mono',monospace;}
   button, select, input{font-family:inherit;}
-
   body::before{
     content:"";
     position:fixed; inset:0; z-index:-1;
@@ -62,118 +72,19 @@
     pointer-events:none;
   }
 
-  /* ---------- nav ---------- */
-  header.site-nav{
-    position:sticky; top:0; z-index:1001;
-    background:rgba(11,14,19,0.82);
-    backdrop-filter:blur(10px) saturate(140%);
-    border-bottom:1px solid var(--card-border);
-  }
-  html[data-theme="light"] header.site-nav{ background:rgba(245,243,238,0.85); }
-  .nav-inner{
-    max-width:var(--maxw); margin:0 auto; padding:0 20px;
-    display:flex; align-items:center; justify-content:space-between; height:64px;
-  }
-  .brand{ display:flex; align-items:center; gap:10px; font-family:'Oswald',sans-serif; }
-  .brand-mark{
-    width:34px;height:34px;border-radius:9px;
-    background:linear-gradient(155deg,var(--trail),#1f8f70);
-    display:flex;align-items:center;justify-content:center;
-    font-weight:700; font-size:14px; color:#06110c; letter-spacing:.5px;
-    box-shadow:0 4px 14px -4px rgba(47,208,163,.55);
-  }
-  .brand-name{font-size:17px;font-weight:600;letter-spacing:.3px;}
-  .brand-name span{color:var(--trail);}
-
-  nav.primary-links{display:flex; align-items:center; gap:26px;}
-  nav.primary-links a{
-    font-size:13.5px; font-weight:500; color:var(--text-dim);
-    letter-spacing:.2px; padding:6px 2px; position:relative;
-    transition:color .15s ease;
-  }
-  nav.primary-links a:hover{color:var(--text);}
-  nav.primary-links a.active{color:var(--trail);}
-  nav.primary-links a.active::after{
-    content:""; position:absolute; left:0; right:0; bottom:-14px; height:2px;
-    background:var(--trail); border-radius:2px;
-  }
-
-  .nav-actions{display:flex;align-items:center;gap:10px;}
-  .icon-btn{
-    width:36px;height:36px;border-radius:10px;
-    border:1px solid var(--card-border); background:var(--card);
-    display:flex;align-items:center;justify-content:center;cursor:pointer;
-    color:var(--text-dim); transition:border-color .15s, color .15s;
-  }
-  .icon-btn:hover{color:var(--text); border-color:var(--trail-dim);}
-  .hamburger{display:none;}
-
-  @media (max-width:860px){
-    nav.primary-links{display:none;}
-    .hamburger{display:flex;}
-  }
-
   /* ---------- breadcrumb ---------- */
   .breadcrumb{
     max-width:var(--maxw); margin:22px auto 0; padding:0 20px;
-    font-size:12.5px; color:var(--text-faint); display:flex; gap:8px; align-items:center;
+    font-size:12.5px; color:var(--text-faint); display:flex; gap:8px; align-items:center; flex-wrap:wrap;
   }
   .breadcrumb a:hover{color:var(--trail);}
   .breadcrumb .sep{opacity:.5;}
-
- /* ---------- course grid (replaces switcher chips) ---------- */ 
- .course-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 22px;
-    max-width: var(--maxw);
-    margin: 20px auto 60px;
-    padding: 0 20px;
-  }
-  .course-card {
-    background: var(--card);
-    border: 1px solid var(--card-border);
-    border-radius: var(--radius);
-    padding: 24px;
-    cursor: pointer;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
-  }
-  .course-card:hover {
-    transform: translateY(-4px);
-    border-color: var(--trail);
-    box-shadow: 0 10px 20px -10px rgba(47, 208, 163, 0.15);
-  }
-  .course-card-title {
-    font-family: 'Oswald', sans-serif;
-    font-size: 24px;
-    font-weight: 600;
-    color: var(--text);
-    margin: 0;
-    letter-spacing: 0.3px;
-  }
-  .course-card-meta {
-    font-size: 13.5px;
-    color: var(--text-dim);
-    line-height: 1.5;
-  }
-  .course-card-footer {
-    margin-top: auto;
-    font-size: 13px;
-    color: var(--trail);
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding-top: 10px;
-  }
 
   /* ---------- hero ---------- */
   .hero{
     max-width:var(--maxw); margin:0 auto; padding:18px 20px 6px;
     display:flex; align-items:flex-end; justify-content:space-between; gap:24px; flex-wrap:wrap;
+    text-align:left; /* reset the shared sheet's centred .hero */
   }
   .hero-title-block{display:flex; flex-direction:column; gap:10px; min-width:0;}
   .eyebrow{
@@ -185,11 +96,11 @@
     font-family:'Oswald',sans-serif; font-size:44px; line-height:1.02; font-weight:600;
     margin:0; letter-spacing:.2px;
   }
-  .course-sub{color:var(--text-dim); font-size:14.5px; margin:0; max-width:520px;}
+  .course-sub{color:var(--text-dim); font-size:14.5px; margin:0; max-width:560px; opacity:1;}
 
-  .stat-strip{display:flex; gap:16px; flex-wrap:wrap;}
+  .stat-strip{display:flex; gap:12px; flex-wrap:wrap;}
   .stat{
-    display:flex; flex-direction:column; gap:2px; min-width:92px;
+    display:flex; flex-direction:column; gap:2px; min-width:96px;
     padding:10px 16px; border-radius:10px; background:var(--card);
     border:1px solid var(--card-border);
   }
@@ -197,106 +108,178 @@
   .stat .lab{font-size:10.5px; color:var(--text-faint); text-transform:uppercase; letter-spacing:.8px;}
 
   /* ---------- layout ---------- */
-  main{max-width:var(--maxw); margin:0 auto; padding:28px 20px 80px; display:flex; flex-direction:column; gap:22px;}
-  .grid-2{display:grid; grid-template-columns:1.2fr 1fr; gap:22px;}
-  @media (max-width:950px){ .grid-2{grid-template-columns:1fr;} }
+  .page{max-width:var(--maxw); margin:0 auto; padding:28px 20px 80px; display:flex; flex-direction:column; gap:22px;}
+  .grid-2{display:grid; grid-template-columns:1.2fr 1fr; gap:22px; align-items:start;}
+  .grid-2.even{grid-template-columns:1fr 1fr;}
+  @media (max-width:950px){ .grid-2, .grid-2.even{grid-template-columns:1fr;} }
 
   .card{
     background:var(--card); border:1px solid var(--card-border); border-radius:var(--radius);
-    overflow:hidden; position:relative; display:flex; flex-direction:column;
+    overflow:hidden; position:relative; display:flex; flex-direction:column; min-width:0;
+    /* Explicitly neutralise the shared sheet's padded/shadowed .card chrome. */
+    padding:0; box-shadow:none; transition:none;
   }
   .card-head{
-    display:flex; align-items:center; justify-content:space-between;
-    padding:16px 18px 12px; border-bottom:1px solid var(--card-border);
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    padding:16px 18px 12px; border-bottom:1px solid var(--card-border); flex-wrap:wrap;
   }
   .card-head h2{
     font-family:'Oswald',sans-serif; font-size:15px; font-weight:600; margin:0;
     letter-spacing:.4px; text-transform:uppercase; color:var(--text);
     display:flex; align-items:center; gap:9px;
   }
-  .card-head h2 .swatch{width:9px;height:9px;border-radius:3px;}
+  .card-head h2 .swatch{width:9px;height:9px;border-radius:3px;flex:none;}
   .card-head .tag{
     font-size:11px; color:var(--text-faint); font-family:'JetBrains Mono',monospace;
-    max-width:220px; overflow:hidden; text-overflow:ellipsis;
+    max-width:280px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
   }
-  .card-body{padding:0; position:relative; flex-grow:1;}
+  .card-body{position:relative; flex-grow:1; min-width:0;}
 
-  /* video */
+  /* ---------- course grid ---------- */
+  .course-grid{
+    display:grid; grid-template-columns:repeat(auto-fill, minmax(320px, 1fr));
+    gap:22px; max-width:var(--maxw); margin:20px auto 60px; padding:0 20px;
+  }
+  .course-card{
+    background:var(--card); border:1px solid var(--card-border); border-radius:var(--radius);
+    padding:20px; cursor:pointer; display:flex; flex-direction:column; gap:12px;
+    transition:transform .2s ease, border-color .2s ease, box-shadow .2s ease; text-align:left;
+  }
+  .course-card:hover{ transform:translateY(-4px); border-color:var(--trail); box-shadow:0 10px 24px -12px rgba(47,208,163,.28); }
+  .course-card-top{display:flex; justify-content:space-between; align-items:flex-start; gap:10px;}
+  .course-card-title{font-family:'Oswald',sans-serif; font-size:23px; font-weight:600; margin:0; letter-spacing:.3px;}
+  .course-card-loc{font-size:12px; color:var(--text-faint); margin-top:2px;}
+  .spark{width:100%; height:44px; display:block; overflow:visible;}
+  .spark-empty{height:44px; display:flex; align-items:center; font-size:11.5px; color:var(--text-faint);}
+  .card-facts{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; border-top:1px solid var(--card-border); padding-top:12px;}
+  .card-fact .v{font-family:'Oswald',sans-serif; font-size:17px; font-weight:600;}
+  .card-fact .l{font-size:10px; color:var(--text-faint); text-transform:uppercase; letter-spacing:.6px;}
+  .course-card-footer{
+    margin-top:auto; font-size:13px; color:var(--trail); font-weight:600;
+    display:flex; align-items:center; justify-content:space-between; gap:6px; padding-top:8px;
+  }
+  .course-card-footer .measuring{color:var(--text-faint); font-weight:500; font-size:12px;}
+
+  /* ---------- pills / badges ---------- */
+  .pill{display:inline-flex; align-items:center; gap:5px; padding:3px 9px; border-radius:999px; font-size:10.5px; font-weight:700; letter-spacing:.4px; text-transform:uppercase; white-space:nowrap;}
+  .pill.rolling{background:rgba(154,165,179,.16); color:var(--text-dim);}
+  .pill.moderate{background:rgba(242,166,90,.16); color:var(--summit);}
+  .pill.major{background:rgba(232,101,79,.16); color:var(--danger);}
+  .pill.fast{background:rgba(47,208,163,.14); color:var(--trail);}
+  .pill.tough{background:rgba(232,101,79,.16); color:var(--danger);}
+  .stars{color:var(--summit); letter-spacing:2px; font-size:13px;}
+
+  /* ---------- map ---------- */
+  #course-map{height:460px; width:100%; background:var(--bg-elevated); z-index:1;}
+  .leaflet-container{background:var(--bg-elevated) !important; font-family:'Inter',sans-serif;}
+  .leaflet-control-layers{background:var(--card)!important; border:1px solid var(--card-border)!important; color:var(--text)!important; border-radius:8px!important;}
+  .leaflet-control-layers-toggle{background-color:var(--card)!important; border-radius:8px;}
+  .map-legend{display:flex; gap:14px; padding:12px 18px; font-size:12px; color:var(--text-dim); flex-wrap:wrap; border-top:1px solid var(--card-border);}
+  .map-legend .item{display:flex; align-items:center; gap:6px;}
+  .legend-swatch{width:18px;height:4px;border-radius:2px;}
+  .legend-dot{width:9px;height:9px;border-radius:50%;border:2px solid var(--card);}
+  .mile-marker{
+    background:var(--card); border:1px solid var(--trail-dim); color:var(--text);
+    font-size:10px; font-weight:700; padding:1px 5px; border-radius:6px; white-space:nowrap;
+    box-shadow:0 2px 6px rgba(0,0,0,.35);
+  }
+  .hill-marker{
+    background:var(--danger); color:#fff; font-size:10px; font-weight:800;
+    width:19px; height:19px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    border:2px solid rgba(255,255,255,.85); box-shadow:0 2px 6px rgba(0,0,0,.4);
+  }
+
+  /* ---------- chart ---------- */
+  .profile-wrap{padding:18px 18px 6px; width:100%; height:300px; position:relative;}
+  .climb-strip{position:relative; height:26px; margin:2px 18px 0; border-radius:6px; background:var(--bg-elevated); border:1px solid var(--card-border);}
+  .climb-band{position:absolute; top:3px; bottom:3px; border-radius:4px; background:rgba(232,101,79,.35); border:1px solid rgba(232,101,79,.6);}
+  .climb-band span{position:absolute; left:4px; top:1px; font-size:9.5px; font-weight:700; color:var(--text); white-space:nowrap;}
+  .mini-stats{display:flex; border-top:1px solid var(--card-border); flex-wrap:wrap;}
+  .mini-stat{flex:1; min-width:120px; padding:12px 14px; text-align:center; border-right:1px solid var(--card-border);}
+  .mini-stat:last-child{border-right:none;}
+  @media (max-width:520px){ .mini-stat{border-right:none; border-bottom:1px solid var(--card-border); flex:1 0 45%;} .mini-stat:last-child{border-bottom:none;} }
+  .mini-stat .v{font-family:'Oswald',sans-serif; font-size:17px; font-weight:600;}
+  .mini-stat .l{font-size:10px; color:var(--text-faint); text-transform:uppercase; letter-spacing:.6px; margin-top:2px;}
+
+  /* ---------- race plan ---------- */
+  .plan-body{padding:16px 18px; display:flex; flex-direction:column; gap:14px;}
+  .field-row{display:grid; grid-template-columns:repeat(auto-fit, minmax(130px,1fr)); gap:12px;}
+  .field label{display:block; font-size:10.5px; text-transform:uppercase; letter-spacing:.6px; color:var(--text-dim); font-weight:700; margin-bottom:5px;}
+  .field .inputs{display:flex; gap:6px; align-items:center;}
+  .inp{
+    width:100%; background:var(--bg); border:1px solid var(--card-border); color:var(--text);
+    padding:8px 10px; border-radius:8px; font-size:14px; outline:none; transition:border-color .15s;
+  }
+  .inp:focus{border-color:var(--trail);}
+  .inp-sep{color:var(--text-faint); font-weight:700;}
+  .slider-row{display:grid; grid-template-columns:1fr 1fr; gap:14px;}
+  @media (max-width:520px){ .slider-row{grid-template-columns:1fr;} }
+  input[type="range"]{width:100%; accent-color:var(--trail);}
+  .range-val{font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--trail);}
+  .pred-box{
+    background:var(--bg-elevated); border:1px solid var(--card-border); border-radius:12px;
+    padding:16px; text-align:center; box-shadow:inset 0 2px 10px rgba(0,0,0,.22);
+  }
+  .pred-box .pred-time{font-family:'Oswald',sans-serif; font-size:40px; color:var(--trail); font-weight:700; letter-spacing:.5px; line-height:1;}
+  .pred-box .pred-lab{font-size:10.5px; color:var(--text-faint); text-transform:uppercase; margin-top:6px; letter-spacing:.7px;}
+  .pred-box .pred-delta{font-size:12.5px; color:var(--text-dim); margin-top:8px;}
+  .pred-notes{display:flex; gap:8px; flex-wrap:wrap; justify-content:center; margin-top:10px;}
+  .chip{font-size:11px; padding:4px 9px; border-radius:999px; background:var(--bg); border:1px solid var(--card-border); color:var(--text-dim);}
+  .split-table{width:100%; border-collapse:collapse; font-size:12.5px;}
+  .split-table th{
+    text-align:left; font-size:10px; text-transform:uppercase; letter-spacing:.5px;
+    color:var(--text-faint); padding:6px 4px; border-bottom:1px solid var(--card-border);
+  }
+  .split-table td{padding:7px 4px; border-bottom:1px solid var(--ridge); vertical-align:top;}
+  .split-table td.num{font-family:'JetBrains Mono',monospace; text-align:right; white-space:nowrap;}
+  .split-table td.terr{color:var(--text-dim); font-size:11.5px; white-space:nowrap;}
+  .split-table tr.total td{font-weight:700; color:var(--trail); border-bottom:none; border-top:1px solid var(--card-border);}
+  .strategy-list{margin:0; padding-left:16px; display:flex; flex-direction:column; gap:7px; font-size:12.5px; color:var(--text-dim); line-height:1.5;}
+  .strategy-list li::marker{color:var(--trail);}
+  .strategy-list b{color:var(--text);}
+
+  /* ---------- hill sheet ---------- */
+  .hill-list{padding:14px 18px; display:flex; flex-direction:column; gap:10px;}
+  .hill{
+    border:1px solid var(--card-border); border-radius:11px; padding:12px 14px;
+    background:var(--bg-elevated); display:flex; flex-direction:column; gap:8px;
+  }
+  .hill-top{display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap;}
+  .hill-name{font-family:'Oswald',sans-serif; font-size:15px; font-weight:600;}
+  .hill-where{font-size:11.5px; color:var(--text-faint);}
+  .hill-facts{display:grid; grid-template-columns:repeat(4,1fr); gap:8px;}
+  @media (max-width:520px){ .hill-facts{grid-template-columns:repeat(2,1fr);} }
+  .hill-fact .v{font-family:'JetBrains Mono',monospace; font-size:13.5px; font-weight:600;}
+  .hill-fact .l{font-size:9.5px; color:var(--text-faint); text-transform:uppercase; letter-spacing:.5px;}
+  .hill-tip{font-size:12px; color:var(--text-dim); line-height:1.45;}
+  .empty-note{padding:16px 18px; font-size:13px; color:var(--text-dim); line-height:1.55;}
+
+  /* ---------- surface ---------- */
+  .surface-container{padding:16px 18px;}
+  .surface-label-row{display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; font-size:12.5px; gap:10px; flex-wrap:wrap;}
+  .surface-title{font-weight:600;}
+  .surface-bar{display:flex; width:100%; height:10px; border-radius:999px; overflow:hidden; background:var(--ridge);}
+  .surface-segment{height:100%;}
+  .surface-legend{display:flex; gap:14px; margin-top:10px; flex-wrap:wrap;}
+  .surface-legend-item{display:flex; align-items:center; gap:6px; font-size:11.5px; color:var(--text-dim);}
+  .surface-legend-color{width:10px; height:10px; border-radius:3px;}
+
+  /* ---------- media ---------- */
   .video-wrap{position:relative; background:#000; aspect-ratio:16/9;}
   .video-wrap video{width:100%;height:100%;display:block;object-fit:cover;background:#000;}
   .media-msg{
     position:absolute; inset:0; display:none; flex-direction:column; align-items:center; justify-content:center;
-    gap:8px; color:var(--text-faint); font-size:13px; text-align:center; padding:20px; background:var(--bg-elevated);
-    z-index:10;
+    gap:8px; color:var(--text-faint); font-size:13px; text-align:center; padding:20px; background:var(--bg-elevated); z-index:10;
   }
   .media-msg.show{display:flex;}
+  #canvas3d-wrap{height:400px; width:100%; position:relative; cursor:grab;}
+  #canvas3d-wrap:active{cursor:grabbing;}
+  .media-placeholder{padding:34px 18px; text-align:center; color:var(--text-faint); font-size:13px;}
 
-  /* maps */
-  #course-map{height:440px; width:100%; background:var(--bg-elevated); z-index:1;}
-  #canvas3d-wrap{height:440px; width:100%; position:relative; cursor: grab;}
-  #canvas3d-wrap:active{cursor: grabbing;}
-  .leaflet-container{background:var(--bg-elevated) !important; font-family:'Inter',sans-serif;}
-  
-  .leaflet-control-layers {
-    background: var(--card) !important;
-    border: 1px solid var(--card-border) !important;
-    color: var(--text) !important;
-    border-radius: 8px !important;
-  }
-  .leaflet-control-layers-toggle { background-color: var(--card) !important; border-radius: 8px; }
-
-  .map-footer-ui {
-    display: flex; flex-direction: column; border-top:1px solid var(--card-border);
-  }
-  .map-legend{
-    display:flex; gap:16px; padding:12px 18px;
-    font-size:12px; color:var(--text-dim); flex-wrap:wrap; background: var(--card);
-  }
-  .map-legend .item{display:flex;align-items:center;gap:6px;}
-  .legend-swatch{width:16px;height:3px;border-radius:2px;}
-  .legend-dot{width:9px;height:9px;border-radius:50%;border:2px solid var(--card);}
-  .map-status{
-    padding:10px 18px; font-size:12px; color:var(--text-faint); border-top:1px solid var(--card-border);
-    display:none; background: var(--bg-elevated);
-  }
-  .map-status.show{display:block;}
-
-  /* profile chart container */
-  .profile-wrap{ padding:18px; min-height:240px; position:relative; width:100%; height:260px; }
-
-  /* Surface Bar UI Component */
-  .surface-container { padding: 16px 18px; border-bottom: 1px solid var(--card-border); }
-  .surface-label-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 12.5px; }
-  .surface-title { font-weight: 600; color: var(--text); }
-  .surface-bar { display: flex; width: 100%; height: 10px; border-radius: 999px; overflow: hidden; background: var(--ridge); }
-  .surface-segment { height: 100%; transition: width 0.3s ease; }
-  .surface-legend { display: flex; gap: 14px; margin-top: 10px; flex-wrap: wrap; }
-  .surface-legend-item { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--text-dim); }
-  .surface-legend-color { width: 10px; height: 10px; border-radius: 3px; }
-
-  /* mini stats */
-  .mini-stats{display:flex; border-top:1px solid var(--card-border); flex-wrap:wrap;}
-  .mini-stat{
-    flex:1; min-width:110px; padding:12px 14px; text-align:center; border-right:1px solid var(--card-border);
-  }
-  .mini-stat:last-child{border-right:none;}
-  @media (max-width:480px) { .mini-stat { border-right: none; border-bottom: 1px solid var(--card-border); flex: 1 0 45%; } .mini-stat:last-child { border-bottom:none; } }
-  .mini-stat .v{font-family:'Oswald',sans-serif; font-size:17px; font-weight:600;}
-  .mini-stat .l{font-size:10px; color:var(--text-faint); text-transform:uppercase; letter-spacing:.6px; margin-top:2px;}
-
-  /* Predictor styles */
-  .pred-input{
-    width: 100%; background: var(--bg); border: 1px solid var(--card-border); color: var(--text); padding: 7px 10px; border-radius: 6px; font-size: 13.5px; outline: none; transition: border-color 0.15s;
-  }
-  .pred-input:focus{ border-color: var(--trail); }
-
-  /* notes */
+  /* ---------- notes / buttons ---------- */
   .notes{display:flex; flex-direction:column; gap:10px; padding:16px 18px;}
-  .notes p{margin:0; color:var(--text-dim); font-size:13.5px; line-height:1.55;}
-  .notes ul{margin:2px 0 0; padding-left:18px; color:var(--text-dim); font-size:13.5px; line-height:1.6;}
-  .notes li::marker{color:var(--trail);}
-
-  .btn-row{display:flex; gap:10px; padding:0 18px 18px; flex-wrap:wrap;}
+  .notes p{margin:0; color:var(--text-dim); font-size:13.5px; line-height:1.6;}
+  .btn-row{display:flex; gap:10px; padding:0 18px 18px; flex-wrap:wrap; align-items:center;}
   .btn{
     display:inline-flex; align-items:center; gap:8px; padding:9px 14px; border-radius:9px;
     font-size:13px; font-weight:600; border:1px solid var(--card-border); cursor:pointer;
@@ -305,38 +288,14 @@
   .btn.primary{background:var(--trail); color:#062018; border-color:transparent;}
   .btn:hover{filter:brightness(1.06);}
 
-  .empty-state{
-    max-width:var(--maxw); margin:60px auto; padding:0 20px; text-align:center;
-    display:flex; flex-direction:column; align-items:center; gap:14px;
-  }
-  .empty-state h2{font-family:'Oswald',sans-serif; font-size:24px; margin:0;}
-  .empty-state p{color:var(--text-dim); font-size:14px; max-width:420px; margin:0;}
-
-  footer{ border-top:1px solid var(--card-border); background:var(--bg-elevated); margin-top:40px; }
-  .footer-inner{
-    max-width:var(--maxw); margin:0 auto; padding:36px 20px 28px;
-    display:grid; grid-template-columns:1.3fr 1fr 1fr; gap:28px;
-  }
-  @media (max-width:700px){ .footer-inner{grid-template-columns:1fr;} }
-  .footer-inner h4{font-size:11.5px; text-transform:uppercase; letter-spacing:1px; color:var(--text-faint); margin:0 0 12px;}
-  .footer-inner ul{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px;}
-  .footer-inner a{font-size:13.5px; color:var(--text-dim);}
-  .footer-inner a:hover{color:var(--trail);}
-  .footer-bottom{
-    max-width:var(--maxw); margin:0 auto; padding:16px 20px 28px; font-size:12px; color:var(--text-faint);
-    border-top:1px solid var(--card-border);
-  }
-
-  /* Course Records + Upcoming Meets panels */
+  /* ---------- records ---------- */
   .records-grid{display:grid; grid-template-columns:1fr 1fr; gap:16px; padding:16px 18px;}
   @media (max-width:700px){ .records-grid{grid-template-columns:1fr;} }
-  .record-col{display:flex; flex-direction:column; gap:8px;}
-  .record-col-title{font-size:11px; text-transform:uppercase; letter-spacing:0.5px; font-weight:700; color:var(--text-dim);}
-  .record-highlight{
-    background:var(--bg-elevated); border:1px solid var(--card-border); border-radius:10px; padding:12px 14px;
-  }
+  .record-col{display:flex; flex-direction:column; gap:8px; min-width:0;}
+  .record-col-title{font-size:11px; text-transform:uppercase; letter-spacing:.5px; font-weight:700; color:var(--text-dim);}
+  .record-highlight{background:var(--bg-elevated); border:1px solid var(--card-border); border-radius:10px; padding:12px 14px;}
   .record-highlight .rh-time{font-family:'Oswald',sans-serif; font-size:26px; font-weight:700; color:var(--trail);}
-  .record-highlight .rh-name{font-size:13.5px; font-weight:600; color:var(--text);}
+  .record-highlight .rh-name{font-size:13.5px; font-weight:600;}
   .record-highlight .rh-meta{font-size:11.5px; color:var(--text-faint); margin-top:2px;}
   .record-table{width:100%; border-collapse:collapse; font-size:12.5px;}
   .record-table td{padding:5px 4px; border-bottom:1px solid var(--card-border); color:var(--text-dim);}
@@ -347,35 +306,54 @@
   .upcoming-item{
     display:flex; justify-content:space-between; align-items:center; gap:10px;
     background:var(--bg-elevated); border:1px solid var(--card-border); border-radius:9px; padding:10px 14px;
-    text-decoration:none; color:var(--text);
   }
   .upcoming-item:hover{border-color:var(--trail);}
   .upcoming-item .um-name{font-size:13.5px; font-weight:600;}
   .upcoming-item .um-date{font-size:12px; color:var(--text-dim); white-space:nowrap;}
-</style>
 
-  <link rel="stylesheet" href="/assets/main.css" />
-  
-  <script src="/assets/theme-toggle.js" defer></script>
-  <script src="/assets/components.js" defer></script>
+  .notice{
+    display:flex; gap:10px; align-items:flex-start; padding:12px 14px; border-radius:10px;
+    background:rgba(242,166,90,.09); border:1px solid rgba(242,166,90,.35);
+    color:var(--text-dim); font-size:12.5px; line-height:1.5; margin:16px 18px;
+  }
+  .empty-state{max-width:var(--maxw); margin:60px auto; padding:0 20px; text-align:center; display:flex; flex-direction:column; align-items:center; gap:14px;}
+  .empty-state h2{font-family:'Oswald',sans-serif; font-size:24px; margin:0;}
+  .empty-state p{color:var(--text-dim); font-size:14px; max-width:460px; margin:0;}
+  .loading{padding:40px 18px; text-align:center; color:var(--text-dim); font-size:14px;}
+
+  /* ---------- print: a coach/runner course card ---------- */
+  @media print{
+    body::before{display:none;}
+    #global-header, #global-footer, .breadcrumb, .no-print, .hero .stat-strip{display:none !important;}
+    body{background:#fff; color:#000;}
+    .card{border:1px solid #ccc; break-inside:avoid; box-shadow:none;}
+    .card-head{border-bottom:1px solid #ccc;}
+    .page{display:block; padding:0; max-width:none;}
+    .grid-2, .grid-2.even{display:block;}
+    .card{margin-bottom:14px;}
+    .course-title{font-size:26px;}
+    .pred-box .pred-time{color:#000;}
+    .print-only{display:block !important;}
+  }
+  .print-only{display:none;}
+</style>
+<script src="/assets/theme-toggle.js" defer></script>
+<script src="/assets/components.js" defer></script>
 </head>
 <body>
 
-  <div id="global-header"></div>
+<div id="global-header"></div>
 
-  <main class="content-section">
-<div class="breadcrumb">
-  <a href="../xc">Cross Country</a>
-  <span class="sep">/</span>
-  <a href="../courses/course viewer.html">Courses</a>
-  <span class="sep">/</span>
-  <span id="breadcrumb-course" style="color:var(--text-dim)">…</span>
-</div>
-
-<div class="course-switcher" id="course-switcher"></div>
-
-<div id="page-content"></div>
-  </main>
+<main class="content-section">
+  <div class="breadcrumb no-print">
+    <a href="../xc.html">Cross Country</a>
+    <span class="sep">/</span>
+    <a href="course viewer.html">Courses</a>
+    <span class="sep">/</span>
+    <span id="breadcrumb-course" style="color:var(--text-dim)">…</span>
+  </div>
+  <div id="page-content"></div>
+</main>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -384,1101 +362,1257 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script src="../firebase-config.js"></script>
 <script src="../firebase-helpers.js"></script>
+<script src="course-engine.js"></script>
+<script src="courses-data.js"></script>
 <script>
-  const SURFACE_COLORS = {
-    "Grass": "#284706",
-    "Dirt Trail": "#6b4307",
-    "Gravel": "#4d4f4a",
-    "Asphalt": "#8a90a0",
-    "Track": "#bd453e"
-  };
+(function () {
+  'use strict';
 
-  // Pace multipliers based on terrain density/softness 
-  // (1.00 = perfect flat track, 1.02 = 2% slower, etc.)
-  const SURFACE_MULTIPLIERS = {
-    "Track": 1.00,
-    "Asphalt": 1.00,
-    "Dirt Trail": 1.015,
-    "Grass": 1.025,
-    "Gravel": 1.03
-  };
+  var E = window.CourseEngine;
 
-  const DEFAULT_COURSES = [
-    {
-      slug: "chick-fil-a",
-      name: "Chick-fil-A 5K",
-      video: "/CrossCountry/courses/assets/Chick-Fil-A.mp4",
-      profile: "/CrossCountry/courses/assets/Chick-Fil-A.svg",
-      gpx: "/CrossCountry/courses/Chick-fil-a.gpx",
-      notes: "Standard 5K cross country loop with a rolling middle third. Course layout consists predominantly of wide natural grass lanes punctuated by brief transitions across wood chip segments.",
-      surfaces: [
-        { type: "Grass", pct: 90 },
-        { type: "Dirt Trail", pct: 10 },
-        { type: "Asphalt", pct: 0 }
-      ],
-      fallbackTrack: [[39.193197,-81.461658],[39.194057,-81.464143],[39.194353,-81.464877],[39.194369,-81.46495],[39.194385,-81.465022],[39.194397,-81.465104],[39.19436,-81.465248],[39.194297,-81.465318],[39.19424,-81.46536],[39.194176,-81.465395],[39.194108,-81.465403],[39.19404,-81.465401],[39.193599,-81.46525],[39.193313,-81.465226],[39.193275,-81.465261],[39.193258,-81.465316],[39.193183,-81.465665],[39.193221,-81.466258],[39.193257,-81.466323],[39.193303,-81.466354],[39.193359,-81.466375],[39.194528,-81.466511],[39.194586,-81.466557],[39.194631,-81.466626],[39.194655,-81.466694],[39.194671,-81.466776],[39.194662,-81.466877],[39.194613,-81.466944],[39.194554,-81.466965],[39.194487,-81.466966],[39.194427,-81.466959],[39.193289,-81.466715],[39.193236,-81.46671],[39.193168,-81.466711],[39.192519,-81.466668],[39.192424,-81.466658],[39.192364,-81.466646],[39.192313,-81.466634],[39.192259,-81.466604],[39.192236,-81.466539],[39.192222,-81.466469],[39.192219,-81.466402],[39.192215,-81.46633],[39.192205,-81.466214],[39.192195,-81.466116],[39.19218,-81.466026],[39.19218,-81.465881],[39.192183,-81.465813],[39.1922,-81.465721],[39.192221,-81.465653],[39.192225,-81.465574],[39.192193,-81.465517],[39.192148,-81.465492],[39.192106,-81.465478],[39.192069,-81.465469],[39.191979,-81.465473],[39.191909,-81.465492],[39.191844,-81.465527],[39.191797,-81.465569],[39.191774,-81.465625],[39.191761,-81.465684],[39.191745,-81.465749],[39.191732,-81.465809],[39.191504,-81.466306],[39.191468,-81.466343],[39.191427,-81.466364],[39.191385,-81.466381],[39.191342,-81.466392],[39.191024,-81.466245],[39.190752,-81.466235],[39.190695,-81.466246],[39.190646,-81.466257],[39.190599,-81.466263],[39.190548,-81.466262],[39.190505,-81.46624],[39.189268,-81.465743],[39.189219,-81.465721],[39.189182,-81.465699],[39.189161,-81.46566],[39.189147,-81.465605],[39.189139,-81.465548],[39.189214,-81.465215],[39.18937,-81.464573],[39.189363,-81.464473],[39.189355,-81.46439],[39.189337,-81.464307],[39.189304,-81.464172],[39.189298,-81.464111],[39.189303,-81.464041],[39.189477,-81.463827],[39.190314,-81.462956],[39.190357,-81.462894],[39.191164,-81.46245],[39.191221,-81.462462],[39.19129,-81.46249],[39.191349,-81.462522],[39.191428,-81.462565],[39.191498,-81.462616],[39.191545,-81.462672],[39.191586,-81.462726],[39.191612,-81.462792],[39.191628,-81.462862],[39.191644,-81.462939],[39.191679,-81.462989],[39.191741,-81.463069],[39.191973,-81.463722],[39.192038,-81.463848],[39.192064,-81.463917],[39.192099,-81.463985],[39.192139,-81.46405],[39.192201,-81.46409],[39.192256,-81.464061],[39.192267,-81.463994],[39.192248,-81.463889],[39.192223,-81.46378],[39.192191,-81.463691],[39.192154,-81.463613],[39.192118,-81.46353],[39.192098,-81.463292],[39.192095,-81.463197],[39.192088,-81.463105],[39.192064,-81.463029],[39.192023,-81.46296],[39.191964,-81.462926],[39.191908,-81.462894],[39.191853,-81.462855],[39.191907,-81.462134],[39.192294,-81.461138],[39.192848,-81.460986],[39.192906,-81.461052],[39.19294,-81.46113],[39.193995,-81.464159],[39.194378,-81.465228],[39.19431,-81.465305],[39.194233,-81.465361],[39.194158,-81.465397],[39.194079,-81.4654],[39.193802,-81.465307],[39.193349,-81.46522],[39.193185,-81.465617],[39.193253,-81.466306],[39.193312,-81.466363],[39.193387,-81.466381],[39.194557,-81.466512],[39.194618,-81.46659],[39.194659,-81.466695],[39.19467,-81.466797],[39.194639,-81.466906],[39.194562,-81.466958],[39.194444,-81.466943],[39.19415,-81.466891],[39.192234,-81.466561],[39.192214,-81.466493],[39.1922,-81.466405],[39.192294,-81.461138]]
-    },
-    {
-      slug: "cabell-midland",
-      name: "Cabell Midland",
-      video: "/CrossCountry/courses/assets/Cabell Midland.mp4",
-      profile: "/CrossCountry/courses/assets/Cabell Midland.svg",
-      gpx: "/CrossCountry/courses/Cabell Midland.gpx",
-      notes: "The premiere multi-loop championship framework course known for 'The Rollercoaster' hill complex. Firm turf footing that translates to high paces in optimal weather.",
-      surfaces: [
-        { type: "Grass", pct: 86 },
-        { type: "Track", pct: 4 },
-        { type: "Gravel", pct: 10 }
-      ],
-      fallbackTrack: [[39.193197,-81.461658],[39.194057,-81.464143],[39.194353,-81.464877],[39.194369,-81.46495],[39.19424,-81.46536],[39.193599,-81.46525],[39.193183,-81.465665],[39.193257,-81.466323],[39.194528,-81.466511],[39.194662,-81.466877],[39.194427,-81.466959],[39.193168,-81.466711],[39.192364,-81.466646],[39.192222,-81.466469],[39.192205,-81.466214],[39.19218,-81.466026],[39.1922,-81.465721],[39.192193,-81.465517],[39.192069,-81.465469],[39.191844,-81.465527],[39.191761,-81.465684],[39.191504,-81.466306],[39.191385,-81.466381],[39.191024,-81.466245],[39.190695,-81.466246],[39.190505,-81.46624],[39.189219,-81.465721],[39.189161,-81.46566],[39.189139,-81.465548],[39.18937,-81.464573],[39.189337,-81.464307],[39.189298,-81.464111],[39.189477,-81.463827],[39.190357,-81.462894],[39.191221,-81.462462],[39.191349,-81.462522],[39.191498,-81.462616],[39.191586,-81.462726],[39.191628,-81.462862],[39.191679,-81.462989],[39.191973,-81.463722],[39.192064,-81.463917],[39.192139,-81.46405],[39.192256,-81.464061],[39.192248,-81.463889],[39.192191,-81.463691],[39.192118,-81.46353],[39.192095,-81.463197],[39.192064,-81.463029],[39.191964,-81.462926],[39.191853,-81.462855],[39.192294,-81.461138],[39.192906,-81.461052],[39.193995,-81.464159],[39.19431,-81.465305],[39.194079,-81.4654],[39.193349,-81.46522],[39.193253,-81.466306],[39.193387,-81.466381],[39.194618,-81.46659],[39.19467,-81.466797],[39.194562,-81.466958],[39.19415,-81.466891],[39.192214,-81.466493],[39.192195,-81.466338],[39.1922,-81.466186],[39.192155,-81.465526],[39.192011,-81.465487],[39.191898,-81.465513],[39.191807,-81.46557],[39.19157,-81.466207],[39.191498,-81.466296],[39.19133,-81.466382],[39.190517,-81.466259],[39.190414,-81.466177],[39.189583,-81.46579],[39.189296,-81.464136],[39.189351,-81.463947],[39.191848,-81.462596],[39.192913,-81.463192]]
-    },
-    {
-      slug: "meadowood-park",
-      name: "Meadowood Park",
-      video: "/CrossCountry/courses/assets/Meadowood Park.mp4",
-      profile: "/CrossCountry/courses/assets/Meadowood Park.svg",
-      gpx: "/CrossCountry/courses/Meadowood Park.gpx",
-      notes: "A scenic rolling route wrapped around wide athletic fields and park lines. Great for spectators and offers crisp drafting segments across long flat expanses.",
-      surfaces: [
-        { type: "Grass", pct: 95 },
-        { type: "Gravel", pct: 5 }
-      ],
-      fallbackTrack: [[39.193197,-81.461658],[39.194057,-81.464143],[39.194353,-81.464877],[39.194369,-81.46495],[39.19424,-81.46536],[39.193599,-81.46525],[39.193183,-81.465665],[39.193257,-81.466323],[39.194528,-81.466511],[39.194662,-81.466877],[39.194427,-81.466959],[39.193168,-81.466711],[39.192364,-81.466646],[39.192222,-81.466469],[39.192205,-81.466214],[39.19218,-81.466026],[39.1922,-81.465721],[39.192193,-81.465517],[39.192069,-81.465469],[39.191844,-81.465527],[39.191761,-81.465684],[39.191504,-81.466306],[39.191385,-81.466381],[39.191024,-81.466245],[39.190695,-81.466246],[39.190505,-81.46624],[39.189219,-81.465721],[39.189161,-81.46566],[39.189139,-81.465548],[39.18937,-81.464573],[39.189337,-81.464307],[39.189298,-81.464111],[39.189477,-81.463827],[39.190357,-81.462894],[39.191221,-81.462462],[39.191349,-81.462522],[39.191498,-81.462616],[39.191586,-81.462726],[39.191628,-81.462862],[39.191679,-81.462989],[39.191973,-81.463722],[39.192064,-81.463917],[39.192139,-81.46405],[39.192256,-81.464061],[39.192248,-81.463889],[39.192191,-81.463691],[39.192118,-81.46353],[39.192095,-81.463197],[39.192064,-81.463029],[39.191964,-81.462926],[39.191853,-81.462855],[39.192294,-81.461138],[39.192906,-81.461052],[39.193995,-81.464159],[39.19431,-81.465305],[39.194079,-81.4654],[39.193349,-81.46522],[39.193253,-81.466306],[39.193387,-81.466381],[39.194618,-81.46659],[39.19467,-81.466797],[39.194562,-81.466958],[39.19415,-81.466891],[39.192214,-81.466493],[39.192195,-81.466338],[39.1922,-81.466186],[39.192155,-81.465526],[39.192011,-81.465487],[39.191898,-81.465513],[39.191807,-81.46557],[39.19157,-81.466207],[39.191498,-81.466296],[39.19133,-81.466382],[39.190517,-81.466259],[39.190414,-81.466177],[39.189583,-81.46579],[39.189296,-81.464136],[39.189351,-81.463947],[39.191848,-81.462596],[39.192913,-81.463192]]
-    },
-    {slug: "holmdel-park",
-    name: "Holmdel Park",
-    video: "/CrossCountry/courses/assets/Holmdel Park.mp4",
-    profile: "/CrossCountry/courses/assets/Holmdel Park.svg",
-    gpx: "/CrossCountry/courses/Holmdel Park.gpx",
-    notes: "A scenic rolling route wrapped around wide athletic fields and park lines. Great for spectators and offers crisp drafting segments across long flat expanses.",
-    surfaces: [
-      { type: "Dirt Trail", pct: 60 },
-      { type: "Grass", pct: 40 }
-    ],},
-    {
-      slug: "pipestem-state-park",
-      name: "Pipestem State Park",
-      video: "/CrossCountry/courses/assets/Pipestem.mp4",
-      profile: "/CrossCountry/courses/assets/Pipestem.svg",
-      gpx: "/CrossCountry/courses/Pipestem.gpx",
-      notes: "Heavy wooded variants featuring dense canopy sections and technical turns. Ground is highly organic and shifts dynamically based on precipitation margins.",
-      surfaces: [
-        { type: "Grass", pct: 75 },
-        { type: "Dirt Trail", pct: 20 },
-        { type: "Gravel", pct: 5 }
-      ],
-      fallbackTrack: [[39.193197,-81.461658],[39.194057,-81.464143],[39.194353,-81.464877],[39.194369,-81.46495],[39.19424,-81.46536],[39.193599,-81.46525],[39.193183,-81.465665],[39.193257,-81.466323],[39.194528,-81.466511],[39.194662,-81.466877],[39.194427,-81.466959],[39.193168,-81.466711],[39.192364,-81.466646],[39.192222,-81.466469],[39.192205,-81.466214],[39.19218,-81.466026],[39.1922,-81.465721],[39.192193,-81.465517],[39.192069,-81.465469],[39.191844,-81.465527],[39.191761,-81.465684],[39.191504,-81.466306],[39.191385,-81.466381],[39.191024,-81.466245],[39.190695,-81.466246],[39.190505,-81.46624],[39.189219,-81.465721],[39.189161,-81.46566],[39.189139,-81.465548],[39.18937,-81.464573],[39.189337,-81.464307],[39.189298,-81.464111],[39.189477,-81.463827],[39.190357,-81.462894],[39.191221,-81.462462],[39.191349,-81.462522],[39.191498,-81.462616],[39.191586,-81.462726],[39.191628,-81.462862],[39.191679,-81.462989],[39.191973,-81.463722],[39.192064,-81.463917],[39.192139,-81.46405],[39.192256,-81.464061],[39.192248,-81.463889],[39.192191,-81.463691],[39.192118,-81.46353],[39.192095,-81.463197],[39.192064,-81.463029],[39.191964,-81.462926],[39.191853,-81.462855],[39.192294,-81.461138],[39.192906,-81.461052],[39.193995,-81.464159],[39.19431,-81.465305],[39.194079,-81.4654],[39.193349,-81.46522],[39.193253,-81.466306],[39.193387,-81.466381],[39.194618,-81.46659],[39.19467,-81.466797],[39.194562,-81.466958],[39.19415,-81.466891],[39.192214,-81.466493],[39.192195,-81.466338],[39.1922,-81.466186],[39.192155,-81.465526],[39.192011,-81.465487],[39.191898,-81.465513],[39.191807,-81.46557],[39.19157,-81.466207],[39.191498,-81.466296],[39.19133,-81.466382],[39.190517,-81.466259],[39.190414,-81.466177],[39.189583,-81.46579],[39.189296,-81.464136],[39.189351,-81.463947],[39.191848,-81.462596],[39.192913,-81.463192]]
-    },
-    {
-      slug: "south-harrison",
-      name: "South Harrison",
-      video: "/CrossCountry/courses/assets/South Harrison.mp4",
-      gpx: "/CrossCountry/courses/South Harrison.gpx",
-      notes: "Heavy wooded variants featuring dense canopy sections and technical turns. Ground is highly organic and shifts dynamically based on precipitation margins.",
-      surfaces: [
-        { type: "Grass", pct: 75 },
-        { type: "Dirt Trail", pct: 20 },
-        { type: "Gravel", pct: 5 }
-      ],
-    },
-    {
-      slug: "glen-oak",
-      name: "Glen Oak",
-      video: "/CrossCountry/courses/assets/Glen Oak.mp4",
-      gpx: "/CrossCountry/courses/Glen Oak.gpx",
-      notes: "Heavy wooded variants featuring dense canopy sections and technical turns. Ground is highly organic and shifts dynamically based on precipitation margins.",
-      surfaces: [
-        { type: "Grass", pct: 85 },
-        { type: "Track", pct: 10 },
-        { type: "Gravel", pct: 5 }
-      ],
-    },
-  ];
+  // ---------------------------------------------------------------- state
+  var COURSES = [];
+  var analysisCache = new Map();   // slug -> analysis (or {error})
+  var activeRequestId = 0;
+  var map = null;
+  var mapHoverMarker = null;
+  var elevationChart = null;
+  var activeSamples = [];
+  var threeRefs = null;
+  var currentPlan = null;
 
-  let COURSES = DEFAULT_COURSES;
-  let map = null;
-  let routeLayer = null;
-  let mapHoverMarker = null;
-  let activeElevationChart = null;
-  let activeSamplePoints = []; 
+  // ---------------------------------------------------------------- helpers
+  function assetUrl(p) {
+    if (!p) return '';
+    if (/^(https?:)?\/\//.test(p) || p.charAt(0) === '/') return p;
+    return p.split('/').map(encodeURIComponent).join('/');
+  }
+  function esc(s) {
+    return String(s === null || s === undefined ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+  function fmtFt(n) { return n === null || n === undefined || !isFinite(n) ? '—' : Math.round(n).toLocaleString(); }
+  function fmtMi(n) { return n === null || n === undefined || !isFinite(n) ? '—' : n.toFixed(2); }
+  function starsHtml(stars) {
+    var full = Math.round(E.clamp(stars, 1, 5));
+    return '<span class="stars">' + '★'.repeat(full) + '☆'.repeat(5 - full) + '</span>';
+  }
+  function difficultyPill(rating) {
+    var cls = rating.costPct < 1.5 ? 'fast' : rating.costPct < 3 ? 'moderate' : 'tough';
+    return '<span class="pill ' + cls + '">' + esc(rating.label) + '</span>';
+  }
+  function slugify(s) {
+    return String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  }
+  function signedPct(v) { return (v >= 0 ? '+' : '−') + Math.abs(v).toFixed(1) + '%'; }
+  function gpxKey(p) { return p ? String(p).split('/').pop().trim().toLowerCase() : ''; }
 
-  // THREE.JS Global Object References
-  let renderer3d = null, scene3d = null, camera3d = null, trackGroup3d = null;
+  // ---------------------------------------------------------------- data
+  async function loadManifest() {
+    var local = (window.XC_COURSE_MANIFEST || []).map(function (c) {
+      return Object.assign({}, c, { source: 'local' });
+    });
+    var bySlug = {}, byName = {};
+    local.forEach(function (c) { bySlug[c.slug] = c; byName[slugify(c.name)] = c; });
 
-  // ---------- theme-aware updates ----------
-  // Theme toggling itself is handled globally by /assets/theme-toggle.js
-  // (the shared header injects buttons with class "theme-toggle", not an
-  // id, so we hook into theme changes via the data-theme attribute instead
-  // of assuming a page-local button with id="theme-toggle" exists).
-  const root = document.documentElement;
+    var fbCourses = [];
+    try {
+      if (typeof window.getAllCourses === 'function') fbCourses = await window.getAllCourses();
+    } catch (e) { console.warn('Course viewer: Firebase courses unavailable', e); }
 
-  function applyThemeSideEffects() {
-    const isLight = root.getAttribute('data-theme') === 'light';
+    var consumed = {};
+    var merged = (fbCourses || []).map(function (fb) {
+      var slug = fb.slug || slugify(fb.name || '');
+      var fallback = bySlug[slug] || byName[slugify(fb.name || '')] || null;
+      if (fallback) consumed[fallback.slug] = true;
+      return {
+        slug: slug,
+        name: fb.name || (fallback && fallback.name) || 'Unnamed Course',
+        gpx: fb.gpx_url || (fallback && fallback.gpx) || '',
+        video: fb.video_url || (fallback && fallback.video) || '',
+        location: fb.location || (fallback && fallback.location) || '',
+        surfaces: (Array.isArray(fb.surfaces) && fb.surfaces.length)
+          ? fb.surfaces
+          : ((fallback && fallback.surfaces) || []),
+        notes: fb.notes || (fallback && fallback.notes) || fb.description || '',
+        source: 'firebase'
+      };
+    }).filter(function (c) { return c.slug; });
 
-    if (activeElevationChart) {
-      const gColor = isLight ? '#eae5da' : '#232b36';
-      const tColor = isLight ? '#1c2128' : '#9aa5b3';
-
-      activeElevationChart.options.scales.x.grid.color = gColor;
-      activeElevationChart.options.scales.x.ticks.color = tColor;
-      activeElevationChart.options.scales.y.grid.color = gColor;
-      activeElevationChart.options.scales.y.ticks.color = tColor;
-      activeElevationChart.update();
-    }
-
-    // Dynamic 3D Scene Background Matching Updates
-    if (scene3d) {
-      const cardColor = getComputedStyle(document.documentElement).getPropertyValue('--card').trim();
-      scene3d.background.set(cardColor);
-    }
+    // A course can only appear once. Match local fallbacks by slug, and — if a
+    // slug has drifted — by GPX filename, so the same track never renders twice.
+    var usedGpx = {};
+    merged.forEach(function (c) { var k = gpxKey(c.gpx); if (k) usedGpx[k] = true; });
+    local.forEach(function (c) {
+      if (consumed[c.slug]) return;
+      var k = gpxKey(c.gpx);
+      if (k && usedGpx[k]) return;
+      merged.push(c);
+    });
+    merged.sort(function (a, b) { return (a.name || '').localeCompare(b.name || ''); });
+    COURSES = merged;
   }
 
-  new MutationObserver(applyThemeSideEffects).observe(root, {
-    attributes: true,
-    attributeFilter: ['data-theme']
-  });
-
-  // ---------- utils ----------
-  function haversine(lat1, lon1, lat2, lon2) {
-    const R = 6371000;
-    const phi1 = lat1 * Math.PI / 180, phi2 = lat2 * Math.PI / 180;
-    const dphi = (lat2 - lat1) * Math.PI / 180;
-    const dlambda = (lon2 - lon1) * Math.PI / 180;
-    const a = Math.sin(dphi/2)**2 + Math.cos(phi1)*Math.cos(phi2)*Math.sin(dlambda/2)**2;
-    return 2 * R * Math.asin(Math.sqrt(a));
+  function getCourse(slug) {
+    return COURSES.find(function (c) { return c.slug === slug; }) || null;
   }
 
-  function computeStats(points) {
-    let dist = 0, gain = 0, loss = 0;
-    const elevs = points.map(p => p.ele).filter(e => e !== null && !isNaN(e));
-    
-    points[0].distanceFromStart = 0;
-    for (let i = 1; i < points.length; i++) {
-      const step = haversine(points[i-1].lat, points[i-1].lon, points[i].lat, points[i].lon);
-      dist += step;
-      points[i].distanceFromStart = dist;
-      
-      if (points[i].ele !== null && points[i-1].ele !== null) {
-        const de = points[i].ele - points[i-1].ele;
-        if (de > 0) gain += de; else loss += -de;
-      }
+  function analyzeCourse(course) {
+    if (!course || !course.gpx) return Promise.resolve(null);
+    if (analysisCache.has(course.slug)) return Promise.resolve(analysisCache.get(course.slug));
+    var url = assetUrl(course.gpx);
+    var p = fetch(url)
+      .then(function (res) { if (!res.ok) throw new Error('HTTP ' + res.status); return res.text(); })
+      .then(function (text) {
+        var a = E.analyze(text);
+        if (!a.points.length) throw new Error('no track points');
+        analysisCache.set(course.slug, a);
+        return a;
+      })
+      .catch(function (err) {
+        console.warn('Course viewer: could not analyze ' + course.slug, err);
+        var fail = { error: String(err && err.message || err), points: [], metrics: null, climbs: [], hasElevation: false };
+        analysisCache.set(course.slug, fail);
+        return fail;
+      });
+    analysisCache.set(course.slug, p); // cache the promise so parallel calls dedupe
+    return p;
+  }
+
+  // Auto-written terrain summary, derived only from measured data.
+  function terrainSummary(a) {
+    var m = a.metrics;
+    if (!m) return '';
+    var parts = ['Measured ' + fmtMi(m.distanceMi) + ' mi'];
+    if (m.hasElevation) {
+      parts.push('+' + fmtFt(m.gainFt) + ' ft / −' + fmtFt(m.lossFt) + ' ft');
+      parts.push(a.climbs.length
+        ? a.climbs.length + (a.climbs.length === 1 ? ' climb' : ' climbs') + ' detected'
+        : 'no sustained climbs');
+      parts.push((m.costPct >= 0 ? '+' : '') + m.costPct.toFixed(1) + '% vs flat equivalent');
+    } else {
+      parts.push('elevation data unavailable');
     }
+    return parts.join(' · ');
+  }
+
+  // ---------------------------------------------------------------- list view
+  function sparklineSvg(a) {
+    if (!a || !a.hasElevation || a.points.length < 3) return '';
+    var pts = E.resample(a.points, 90);
+    var w = 300, h = 44, pad = 3;
+    var min = Infinity, max = -Infinity;
+    pts.forEach(function (p) { if (p.eleSmooth < min) min = p.eleSmooth; if (p.eleSmooth > max) max = p.eleSmooth; });
+    var span = (max - min) || 1;
+    var total = pts[pts.length - 1].distMi || 1;
+    var lines = [];
+    for (var i = 1; i < pts.length; i++) {
+      var x1 = (pts[i - 1].distMi / total) * w;
+      var x2 = (pts[i].distMi / total) * w;
+      var y1 = h - pad - ((pts[i - 1].eleSmooth - min) / span) * (h - pad * 2);
+      var y2 = h - pad - ((pts[i].eleSmooth - min) / span) * (h - pad * 2);
+      var color = E.gradeColor((pts[i].grade + pts[i - 1].grade) / 2);
+      lines.push('<line x1="' + x1.toFixed(1) + '" y1="' + y1.toFixed(1) + '" x2="' + x2.toFixed(1) + '" y2="' + y2.toFixed(1) +
+        '" stroke="' + color + '" stroke-width="2" stroke-linecap="round"/>');
+    }
+    return '<svg class="spark" viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="none" aria-hidden="true">' + lines.join('') + '</svg>';
+  }
+
+  function renderList() {
+    document.title = 'Courses | Mountain State Miles';
+    document.getElementById('breadcrumb-course').textContent = 'All Courses';
+    teardownCourseView();
+
+    var cards = COURSES.map(function (c) {
+      return '<button type="button" class="course-card" data-slug="' + esc(c.slug) + '">' +
+        '<div class="course-card-top">' +
+          '<div>' +
+            '<h3 class="course-card-title">' + esc(c.name) + '</h3>' +
+            (c.location ? '<div class="course-card-loc">' + esc(c.location) + '</div>' : '') +
+          '</div>' +
+          '<span class="rating-slot"></span>' +
+        '</div>' +
+        '<div class="spark-slot"><div class="spark-empty">Profiling course…</div></div>' +
+        '<div class="card-facts">' +
+          '<div class="card-fact"><div class="v fact-dist">—</div><div class="l">Miles</div></div>' +
+          '<div class="card-fact"><div class="v fact-gain">—</div><div class="l">Ft Climb</div></div>' +
+          '<div class="card-fact"><div class="v fact-hills">—</div><div class="l">Climbs</div></div>' +
+        '</div>' +
+        '<div class="course-card-footer"><span>Open course profile &rarr;</span><span class="measuring">measuring…</span></div>' +
+      '</button>';
+    }).join('');
+
+    document.getElementById('page-content').innerHTML =
+      '<section class="hero">' +
+        '<div class="hero-title-block">' +
+          '<div class="eyebrow"><span class="dot"></span> Course Directory</div>' +
+          '<h1 class="course-title">Courses</h1>' +
+          '<p class="course-sub">Every course below is measured from its GPX track — smoothed elevation, detected climbs, and a grade-adjusted pace model. Open one for a hill sheet and a pacing plan built around your PR.</p>' +
+        '</div>' +
+      '</section>' +
+      '<div class="course-grid">' + cards + '</div>';
+
+    document.getElementById('page-content').querySelectorAll('.course-card').forEach(function (btn) {
+      btn.addEventListener('click', function () { route(btn.dataset.slug, true); });
+    });
+
+    hydrateCards();
+  }
+
+  function hydrateCards() {
+    // Small concurrency pool keeps 14 GPX fetches from stampeding mobile links.
+    var queue = COURSES.slice();
+    var running = 0, MAX = 4;
+    function next() {
+      if (!queue.length) return;
+      if (running >= MAX) return;
+      var course = queue.shift();
+      running++;
+      analyzeCourse(course).then(function (a) {
+        running--;
+        fillCard(course, a);
+        next();
+      });
+    }
+    for (var i = 0; i < MAX; i++) next();
+  }
+
+  function fillCard(course, a) {
+    var card = document.querySelector('.course-card[data-slug="' + course.slug + '"]');
+    if (!card) return;
+    var slot = card.querySelector('.spark-slot');
+    var ratingSlot = card.querySelector('.rating-slot');
+    var measuring = card.querySelector('.measuring');
+
+    if (!a || a.error || !a.metrics) {
+      slot.innerHTML = '<div class="spark-empty">Track file unavailable</div>';
+      ratingSlot.innerHTML = '<span class="pill rolling">No track file</span>';
+      measuring.textContent = 'not measured';
+      return;
+    }
+    var m = a.metrics;
+    slot.innerHTML = a.hasElevation ? sparklineSvg(a) : '<div class="spark-empty">No elevation data in track file</div>';
+    card.querySelector('.fact-dist').textContent = fmtMi(m.distanceMi);
+    card.querySelector('.fact-gain').textContent = a.hasElevation ? fmtFt(m.gainFt) : '—';
+    card.querySelector('.fact-hills').textContent = a.hasElevation ? String(a.climbs.length) : '—';
+    // Never rate a course we cannot measure — calling it "Fast" would be a claim
+    // the track data does not support.
+    ratingSlot.innerHTML = a.hasElevation
+      ? difficultyPill(a.rating) + '<div style="margin-top:6px">' + starsHtml(a.rating.stars) + '</div>'
+      : '<span class="pill rolling">Unrated</span>';
+    measuring.textContent = a.hasElevation ? signedPct(m.costPct) + ' vs flat' : 'distance only';
+  }
+
+  // ---------------------------------------------------------------- course view
+  function teardownCourseView() {
+    if (map) { map.remove(); map = null; }
+    mapHoverMarker = null;
+    if (elevationChart) { elevationChart.destroy(); elevationChart = null; }
+    activeSamples = [];
+    if (threeRefs && threeRefs.renderer) {
+      threeRefs.disposed = true;
+      try { threeRefs.renderer.dispose(); } catch (e) {}
+    }
+    threeRefs = null;
+    currentPlan = null;
+  }
+
+  function renderCourseShell(course, a) {
+    var m = a && a.metrics;
+    var hasElev = !!(a && a.hasElevation);
+    var statStrip = m
+      ? '<div class="stat-strip">' +
+          '<div class="stat"><span class="val">' + fmtMi(m.distanceMi) + '</span><span class="lab">Miles</span></div>' +
+          '<div class="stat"><span class="val">' + (hasElev ? fmtFt(m.gainFt) : '—') + '</span><span class="lab">Ft Climb</span></div>' +
+          '<div class="stat"><span class="val">' + (hasElev ? fmtFt(m.maxFt) + '′' : '—') + '</span><span class="lab">High Point</span></div>' +
+          '<div class="stat"><span class="val">' + (hasElev ? signedPct(m.costPct) : '—') + '</span><span class="lab">Vs Flat</span></div>' +
+        '</div>'
+      : '';
+
+    return '' +
+      '<div class="no-print" style="max-width:var(--maxw); margin:0 auto; padding:0 20px;">' +
+        '<button class="btn" id="back-to-list">&larr; All Courses</button>' +
+      '</div>' +
+      '<section class="hero">' +
+        '<div class="hero-title-block">' +
+          '<div class="eyebrow"><span class="dot"></span> Course Profile</div>' +
+          '<h1 class="course-title">' + esc(course.name) + '</h1>' +
+          '<p class="course-sub" id="course-sub">' + esc(course.location || 'Measured from the official course track file.') + '</p>' +
+        '</div>' +
+        statStrip +
+      '</section>' +
+      '<div class="page" id="course-body"></div>';
+  }
+
+  function renderCourse(course, a) {
+    var body = document.getElementById('course-body');
+    if (!body) return;
+    if (!a || a.error || !a.metrics) {
+      var msg = course.gpx
+        ? 'This course\'s track file could not be loaded, so nothing can be measured yet. Expected <span class="mono">' +
+          esc(course.gpx) + '</span> to be reachable — ' + esc((a && a.error) ? a.error : 'unknown error') + '.'
+        : 'No track file is configured for this course yet, so it cannot be measured. ' +
+          'Upload a GPX in the course admin to unlock the map, hill sheet, and pacing plan.';
+      body.innerHTML = '<div class="card"><div class="empty-note">' + msg + '</div></div>';
+      return;
+    }
+
+    var m = a.metrics;
+    body.innerHTML =
+      planCardHtml(course, a) +
+      hillsCardHtml(a) +
+      mapCardHtml(course, a) +
+      profileCardHtml(course, a) +
+      terrainCardHtml(course, a) +
+      mediaRowHtml(course) +
+      recordsRowHtml() +
+      notesCardHtml(course, a);
+
+    document.getElementById('back-to-list').addEventListener('click', function () { route(null, true); });
+
+    renderMap(course, a);
+    renderProfile(course, a);
+    if (a.hasElevation) render3D(a);
+    renderRacePlan(course, a);
+    bindPlanInputs(course, a);
+    bindVideoFallback();
+    loadRecordsAndUpcoming(course);
+
+    var subEl = document.getElementById('course-sub');
+    if (subEl) subEl.textContent = [course.location, terrainSummary(a)].filter(Boolean).join(' · ');
+  }
+
+  // ---------- race plan ----------
+  function planCardHtml(course, a) {
+    return '' +
+    '<div class="card">' +
+      '<div class="card-head">' +
+        '<h2><span class="swatch" style="background:var(--trail)"></span>Race Plan</h2>' +
+        '<span class="tag no-print">Grade-adjusted from your PR</span>' +
+      '</div>' +
+      '<div class="plan-body">' +
+        '<div class="field-row">' +
+          '<div class="field">' +
+            '<label for="ref-dist">Reference PR distance</label>' +
+            '<select id="ref-dist" class="inp">' +
+              '<option value="3.10686">5,000m (5K)</option>' +
+              '<option value="1">1 mile</option>' +
+              '<option value="2">2 mile / 3,200m</option>' +
+              '<option value="4.97097">8,000m (8K)</option>' +
+              '<option value="6.21371">10,000m (10K)</option>' +
+            '</select>' +
+          '</div>' +
+          '<div class="field">' +
+            '<label>Your PR on that distance (flat course)</label>' +
+            '<div class="inputs">' +
+              '<input type="number" id="ref-min" class="inp" min="3" max="90" value="18" aria-label="PR minutes">' +
+              '<span class="inp-sep">:</span>' +
+              '<input type="number" id="ref-sec" class="inp" min="0" max="59" value="0" aria-label="PR seconds">' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="slider-row">' +
+          '<div class="field">' +
+            '<label for="temp">Race-day temp <span class="range-val" id="temp-val">55°F</span></label>' +
+            '<input type="range" id="temp" min="30" max="100" step="1" value="55">' +
+          '</div>' +
+          '<div class="field">' +
+            '<label for="humidity">Humidity <span class="range-val" id="humidity-val">50%</span></label>' +
+            '<input type="range" id="humidity" min="10" max="100" step="5" value="50">' +
+          '</div>' +
+        '</div>' +
+        '<div class="pred-box">' +
+          '<div class="pred-time" id="pred-time">—</div>' +
+          '<div class="pred-lab">Predicted finish</div>' +
+          '<div class="pred-delta" id="pred-delta"></div>' +
+          '<div class="pred-notes" id="pred-notes"></div>' +
+        '</div>' +
+        '<div>' +
+          '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-dim);margin-bottom:6px;">Mile-by-mile plan</div>' +
+          '<table class="split-table"><thead><tr>' +
+            '<th>Segment</th><th>Terrain</th><th style="text-align:right">Target</th><th style="text-align:right">Running</th>' +
+          '</tr></thead><tbody id="split-body"></tbody></table>' +
+        '</div>' +
+        '<div>' +
+          '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-dim);margin-bottom:8px;">Race strategy</div>' +
+          '<ul class="strategy-list" id="strategy-list"></ul>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  }
+
+  function bindPlanInputs(course, a) {
+    ['ref-dist', 'ref-min', 'ref-sec', 'temp', 'humidity'].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) el.addEventListener('input', function () { renderRacePlan(course, a); });
+    });
+  }
+
+  function readPlanInputs() {
+    var refMi = parseFloat((document.getElementById('ref-dist') || {}).value) || 3.10686;
+    var mins = parseInt((document.getElementById('ref-min') || {}).value, 10);
+    var secs = parseInt((document.getElementById('ref-sec') || {}).value, 10);
+    if (!isFinite(mins)) mins = 18;
+    if (!isFinite(secs)) secs = 0;
+    mins = E.clamp(mins, 0, 180);
+    secs = E.clamp(secs, 0, 59);
+    var tempF = parseFloat((document.getElementById('temp') || {}).value);
+    var humidity = parseFloat((document.getElementById('humidity') || {}).value);
     return {
-      distanceMi: dist / 1609.34,
-      gainFt: gain * 3.28084,
-      lossFt: loss * 3.28084,
-      minFt: elevs.length ? Math.min(...elevs) * 3.28084 : null,
-      maxFt: elevs.length ? Math.max(...elevs) * 3.28084 : null,
-      pointCount: points.length
+      refMi: refMi,
+      refSeconds: mins * 60 + secs,
+      tempF: isFinite(tempF) ? tempF : 55,
+      humidityPct: isFinite(humidity) ? humidity : 50
     };
   }
 
-  function parseGpx(text) {
-    const xml = new DOMParser().parseFromString(text, 'application/xml');
-    if (xml.querySelector('parsererror')) return [];
-    return Array.from(xml.getElementsByTagName('trkpt')).map((p, idx) => {
-      const eleNode = p.getElementsByTagName('ele')[0];
-      let fallbackEle = 120 + Math.sin(idx * 0.04) * 15 + Math.cos(idx * 0.1) * 5;
-      return {
-        lat: parseFloat(p.getAttribute('lat')),
-        lon: parseFloat(p.getAttribute('lon')),
-        ele: eleNode ? parseFloat(eleNode.textContent) : fallbackEle
-      };
-    });
-  }
+  function renderRacePlan(course, a) {
+    var m = a.metrics;
+    var i = readPlanInputs();
 
-  function basename(path) {
-    return path.split('/').pop();
-  }
+    var tempLab = document.getElementById('temp-val');
+    var humLab = document.getElementById('humidity-val');
+    if (tempLab) tempLab.textContent = Math.round(i.tempF) + '°F';
+    if (humLab) humLab.textContent = Math.round(i.humidityPct) + '%';
 
-  function fmt(n, digits) {
-    return n === null || isNaN(n) ? '—' : n.toFixed(digits);
-  }
-
-  // ---------- Firebase merge: crosscountry/courses + local DEFAULT_COURSES fallback ----------
-  async function mergeCoursesFromFirebase() {
-    if (typeof window.getAllCourses !== 'function') return;
-
-    let fbCourses = [];
-    try {
-      fbCourses = await window.getAllCourses();
-    } catch (e) {
-      console.error('Course viewer: failed to load courses from Firebase', e);
+    if (!i.refSeconds) {
+      document.getElementById('pred-time').textContent = '—';
       return;
     }
-    if (!Array.isArray(fbCourses) || !fbCourses.length) return;
 
-    const hardcodedBySlug = {};
-    const hardcodedByName = {};
-    DEFAULT_COURSES.forEach(c => {
-      hardcodedBySlug[c.slug] = c;
-      hardcodedByName[(c.name || '').trim().toLowerCase()] = c;
+    var pred = E.predictTime({
+      refMi: i.refMi,
+      refSeconds: i.refSeconds,
+      flatEquivMi: m.flatEquivMi,
+      distanceMi: m.distanceMi,
+      surfaces: course.surfaces,
+      tempF: i.tempF,
+      humidityPct: i.humidityPct
     });
-
-    const consumedSlugs = new Set();
-
-    const merged = fbCourses.map(fb => {
-      const fallback = hardcodedBySlug[fb.slug] || hardcodedByName[(fb.name || '').trim().toLowerCase()] || null;
-      if (fallback) consumedSlugs.add(fallback.slug);
-
-      const surfaces = (Array.isArray(fb.surfaces) && fb.surfaces.length)
-        ? fb.surfaces
-        : ((fallback && fallback.surfaces) || []);
-
-      return {
-        id: fb.id,
-        slug: fb.slug || (fallback && fallback.slug) || '',
-        name: fb.name || (fallback && fallback.name) || 'Unnamed Course',
-        location: fb.location || '',
-        distance: fb.distance || '',
-        difficulty: fb.difficulty || '',
-        description: fb.description || '',
-        video: fb.video_url || (fallback && fallback.video) || '',
-        profile: (fallback && fallback.profile) || '',
-        gpx: fb.gpx_url || (fallback && fallback.gpx) || '',
-        notes: fb.notes || (fallback && fallback.notes) || fb.description || '',
-        surfaces: surfaces,
-        fallbackTrack: (fallback && fallback.fallbackTrack) || null
-      };
-    }).filter(c => c.slug);
-
-    DEFAULT_COURSES.forEach(c => {
-      const alreadyPresent = consumedSlugs.has(c.slug) || merged.some(m => m.slug === c.slug);
-      if (!alreadyPresent) merged.push(c);
+    var plan = E.buildRacePlan(a.points, pred.seconds, {
+      totalGainFt: m.gainFt,
+      totalLossFt: m.lossFt
     });
+    currentPlan = { course: course, inputs: i, pred: pred, plan: plan };
 
-    if (merged.length) COURSES = merged;
-  }
+    document.getElementById('pred-time').textContent = E.fmtTime(pred.seconds);
 
-  // ---------- Main Course Grid View ----------
-  function showCourseList() {
-    document.title = `Courses | Mountain State Miles`;
-    document.getElementById('breadcrumb-course').textContent = 'All Courses';
+    var delta = pred.secondsOverFlat;
+    document.getElementById('pred-delta').innerHTML =
+      'On this course vs. a flat ' + fmtMi(m.distanceMi) + '-mile run at the same fitness: ' +
+      '<b style="color:' + (delta >= 0 ? 'var(--up)' : 'var(--trail)') + '">' +
+      (delta >= 0 ? '+' : '−') + E.fmtTime(Math.abs(delta)) + '</b>';
 
-    const switcher = document.getElementById('course-switcher');
-    if (switcher) switcher.style.display = 'none';
+    var notes = [];
+    notes.push('<span class="chip">Terrain ×' + pred.gradeMultiplier.toFixed(3) + '</span>');
+    notes.push('<span class="chip">Footing ×' + pred.surfaceMultiplier.toFixed(3) + '</span>');
+    notes.push('<span class="chip">Conditions ×' + pred.weatherMultiplier.toFixed(3) + '</span>');
+    notes.push('<span class="chip">Flat-equiv ' + fmtMi(m.flatEquivMi) + ' mi</span>');
+    document.getElementById('pred-notes').innerHTML = notes.join('');
 
-    const gridHtml = COURSES.map(c => `
-      <div class="course-card" onclick="loadCourse('${c.slug}', true)">
-        <h3 class="course-card-title">${c.name}</h3>
-        <div class="course-card-meta">
-          ${c.notes ? c.notes.substring(0, 90) + '...' : 'Interactive course layout, 3D profile, and terrain metrics.'}
-        </div>
-        <div class="course-card-footer">
-          View Detailed Profile &rarr;
-        </div>
-      </div>
-    `).join('');
-
-    document.getElementById('page-content').innerHTML = `
-      <section class="hero" style="padding-bottom: 10px;">
-        <div class="hero-title-block">
-          <div class="eyebrow"><span class="dot"></span> Directory</div>
-          <h1 class="course-title">Select a Course</h1>
-          <p class="course-sub">Choose a course below to view its interactive map, 3D fly-through, and race predictor.</p>
-        </div>
-      </section>
-      <div class="course-grid">
-        ${gridHtml}
-      </div>
-    `;
-
-    const url = new URL(window.location.href);
-    url.searchParams.delete('course');
-    window.history.pushState({}, '', url);
-    
-    if (map) { map.remove(); map = null; }
-    if (activeElevationChart) { activeElevationChart.destroy(); activeElevationChart = null; }
-  }
-
-  // ---------- page shell for a course ----------
-  function courseTemplate(course) {
-    const surfaceBarsHtml = (course.surfaces || []).map(s => {
-      const color = SURFACE_COLORS[s.type] || '#5f6b7a';
-      return `<div class="surface-segment" style="width: ${s.pct}%; background-color: ${color};" title="${s.type}: ${s.pct}%"></div>`;
+    var rows = plan.splits.map(function (s) {
+      var terr = '<span style="color:var(--up)">↑' + Math.round(s.gainFt) + '</span> / ' +
+        '<span style="color:var(--down)">↓' + Math.round(s.lossFt) + '</span>' +
+        (a.hasElevation ? ' <span style="color:var(--text-faint)">' + (s.avgGradePct >= 0 ? '+' : '') + s.avgGradePct.toFixed(1) + '%</span>' : '');
+      return '<tr>' +
+        '<td>' + esc(s.label) + (s.partial ? ' <span style="color:var(--text-faint)">(' + fmtMi(s.distanceMi) + ' mi)</span>' : '') +
+          '<div style="margin-top:3px"><span class="pill ' + pillForEffort(effortForSegment(s)) + '">' + esc(effortForSegment(s)) + '</span></div></td>' +
+        '<td class="terr">' + terr + '</td>' +
+        '<td class="num">' + E.fmtTime(s.timeSeconds) + '<div style="color:var(--text-faint);font-size:10.5px">' + E.fmtPace(s.paceSecPerMi) + '</div></td>' +
+        '<td class="num" style="color:var(--text-dim)">' + E.fmtTime(s.cumulativeSeconds) + '</td>' +
+      '</tr>';
     }).join('');
 
-    const surfaceLegendHtml = (course.surfaces || []).map(s => {
-      const color = SURFACE_COLORS[s.type] || '#5f6b7a';
-      return `
-        <div class="surface-legend-item">
-          <span class="surface-legend-color" style="background-color: ${color};"></span>
-          <span>${s.type} <strong>(${s.pct}%)</strong></span>
-        </div>`;
+    rows += '<tr class="total"><td>Finish</td><td class="terr">' + fmtMi(m.distanceMi) + ' mi</td>' +
+      '<td class="num">' + E.fmtTime(pred.seconds) + '</td><td class="num">' + E.fmtTime(pred.seconds) + '</td></tr>';
+    document.getElementById('split-body').innerHTML = rows;
+
+    document.getElementById('strategy-list').innerHTML = plan.splits.map(function (s) {
+      return '<li><b>' + esc(s.label) + ' — ' + esc(effortForSegment(s)) + ':</b> ' + esc(s.guidance) + '</li>';
+    }).join('') + '<li><b>Overall:</b> ' + esc(overallStrategy(a, pred)) + '</li>';
+  }
+
+  function pillForEffort(label) {
+    if (label === 'Climb') return 'major';
+    if (label === 'Rising') return 'moderate';
+    if (label === 'Level') return 'fast';
+    return 'rolling';
+  }
+
+  // Mirrors segmentEffortLabel in the engine so the badge and the guidance text
+  // can never contradict each other.
+  function effortForSegment(s) {
+    var g = s.avgGradePct || 0;
+    if (g >= 2.5) return 'Climb';
+    if (g >= 0.8) return 'Rising';
+    if (g <= -2.5) return 'Descent';
+    if (g <= -0.8) return 'Falling';
+    if ((s.gainFt || 0) > 25 && (s.lossFt || 0) > 25) return 'Rolling';
+    return 'Level';
+  }
+
+  function overallStrategy(a, pred) {
+    var bits = [];
+
+    if (a.hasElevation && a.climbs.length) {
+      var hardest = a.climbs.slice().sort(function (x, y) { return y.score - x.score; })[0];
+      if (hardest.category === 'rolling') {
+        bits.push('No single decisive climb: every climb here is a roller under ' + fmtFt(hardest.gainFt) +
+          ' ft, so surges and rhythm matter far more than the terrain.');
+      } else {
+        bits.push('The race is decided on ' + hardest.name + ' (' + fmtFt(hardest.gainFt) + ' ft over ' +
+          hardest.lengthMi.toFixed(2) + ' mi at ' + hardest.avgGradePct.toFixed(1) + '%), starting at mile ' +
+          hardest.startDistMi.toFixed(2) + '. Get there in control — a blow-up there costs more than any flat split.');
+      }
+    } else if (a.hasElevation) {
+      bits.push('No sustained climbs: this is a rhythm course. Settle into goal pace early and hold it.');
+    } else {
+      bits.push('Elevation data is missing for this track, so the pacing plan uses distance and footing only — treat the split times as approximate.');
+    }
+
+    // Keep the COURSE (terrain + footing) separate from TODAY'S weather. Folding
+    // them together would tell a runner their course is slow when it was really
+    // just a hot day.
+    var coursePct = (pred.gradeMultiplier * pred.surfaceMultiplier - 1) * 100;
+    if (coursePct >= 2) {
+      bits.push('The course itself is worth about ' + coursePct.toFixed(1) +
+        '% over a flat, firm route of the same length, so do not read the finish time as a road or track mark.');
+    } else if (coursePct <= 0.5) {
+      bits.push('The course itself is within ' + Math.abs(coursePct).toFixed(1) +
+        '% of a flat, firm route, so the stopwatch should translate well.');
+    } else {
+      bits.push('The course itself is about ' + coursePct.toFixed(1) + '% slower than a flat, firm route.');
+    }
+
+    var condPct = (pred.weatherMultiplier - 1) * 100;
+    if (condPct >= 1) {
+      bits.push('Race-day conditions add about ' + condPct.toFixed(1) + '% on top of that — adjust expectations, not the plan.');
+    }
+
+    bits.push(a.hasElevation && a.climbs.length
+      ? 'Aim to run the second half at or faster than the first; the splits already price in the climbing.'
+      : 'Run even splits: arrive at the last mile with something left, then commit.');
+    return bits.join(' ');
+  }
+
+  // ---------- hills ----------
+  function hillsCardHtml(a) {
+    if (!a.hasElevation) {
+      return '<div class="card"><div class="card-head"><h2><span class="swatch" style="background:var(--danger)"></span>Hill Sheet</h2></div>' +
+        '<div class="empty-note">This track file has no elevation data, so climbs cannot be detected. Upload an elevation-enabled GPX to unlock the hill sheet and grade model.</div></div>';
+    }
+    if (!a.climbs.length) {
+      return '<div class="card"><div class="card-head"><h2><span class="swatch" style="background:var(--danger)"></span>Hill Sheet</h2>' +
+        '<span class="tag">No sustained climbs</span></div>' +
+        '<div class="empty-note">No sustained climbs were detected — the track never holds a climb long enough to bank one. Treat this as a rhythm course and focus on even pacing.</div></div>';
+    }
+    var items = a.climbs.map(function (c) {
+      return '<div class="hill">' +
+        '<div class="hill-top">' +
+          '<div><span class="hill-name">' + esc(c.name) + '</span> ' +
+            '<span class="pill ' + c.category + '">' + c.category + '</span>' +
+            '<div class="hill-where">Mile ' + c.startDistMi.toFixed(2) + ' to ' + c.endDistMi.toFixed(2) + '</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="hill-facts">' +
+          '<div class="hill-fact"><div class="v">' + fmtFt(c.gainFt) + ' ft</div><div class="l">Gain</div></div>' +
+          '<div class="hill-fact"><div class="v">' + Math.round(c.lengthM) + ' m</div><div class="l">Length</div></div>' +
+          '<div class="hill-fact"><div class="v">' + c.avgGradePct.toFixed(1) + '%</div><div class="l">Avg Grade</div></div>' +
+          '<div class="hill-fact"><div class="v">' + c.maxGradePct.toFixed(1) + '%</div><div class="l">Max Grade</div></div>' +
+        '</div>' +
+        '<div class="hill-tip">' + esc(hillTip(c)) + '</div>' +
+      '</div>';
     }).join('');
-
-    return `
-      <div style="max-width: var(--maxw); margin: 0 auto; padding: 0 20px;">
-        <button class="btn" onclick="showCourseList()" style="margin-bottom: 10px;">&larr; Back to All Courses</button>
-      </div>
-      
-      <section class="hero">
-        <div class="hero-title-block">
-          <div class="eyebrow"><span class="dot"></span> Course Profile Dashboard</div>
-          <h1 class="course-title">${course.name}</h1>
-          <p class="course-sub">${[course.location, course.difficulty ? `${course.difficulty} difficulty` : ''].filter(Boolean).join(' &middot; ') || 'Fly-through media, sync-interactive track mappings, and terrain parameters.'}</p>
-        </div>
-        <div class="stat-strip" id="stat-strip">
-          <div class="stat"><span class="val">…</span><span class="lab">Miles</span></div>
-          <div class="stat"><span class="val">…</span><span class="lab">Ft Gain</span></div>
-          <div class="stat"><span class="val">…</span><span class="lab">Ft Elev</span></div>
-        </div>
-      </section>
-
-      <main class="content-section">
-        <div class="grid-2">
-          <div class="card">
-            <div class="card-head">
-              <h2><span class="swatch" style="background:var(--trail)"></span>Course Video Inspection</h2>
-              <span class="tag">${basename(course.video)}</span>
-            </div>
-            <div class="card-body">
-              <div class="video-wrap">
-                <video id="course-video" controls preload="metadata" playsinline>
-                  <source src="${encodeURI(course.video)}" type="video/mp4">
-                </video>
-                <div class="media-msg" id="video-msg">Video track unindexed — check deployment directory path local bounds:<br><span class="mono">${course.video}</span></div>
-              </div>
-            </div>
-          </div>
-
-          <div class="card">
-            <div class="card-head">
-              <h2><span class="swatch" style="background:var(--summit)"></span>Multi-Layer Route Matrix</h2>
-              <span class="tag">${basename(course.gpx)}</span>
-            </div>
-            <div class="card-body">
-              <div id="course-map"></div>
-            </div>
-            <div class="map-footer-ui">
-              <div class="map-legend">
-                <div class="item"><span class="legend-swatch" style="background:var(--summit)"></span> Course Track</div>
-                <div class="item"><span class="legend-dot" style="background:#2fd0a3"></span> Gate Start</div>
-                <div class="item"><span class="legend-dot" style="background:#e8654f"></span> Finish Funnel</div>
-              </div>
-              <div class="map-status" id="map-status"></div>
-            </div>
-          </div>
-        </div>
-
-        <div class="grid-2">
-          <div class="card">
-            <div class="card-head">
-              <h2><span class="swatch" style="background:var(--trail)"></span>3D Kinetic Topology Model</h2>
-              <span class="tag">Click and drag to orbit track profile</span>
-            </div>
-            <div class="card-body" style="background: #05070a;">
-              <div id="canvas3d-wrap"></div>
-            </div>
-          </div>
-
-          <div class="card">
-            <div class="card-head">
-              <h2><span class="swatch" style="background:var(--creek)"></span>Championship Predictor Engine</h2>
-              <span class="tag">Simulate outputs based on topo-gradients</span>
-            </div>
-            <div style="padding: 18px; display: flex; flex-direction: column; gap: 14px;">
-              <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                <div style="flex: 1; min-width: 120px;">
-                  <label style="font-size: 11px; text-transform: uppercase; color: var(--text-dim); display: block; margin-bottom: 5px; font-weight: 600;">Flat 5K Track PR</label>
-                  <div style="display: flex; gap: 6px; align-items: center;">
-                    <input type="number" id="pred-min" value="16" class="pred-input" min="12" max="35">
-                    <span style="color: var(--text-faint)">:</span>
-                    <input type="number" id="pred-sec" value="45" class="pred-input" min="0" max="59">
-                  </div>
-                </div>
-                <div style="flex: 1; min-width: 130px;">
-                  <label style="font-size: 11px; text-transform: uppercase; color: var(--text-dim); display: block; margin-bottom: 5px; font-weight: 600;">Atmosphere Context</label>
-                  <select id="pred-weather" class="pred-input">
-                    <option value="1.00">Optimal (45–58°F, Low Humidity)</option>
-                    <option value="1.02">Warm / Mild Humidity (68–78°F)</option>
-                    <option value="1.05">Extreme Heat / Soup (>84°F)</option>
-                  </select>
-                </div>
-              </div>
-              <div style="display: flex; gap: 6px; align-items: center; background: rgba(47, 208, 163, 0.05); padding: 8px 12px; border-radius: 8px; border: 1px dashed var(--trail-dim);">
-                <span style="font-size: 12px; color: var(--text-dim);">🌱 Auto-detected terrain profile scale calculated from course surface matrix.</span>
-              </div>
-              
-              <div style="background: var(--bg-elevated); border: 1px solid var(--card-border); border-radius: 10px; padding: 14px; text-align: center; box-shadow: inset 0 2px 8px rgba(0,0,0,0.2);">
-                <div id="predicted-time-display" style="font-family: 'Oswald', sans-serif; font-size: 34px; color: var(--trail); font-weight: 700; letter-spacing: 0.5px;">--:--</div>
-                <div style="font-size: 11px; color: var(--text-faint); text-transform: uppercase; margin-top: 2px; letter-spacing: 0.5px;" id="predicted-diff-label">Course Adjustment Scale</div>
-              </div>
-
-              <div>
-                <div style="font-size: 11.5px; font-weight: 600; color: var(--text); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.3px;">Simulated Topographical Split Grid:</div>
-                <table style="width: 100%; font-size: 12.5px; border-collapse: collapse; text-align: left;" id="splits-table"></table>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="surface-container">
-            <div class="surface-label-row">
-              <span class="surface-title">📊 Surface Track Breakdown Matrix</span>
-              <span class="mono" style="font-size: 11px; color: var(--text-faint);">Footing Configuration</span>
-            </div>
-            <div class="surface-bar">${surfaceBarsHtml || '<div class="surface-segment" style="width:100%; background:#5f6b7a;"></div>'}</div>
-            <div class="surface-legend">${surfaceLegendHtml || 'Unspecified track metrics'}</div>
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="card-head">
-            <h2><span class="swatch" style="background:var(--creek)"></span>Interactive Elevation Analyst Profile</h2>
-            <span class="tag">Scrub chart to display coordinates on the map above</span>
-          </div>
-          <div class="profile-wrap">
-            <canvas id="elevation-chart"></canvas>
-          </div>
-          <div class="mini-stats" id="mini-stats">
-            <div class="mini-stat"><div class="v">…</div><div class="l">Min Elevation</div></div>
-            <div class="mini-stat"><div class="v">…</div><div class="l">Max Elevation</div></div>
-            <div class="mini-stat"><div class="v">…</div><div class="l">Gain / Loss</div></div>
-            <div class="mini-stat"><div class="v">…</div><div class="l">Total Distance</div></div>
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="card-head">
-            <h2><span class="swatch" style="background:var(--text-dim)"></span>Stratified Course Notes</h2>
-          </div>
-          <div class="notes">
-            <p>${course.notes || 'No track notes categorized for this layout framework.'}</p>
-            <ul>
-              <li>Distance maps, vertical profiles, and gradients are isolated straight from the true GPX tracking matrix array.</li>
-              <li>Hovering over the elevation graph updates a crosshair pinpoint directly on the Leaflet framework maps container layer.</li>
-              <li>Utilize the layer selection button at top-right to inspect contours or satellite footing markers before event preparation.</li>
-            </ul>
-          </div>
-          <div class="btn-row">
-            <a class="btn primary" href="${encodeURI(course.gpx)}" download>Download GPX Framework</a>
-            <a class="btn" href="../courses">Track Inventory</a>
-          </div>
-        </div>
-
-        <div class="grid-2">
-          <div class="card">
-            <div class="card-head">
-              <h2><span class="swatch" style="background:var(--danger)"></span>Course Records</h2>
-              <span class="tag">All-time fastest results at this course</span>
-            </div>
-            <div id="course-records-panel">
-              <div class="record-empty" style="padding:16px 18px;">Loading course records...</div>
-            </div>
-          </div>
-
-          <div class="card">
-            <div class="card-head">
-              <h2><span class="swatch" style="background:var(--summit)"></span>Upcoming Meets</h2>
-              <span class="tag">Scheduled events at this course</span>
-            </div>
-            <div id="upcoming-meets-panel">
-              <div class="record-empty" style="padding:16px 18px;">Loading upcoming meets...</div>
-            </div>
-          </div>
-        </div>
-      </main>
-    `;
+    var title = a.climbs.length + (a.climbs.length === 1 ? ' climb' : ' climbs');
+    return '<div class="card"><div class="card-head"><h2><span class="swatch" style="background:var(--danger)"></span>Hill Sheet</h2>' +
+      '<span class="tag">' + title + ' · +' + fmtFt(a.metrics.totalClimbFt) + ' ft</span></div>' +
+      '<div class="hill-list">' + items + '</div></div>';
   }
 
-  function emptyState(slug) {
-    return `<div class="empty-state">
-      <h2>Target layout data block unindexed</h2>
-      <p>“${slug}” missing from current active manifest file configuration paths. Choose an alternate option above.</p>
-    </div>`;
+  function hillTip(c) {
+    if (c.category === 'major') {
+      return 'The decisive one. Start it slightly within yourself, hold form through the steepest section, and only press once the grade eases near the top.';
+    }
+    if (c.category === 'moderate') {
+      return 'Short enough to attack, long enough to punish a rushed start. Keep cadence up and breathe rhythmically; pass people going over the top, not up the middle.';
+    }
+    return 'A roller, not a hill. Don\'t brake and don\'t surge — carry momentum and let the terrain pass under you.';
   }
 
-  // ---------- Course Records + Upcoming Meets ----------
+  // ---------- map ----------
+  function mapCardHtml(course, a) {
+    var bands = E.GRADE_BANDS.map(function (b) {
+      return '<div class="item"><span class="legend-swatch" style="background:' + b.color + '"></span>' + esc(b.label) + '</div>';
+    }).join('');
+    return '<div class="card no-print">' +
+      '<div class="card-head">' +
+        '<h2><span class="swatch" style="background:var(--summit)"></span>Course Map</h2>' +
+        '<span class="tag">' + esc(course.gpx || '') + '</span>' +
+      '</div>' +
+      '<div class="card-body"><div id="course-map"></div></div>' +
+      '<div class="map-legend">' + bands +
+        '<div class="item"><span class="legend-dot" style="background:#2fd0a3"></span>Start</div>' +
+        '<div class="item"><span class="legend-dot" style="background:#e8654f"></span>Finish</div>' +
+        '<div class="item"><span class="legend-dot" style="background:#f2a65a"></span>Mile mark</div>' +
+      '</div>' +
+    '</div>';
+  }
+
+  function renderMap(course, a) {
+    var el = document.getElementById('course-map');
+    if (!el) return;
+    var satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+      maxZoom: 19, attribution: 'Tiles &copy; Esri'
+    });
+    var dark = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      maxZoom: 19, attribution: '&copy; OpenStreetMap &copy; CARTO'
+    });
+    var topo = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+      maxZoom: 17, attribution: '&copy; OpenTopoMap'
+    });
+
+    map = L.map(el, { scrollWheelZoom: false, layers: [satellite] });
+    L.control.layers({ 'Satellite': satellite, 'Dark map': dark, 'Topographic': topo }, null, { position: 'topright' }).addTo(map);
+
+    var pts = a.points;
+    if (!pts.length) { map.setView([39.19, -81.46], 12); return; }
+
+    var bounds = L.latLngBounds(pts.map(function (p) { return [p.lat, p.lon]; }));
+
+    // A faint casing drawn FIRST keeps the track visible over bright satellite
+    // imagery — drawn first so it sits under the grade colours without relying
+    // on Leaflet's bringToBack().
+    L.polyline(pts.map(function (p) { return [p.lat, p.lon]; }), {
+      color: '#0b0e13', weight: 8, opacity: 0.22, lineJoin: 'round', lineCap: 'round'
+    }).addTo(map);
+
+    // Grade-coloured track: one polyline per contiguous grade band.
+    E.coloredSegments(pts, 30).forEach(function (seg) {
+      if (seg.latlngs.length < 2) return;
+      L.polyline(seg.latlngs, { color: seg.color, weight: 5, opacity: 0.98, lineJoin: 'round', lineCap: 'round' }).addTo(map);
+    });
+
+    L.circleMarker([pts[0].lat, pts[0].lon], { radius: 8, color: '#0b0e13', weight: 2, fillColor: '#2fd0a3', fillOpacity: 1 })
+      .addTo(map).bindPopup('Start');
+    var last = pts[pts.length - 1];
+    L.circleMarker([last.lat, last.lon], { radius: 8, color: '#0b0e13', weight: 2, fillColor: '#e8654f', fillOpacity: 1 })
+      .addTo(map).bindPopup('Finish');
+
+    // Mile marks, positioned by measured distance.
+    [1, 2, 3, 4, 5, 6].forEach(function (mi) {
+      var p = pointAtDistance(pts, mi * E.M_PER_MILE);
+      if (!p) return;
+      L.marker([p.lat, p.lon], {
+        icon: L.divIcon({ className: '', html: '<div class="mile-marker">MILE ' + mi + '</div>', iconSize: [0, 0] }),
+        interactive: false
+      }).addTo(map);
+    });
+
+    a.climbs.forEach(function (c) {
+      var p = pointAtDistance(pts, c.startDistMi * E.M_PER_MILE);
+      if (!p) return;
+      L.marker([p.lat, p.lon], {
+        icon: L.divIcon({ className: '', html: '<div class="hill-marker">' + c.index + '</div>', iconSize: [19, 19] })
+      }).addTo(map).bindPopup('<b>' + esc(c.name) + '</b><br>' + fmtFt(c.gainFt) + ' ft over ' +
+        c.lengthMi.toFixed(2) + ' mi · avg ' + c.avgGradePct.toFixed(1) + '%');
+    });
+
+    map.fitBounds(bounds, { padding: [26, 26] });
+
+    mapHoverMarker = L.circleMarker([pts[0].lat, pts[0].lon], {
+      radius: 7, color: '#ffffff', weight: 2, fillColor: '#4f8bf0', fillOpacity: 1, zIndexOffset: 1000
+    });
+  }
+
+  function pointAtDistance(pts, targetM) {
+    if (!pts.length) return null;
+    if (targetM <= 0) return pts[0];
+    if (targetM >= pts[pts.length - 1].distM) return null; // don't stack all markers on the finish
+    var lo = 0, hi = pts.length - 1;
+    while (lo < hi - 1) {
+      var mid = (lo + hi) >> 1;
+      if (pts[mid].distM < targetM) lo = mid; else hi = mid;
+    }
+    return pts[hi];
+  }
+
+  // ---------- profile chart ----------
+  function profileCardHtml(course, a) {
+    if (!a.hasElevation) {
+      return '<div class="card no-print"><div class="card-head"><h2><span class="swatch" style="background:var(--creek)"></span>Elevation Profile</h2></div>' +
+        '<div class="empty-note">No elevation samples in this track file. Distance is measured, but terrain analysis is unavailable.</div></div>';
+    }
+    return '<div class="card no-print">' +
+      '<div class="card-head">' +
+        '<h2><span class="swatch" style="background:var(--creek)"></span>Elevation Profile</h2>' +
+        '<span class="tag">Hover the chart to locate that point on the map</span>' +
+      '</div>' +
+      '<div class="profile-wrap"><canvas id="elevation-chart"></canvas></div>' +
+      '<div class="climb-strip" id="climb-strip"></div>' +
+      '<div class="mini-stats" id="mini-stats"></div>' +
+    '</div>';
+  }
+
+  function renderProfile(course, a) {
+    var canvas = document.getElementById('elevation-chart');
+    if (!canvas) return;
+    var m = a.metrics;
+    activeSamples = E.resample(a.points, 320);
+
+    var labels = activeSamples.map(function (p) { return p.distMi.toFixed(2); });
+    var values = activeSamples.map(function (p) { return p.eleSmooth * E.FT_PER_M; });
+    var light = document.documentElement.getAttribute('data-theme') === 'light';
+    var gridColor = light ? '#eae5da' : '#232b36';
+    var textColor = light ? '#1c2128' : '#9aa5b3';
+
+    if (elevationChart) elevationChart.destroy();
+    elevationChart = new Chart(canvas, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Elevation (ft)',
+          data: values,
+          borderColor: '#4f8bf0',
+          backgroundColor: light ? 'rgba(79,139,240,0.10)' : 'rgba(79,139,240,0.14)',
+          fill: true,
+          tension: 0.25,
+          pointRadius: 0,
+          pointHoverRadius: 5,
+          pointHoverBackgroundColor: '#fff',
+          pointHoverBorderColor: '#4f8bf0',
+          pointHoverBorderWidth: 2,
+          segment: {
+            borderColor: function (ctx) {
+              var p = activeSamples[ctx.p1DataIndex];
+              return p ? E.gradeColor(p.grade) : '#4f8bf0';
+            },
+            borderWidth: 3
+          }
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            mode: 'index',
+            intersect: false,
+            callbacks: {
+              title: function (items) { return 'Distance ' + items[0].label + ' mi'; },
+              label: function (item) {
+                var p = activeSamples[item.dataIndex];
+                var grade = p ? (p.grade * 100) : 0;
+                return [
+                  'Elevation ' + item.parsed.y.toFixed(0) + ' ft',
+                  'Grade ' + (grade >= 0 ? '+' : '') + grade.toFixed(1) + '%'
+                ];
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: { color: gridColor },
+            ticks: { color: textColor, maxTicksLimit: 12 },
+            title: { display: true, text: 'Miles', color: textColor, font: { size: 11, weight: '600' } }
+          },
+          y: {
+            grid: { color: gridColor },
+            ticks: { color: textColor },
+            title: { display: true, text: 'Feet', color: textColor, font: { size: 11, weight: '600' } }
+          }
+        },
+        onHover: function (evt, els) {
+          if (!map || !mapHoverMarker) return;
+          if (els && els.length) {
+            var p = activeSamples[els[0].index];
+            if (p) {
+              mapHoverMarker.setLatLng([p.lat, p.lon]);
+              if (!map.hasLayer(mapHoverMarker)) mapHoverMarker.addTo(map);
+            }
+          } else if (map.hasLayer(mapHoverMarker)) {
+            map.removeLayer(mapHoverMarker);
+          }
+        }
+      }
+    });
+
+    // Climb bands under the chart so hills are visible at a glance.
+    var strip = document.getElementById('climb-strip');
+    var total = m.distanceMi || 1;
+    strip.innerHTML = a.climbs.map(function (c) {
+      var left = E.clamp((c.startDistMi / total) * 100, 0, 100);
+      var width = E.clamp((c.lengthMi / total) * 100, 1.2, 100 - left);
+      return '<div class="climb-band" style="left:' + left.toFixed(2) + '%;width:' + width.toFixed(2) + '%">' +
+        '<span>' + c.index + '</span></div>';
+    }).join('') || '<div style="padding:5px 10px;font-size:11px;color:var(--text-faint)">No detected climbs</div>';
+
+    document.getElementById('mini-stats').innerHTML =
+      '<div class="mini-stat"><div class="v">' + fmtFt(m.minFt) + ' ft</div><div class="l">Low Point</div></div>' +
+      '<div class="mini-stat"><div class="v">' + fmtFt(m.maxFt) + ' ft</div><div class="l">High Point</div></div>' +
+      '<div class="mini-stat"><div class="v">+' + fmtFt(m.gainFt) + ' / −' + fmtFt(m.lossFt) + ' ft</div><div class="l">Gain / Loss</div></div>' +
+      '<div class="mini-stat"><div class="v">' + (m.max100mGradePct === null ? '—' : m.max100mGradePct.toFixed(1) + '%') + '</div><div class="l">Steepest 100m</div></div>' +
+      '<div class="mini-stat"><div class="v">' + fmtMi(m.distanceMi) + ' mi</div><div class="l">Measured Distance</div></div>';
+  }
+
+  // ---------- terrain / footing ----------
+  function terrainCardHtml(course, a) {
+    var m = a.metrics;
+    var surfaces = (course.surfaces || []).filter(function (s) { return parseFloat(s.pct) > 0; });
+    var barHtml, legendHtml;
+    if (surfaces.length) {
+      barHtml = surfaces.map(function (s) {
+        var color = E.SURFACE_COLORS[s.type] || '#5f6b7a';
+        return '<div class="surface-segment" style="width:' + s.pct + '%;background:' + color + '" title="' + esc(s.type) + ': ' + s.pct + '%"></div>';
+      }).join('');
+      legendHtml = surfaces.map(function (s) {
+        var color = E.SURFACE_COLORS[s.type] || '#5f6b7a';
+        return '<div class="surface-legend-item"><span class="surface-legend-color" style="background:' + color + '"></span>' +
+          esc(s.type) + ' <strong>(' + s.pct + '%)</strong>' +
+          '<span style="color:var(--text-faint)">×' + (E.SURFACE_FACTORS[s.type] || 1.02).toFixed(3) + ' pace</span></div>';
+      }).join('');
+    } else {
+      barHtml = '<div class="surface-segment" style="width:100%;background:#5f6b7a"></div>';
+      legendHtml = '<div class="surface-legend-item">No footing breakdown recorded for this course — the pace model uses a neutral (firm) surface.</div>';
+    }
+
+    var ratingRows = '';
+    if (a.hasElevation) {
+      ratingRows =
+        '<div class="card-facts" style="border-top:none;padding-top:0">' +
+          '<div class="card-fact"><div class="v">' + a.rating.secondsOverFlat.toFixed(0) + ' s</div><div class="l">Over flat 5K (at 17:00)</div></div>' +
+          '<div class="card-fact"><div class="v">' + signedPct(m.costPct) + '</div><div class="l">Terrain cost</div></div>' +
+          '<div class="card-fact"><div class="v">' + a.climbs.length + '</div><div class="l">Climbs</div></div>' +
+        '</div>';
+    }
+
+    return '<div class="card">' +
+      '<div class="card-head">' +
+        '<h2><span class="swatch" style="background:var(--summit)"></span>Terrain &amp; Footing</h2>' +
+        '<span class="tag">' + (a.hasElevation ? a.rating.label + ' course' : 'Flat model only') + '</span>' +
+      '</div>' +
+      '<div class="surface-container">' +
+        '<div class="surface-label-row"><span class="surface-title">Surface breakdown</span>' +
+          '<span class="mono" style="font-size:11px;color:var(--text-faint)">footing multiplier</span></div>' +
+        '<div class="surface-bar">' + barHtml + '</div>' +
+        '<div class="surface-legend">' + legendHtml + '</div>' +
+      '</div>' +
+      (a.hasElevation ? '<div style="padding:0 18px 8px"><span style="font-size:11.5px;color:var(--text-dim)">Terrain rating ' +
+        starsHtml(a.rating.stars) + '</span></div>' + ratingRows : '') +
+      '<div class="notes"><p>' + esc(autoTerrainNotes(a)) + '</p></div>' +
+    '</div>';
+  }
+
+  function autoTerrainNotes(a) {
+    var m = a.metrics;
+    if (!m) return '';
+    if (!a.hasElevation) {
+      return 'This track has no elevation samples, so grade, climbing, and footing cost cannot be measured. Distance (' +
+        fmtMi(m.distanceMi) + ' mi) is still accurate from the GPS trace.';
+    }
+    var out = 'The measured track climbs ' + fmtFt(m.gainFt) + ' ft and descends ' + fmtFt(m.lossFt) +
+      ' ft, with a net change of ' + (m.netFt >= 0 ? '+' : '−') + fmtFt(Math.abs(m.netFt)) + ' ft. ' +
+      'Its terrain alone is worth ' + signedPct(m.costPct) + ' against the same distance run flat (climbing is charged in full; ' +
+      'descending only credits back ' + Math.round(E.DESCENT_EFFICIENCY * 100) + '% of its theoretical saving on cross country footing)' +
+      (a.climbs.length ? ', concentrated in ' + a.climbs.length + ' detected climb' + (a.climbs.length === 1 ? '' : 's') + '.' : '.');
+    if (a.climbs.length) {
+      var worst = a.climbs.slice().sort(function (x, y) { return y.score - x.score; })[0];
+      out += ' The hardest pitch is ' + worst.name + ': ' + fmtFt(worst.gainFt) + ' ft over ' +
+        worst.lengthMi.toFixed(2) + ' mi (' + worst.avgGradePct.toFixed(1) + '% average, peaking near ' +
+        worst.maxGradePct.toFixed(1) + '%).';
+    }
+    return out;
+  }
+
+  // ---------- media (3D + video) ----------
+  function mediaRowHtml(course) {
+    var video = course.video
+      ? '<div class="card no-print">' +
+          '<div class="card-head"><h2><span class="swatch" style="background:var(--trail)"></span>Course Flyover</h2>' +
+          '<span class="tag">' + esc(course.video.split('/').pop()) + '</span></div>' +
+          '<div class="card-body"><div class="video-wrap">' +
+            '<video id="course-video" controls preload="metadata" playsinline>' +
+              '<source src="' + esc(assetUrl(course.video)) + '" type="video/mp4">' +
+            '</video>' +
+            '<div class="media-msg" id="video-msg">Video file not found at <span class="mono">' + esc(course.video) + '</span></div>' +
+          '</div></div>' +
+        '</div>'
+      : '<div class="card no-print"><div class="card-head"><h2><span class="swatch" style="background:var(--trail)"></span>Course Flyover</h2></div>' +
+        '<div class="media-placeholder">No flyover video has been recorded for this course yet.</div></div>';
+
+    return '<div class="grid-2 even">' +
+      '<div class="card no-print">' +
+        '<div class="card-head"><h2><span class="swatch" style="background:var(--trail)"></span>3D Terrain Orbit</h2>' +
+        '<span class="tag">Drag to rotate · coloured by grade</span></div>' +
+        '<div class="card-body" style="background:#05070a"><div id="canvas3d-wrap"></div></div>' +
+      '</div>' +
+      video +
+    '</div>';
+  }
+
+  function render3D(a) {
+    var container = document.getElementById('canvas3d-wrap');
+    if (!container || typeof THREE === 'undefined') return;
+    container.innerHTML = '';
+    var width = container.clientWidth || 600;
+    var height = container.clientHeight || 400;
+
+    var scene = new THREE.Scene();
+    var cardColor = getComputedStyle(document.documentElement).getPropertyValue('--card').trim() || '#151a22';
+    scene.background = new THREE.Color(cardColor);
+    var camera = new THREE.PerspectiveCamera(30, width / height, 0.1, 1000);
+    camera.position.set(0, 12, 30);
+    camera.lookAt(0, 0, 0);
+    scene.add(new THREE.AmbientLight(0xffffff, 0.65));
+    var dir = new THREE.DirectionalLight(0xffffff, 0.8);
+    dir.position.set(10, 20, 10);
+    scene.add(dir);
+
+    var renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(width, height);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    container.appendChild(renderer.domElement);
+
+    var pts = E.resample(a.points, 600);
+    var minLat = Infinity, maxLat = -Infinity, minLon = Infinity, maxLon = -Infinity, minEle = Infinity, maxEle = -Infinity;
+    pts.forEach(function (p) {
+      minLat = Math.min(minLat, p.lat); maxLat = Math.max(maxLat, p.lat);
+      minLon = Math.min(minLon, p.lon); maxLon = Math.max(maxLon, p.lon);
+      minEle = Math.min(minEle, p.eleSmooth); maxEle = Math.max(maxEle, p.eleSmooth);
+    });
+    var centerLat = (minLat + maxLat) / 2, centerLon = (minLon + maxLon) / 2, centerEle = (minEle + maxEle) / 2;
+    var latCorr = Math.cos(centerLat * Math.PI / 180);
+    var maxDiff = Math.max(maxLat - minLat, (maxLon - minLon) * latCorr) || 1;
+    var geoScale = 14 / maxDiff;
+    var eleSpan = (maxEle - minEle) || 1;
+    var eleScale = Math.max(1.5, Math.min(4, eleSpan)) / eleSpan;
+
+    var group = new THREE.Group();
+    var vectors = pts.map(function (p) {
+      return new THREE.Vector3(
+        (p.lon - centerLon) * geoScale * latCorr,
+        (p.eleSmooth - centerEle) * eleScale,
+        -(p.lat - centerLat) * geoScale
+      );
+    });
+
+    // One thin tube per grade band keeps colours honest without a shader.
+    var colorHexes = {};
+    E.GRADE_BANDS.forEach(function (b) { colorHexes[b.color] = new THREE.Color(b.color); });
+
+    var runsFor = function (color) {
+      var runs = [], cur = null;
+      for (var i = 0; i < vectors.length; i++) {
+        var c = E.gradeColor(pts[i].grade);
+        if (!cur || c !== cur.color) {
+          if (cur && cur.pts.length > 1) runs.push(cur);
+          cur = { color: c, pts: [i > 0 ? vectors[i - 1] : vectors[i], vectors[i]] };
+        } else {
+          cur.pts.push(vectors[i]);
+        }
+      }
+      if (cur && cur.pts.length > 1) runs.push(cur);
+      return runs.filter(function (r) { return r.color === color; });
+    };
+
+    E.GRADE_BANDS.forEach(function (band) {
+      runsFor(band.color).forEach(function (run) {
+        var curve = new THREE.CatmullRomCurve3(run.pts);
+        var geo = new THREE.TubeGeometry(curve, Math.max(2, Math.min(200, run.pts.length)), 0.13, 8, false);
+        group.add(new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: colorHexes[band.color] })));
+      });
+    });
+
+    var startBall = new THREE.Mesh(new THREE.SphereGeometry(0.32, 16, 16), new THREE.MeshStandardMaterial({ color: 0x2fd0a3, roughness: 0.25 }));
+    startBall.position.copy(vectors[0]);
+    group.add(startBall);
+    var endBall = new THREE.Mesh(new THREE.SphereGeometry(0.32, 16, 16), new THREE.MeshStandardMaterial({ color: 0xe8654f, roughness: 0.25 }));
+    endBall.position.copy(vectors[vectors.length - 1]);
+    group.add(endBall);
+
+    var grid = new THREE.GridHelper(20, 20, 0x5f6b7a, 0x232b36);
+    grid.position.y = -3;
+    scene.add(grid);
+    scene.add(group);
+
+    var interacting = false, lastPos = { x: 0, y: 0 };
+    container.addEventListener('mousedown', function (e) { interacting = true; lastPos = { x: e.clientX, y: e.clientY }; });
+    container.addEventListener('mousemove', function (e) {
+      if (!interacting) return;
+      group.rotation.y += (e.clientX - lastPos.x) * 0.007;
+      group.rotation.x = E.clamp(group.rotation.x + (e.clientY - lastPos.y) * 0.007, -Math.PI / 3, Math.PI / 3);
+      lastPos = { x: e.clientX, y: e.clientY };
+    });
+    window.addEventListener('mouseup', function () { interacting = false; });
+    container.addEventListener('touchstart', function (e) {
+      if (e.touches.length === 1) { interacting = true; lastPos = { x: e.touches[0].clientX, y: e.touches[0].clientY }; }
+    }, { passive: true });
+    container.addEventListener('touchmove', function (e) {
+      if (!interacting || e.touches.length !== 1) return;
+      group.rotation.y += (e.touches[0].clientX - lastPos.x) * 0.007;
+      group.rotation.x = E.clamp(group.rotation.x + (e.touches[0].clientY - lastPos.y) * 0.007, -Math.PI / 3, Math.PI / 3);
+      lastPos = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    }, { passive: true });
+    window.addEventListener('touchend', function () { interacting = false; });
+
+    threeRefs = { renderer: renderer, scene: scene, group: group, disposed: false };
+    (function loop() {
+      if (!threeRefs || threeRefs.disposed) return;
+      requestAnimationFrame(loop);
+      if (!interacting) group.rotation.y += 0.0022;
+      renderer.render(scene, camera);
+    })();
+  }
+
+  // ---------- records + upcoming (unchanged behaviour, new markup) ----------
+  function recordsRowHtml() {
+    return '<div class="grid-2 even">' +
+      '<div class="card">' +
+        '<div class="card-head"><h2><span class="swatch" style="background:var(--danger)"></span>Course Records</h2>' +
+        '<span class="tag">All-time fastest here</span></div>' +
+        '<div id="course-records-panel"><div class="record-empty" style="padding:16px 18px">Loading…</div></div>' +
+      '</div>' +
+      '<div class="card">' +
+        '<div class="card-head"><h2><span class="swatch" style="background:var(--summit)"></span>Upcoming Meets</h2>' +
+        '<span class="tag">Scheduled at this course</span></div>' +
+        '<div id="upcoming-meets-panel"><div class="record-empty" style="padding:16px 18px">Loading…</div></div>' +
+      '</div>' +
+    '</div>';
+  }
+
   function formatMeetDate(dateStr) {
     if (!dateStr) return '';
-    const d = new Date(dateStr + 'T00:00:00');
-    if (isNaN(d.getTime())) return dateStr;
-    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-  }
-
-  function formatSecondsAsTime(totalSeconds) {
-    if (totalSeconds === null || totalSeconds === undefined || isNaN(totalSeconds)) return '—';
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = totalSeconds - minutes * 60;
-    return `${minutes}:${seconds < 10 ? '0' : ''}${seconds.toFixed(2)}`;
+    var d = new Date(dateStr + 'T00:00:00');
+    return isNaN(d.getTime()) ? dateStr : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   }
 
   function renderRecordColumn(label, results) {
     if (!results.length) {
-      return `<div class="record-col"><span class="record-col-title">${label}</span><div class="record-empty">No recorded results at this course yet.</div></div>`;
+      return '<div class="record-col"><span class="record-col-title">' + label + '</span><div class="record-empty">No recorded results yet.</div></div>';
     }
-    const top = results[0];
-    const restRows = results.slice(1, 5).map((r, i) => `
-      <tr>
-        <td class="rt-rank">${i + 2}</td>
-        <td>${r.athlete_name || 'Unknown'}</td>
-        <td class="rt-time">${formatSecondsAsTime(r.timeSeconds)}</td>
-      </tr>`).join('');
-    return `
-      <div class="record-col">
-        <span class="record-col-title">${label}</span>
-        <div class="record-highlight">
-          <div class="rh-time">${formatSecondsAsTime(top.timeSeconds)}</div>
-          <div class="rh-name">${top.athlete_name || 'Unknown'}</div>
-          <div class="rh-meta">${top.meetName || 'Unknown Meet'} &middot; ${formatMeetDate(top.meetDate)}</div>
-        </div>
-        ${restRows ? `<table class="record-table"><tbody>${restRows}</tbody></table>` : ''}
-      </div>`;
+    var top = results[0];
+    var rows = results.slice(1, 5).map(function (r, i) {
+      return '<tr><td class="rt-rank">' + (i + 2) + '</td><td>' + esc(r.athlete_name || 'Unknown') + '</td>' +
+        '<td class="rt-time">' + E.fmtTimeTenths(r.timeSeconds) + '</td></tr>';
+    }).join('');
+    return '<div class="record-col"><span class="record-col-title">' + label + '</span>' +
+      '<div class="record-highlight"><div class="rh-time">' + E.fmtTimeTenths(top.timeSeconds) + '</div>' +
+      '<div class="rh-name">' + esc(top.athlete_name || 'Unknown') + '</div>' +
+      '<div class="rh-meta">' + esc(top.meetName || 'Unknown meet') + ' · ' + formatMeetDate(top.meetDate) + '</div></div>' +
+      (rows ? '<table class="record-table"><tbody>' + rows + '</tbody></table>' : '') +
+      '</div>';
   }
 
-  async function loadCourseRecordsAndUpcomingMeets(course) {
-    const recordsPanel = document.getElementById('course-records-panel');
-    const upcomingPanel = document.getElementById('upcoming-meets-panel');
+  async function loadRecordsAndUpcoming(course) {
+    var recordsPanel = document.getElementById('course-records-panel');
+    var upcomingPanel = document.getElementById('upcoming-meets-panel');
     if (!recordsPanel && !upcomingPanel) return;
 
     if (typeof window.getAllMeets !== 'function' || typeof window.getResultsByMeet !== 'function') {
-      if (recordsPanel) recordsPanel.innerHTML = '<div class="record-empty" style="padding:16px 18px;">Course record lookups unavailable right now.</div>';
-      if (upcomingPanel) upcomingPanel.innerHTML = '<div class="record-empty" style="padding:16px 18px;">Upcoming meet lookups unavailable right now.</div>';
+      if (recordsPanel) recordsPanel.innerHTML = '<div class="record-empty" style="padding:16px 18px">Course records unavailable right now.</div>';
+      if (upcomingPanel) upcomingPanel.innerHTML = '<div class="record-empty" style="padding:16px 18px">Meet lookups unavailable right now.</div>';
       return;
     }
 
     try {
-      const allMeets = await window.getAllMeets(5000);
-      const courseMeets = (allMeets || []).filter(m => m.course_slug && m.course_slug === course.slug);
+      var allMeets = await window.getAllMeets(5000);
+      var courseMeets = (allMeets || []).filter(function (m) { return m.course_slug && m.course_slug === course.slug; });
 
       if (upcomingPanel) {
-        const todayStr = new Date().toISOString().slice(0, 10);
-        const upcoming = courseMeets
-          .filter(m => m.date && m.date >= todayStr)
-          .sort((a, b) => (a.date || '').localeCompare(b.date || ''));
-
-        if (!upcoming.length) {
-          upcomingPanel.innerHTML = '<div class="record-empty" style="padding:16px 18px;">No upcoming meets scheduled at this course yet.</div>';
-        } else {
-          upcomingPanel.innerHTML = `<div class="upcoming-list">${upcoming.map(m => `
-            <a class="upcoming-item" href="../meet.html?slug=${encodeURIComponent(m.slug)}">
-              <span class="um-name">${m.name || m.slug}</span>
-              <span class="um-date">${formatMeetDate(m.date)}</span>
-            </a>`).join('')}</div>`;
-        }
+        var today = new Date().toISOString().slice(0, 10);
+        var upcoming = courseMeets.filter(function (m) { return m.date && m.date >= today; })
+          .sort(function (a, b) { return (a.date || '').localeCompare(b.date || ''); });
+        upcomingPanel.innerHTML = upcoming.length
+          ? '<div class="upcoming-list">' + upcoming.map(function (m) {
+              return '<a class="upcoming-item" href="../meet.html?slug=' + encodeURIComponent(m.slug) + '">' +
+                '<span class="um-name">' + esc(m.name || m.slug) + '</span>' +
+                '<span class="um-date">' + formatMeetDate(m.date) + '</span></a>';
+            }).join('') + '</div>'
+          : '<div class="record-empty" style="padding:16px 18px">No upcoming meets scheduled at this course yet.</div>';
       }
 
       if (recordsPanel) {
         if (!courseMeets.length) {
-          recordsPanel.innerHTML = '<div class="record-empty" style="padding:16px 18px;">No meets are linked to this course yet, so no records are available. Link meets to this course via course-admin.html to populate this panel.</div>';
+          recordsPanel.innerHTML = '<div class="record-empty" style="padding:16px 18px">No meets are linked to this course yet, so no records exist. Link meets to this course in the admin to populate this panel.</div>';
         } else {
-          const resultsByMeet = await Promise.all(courseMeets.map(m => window.getResultsByMeet(m.slug)));
-          const boys = [];
-          const girls = [];
-
-          courseMeets.forEach((meet, idx) => {
-            (resultsByMeet[idx] || []).forEach(r => {
-              const timeSeconds = parseFloat(r.time);
-              if (isNaN(timeSeconds) || timeSeconds <= 0) return;
-              const entry = {
-                athlete_name: r.athlete_name,
-                timeSeconds: timeSeconds,
-                meetName: meet.name,
-                meetDate: meet.date
-              };
-              const gender = (r.gender || '').toUpperCase();
-              if (gender === 'M' || gender === 'B' || gender === 'BOY' || gender === 'BOYS') boys.push(entry);
-              else if (gender === 'F' || gender === 'G' || gender === 'GIRL' || gender === 'GIRLS') girls.push(entry);
+          var resultsByMeet = await Promise.all(courseMeets.map(function (m) { return window.getResultsByMeet(m.slug); }));
+          var boys = [], girls = [];
+          courseMeets.forEach(function (meet, idx) {
+            (resultsByMeet[idx] || []).forEach(function (r) {
+              var t = parseFloat(r.time);
+              if (isNaN(t) || t <= 0) return;
+              var entry = { athlete_name: r.athlete_name, timeSeconds: t, meetName: meet.name, meetDate: meet.date };
+              var g = (r.gender || '').toUpperCase();
+              if (g === 'M' || g === 'B' || g === 'BOY' || g === 'BOYS') boys.push(entry);
+              else if (g === 'F' || g === 'G' || g === 'GIRL' || g === 'GIRLS') girls.push(entry);
             });
           });
-
-          boys.sort((a, b) => a.timeSeconds - b.timeSeconds);
-          girls.sort((a, b) => a.timeSeconds - b.timeSeconds);
-
-          recordsPanel.innerHTML = `<div class="records-grid">${renderRecordColumn('Fastest Boys', boys)}${renderRecordColumn('Fastest Girls', girls)}</div>`;
+          boys.sort(function (a, b) { return a.timeSeconds - b.timeSeconds; });
+          girls.sort(function (a, b) { return a.timeSeconds - b.timeSeconds; });
+          recordsPanel.innerHTML = '<div class="records-grid">' +
+            renderRecordColumn('Fastest Boys', boys) + renderRecordColumn('Fastest Girls', girls) + '</div>';
         }
       }
-    } catch (error) {
-      console.error('Error loading course records/upcoming meets:', error);
-      if (recordsPanel) recordsPanel.innerHTML = '<div class="record-empty" style="padding:16px 18px;">Unable to load course records right now.</div>';
-      if (upcomingPanel) upcomingPanel.innerHTML = '<div class="record-empty" style="padding:16px 18px;">Unable to load upcoming meets right now.</div>';
+    } catch (err) {
+      console.warn('Course viewer: records/meets failed', err);
+      if (recordsPanel) recordsPanel.innerHTML = '<div class="record-empty" style="padding:16px 18px">Unable to load course records right now.</div>';
+      if (upcomingPanel) upcomingPanel.innerHTML = '<div class="record-empty" style="padding:16px 18px">Unable to load upcoming meets right now.</div>';
     }
   }
 
-  function loadCourse(slug, pushState) {
-    if (!slug) {
-      showCourseList();
-      return;
-    }
+  // ---------- notes + actions ----------
+  function notesCardHtml(course, a) {
+    return '<div class="card">' +
+      '<div class="card-head"><h2><span class="swatch" style="background:var(--text-dim)"></span>Course Notes</h2>' +
+      '<span class="tag">' + (course.source === 'firebase' ? 'from database' : 'local manifest') + '</span></div>' +
+      '<div class="notes">' +
+        (course.notes ? '<p>' + esc(course.notes) + '</p>' : '<p>No hand-written notes for this course yet.</p>') +
+        '<p style="color:var(--text-faint);font-size:12.5px">All distances, climbing, grades, and climb counts on this page are computed from the course GPX, not entered by hand. Elevation is smoothed by distance and gain uses a noise threshold, so short GPS spikes are not counted as hills.</p>' +
+      '</div>' +
+      '<div class="btn-row no-print">' +
+        (course.gpx ? '<a class="btn" href="' + esc(assetUrl(course.gpx)) + '" download>Download GPX</a>' : '') +
+        '<button class="btn primary" id="print-card">Print course card</button>' +
+        '<button class="btn" id="copy-plan">Copy race plan</button>' +
+      '</div>' +
+    '</div>';
+  }
 
-    const course = COURSES.find(c => c.slug === slug);
-    
-    if (!course) {
-      document.getElementById('page-content').innerHTML = emptyState(slug);
-      return;
-    }
+  function planAsText() {
+    if (!currentPlan) return '';
+    var course = currentPlan.course, i = currentPlan.inputs, pred = currentPlan.pred, plan = currentPlan.plan;
+    var lines = [];
+    lines.push(course.name + ' — race plan');
+    lines.push('Reference PR: ' + E.fmtTime(i.refSeconds) + ' for ' + i.refMi.toFixed(2) + ' mi (flat)');
+    lines.push('Conditions: ' + Math.round(i.tempF) + 'F, ' + Math.round(i.humidityPct) + '% humidity');
+    lines.push('Predicted finish: ' + E.fmtTime(pred.seconds) + ' (' +
+      (pred.secondsOverFlat >= 0 ? '+' : '−') + E.fmtTime(Math.abs(pred.secondsOverFlat)) + ' vs flat same distance)');
+    lines.push('');
+    lines.push('Splits:');
+    plan.splits.forEach(function (s) {
+      lines.push('  ' + s.label + '  ' + E.fmtTime(s.timeSeconds) + '  (' + E.fmtPace(s.paceSecPerMi) + ')  ' +
+        s.effortLabel + '  ' + E.fmtTime(s.cumulativeSeconds) + ' cumulative');
+    });
+    lines.push('');
+    lines.push('Strategy:');
+    plan.splits.forEach(function (s) { lines.push('  - ' + s.label + ': ' + s.guidance); });
+    return lines.join('\n');
+  }
 
-    document.title = `${course.name} — Course | Mountain State Miles`;
-    document.getElementById('breadcrumb-course').textContent = course.name;
-    document.getElementById('page-content').innerHTML = courseTemplate(course);
-    
-    loadCourseRecordsAndUpcomingMeets(course);
+  // Show a readable message instead of a dead black box when a flyover video is
+  // missing on this deployment.
+  function bindVideoFallback() {
+    var video = document.getElementById('course-video');
+    var msg = document.getElementById('video-msg');
+    if (!video || !msg) return;
+    var show = function () { msg.classList.add('show'); };
+    video.addEventListener('error', show, { once: true });
+    var source = video.querySelector('source');
+    if (source) source.addEventListener('error', show, { once: true });
+  }
 
+  function bindNotesActions() {
+    var printBtn = document.getElementById('print-card');
+    if (printBtn) printBtn.addEventListener('click', function () { window.print(); });
+    var copyBtn = document.getElementById('copy-plan');
+    if (copyBtn) copyBtn.addEventListener('click', function () {
+      var text = planAsText();
+      if (!text) return;
+      var done = function () { copyBtn.textContent = 'Copied ✓'; setTimeout(function () { copyBtn.textContent = 'Copy race plan'; }, 2000); };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done, function () { window.prompt('Copy race plan', text); });
+      } else {
+        window.prompt('Copy race plan', text);
+      }
+    });
+  }
+
+  // ---------------------------------------------------------------- routing
+  async function route(slug, pushState) {
+    var requestId = ++activeRequestId;
+    teardownCourseView();
     if (pushState) {
-      const url = new URL(window.location.href);
-      url.searchParams.set('course', course.slug);
-      window.history.pushState({ slug: course.slug }, '', url);
+      var url = new URL(window.location.href);
+      if (slug) url.searchParams.set('course', slug); else url.searchParams.delete('course');
+      window.history.pushState({ slug: slug }, '', url);
     }
 
-    const video = document.getElementById('course-video');
-    const videoMsg = document.getElementById('video-msg');
-    if (video) {
-      video.addEventListener('error', () => videoMsg.classList.add('show'), { once: true });
+    if (!slug) {
+      window.scrollTo({ top: 0 });
+      renderList();
+      return;
     }
 
-    // ---------- Enhanced Leaflet Multi-Layer Map Pipeline ----------
-    if (map) { map.remove(); map = null; }
-    const satelliteTiles = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-      maxZoom: 19, attribution: 'Tiles &copy; Esri &mdash; Source: Esri'
-    });
-    const darkTiles = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-      maxZoom: 19, attribution: '&copy; OpenStreetMap &copy; CARTO'
-    });
-    const topoTiles = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
-      maxZoom: 17, attribution: '&copy; OpenTopoMap'
-    });
-
-    map = L.map('course-map', { 
-      scrollWheelZoom: false, 
-      layers: [satelliteTiles]
-    });
-
-    const baseMapsConfig = {
-      "High-Res Satellite View": satelliteTiles,
-      "Dark Contrast View": darkTiles,
-      "Topography & Contours": topoTiles,
-    };
-    L.control.layers(baseMapsConfig, null, { position: 'topright' }).addTo(map);
-
-    mapHoverMarker = L.circleMarker([0, 0], {
-      radius: 7, color: '#ffffff', weight: 2, fillColor: '#4f8bf0', fillOpacity: 1, zIndexOffset: 1000
-    });
-
-    map.setView([39.19, -81.46], 13);
-    const mapStatus = document.getElementById('map-status');
-
-    function drawRouteAndStats(points) {
-      if (!points.length) {
-        mapStatus.textContent = 'No coordinate metrics mapped inside target route tracking array vectors.';
-        mapStatus.classList.add('show');
-        return;
-      }
-
-      const stats = computeStats(points);
-      const latlngs = points.map(p => [p.lat, p.lon]);
-      routeLayer = L.polyline(latlngs, { color: '#f2a65a', weight: 4, opacity: 0.95, lineJoin: 'round' }).addTo(map);
-      
-      L.circleMarker(latlngs[0], { radius: 7, color: '#0b0e13', weight: 2, fillColor: '#2fd0a3', fillOpacity: 1 })
-        .addTo(map).bindPopup('Gate Start Position');
-      L.circleMarker(latlngs[latlngs.length - 1], { radius: 7, color: '#0b0e13', weight: 2, fillColor: '#e8654f', fillOpacity: 1 })
-        .addTo(map).bindPopup('Finish Timing Grid');
-      
-      map.fitBounds(routeLayer.getBounds(), { padding: [24, 24] });
-
-      const statStrip = document.getElementById('stat-strip');
-      statStrip.innerHTML = `
-        <div class="stat"><span class="val">${fmt(stats.distanceMi, 2)}</span><span class="lab">Miles</span></div>
-        <div class="stat"><span class="val">+${fmt(stats.gainFt, 0)}</span><span class="lab">Ft Gain</span></div>
-        <div class="stat"><span class="val">${stats.minFt !== null ? fmt(stats.minFt,0)+'–'+fmt(stats.maxFt,0) : '—'}</span><span class="lab">Ft Elev</span></div>
-      `;
-      document.getElementById('mini-stats').innerHTML = `
-        <div class="mini-stat"><div class="v">${stats.minFt !== null ? fmt(stats.minFt,0)+' ft' : '—'}</div><div class="l">Min Elevation</div></div>
-        <div class="mini-stat"><div class="v">${stats.maxFt !== null ? fmt(stats.maxFt,0)+' ft' : '—'}</div><div class="l">Max Elevation</div></div>
-        <div class="mini-stat"><div class="v">+${fmt(stats.gainFt,0)} / -${fmt(stats.lossFt,0)} ft</div><div class="l">Gain / Loss</div></div>
-        <div class="mini-stat"><div class="v">${fmt(stats.distanceMi,2)} mi</div><div class="l">Total Distance</div></div>
-      `;
-
-      buildElevationChart(points);
-      build3DTrackOrbitModel(points);
-      
-      // Wire up Predictor Interaction Handles
-      const inputs = ['pred-min', 'pred-sec', 'pred-weather'];
-      inputs.forEach(id => {
-        document.getElementById(id).addEventListener('input', () => runPredictorCalculations(course, points));
-      });
-      runPredictorCalculations(course, points);
+    var course = getCourse(slug);
+    if (!course) {
+      document.getElementById('page-content').innerHTML =
+        '<div class="empty-state"><h2>Course not found</h2><p>“' + esc(slug) + '” is not in the course manifest.</p></div>';
+      return;
     }
 
-    // ---------- NEW ENGINE: Three.js Interactive 3D Orbit Component ----------
-    function build3DTrackOrbitModel(trackPoints) {
-      const container = document.getElementById('canvas3d-wrap');
-      if (!container) return;
-      container.innerHTML = ''; 
+    document.title = course.name + ' — Course | Mountain State Miles';
+    document.getElementById('breadcrumb-course').textContent = course.name;
+    document.getElementById('page-content').innerHTML =
+      renderCourseShell(course, null) +
+      '<div class="loading">Measuring course from track data…</div>';
+    window.scrollTo({ top: 0 });
 
-      const width = container.clientWidth;
-      const height = container.clientHeight;
+    var a = await analyzeCourse(course);
+    if (requestId !== activeRequestId) return; // a newer navigation won
 
-      scene3d = new THREE.Scene();
-      const cardColor = getComputedStyle(document.documentElement).getPropertyValue('--card').trim() || '#151a22';
-      scene3d.background = new THREE.Color(cardColor);
-
-      camera3d = new THREE.PerspectiveCamera(30, width / height, 0.1, 1000);
-      camera3d.position.set(0, 12, 30); 
-      camera3d.lookAt(0, 0, 0); 
-
-      const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-      scene3d.add(ambientLight);
-      const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
-      dirLight.position.set(10, 20, 10);
-      scene3d.add(dirLight);
-
-      renderer3d = new THREE.WebGLRenderer({ antialias: true });
-      renderer3d.setSize(width, height);
-      renderer3d.setPixelRatio(window.devicePixelRatio);
-      container.appendChild(renderer3d.domElement);
-
-      let minLat = Infinity, maxLat = -Infinity;
-      let minLon = Infinity, maxLon = -Infinity;
-      let minEle = Infinity, maxEle = -Infinity;
-
-      trackPoints.forEach(p => {
-        if (p.lat < minLat) minLat = p.lat; if (p.lat > maxLat) maxLat = p.lat;
-        if (p.lon < minLon) minLon = p.lon; if (p.lon > maxLon) maxLon = p.lon;
-        if (p.ele < minEle) minEle = p.ele; if (p.ele > maxEle) maxEle = p.ele;
-      });
-
-      const centerLat = (minLat + maxLat) / 2;
-      const centerLon = (minLon + maxLon) / 2;
-      const centerEle = (minEle + maxEle) / 2;
-
-      const latCorrection = Math.cos(centerLat * Math.PI / 180);
-      const deltaLat = maxLat - minLat;
-      const deltaLon = (maxLon - minLon) * latCorrection;
-      
-      const maxDiff = Math.max(deltaLat, deltaLon) || 1;
-      const geoScale = 14 / maxDiff;
-      
-      const eleScale = (maxEle - minEle !== 0) ? 2.5 / (maxEle - minEle) : 1; 
-
-      trackGroup3d = new THREE.Group();
-
-      const threePointsArray = trackPoints.map(p => {
-        return new THREE.Vector3(
-          (p.lon - centerLon) * geoScale * latCorrection,
-          (p.ele - centerEle) * eleScale, 
-          -(p.lat - centerLat) * geoScale  
-        );
-      });
-
-      const trackCurve = new THREE.CatmullRomCurve3(threePointsArray);
-      const tubeGeometry = new THREE.TubeGeometry(trackCurve, Math.min(300, trackPoints.length), 0.14, 8, false);
-      
-      const colors = [];
-      for (let i = 0; i < tubeGeometry.attributes.position.count; i++) {
-        const t = i / tubeGeometry.attributes.position.count;
-        const pt1 = trackCurve.getPoint(Math.max(0, t - 0.01));
-        const pt2 = trackCurve.getPoint(Math.min(1, t + 0.01));
-        const slope = pt2.y - pt1.y;
-
-        const color = new THREE.Color();
-        if (slope > 0.05) color.setHex(0xe8654f); 
-        else if (slope < -0.05) color.setHex(0x2fd0a3); 
-        else color.setHex(0xf2a65a); 
-
-        colors.push(color.r, color.g, color.b);
-      }
-      
-      tubeGeometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-      
-      const tubeMaterial = new THREE.MeshBasicMaterial({ 
-        vertexColors: true,
-        wireframe: false 
-      });
-      const lineMesh = new THREE.Mesh(tubeGeometry, tubeMaterial);
-      trackGroup3d.add(lineMesh);
-
-      const markerMaterialStart = new THREE.MeshStandardMaterial({ color: 0x2fd0a3, roughness: 0.2 });
-      const markerMaterialEnd = new THREE.MeshStandardMaterial({ color: 0xe8654f, roughness: 0.2 });
-
-      const startSphere = new THREE.Mesh(new THREE.SphereGeometry(0.35, 16, 16), markerMaterialStart);
-      startSphere.position.copy(threePointsArray[0]);
-      trackGroup3d.add(startSphere);
-
-      const finishSphere = new THREE.Mesh(new THREE.SphereGeometry(0.35, 16, 16), markerMaterialEnd);
-      finishSphere.position.copy(threePointsArray[threePointsArray.length - 1]);
-      trackGroup3d.add(finishSphere);
-
-      const gridSystem = new THREE.GridHelper(20, 20, 0x5f6b7a, 0x232b36);
-      gridSystem.position.y = -3;
-      scene3d.add(gridSystem);
-      scene3d.add(trackGroup3d);
-
-      let isInteracting = false;
-      let lastMousePos = { x: 0, y: 0 };
-
-      container.addEventListener('mousedown', (e) => {
-        isInteracting = true;
-        lastMousePos = { x: e.clientX, y: e.clientY };
-      });
-
-      container.addEventListener('mousemove', (e) => {
-        if (!isInteracting) return;
-        const deltaX = e.clientX - lastMousePos.x;
-        const deltaY = e.clientY - lastMousePos.y;
-        trackGroup3d.rotation.y += deltaX * 0.007;
-        trackGroup3d.rotation.x = Math.max(-Math.PI/3, Math.min(Math.PI/3, trackGroup3d.rotation.x + deltaY * 0.007));
-        lastMousePos = { x: e.clientX, y: e.clientY };
-      });
-
-      window.addEventListener('mouseup', () => isInteracting = false);
-
-      container.addEventListener('touchstart', (e) => {
-        if(e.touches.length === 1) {
-          isInteracting = true;
-          lastMousePos = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-        }
-      }, {passive: true});
-
-      container.addEventListener('touchmove', (e) => {
-        if (!isInteracting || e.touches.length !== 1) return;
-        const deltaX = e.touches[0].clientX - lastMousePos.x;
-        const deltaY = e.touches[0].clientY - lastMousePos.y;
-        trackGroup3d.rotation.y += deltaX * 0.007;
-        trackGroup3d.rotation.x = Math.max(-Math.PI/3, Math.min(Math.PI/3, trackGroup3d.rotation.x + deltaY * 0.007));
-        lastMousePos = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-      }, {passive: true});
-
-      window.addEventListener('touchend', () => isInteracting = false);
-
-      function renderFrameLoop() {
-        if (!renderer3d) return;
-        requestAnimationFrame(renderFrameLoop);
-        if (!isInteracting) {
-          trackGroup3d.rotation.y += 0.0025; 
-        }
-        renderer3d.render(scene3d, camera3d);
-      }
-      renderFrameLoop();
-    }
-
-   // ---------- ADVANCED ENGINE: Grade-Adjusted Topographical Predictor ----------
-    function runPredictorCalculations(currentCourse, points) {
-      const minEl = document.getElementById('pred-min');
-      const secEl = document.getElementById('pred-sec');
-      if (!minEl || !secEl || !points.length) return;
-
-      const userMinutes = parseInt(minEl.value) || 17;
-      const userSeconds = parseInt(secEl.value) || 0;
-      
-      const totalBaseTrackSeconds = (userMinutes * 60) + userSeconds;
-      const basePacePerMile = totalBaseTrackSeconds / 3.10686; 
-
-      const atmosphericMultiplier = parseFloat(document.getElementById('pred-weather').value) || 1.00;
-
-      let surfaceMultiplier = 1.02; 
-      if (currentCourse.surfaces && currentCourse.surfaces.length > 0) {
-        surfaceMultiplier = 0;
-        currentCourse.surfaces.forEach(s => {
-          const weight = SURFACE_MULTIPLIERS[s.type] || 1.02;
-          surfaceMultiplier += (s.pct / 100) * weight;
-        });
-      }
-
-      let totalDistanceMi = 0;
-      let splits = [];
-      let currentSplit = { dist: 0, gain: 0, loss: 0, points: 0 };
-      let currentMileTarget = 1;
-
-      for (let i = 1; i < points.length; i++) {
-        const stepDist = haversine(points[i-1].lat, points[i-1].lon, points[i].lat, points[i].lon) / 1609.34;
-        totalDistanceMi += stepDist;
-        currentSplit.dist += stepDist;
-        currentSplit.points++;
-
-        const stepElev = points[i].ele - points[i-1].ele; 
-        if (stepElev > 0) currentSplit.gain += stepElev;
-        else currentSplit.loss -= stepElev;
-
-        if (totalDistanceMi >= currentMileTarget || i === points.length - 1) {
-          splits.push({...currentSplit, mileLabel: totalDistanceMi >= 3.1 ? 'Final Kick' : `Mile ${currentMileTarget}`});
-          currentSplit = { dist: 0, gain: 0, loss: 0, points: 0 };
-          currentMileTarget++;
-        }
-      }
-
-      let predictedTotalSeconds = 0;
-      let splitsHtml = `
-        <tr style="border-bottom: 1px solid var(--card-border); color: var(--text-faint); font-size:10.5px; text-transform:uppercase;">
-          <th style="padding: 6px 0;">Segment</th>
-          <th>Topo Data (Gain/Loss)</th>
-          <th style="text-align: right;">Predicted Split</th>
-        </tr>
-      `;
-
-      const standardPad = (val) => val < 10 ? '0' + val : val;
-      const segmentFormatter = (secs) => `${Math.floor(secs / 60)}:${standardPad(Math.floor(secs % 60))}`;
-
-      splits.forEach(split => {
-        const netElevChangeMi = ((split.gain - split.loss) * 3.28084) / 5280; 
-        const gradient = (netElevChangeMi / split.dist) * 100;
-        
-        let gradeMultiplier = 1.0;
-        if (gradient > 0) gradeMultiplier += (gradient * 0.033);
-        else if (gradient < 0 && gradient > -10) gradeMultiplier += (gradient * 0.015);
-        else if (gradient <= -10) gradeMultiplier += 0.05;
-
-        const combinedMultiplier = gradeMultiplier * atmosphericMultiplier * surfaceMultiplier;
-        const splitSeconds = (basePacePerMile * split.dist) * combinedMultiplier;
-        predictedTotalSeconds += splitSeconds;
-
-        splitsHtml += `
-          <tr style="border-bottom: 1px solid var(--ridge);">
-            <td style="padding: 7px 0; color: var(--text); font-weight:500;">${split.mileLabel}</td>
-            <td style="color: var(--text-dim); font-size:12px;">
-              <span style="color:#e8654f">↑${Math.round(split.gain * 3.28084)}ft</span> / 
-              <span style="color:#2fd0a3">↓${Math.round(split.loss * 3.28084)}ft</span>
-            </td>
-            <td style="text-align: right; font-family: monospace; color: var(--trail); font-weight:600; font-size:13.5px;">
-              ${segmentFormatter(splitSeconds)}
-            </td>
-          </tr>
-        `;
-      });
-
-      const parsedOutputMinutes = Math.floor(predictedTotalSeconds / 60);
-      const parsedOutputSeconds = Math.floor(predictedTotalSeconds % 60);
-
-      document.getElementById('predicted-time-display').textContent = `${parsedOutputMinutes}:${standardPad(parsedOutputSeconds)}`;
-      const netOverheadSeconds = Math.round(predictedTotalSeconds - totalBaseTrackSeconds);
-      document.getElementById('predicted-diff-label').textContent = `Predicted XC Conversion (+${netOverheadSeconds}s vs flat track PR)`;
-      document.getElementById('splits-table').innerHTML = splitsHtml;
-    }
-
-    // ---------- Interactive Elevation Profile Logic ----------
-    function buildElevationChart(fullTrackPoints) {
-      const canvasCtx = document.getElementById('elevation-chart');
-      if (!canvasCtx) return;
-
-      const samplingFactor = Math.max(1, Math.floor(fullTrackPoints.length / 150));
-      activeSamplePoints = fullTrackPoints.filter((_, idx) => idx % samplingFactor === 0);
-
-      const elevationDataset = activeSamplePoints.map(p => p.ele !== null ? p.ele * 3.28084 : 0);
-      const distanceLabels = activeSamplePoints.map(p => (p.distanceFromStart / 1609.34).toFixed(2));
-
-      if (activeElevationChart) {
-        activeElevationChart.destroy();
-      }
-
-      const lightStateActive = document.documentElement.getAttribute('data-theme') === 'light';
-      const gridBorderTint = lightStateActive ? '#eae5da' : '#232b36';
-      const textLabelsTint = lightStateActive ? '#1c2128' : '#9aa5b3';
-
-      activeElevationChart = new Chart(canvasCtx, {
-        type: 'line',
-        data: {
-          labels: distanceLabels,
-          datasets: [{
-            label: 'Elevation (ft)',
-            data: elevationDataset,
-            borderColor: '#4f8bf0',
-            backgroundColor: 'rgba(79, 139, 240, 0.12)',
-            fill: true,
-            tension: 0.3,
-            pointRadius: 0,
-            pointHoverRadius: 6,
-            pointHoverBackgroundColor: '#ffffff',
-            pointHoverBorderColor: '#4f8bf0',
-            pointHoverBorderWidth: 2
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              mode: 'index',
-              intersect: false,
-              callbacks: {
-                title: (items) => `Distance: ${items[0].label} mi`,
-                label: (item) => `Elevation: ${item.parsed.y.toFixed(0)} ft`
-              }
-            }
-          },
-          scales: {
-            x: {
-              grid: { color: gridBorderTint },
-              ticks: { color: textLabelsTint, maxTicksLimit: 12 },
-              title: { display: true, text: 'Distance Offset (Miles)', color: textLabelsTint, font: { size: 11, weight: '500' } }
-            },
-            y: {
-              grid: { color: gridBorderTint },
-              ticks: { color: textLabelsTint },
-              title: { display: true, text: 'Elevation (Feet)', color: textLabelsTint, font: { size: 11, weight: '500' } }
-            }
-          },
-          onHover: (event, chartActiveElements) => {
-            if (chartActiveElements && chartActiveElements.length > 0) {
-              const activeIndex = chartActiveElements[0].index;
-              const trackDataReference = activeSamplePoints[activeIndex];
-              
-              if (trackDataReference) {
-                mapHoverMarker.setLatLng([trackDataReference.lat, trackDataReference.lon]);
-                if (!map.hasLayer(mapHoverMarker)) {
-                  mapHoverMarker.addTo(map);
-                }
-              }
-            } else {
-              if (map.hasLayer(mapHoverMarker)) {
-                map.removeLayer(mapHoverMarker);
-              }
-            }
-          }
-        }
-      });
-    }
-
-    fetch(course.gpx)
-      .then(res => { if (!res.ok) throw new Error('not found'); return res.text(); })
-      .then(text => {
-        const points = parseGpx(text);
-        if (points.length) {
-          drawRouteAndStats(points);
-        } else if (course.fallbackTrack) {
-          mapStatus.textContent = 'GPX empty tracking components. Visualizing layout fallback mapping schema structure.';
-          mapStatus.classList.add('show');
-          const simulatedElevatedFallback = course.fallbackTrack.map(([lat, lon], index) => {
-            let mockElevation = 135 + Math.sin(index * 0.15) * 12 + Math.cos(index * 0.05) * 4;
-            return { lat, lon, ele: mockElevation };
-          });
-          drawRouteAndStats(simulatedElevatedFallback);
-        }
-      })
-      .catch(() => {
-        if (course.fallbackTrack) {
-          mapStatus.textContent = 'Network offline. Using local cached track routing geometry specifications.';
-          mapStatus.classList.add('show');
-          const simulatedElevatedFallback = course.fallbackTrack.map(([lat, lon], index) => {
-            let mockElevation = 135 + Math.sin(index * 0.15) * 12 + Math.cos(index * 0.05) * 4;
-            return { lat, lon, ele: mockElevation };
-          });
-          drawRouteAndStats(simulatedElevatedFallback);
-        } else {
-          mapStatus.textContent = `Map framework structural pipeline failed to resolve remote tracking targets at path: ${course.gpx}`;
-          mapStatus.classList.add('show');
-        }
-      });
+    document.getElementById('page-content').innerHTML = renderCourseShell(course, a || { metrics: null });
+    renderCourse(course, a || { metrics: null });
+    bindNotesActions();
   }
 
+  // ---------------------------------------------------------------- boot
   async function boot() {
-    await mergeCoursesFromFirebase();
-    const params = new URLSearchParams(window.location.search);
-    const slug = params.get('course'); // No fallback! Let it be null to trigger the list view
-    loadCourse(slug, false);
+    try { await loadManifest(); } catch (e) { console.warn(e); }
+    if (!COURSES.length) {
+      document.getElementById('page-content').innerHTML =
+        '<div class="empty-state"><h2>No courses configured</h2><p>The course manifest is empty.</p></div>';
+      return;
+    }
+    var params = new URLSearchParams(window.location.search);
+    route(params.get('course'), false);
   }
 
-  window.addEventListener('popstate', () => {
-    const params = new URLSearchParams(window.location.search);
-    const slug = params.get('course');
-    loadCourse(slug, false);
+  window.addEventListener('popstate', function () {
+    route(new URLSearchParams(window.location.search).get('course'), false);
   });
 
-  window.addEventListener('DOMContentLoaded', boot);
+  var themeObserver = new MutationObserver(function () {
+    if (typeof Chart !== 'undefined' && elevationChart) {
+      var light = document.documentElement.getAttribute('data-theme') === 'light';
+      var grid = light ? '#eae5da' : '#232b36';
+      var text = light ? '#1c2128' : '#9aa5b3';
+      elevationChart.options.scales.x.grid.color = grid;
+      elevationChart.options.scales.y.grid.color = grid;
+      elevationChart.options.scales.x.ticks.color = text;
+      elevationChart.options.scales.y.ticks.color = text;
+      elevationChart.options.scales.x.title.color = text;
+      elevationChart.options.scales.y.title.color = text;
+      elevationChart.update('none');
+    }
+    if (threeRefs && threeRefs.scene) {
+      var card = getComputedStyle(document.documentElement).getPropertyValue('--card').trim();
+      if (card) threeRefs.scene.background.set(card);
+    }
+  });
+  themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot);
+  } else {
+    boot();
+  }
+})();
 </script>
 
-  <div id="global-footer"></div>
+<div id="global-footer"></div>
 
 </body>
 </html>
