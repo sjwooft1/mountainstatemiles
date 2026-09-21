@@ -675,10 +675,12 @@
   const num = (value) => (value == null ? "—" : Number(value).toLocaleString("en-US"));
 
   // A margin rather than an absolute time: "+42.6s" or "+1:12.4".
-  function formatGap(sec) {
+  function formatGap(sec, unsigned) {
     const n = Number(sec);
     if (!isFinite(n)) return "—";
-    const sign = n < 0 ? "-" : "+";
+    // A spread is a distance, not a direction: callers that mean "how far apart"
+    // pass unsigned so the copy does not read "within +45.7s of each other".
+    const sign = n < 0 ? "-" : (unsigned ? "" : "+");
     const a = Math.abs(n);
     const m = Math.floor(a / 60);
     return m
@@ -1270,7 +1272,7 @@
             top2: second ? second.name : "—",
             top2_school: second ? second.school : "—",
             top2_time: second ? formatTime(second.timeSec) : "—",
-            winner_spread: winner && winner.spread15 != null ? formatGap(winner.spread15) : "—"
+            winner_spread: winner && winner.spread15 != null ? formatGap(winner.spread15, true) : "—"
           };
           // The winner's projected scoring five, addressable as
           // {{sim:meet:M.winner2}} / .winner2_time so a preview can name the
@@ -1397,6 +1399,9 @@
   // lede, team picture, the athletes behind it, recent form, what comes next —
   // and every number that has a token is written as one, so the copy keeps
   // reporting live data instead of freezing on the day it was drafted.
+  // Every recurring beat is also drawn from a pool of phrasings picked by the
+  // story's own seed, so a news desk full of drafts does not read as one
+  // template with the names swapped out.
 
   // "A", "A and B", "A, B and C"
   function nameList(names) {
@@ -1418,6 +1423,28 @@
 
   const WHO = { M: "boys", F: "girls" };
 
+  // Every write-up is assembled from whole sentences, which is a recipe for
+  // fifteen stories that read like the same story. So each recurring beat (the
+  // opener, the star, the form line) picks its phrasing from a pool, using a
+  // hash of the story's own identity: a school's draft is stable every time it
+  // is regenerated, but two schools — or one school's boys and girls — never
+  // come out with the same sentences. The salt keeps the beats independent, so
+  // the whole article does not shift together from one draft to the next.
+  function seedOf(text) {
+    let h = 2166136261;
+    const s = String(text);
+    for (let i = 0; i < s.length; i++) {
+      h = (h ^ s.charCodeAt(i)) >>> 0;
+      h = Math.imul(h, 16777619) >>> 0;
+    }
+    return h;
+  }
+  function pickPhrase(seed, salt, options) {
+    const list = (options || []).filter(Boolean);
+    if (!list.length) return "";
+    return list[seedOf(`${seed}|${salt}`) % list.length];
+  }
+
   // The named-athletes paragraph. This is the part that makes a draft read like
   // reporting rather than a table dump, so it names as many real runners as the
   // roster supports, each with the meet their mark came at.
@@ -1427,22 +1454,36 @@
     const T = k => `{{team:${slug}:${gender}.${k}}}`;
     const who = WHO[gender];
     const a = side.athletes;
+    const seed = `team:${slug}:${gender}`;
     const sentences = [];
-    const relayNote = athlete => (athlete && athlete.relay ? " — a relay leg rather than a cross country race" : "");
+    const relayNote = athlete => (athlete && athlete.relay ? " (a relay leg rather than a cross country race)" : "");
     if (a[0]) {
-      sentences.push(`${T("top")} leads the way at ${T("top_rating")} MSM, the highest rating on the ${who}' roster, set at ${T("top_meet")} in ${T("top_time")}` +
-        (classWordOf(a[0].grade) ? ` as a ${T("top_grade")}` : "") + relayNote(a[0]) + ".");
+      sentences.push(pickPhrase(seed, "star", [
+        `${T("top")} leads the way at ${T("top_rating")} MSM, the best mark on the ${who}' roster, run at ${T("top_meet")} in ${T("top_time")}`,
+        `${T("top")} holds the ${who}' top rating, ${T("top_rating")} MSM for ${T("top_time")} at ${T("top_meet")}`,
+        `The ${who}' best performance of the season is ${T("top")}'s ${T("top_time")} at ${T("top_meet")}, rated ${T("top_rating")} MSM`
+      ]) + (classWordOf(a[0].grade) ? ` as a ${T("top_grade")}` : "") + relayNote(a[0]) + ".");
     }
     if (a[1]) {
-      sentences.push(`${T("top2")} is next at ${T("top2_rating")}, set at ${T("top2_meet")}` +
-        (classWordOf(a[1].grade) ? ` (${T("top2_grade")})` : "") + relayNote(a[1]) + ".");
+      sentences.push(pickPhrase(seed, "second", [
+        `${T("top2")} is next at ${T("top2_rating")} MSM from ${T("top2_meet")}`,
+        `Behind that comes ${T("top2")}, ${T("top2_rating")} MSM at ${T("top2_meet")}`,
+        `Next in line is ${T("top2")}, rated ${T("top2_rating")} at ${T("top2_meet")}`
+      ]) + (classWordOf(a[1].grade) ? ` (${T("top2_grade")})` : "") + relayNote(a[1]) + ".");
     }
     if (a[2]) {
       // Whatever is left of the scoring five, however deep the roster goes.
       const rest = a.slice(2, 5).map((x, i) => `${T(`top${i + 3}`)} (${T(`top${i + 3}_rating`)})`);
       sentences.push(rest.length > 1
-        ? `${nameList(rest)} fill out the back of the scoring five, so the ${who} are not a one-runner team.`
-        : `${rest[0]} is the next name to know.`);
+        ? pickPhrase(seed, "rest", [
+            `${nameList(rest)} complete the scoring five.`,
+            `${nameList(rest)} fill out the rest of the five.`,
+            `The five is rounded out by ${nameList(rest)}.`
+          ])
+        : pickPhrase(seed, "rest1", [
+            `${rest[0]} is the next name on the roster.`,
+            `${rest[0]} is the other name to know so far.`
+          ]));
     }
     return sentences.join(" ");
   }
@@ -1452,6 +1493,7 @@
     const team = state.teamIndex[slug];
     const side = team[gender];
     const who = WHO[gender];
+    const seed = `team:${slug}:${gender}`;
     const T = k => `{{team:${slug}:${gender}.${k}}}`;
     const out = [];
 
@@ -1462,22 +1504,39 @@
       const classRank = side.classRank && team.classification
         ? `, ${T("class_rank")} of Class ${team.classification}`
         : "";
-      bits.push(`Their five-runner core averages ${T("avg")} MSM a scorer${classRank}, and ${T("spread")} MSM points separate their first and fifth scorers.`);
+      bits.push(pickPhrase(seed, "core", [
+        `Their five-runner core averages ${T("avg")} MSM a scorer${classRank}, and ${T("spread")} MSM points separate their first and fifth scorers.`,
+        `Across the scoring five the ${who} average ${T("avg")} MSM${classRank}; first scorer to fifth spans ${T("spread")} MSM points.`,
+        `${T("spread")} MSM points separate the ${who}' first and fifth scorers, a five that averages ${T("avg")} MSM${classRank}.`,
+        `The top five average ${T("avg")} MSM${classRank}, with ${T("spread")} MSM points between the first scorer and the fifth.`
+      ]));
       if (side.spread != null) {
-        bits.push(side.spread <= 130
-          ? `That is a tight pack, so an off day for one runner barely moves the team total — the single most useful thing a cross country team can have.`
-          : `The swing lives at the back of the five, which makes the fifth runner the one to watch on race day.`);
+        bits.push(pickPhrase(seed, "pack", side.spread <= 130
+          ? [`That compression is what turns five good runners into a low team score.`,
+             `A pack that tight limits the damage of an off day from any one runner.`,
+             `A group that close keeps the team total steady from week to week.`,
+             `Five runners within ${T("spread")} MSM of each other is what a coach wants in November.`]
+          : [`The swing sits in the back half of the five, so the fifth scorer is what decides the total.`,
+             `Most of the movement is at the back of the five, where team scores are settled.`,
+             `Depth, not a front-runner, is the lever here: the fifth scorer sets the score.`,
+             `A spread that wide at the back of the five is where the team total is won or lost.`]));
       }
       const formCount = teamFormOf(slug, gender).length;
-      if (formCount > 1) {
-        bits.push(`${T("rated")} ${who} have a rated performance this season across ${T("meets_raced")} meets, which is the depth that lets a coach rearrange the back half of the lineup.`);
-      } else {
-        bits.push(`${T("rated")} ${who} have a rated performance this season, which is the depth that lets a coach rearrange the back half of the lineup.`);
-      }
+      bits.push(formCount > 1
+        ? pickPhrase(seed, "rated", [
+            `${T("rated")} ${who} have a rated performance this season across ${T("meets_raced")} meets.`,
+            `${T("rated")} of them carry a rated mark this season, spread over ${T("meets_raced")} meets.`,
+            `The season covers ${T("meets_raced")} meets and ${T("rated")} rated ${who}.`
+          ])
+        : `${T("rated")} ${who} have a rated performance this season.`);
     } else {
       const tail = side.rated >= 2 ? `, ahead of ${T("top2")} at ${T("top2_rating")}` : "";
       bits.push(`The ${who} are still building a team score: ${T("rated")} rated runner${side.rated === 1 ? "" : "s"} so far, led by ${T("top")} at ${T("top_rating")} MSM${tail}.`);
-      bits.push(`Five scorers is the number that decides cross country meets, so the weeks ahead are about putting a full five behind ${T("top")}.`);
+      bits.push(pickPhrase(seed, "need5", [
+        `Cross country is decided by five scorers, so the weeks ahead are about putting a full five behind ${T("top")}.`,
+        `A team score needs five finishers, which makes the next few weeks a search for the rest of the pack.`,
+        `Until a fifth scorer emerges the ${who} are measured one runner at a time.`
+      ]));
     }
     out.push(bits.join(" "));
 
@@ -1489,10 +1548,15 @@
     const forms = teamFormOf(slug, gender);
     const last = forms[0];
     if (last) {
-      const trend = forms[1]
-        ? ` That is ${T("trend")} MSM on the five-runner average from the meet before.`
-        : "";
-      out.push(`Most recently at ${T("last_meet")}, the top five averaged ${T("last_rating")} MSM${last.leader ? `, with ${T("last_leader")} leading the group in ${T("last_leader_time")}` : ""}.` + trend);
+      const trend = forms[1] ? ` That average moved ${T("trend")} MSM from the meet before.` : "";
+      const leader = last.leader ? `, led by ${T("last_leader")} in ${T("last_leader_time")}` : "";
+      const first = last.leader ? ` with ${T("last_leader")} in ${T("last_leader_time")}` : "";
+      out.push(pickPhrase(seed, "form", [
+        `Most recently at ${T("last_meet")}, the top five averaged ${T("last_rating")} MSM${leader}.`,
+        `At ${T("last_meet")}, their most recent start, the scoring five averaged ${T("last_rating")} MSM${leader}.`,
+        `The last meet, ${T("last_meet")}, put the top five at ${T("last_rating")} MSM on average${leader}.`,
+        `${T("last_meet")} was the last start: a ${T("last_rating")} MSM average across the scoring five${first}.`
+      ]) + trend);
     }
     return out;
   }
@@ -1507,13 +1571,23 @@
     const phrases = genders.map(gender => {
       const side = team[gender];
       const t = k => `{{team:${slug}:${gender}.${k}}}`;
+      const seed = `team:${slug}:${gender}`;
       const standing = side.complete
-        ? `are ${side.powerRank ? t("power_rank") : "unranked"} in West Virginia on a ${t("power")}-point top five`
+        ? pickPhrase(seed, "standing", [
+            `are ${side.powerRank ? t("power_rank") : "unranked"} in West Virginia on a ${t("power")}-point top five`,
+            `carry ${t("power")} team power, ${side.powerRank ? t("power_rank") : "unranked"} in the state`,
+            `rank ${side.powerRank ? t("power_rank") : "outside the state's rated five"} on a ${t("power")}-point top five`
+          ])
         : `have ${t("rated")} rated runner${side.rated === 1 ? "" : "s"} led by ${t("top")}, and no team power rating until a fifth scorer emerges`;
       return `${WHO[gender]} ${standing}`;
     });
     const squads = team.classification
-      ? (genders.length === 2 ? ` Both squads run in Class ${team.classification}.` : ` They run in Class ${team.classification}.`)
+      ? (genders.length === 2
+          ? ` Both squads run in Class ${team.classification}.`
+          : pickPhrase(`team:${slug}:class`, "class", [
+              ` They run in Class ${team.classification}.`,
+              ` Class ${team.classification} is their division.`
+            ]))
       : "";
     const lede = genders.length === 1
       ? `${team.name}'s ${phrases[0]}.`
@@ -1538,12 +1612,21 @@
     // What is next, straight off the school's own calendar.
     const next = nextMeetForSchool(slug);
     if (next) {
-      const opponents = next.opponents.length
-        ? ` The expected field includes ${nameList(next.opponents.slice(0, 3).map(o => o.name))}.`
+      const seed = `team:${slug}:next`;
+      const field = next.opponents.slice(0, 3).map(o => o.name);
+      const opponents = field.length
+        ? " " + pickPhrase(seed, "field", [
+            `The expected field includes ${nameList(field)}.`,
+            `${nameList(field)} are among the teams expected to line up.`
+          ])
         : "";
-      paragraphs.push(`Next up is ${T("next_meet")} on ${T("next_meet_date")} at ${T("next_meet_location")}.${opponents}`);
+      paragraphs.push(pickPhrase(seed, "next", [
+        `Next up is ${T("next_meet")} on ${T("next_meet_date")} at ${T("next_meet_location")}.`,
+        `${T("next_meet")} is the next start, on ${T("next_meet_date")} at ${T("next_meet_location")}.`,
+        `They race again at ${T("next_meet")} on ${T("next_meet_date")}, at ${T("next_meet_location")}.`
+      ]) + opponents);
     } else {
-      paragraphs.push(`No next meet is on the calendar for ${team.name} yet — the schedule will update as soon as it is published.`);
+      paragraphs.push(`No next meet is on the calendar for ${team.name} yet; the schedule updates as soon as it is published.`);
     }
 
     return paragraphs.join("\n\n");
@@ -1578,8 +1661,13 @@
       return `${T("name")} is on the season calendar at ${T("location")}.`;
     }
 
+    const seed = `meet:${slug}`;
     const paragraphs = [
-      `${T("name")} drew ${T("field")} teams and produced ${T("results")} rated MSM performances on ${T("date")} at ${T("location")}.`
+      pickPhrase(seed, "lede", [
+        `${T("name")} drew ${T("field")} teams and produced ${T("results")} rated MSM performances on ${T("date")} at ${T("location")}.`,
+        `${T("results")} performances earned an MSM rating at ${T("name")}, run ${T("date")} at ${T("location")} in a field of ${T("field")} teams.`,
+        `The ${T("field")}-team field at ${T("name")} on ${T("date")} produced ${T("results")} rated MSM performances at ${T("location")}.`
+      ])
     ];
 
     ["M", "F"].forEach(gender => {
@@ -1603,40 +1691,98 @@
       chosen.forEach(race => {
         const t = k => `{{meet:${slug}:${gender}.${race.tag}.${k}}}`;
         const raceName = race.label ? `${race.label.replace(/ race$/, "")} ${who} race` : `${who} race`;
-        const label = multiple ? `${raceName} — ` : "";
-        const parts = [];
+        const rseed = `${seed}:${gender}:${race.tag}`;
+        // The individual race reads as its own short paragraph: the winner
+        // first, then whoever followed, told as separate sentences rather than
+        // one sentence stitched together out of clauses.
+        const sentences = [];
         if (race.finishers[0]) {
-          parts.push(`${label}${t("winner")} of ${t("winner_school")} won in ${t("winner_time")} at ${t("winner_rating")} MSM`);
+          sentences.push(pickPhrase(rseed, "winner", multiple ? [
+            `In the ${raceName}, ${t("winner")} of ${t("winner_school")} won in ${t("winner_time")} at ${t("winner_rating")} MSM.`,
+            `${t("winner")} of ${t("winner_school")} took the ${raceName} in ${t("winner_time")}, rated ${t("winner_rating")} MSM.`,
+            `The ${raceName} went to ${t("winner")} of ${t("winner_school")} in ${t("winner_time")} (${t("winner_rating")} MSM).`
+          ] : [
+            `${t("winner")} of ${t("winner_school")} won the ${who} race in ${t("winner_time")}, rated ${t("winner_rating")} MSM.`,
+            `The ${who} race went to ${t("winner")} of ${t("winner_school")} in ${t("winner_time")} (${t("winner_rating")} MSM).`,
+            `${t("winner")} of ${t("winner_school")} was first across the line in ${t("winner_time")}, worth ${t("winner_rating")} MSM.`
+          ]));
         }
         if (race.finishers[1] && race.finishers[2]) {
-          parts.push(`, with ${t("finisher2")} (${t("finisher2_school")}) second in ${t("finisher2_time")} and ${t("finisher3")} (${t("finisher3_school")}) third in ${t("finisher3_time")}`);
+          sentences.push(pickPhrase(rseed, "podium", [
+            `${t("finisher2")} of ${t("finisher2_school")} was second in ${t("finisher2_time")}, with ${t("finisher3")} of ${t("finisher3_school")} third in ${t("finisher3_time")}.`,
+            `Second went to ${t("finisher2")} of ${t("finisher2_school")} in ${t("finisher2_time")}; ${t("finisher3")} of ${t("finisher3_school")} was third in ${t("finisher3_time")}.`,
+            `Behind the winner came ${t("finisher2")} of ${t("finisher2_school")} in ${t("finisher2_time")} and ${t("finisher3")} of ${t("finisher3_school")} in ${t("finisher3_time")}.`
+          ]));
         }
-        const top5 = race.finishers.slice(0, 5).map(f => f.name);
-        if (top5.length >= 3) parts.push(`. ${nameList(top5)} rounded out the individual top five`);
-        parts.push(".");
-        paragraphs.push(parts.join(""));
+        if (race.finishers[3] && race.finishers[4]) {
+          sentences.push(pickPhrase(rseed, "close5", [
+            `${t("finisher4")} of ${t("finisher4_school")} and ${t("finisher5")} of ${t("finisher5_school")} completed the top five.`,
+            `Fourth and fifth went to ${t("finisher4")} (${t("finisher4_school")}) and ${t("finisher5")} (${t("finisher5_school")}).`,
+            `The next two places went to ${t("finisher4")} of ${t("finisher4_school")} and ${t("finisher5")} of ${t("finisher5_school")}.`
+          ]));
+        }
+        if (sentences.length) paragraphs.push(sentences.join(" "));
 
         // Team scoring from the finish order in that race.
         const scores = race.teamScores || [];
         if (scores.length >= 3 && !LOWER_RACE.test(race.label || "")) {
           const t2 = k => `{{meet:${slug}:${gender}.${race.tag}.${k}}}`;
-          let line = `${multiple ? `In the ${raceName}, ` : `In the ${who} team race, `}${t2("team_winner")} took the win with ${t2("team_winner_score")} points`;
-          if (scores[1]) line += `, ahead of ${t2("team_runner_up")} (${t2("team_runner_up_score")})`;
-          if (scores[2]) line += ` and ${scores[2].school} (${scores[2].score})`;
-          line += `. ${t2("scoring_teams")} schools put five scorers on the line.`;
-          paragraphs.push(line);
+          // "Class AAA girls race" + " team race" would read as "girls race team
+          // race", so the team sentences work off the bare race title.
+          const raceTitle = raceName.replace(/ race$/, "");
+          const champ = pickPhrase(rseed, "champ", multiple ? [
+            `In the ${raceTitle} team race, ${t2("team_winner")} took the win with ${t2("team_winner_score")} points`,
+            `${t2("team_winner")} won the ${raceTitle} team title on ${t2("team_winner_score")} points`,
+            `The ${raceTitle} team scoring went to ${t2("team_winner")} with ${t2("team_winner_score")} points`
+          ] : [
+            `${t2("team_winner")} took the ${who} team race with ${t2("team_winner_score")} points`,
+            `The ${who} team title went to ${t2("team_winner")} on ${t2("team_winner_score")} points`,
+            `${t2("team_winner")} won the ${who} team scoring with ${t2("team_winner_score")} points`
+          ]);
+          const chasing = scores[1]
+            ? (scores[2]
+                ? pickPhrase(rseed, "chase2", [
+                    `, ahead of ${t2("team_runner_up")} (${t2("team_runner_up_score")}) and ${scores[2].school} (${scores[2].score}).`,
+                    `; ${t2("team_runner_up")} was second on ${t2("team_runner_up_score")}, ${scores[2].school} third on ${scores[2].score}.`
+                  ])
+                : pickPhrase(rseed, "chase1", [
+                    `, ahead of ${t2("team_runner_up")} on ${t2("team_runner_up_score")}.`,
+                    `; ${t2("team_runner_up")} was next on ${t2("team_runner_up_score")}.`
+                  ]))
+            : ".";
+          // A team score needs five finishers, so a one-school race reads
+          // better without the count.
+          const depth = scores.length > 1
+            ? " " + pickPhrase(rseed, "depth", [
+                `${t2("scoring_teams")} schools put five scorers on the line.`,
+                `${t2("scoring_teams")} schools finished a full five.`,
+                `Five scorers finished for ${t2("scoring_teams")} schools.`
+              ])
+            : "";
+          paragraphs.push(champ + chasing + depth);
         }
       });
     });
 
     const topBoys = summary ? summary.M : null;
     const topGirls = summary ? summary.F : null;
-    const bests = [topBoys, topGirls].filter(Boolean);
+    // Fastest rating first, so a sentence that leads with "the best of the day"
+    // does not introduce the weaker of the two marks.
+    const bests = [topBoys, topGirls].filter(Boolean)
+      .sort((a, b) => (b.msm == null ? -Infinity : b.msm) - (a.msm == null ? -Infinity : a.msm));
     if (bests.length) {
-      paragraphs.push(`The highest-rated performances of the day came from ${nameList(bests.map(b => `${b.name} of ${b.school} (${b.msm == null ? "—" : num(b.msm)} MSM)`))}.`);
+      const named = nameList(bests.map(b => `${b.name} of ${b.school} (${b.msm == null ? "—" : num(b.msm)} MSM)`));
+      paragraphs.push(pickPhrase(seed, "bests", [
+        `The highest-rated performances of the day came from ${named}.`,
+        `Best on the day: ${named}.`,
+        `${named} posted the top ratings of the meet.`
+      ]));
     }
 
-    paragraphs.push(`Full results, ratings and course information for ${T("name")} are on the meet page. Everything above is drawn from MSM ratings, which normalize each performance for course difficulty, field strength and race-day weather so times from different courses are comparable.`);
+    paragraphs.push(pickPhrase(seed, "close", [
+      `Full results, ratings and course information for ${T("name")} are on the meet page. Everything above is drawn from MSM ratings, which normalize each performance for course difficulty, field strength and race-day weather so times from different courses are comparable.`,
+      `The meet page carries the full results, ratings and course information for ${T("name")}. Every number here comes from MSM ratings, which adjust a performance for course difficulty, field strength and race-day weather so times from different courses can be read side by side.`
+    ]));
     return paragraphs.join("\n\n");
   }
 
@@ -1649,24 +1795,43 @@
       if (!snapshot || snapshot.winner === "—" || snapshot.score === "—") return;
       const who = WHO[gender];
       const S = k => `{{sim:${meetSlug}:${gender}.${k}}}`;
-      const bits = [
-        `${S("winner")} projects as the ${who} team champion at ${T("name")} with a ${S("score")}-point total`
-      ];
-      if (snapshot.runner_up && snapshot.runner_up !== "—") {
-        bits.push(snapshot.runner_up_score && snapshot.runner_up_score !== "—"
-          ? `, ahead of ${S("runner_up")} (${S("runner_up_score")})`
-          : `, ahead of ${S("runner_up")}`);
-      }
+      const seed = `sim:${meetSlug}:${gender}`;
+      // Team picture first, then the individual race, then how deep the
+      // projection goes — three sentences instead of one long one.
+      const champion = pickPhrase(seed, "champ", [
+        `${S("winner")} projects as the ${who} team champion at ${T("name")} with a ${S("score")}-point total`,
+        `The projection puts ${S("winner")} first in the ${who} team race at ${T("name")}, on ${S("score")} points`,
+        `${S("winner")} is the projected ${who} team winner with ${S("score")} points`
+      ]);
+      const runnerUp = snapshot.runner_up && snapshot.runner_up !== "—"
+        ? (snapshot.runner_up_score && snapshot.runner_up_score !== "—"
+            ? pickPhrase(seed, "ru", [
+                `, ahead of ${S("runner_up")} (${S("runner_up_score")}).`,
+                `, with ${S("runner_up")} second on ${S("runner_up_score")}.`
+              ])
+            : `, ahead of ${S("runner_up")}.`)
+        : ".";
+      const sentences = [champion + runnerUp];
       if (snapshot.top && snapshot.top !== "—") {
-        bits.push(`. ${S("top")} of ${S("top_school")} is the projected individual winner in ${S("top_time")}`);
-        if (snapshot.top2 && snapshot.top2 !== "—") bits.push(`, with ${S("top2")} of ${S("top2_school")} next across the line`);
+        sentences.push(pickPhrase(seed, "top", [
+          `${S("top")} of ${S("top_school")} is the projected individual winner in ${S("top_time")}`,
+          `${S("top")} of ${S("top_school")} leads the individual projection in ${S("top_time")}`,
+          `Individually, the projection has ${S("top")} of ${S("top_school")} first in ${S("top_time")}`
+        ]) + (snapshot.top2 && snapshot.top2 !== "—"
+          ? `, with ${S("top2")} of ${S("top2_school")} next across the line.`
+          : "."));
       }
-      bits.push(`. The projection covers ${S("runners")} runners from ${S("teams")} scoring teams`);
-      if (snapshot.winner_spread && snapshot.winner_spread !== "—") {
-        bits.push(`, and ${S("winner")}'s scoring five sits within ${S("winner_spread")} of each other`);
-      }
-      bits.push(`.`);
-      let line = bits.join("");
+      sentences.push(pickPhrase(seed, "depth", [
+        `The projection covers ${S("runners")} runners from ${S("teams")} scoring teams`,
+        `${S("runners")} runners from ${S("teams")} scoring teams are in the projection`,
+        `It spans ${S("runners")} runners and ${S("teams")} scoring teams`
+      ]) + (snapshot.winner_spread && snapshot.winner_spread !== "—"
+        ? pickPhrase(seed, "spread", [
+            `, and ${S("winner")}'s scoring five is projected to finish within ${S("winner_spread")} first to fifth.`,
+            `; ${S("winner")}'s five are projected ${S("winner_spread")} apart.`
+          ])
+        : "."));
+      let line = sentences.join(" ");
       // The winner's projected five, named, because that is the part a coach
       // actually argues with.
       const five = [1, 2, 3, 4, 5].filter(i => snapshot[`winner${i}`]);
@@ -1677,10 +1842,17 @@
       paragraphs.push(line);
     });
     if (!paragraphs.length) return "";
+    const seed = `sim:${meetSlug}`;
     return [
-      `Projection preview for ${T("name")} (${T("date")}, ${T("location")}). Each athlete is projected from their last three races, adjusted for the courses, fields and conditions they ran in, then applied to the target venue.`,
+      pickPhrase(seed, "lede", [
+        `Projection preview for ${T("name")} (${T("date")}, ${T("location")}). Each athlete is projected from their last three races, adjusted for the courses, fields and conditions they ran in, then applied to the target venue.`,
+        `What ${T("name")} (${T("date")}, ${T("location")}) looks like on current form. Every athlete is projected from their last three races — adjusted for the course, the field and the conditions each was run in — and then placed on the target venue.`
+      ]),
       ...paragraphs,
-      `Projections are a snapshot of current form. They update as soon as new results land.`
+      pickPhrase(seed, "close", [
+        `Projections are a snapshot of current form. They update as soon as new results land.`,
+        `These projections track current form and refresh as soon as new results are added.`
+      ])
     ].join("\n\n");
   }
 

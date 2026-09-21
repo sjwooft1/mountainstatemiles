@@ -230,10 +230,14 @@
         </div>
       </details>
       <div class="method-note">
-        Paces use the Tinman/Critical-Velocity model, calibrated to Final Surge across the fitness range.
+        Paces are Tom “Tinman” Schwartz's training zones, fitted to the published Final Surge values.
+        Each race becomes a velocity at VO2max, and every zone is a fixed fraction of it, so the paces follow the VO2 cost curve
+        rather than a straight line between fitness levels — the published rows print exactly as published, and runners above or below
+        the published range stay on the same curve. <b>Ranges show fast–slow.</b> CV 1000 and CV 800 are the CV mile at a shorter distance,
+        so all three always agree.
         Each athlete's season best is their best-fitness performance at the selected distance <b>within the chosen season</b>
         (a season is the calendar year the race was run — the same filter the rankings page uses).
-        Class years are taken from the result row, falling back to the school's athlete roster, and are shown for the season the race was run in. Ranges show <b>fast–slow</b>.
+        Class years are taken from the result row, falling back to the school's athlete roster, and are shown for the season the race was run in.
         <b>Race Pace</b> is what the athlete actually ran — the season best straight off the clock, per mile and per kilometre.
       </div>
     </div>
@@ -275,14 +279,18 @@
 
   <script>
   // ==========================================================
-  //  PACE MODEL  (table interpolation, calibrated to Final Surge)
-  //  Reproduces 13 official anchor rows exactly (VDOT 31.6–60.6) and
-  //  linearly interpolates everyone in between — matches the coaches'
-  //  spreadsheet to the tenth of a second.
+  //  PACE MODEL  (Tom Schwartz / Tinman, calibrated to Final Surge)
+  //  The published calculator does not interpolate paces against a fitness
+  //  score. It takes the race, converts it to a velocity at VO2max, and writes
+  //  every zone as a fixed fraction of that velocity — so zone paces follow the
+  //  VO2 cost curve, not a straight line. Fitting that shape to the 13 official
+  //  anchor rows reproduces them to a few hundredths of a second, and unlike
+  //  straight-line interpolation it still lands where the calculator does past
+  //  either end of the table.
   // ==========================================================
-  const KM_FACTOR = 0.6213712;   // 1000m / 1609.34
-  const M8_FACTOR = 0.497097;    // 800m  / 1609.34
   const METERS_PER_MILE = 1609.34;
+  const KM_FACTOR = 1000 / METERS_PER_MILE;   // 1000m as a fraction of a mile (a pace *time* factor)
+  const M800_FACTOR = 800 / METERS_PER_MILE;
 
   // Race pace = the time they actually ran, scaled to a target distance
   // (per mile = ×1609.34/dist, per km = ×1000/dist).
@@ -302,27 +310,101 @@
     return vo2 / pct;
   }
 
-  // Calibration anchors — official Final Surge values, ascending VDOT.
-  // Pace values are seconds per mile. (CV 1000 / 800 derive from CV mile.)
+  // Calibration anchors — the official Final Surge rows, ascending VDOT, each
+  // zone given as the fast and slow end of its range in seconds per mile.
+  // CV 1000 and CV 800 are the same zone at a shorter distance, so they are not
+  // listed: the official 800 column is exactly CV mile × 800/1609.34 on all 13
+  // rows (to 0.01 s), and scaling keeps the three distances in agreement at
+  // every step instead of interpolating the same value three times.
   const CAL_V = [31.627931, 34.51214, 38.857658, 41.242814, 42.828496, 44.617447, 48.058677, 51.230021, 52.35578, 54.028442, 55.251727, 59.444774, 60.562754];
   const CAL = {
-    cvF:  [570.22, 532.24, 484.31, 464.86, 448, 433.5, 408.3, 387.73, 380.97, 371.37, 364.68, 343.62, 338.45],
-    cvS:  [583.11, 544.26, 495.26, 475.37, 458.12, 443.29, 417.52, 396.49, 389.75, 379.76, 372.92, 351.38, 346.09],
-    thrF: [593.9, 554.34, 504.42, 484.16, 466.6, 451.5, 425.25, 403.83, 396.78, 386.79, 379.82, 357.89, 352.5],
-    thrS: [610.96, 570.27, 518.92, 498.08, 480.01, 464.47, 437.47, 415.43, 408.18, 397.9, 390.73, 368.17, 362.63],
-    tmpF: [626.06, 584.35, 531.74, 510.38, 491.87, 475.94, 448.28, 425.7, 418.27, 407.73, 400.39, 377.27, 371.6],
-    tmpS: [658.94, 615.04, 559.66, 537.19, 517.7, 510.94, 471.82, 448.05, 440.24, 429.15, 421.42, 397.08, 391.1]
+    cv: {
+      fast: [570.22, 532.24, 484.31, 464.86, 448, 433.5, 408.3, 387.73, 380.97, 371.37, 364.68, 343.62, 338.45],
+      slow: [583.11, 544.26, 495.26, 475.37, 458.12, 443.29, 417.52, 396.49, 389.75, 379.76, 372.92, 351.38, 346.09]
+    },
+    thr: {
+      fast: [593.9, 554.34, 504.42, 484.16, 466.6, 451.5, 425.25, 403.83, 396.78, 386.79, 379.82, 357.89, 352.5],
+      slow: [610.96, 570.27, 518.92, 498.08, 480.01, 464.47, 437.47, 415.43, 408.18, 397.9, 390.73, 368.17, 362.63]
+    },
+    tmp: {
+      fast: [626.06, 584.35, 531.74, 510.38, 491.87, 475.94, 448.28, 425.7, 418.27, 407.73, 400.39, 377.27, 371.6],
+      slow: [658.94, 615.04, 559.66, 537.19, 517.7, 510.94, 471.82, 448.05, 440.24, 429.15, 421.42, 397.08, 391.1]
+    }
   };
 
-  // Linear interpolation of a pace column against VDOT (extrapolates past the ends).
-  function interp(vdot, ys) {
-    const xs = CAL_V, n = xs.length;
-    let r = 0;
-    for (let k = 0; k < n; k++) if (xs[k] <= vdot) r = k;
-    if (r > n - 2) r = n - 2;
-    const xl = xs[r], xh = xs[r + 1], yl = ys[r], yh = ys[r + 1];
-    return yl + (yh - yl) * (vdot - xl) / (xh - xl);
+  function paceToVelocity(paceSec) { return METERS_PER_MILE * 60 / paceSec; }
+  function velocityToPace(velocity) { return METERS_PER_MILE * 60 / velocity; }
+
+  // vVO2max — the running speed at which the athlete reaches VO2max, i.e. the
+  // velocity that satisfies Daniels/Gilbert's VO2 cost curve at that VDOT. In
+  // the Tinman model this single number anchors every training zone.
+  function vVO2max(vdot) {
+    const a = 0.000104, b = 0.182258, c = -(vdot + 4.6);
+    return (-b + Math.sqrt(b * b - 4 * a * c)) / (2 * a);
   }
+
+  // One zone edge, as a function of VDOT.
+  //
+  // Inside the published range: a monotone cubic through the published rows.
+  // Every row is reproduced exactly — including the slowest and fastest ones,
+  // which a fitted curve alone cannot do — and the paces never rise as fitness
+  // improves, even where a published row sits a little off its neighbours'
+  // trend (the curve flattens through it instead of doubling back).
+  //
+  // Outside the published range: the fitted "fixed fraction of vVO2max" curve,
+  // velocity = (base + slope · VDOT) × vVO2max, carrying the end row's own
+  // correction so the two halves meet exactly. That is the shape the calculator
+  // itself is built from, so runners faster or slower than any published row
+  // stay on the same curve instead of on a straight line thrown off the end.
+  function fitZone(anchorPaces) {
+    const n = CAL_V.length;
+    let S = 0, Sx = 0, Sxx = 0, Sy = 0, Sxy = 0;
+    for (let i = 0; i < n; i++) {
+      const share = paceToVelocity(anchorPaces[i]) / vVO2max(CAL_V[i]);
+      S += 1; Sx += CAL_V[i]; Sxx += CAL_V[i] * CAL_V[i]; Sy += share; Sxy += CAL_V[i] * share;
+    }
+    const det = S * Sxx - Sx * Sx;
+    const slope = (S * Sxy - Sx * Sy) / det;
+    const base = (Sy - slope * Sx) / S;
+    const shaped = vdot => velocityToPace((base + slope * vdot) * vVO2max(vdot));
+    const lowFix = anchorPaces[0] - shaped(CAL_V[0]);
+    const highFix = anchorPaces[n - 1] - shaped(CAL_V[n - 1]);
+
+    // Fritsch–Carlson tangents: the secant slope across each anchor (the average
+    // of the slopes either side of it), scaled back wherever a segment would
+    // otherwise overshoot and break monotonicity.
+    const secant = i => (anchorPaces[i + 1] - anchorPaces[i]) / (CAL_V[i + 1] - CAL_V[i]);
+    const tang = [];
+    for (let i = 0; i < n; i++) {
+      if (i === 0) tang[i] = secant(0);
+      else if (i === n - 1) tang[i] = secant(n - 2);
+      else tang[i] = secant(i - 1) * secant(i) <= 0 ? 0 : (secant(i - 1) + secant(i)) / 2;
+    }
+    for (let i = 0; i < n - 1; i++) {
+      const s = secant(i);
+      if (s === 0) { tang[i] = 0; tang[i + 1] = 0; continue; }
+      const a = tang[i] / s, b = tang[i + 1] / s, h = Math.sqrt(a * a + b * b);
+      if (h > 3) { tang[i] = 3 * s * a / h; tang[i + 1] = 3 * s * b / h; }
+    }
+
+    return vdot => {
+      if (!isFinite(vdot)) return NaN;
+      if (vdot <= CAL_V[0]) return shaped(vdot) + lowFix;
+      if (vdot >= CAL_V[n - 1]) return shaped(vdot) + highFix;
+      let i = 0;
+      while (i < n - 2 && vdot > CAL_V[i + 1]) i++;
+      const h = CAL_V[i + 1] - CAL_V[i], t = (vdot - CAL_V[i]) / h;
+      const t2 = t * t, t3 = t2 * t;
+      return anchorPaces[i] * (2 * t3 - 3 * t2 + 1) + h * tang[i] * (t3 - 2 * t2 + t)
+           + anchorPaces[i + 1] * (-2 * t3 + 3 * t2) + h * tang[i + 1] * (t3 - t2);
+    };
+  }
+
+  const ZONES = {
+    cv:  [fitZone(CAL.cv.fast),  fitZone(CAL.cv.slow)],
+    thr: [fitZone(CAL.thr.fast), fitZone(CAL.thr.slow)],
+    tmp: [fitZone(CAL.tmp.fast), fitZone(CAL.tmp.slow)]
+  };
 
   // Round on total hundredths first, then split into m/s, so a value like
   // 359.996 carries to 6:00.00 instead of printing 5:60.00.
@@ -342,15 +424,15 @@
     return t[0] + ':' + t[1].toFixed(2).padStart(5, '0');
   }
 
-  // All ten paces for one athlete, from their VDOT.
+  // Every pace for one athlete, from their VDOT.
   function computePaces(vdot) {
-    const cvF = interp(vdot, CAL.cvF), cvS = interp(vdot, CAL.cvS);
+    const cv = [ZONES.cv[0](vdot), ZONES.cv[1](vdot)];
     return {
-      cvMile:  [cvF, cvS],
-      thrMile: [interp(vdot, CAL.thrF), interp(vdot, CAL.thrS)],
-      tmpMile: [interp(vdot, CAL.tmpF), interp(vdot, CAL.tmpS)],
-      cv1000:  [cvF * KM_FACTOR, cvS * KM_FACTOR],
-      cv800:   [cvF * M8_FACTOR, cvS * M8_FACTOR]
+      cvMile:  cv,
+      thrMile: [ZONES.thr[0](vdot), ZONES.thr[1](vdot)],
+      tmpMile: [ZONES.tmp[0](vdot), ZONES.tmp[1](vdot)],
+      cv1000:  [cv[0] * KM_FACTOR, cv[1] * KM_FACTOR],
+      cv800:   [cv[0] * M800_FACTOR, cv[1] * M800_FACTOR]
     };
   }
 
