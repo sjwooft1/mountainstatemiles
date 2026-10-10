@@ -230,13 +230,13 @@
         </div>
       </details>
       <div class="method-note">
-        Paces are Tom “Tinman” Schwartz's training zones, fitted to the published Final Surge values.
+        Paces are Tom “Tinman” Schwartz's training zones.
         Each race becomes a velocity at VO2max, and every zone is a fixed fraction of it, so the paces follow the VO2 cost curve
-        rather than a straight line between fitness levels — the published rows print exactly as published, and runners above or below
+        rather than a straight line between fitness levels — runners above or below
         the published range stay on the same curve. <b>Ranges show fast–slow.</b> CV 1000 and CV 800 are the CV mile at a shorter distance,
         so all three always agree.
         Each athlete's season best is their best-fitness performance at the selected distance <b>within the chosen season</b>
-        (a season is the calendar year the race was run — the same filter the rankings page uses).
+        (a season is the calendar year the race was run).
         Class years are taken from the result row, falling back to the school's athlete roster, and are shown for the season the race was run in.
         <b>Race Pace</b> is what the athlete actually ran — the season best straight off the clock, per mile and per kilometre.
       </div>
@@ -279,83 +279,99 @@
 
   <script>
   // ==========================================================
-  //  PACE MODEL  (Tom Schwartz / Tinman, calibrated to Final Surge)
-  //  The published calculator does not interpolate paces against a fitness
-  //  score. It takes the race, converts it to a velocity at VO2max, and writes
-  //  every zone as a fixed fraction of that velocity — so zone paces follow the
-  //  VO2 cost curve, not a straight line. Fitting that shape to the 13 official
-  //  anchor rows reproduces them to a few hundredths of a second, and unlike
-  //  straight-line interpolation it still lands where the calculator does past
-  //  either end of the table.
+  //  PACE MODEL  (Tom Schwartz / Tinman)
+  //  Every zone is a fixed fraction of velocity at VO2max.
   // ==========================================================
   const METERS_PER_MILE = 1609.34;
-  const KM_FACTOR = 1000 / METERS_PER_MILE;   // 1000m as a fraction of a mile (a pace *time* factor)
+  const KM_FACTOR = 1000 / METERS_PER_MILE;
   const M800_FACTOR = 800 / METERS_PER_MILE;
 
-  // Race pace = the time they actually ran, scaled to a target distance
-  // (per mile = ×1609.34/dist, per km = ×1000/dist).
   function racePaceSec(timeSec, distM, targetMeters) {
     if (!timeSec || timeSec <= 0 || !distM) return NaN;
     return timeSec * targetMeters / distM;
   }
 
-
-  // Fitness score from a race time + distance (Daniels/Gilbert VDOT).
   function vdotFrom(timeSec, distM) {
     if (!timeSec || timeSec <= 0 || !distM) return NaN;
-    const v = distM * 60 / timeSec;                 // m/min
+    const v = distM * 60 / timeSec;
     const vo2 = -4.6 + 0.182258 * v + 0.000104 * v * v;
     const tMin = timeSec / 60;
     const pct = 0.8 + 0.1894393 * Math.exp(-0.012778 * tMin) + 0.2989558 * Math.exp(-0.1932605 * tMin);
     return vo2 / pct;
   }
 
-  // Calibration anchors — the official Final Surge rows, ascending VDOT, each
-  // zone given as the fast and slow end of its range in seconds per mile.
-  // CV 1000 and CV 800 are the same zone at a shorter distance, so they are not
-  // listed: the official 800 column is exactly CV mile × 800/1609.34 on all 13
-  // rows (to 0.01 s), and scaling keeps the three distances in agreement at
-  // every step instead of interpolating the same value three times.
-  const CAL_V = [31.627931, 34.51214, 38.857658, 41.242814, 42.828496, 44.617447, 48.058677, 51.230021, 52.35578, 54.028442, 55.251727, 59.444774, 60.562754];
+  // Calibration anchors — extracted directly from the Tinman master list.
+  // We feed them in ascending VDOT order (slowest times first) for interpolation.
+  const rawTinmanData = `
+    28:08.74, 09:07.88, 09:20.26, 09:30.63, 09:47.03, 10:01.53, 10:33.12
+    26:42.57, 08:41.43, 08:53.21, 09:03.08, 09:18.69, 09:32.49, 10:02.55
+    25:03.00, 08:10.76, 08:21.85, 08:31.14, 08:45.83, 08:58.82, 09:27.12
+    24:51.33, 08:07.16, 08:18.17, 08:27.39, 08:41.97, 08:54.86, 09:22.95
+    24:39.43, 08:03.49, 08:14.41, 08:23.56, 08:38.03, 08:50.83, 09:18.71
+    24:10.93, 07:54.68, 08:05.41, 08:14.39, 08:28.60, 08:41.16, 09:08.53
+    23:58.78, 07:50.92, 08:01.56, 08:10.48, 08:24.57, 08:37.03, 09:04.19
+    23:29.21, 07:41.77, 07:52.20, 08:00.94, 08:14.76, 08:26.99, 08:53.61
+    22:50.54, 07:29.78, 07:39.95, 07:48.46, 08:01.92, 08:13.82, 08:39.76
+    22:47.80, 07:28.93, 07:39.08, 07:47.57, 08:01.01, 08:12.89, 08:38.78
+    22:44.80, 07:28.00, 07:38.12, 07:46.60, 08:00.01, 08:11.87, 08:37.70
+    22:37.95, 07:25.88, 07:35.95, 07:44.39, 07:57.73, 08:09.54, 08:35.24
+    22:36.80, 07:25.52, 07:35.59, 07:44.02, 07:57.35, 08:09.14, 08:34.83
+    22:33.70, 07:24.56, 07:34.60, 07:43.01, 07:56.32, 08:08.09, 08:33.72
+    21:54.42, 07:12.35, 07:22.12, 07:30.30, 07:43.24, 07:54.69, 08:19.62
+    21:30.10, 07:04.78, 07:14.38, 07:22.42, 07:35.13, 07:46.38, 08:10.87
+    21:12.20, 06:59.21, 07:08.68, 07:16.62, 07:29.16, 07:40.26, 08:04.43
+    20:47.50, 06:51.51, 07:00.81, 07:08.60, 07:20.91, 07:31.80, 07:55.53
+    20:37.20, 06:48.30, 06:57.52, 07:05.25, 07:17.47, 07:28.28, 07:51.82
+    19:57.42, 06:35.87, 06:44.82, 06:52.31, 07:04.15, 07:14.63, 07:37.46
+    19:56.33, 06:35.53, 06:44.47, 06:51.95, 07:03.79, 07:14.26, 07:37.07
+    19:33.30, 06:28.33, 06:37.10, 06:44.45, 06:56.07, 07:06.35, 07:28.74
+    19:31.40, 06:27.73, 06:36.49, 06:43.83, 06:55.43, 07:05.70, 07:28.05
+    19:25.49, 06:25.88, 06:34.60, 06:41.90, 06:53.45, 07:03.66, 07:25.91
+    19:09.79, 06:20.96, 06:29.57, 06:36.78, 06:48.18, 06:58.26, 07:20.23
+    19:04.28, 06:19.24, 06:27.80, 06:34.98, 06:46.33, 06:56.37, 07:18.24
+    18:48.60, 06:14.32, 06:22.78, 06:29.86, 06:41.06, 06:50.97, 07:12.55
+    18:39.20, 06:11.37, 06:19.76, 06:26.79, 06:37.90, 06:47.73, 07:09.15
+    18:26.47, 06:07.37, 06:15.67, 06:22.62, 06:33.62, 06:43.34, 07:04.53
+    18:20.16, 06:05.39, 06:13.64, 06:20.56, 06:31.50, 06:41.17, 07:02.24
+    17:52.76, 05:56.77, 06:04.84, 06:11.59, 06:22.27, 06:31.71, 06:52.28
+    17:47.22, 05:55.03, 06:03.05, 06:09.77, 06:20.40, 06:29.80, 06:50.27
+    17:11.00, 05:43.62, 05:51.38, 05:57.89, 06:08.17, 06:17.27, 06:37.08
+    17:06.07, 05:42.07, 05:49.79, 05:56.27, 06:06.51, 06:15.56, 06:35.28
+    16:54.60, 05:38.45, 05:46.09, 05:52.50, 06:02.63, 06:11.59, 06:31.10
+    16:41.27, 05:34.24, 05:41.79, 05:48.12, 05:58.12, 06:06.97, 06:26.24
+  `;
+
+  function parseMmSs(str) {
+    const parts = str.trim().split(':');
+    return parseInt(parts[0], 10) * 60 + parseFloat(parts[1]);
+  }
+
+  const CAL_V = [];
   const CAL = {
-    cv: {
-      fast: [570.22, 532.24, 484.31, 464.86, 448, 433.5, 408.3, 387.73, 380.97, 371.37, 364.68, 343.62, 338.45],
-      slow: [583.11, 544.26, 495.26, 475.37, 458.12, 443.29, 417.52, 396.49, 389.75, 379.76, 372.92, 351.38, 346.09]
-    },
-    thr: {
-      fast: [593.9, 554.34, 504.42, 484.16, 466.6, 451.5, 425.25, 403.83, 396.78, 386.79, 379.82, 357.89, 352.5],
-      slow: [610.96, 570.27, 518.92, 498.08, 480.01, 464.47, 437.47, 415.43, 408.18, 397.9, 390.73, 368.17, 362.63]
-    },
-    tmp: {
-      fast: [626.06, 584.35, 531.74, 510.38, 491.87, 475.94, 448.28, 425.7, 418.27, 407.73, 400.39, 377.27, 371.6],
-      slow: [658.94, 615.04, 559.66, 537.19, 517.7, 510.94, 471.82, 448.05, 440.24, 429.15, 421.42, 397.08, 391.1]
-    }
+    cv: { fast: [], slow: [] },
+    thr: { fast: [], slow: [] },
+    tmp: { fast: [], slow: [] }
   };
+
+  rawTinmanData.trim().split('\n').forEach(line => {
+    const [sb, cvF, cvS, thrF, thrS, tmpF, tmpS] = line.split(',').map(s => s.trim());
+    CAL_V.push(vdotFrom(parseMmSs(sb), 5000));
+    CAL.cv.fast.push(parseMmSs(cvF));
+    CAL.cv.slow.push(parseMmSs(cvS));
+    CAL.thr.fast.push(parseMmSs(thrF));
+    CAL.thr.slow.push(parseMmSs(thrS));
+    CAL.tmp.fast.push(parseMmSs(tmpF));
+    CAL.tmp.slow.push(parseMmSs(tmpS));
+  });
 
   function paceToVelocity(paceSec) { return METERS_PER_MILE * 60 / paceSec; }
   function velocityToPace(velocity) { return METERS_PER_MILE * 60 / velocity; }
 
-  // vVO2max — the running speed at which the athlete reaches VO2max, i.e. the
-  // velocity that satisfies Daniels/Gilbert's VO2 cost curve at that VDOT. In
-  // the Tinman model this single number anchors every training zone.
   function vVO2max(vdot) {
     const a = 0.000104, b = 0.182258, c = -(vdot + 4.6);
     return (-b + Math.sqrt(b * b - 4 * a * c)) / (2 * a);
   }
 
-  // One zone edge, as a function of VDOT.
-  //
-  // Inside the published range: a monotone cubic through the published rows.
-  // Every row is reproduced exactly — including the slowest and fastest ones,
-  // which a fitted curve alone cannot do — and the paces never rise as fitness
-  // improves, even where a published row sits a little off its neighbours'
-  // trend (the curve flattens through it instead of doubling back).
-  //
-  // Outside the published range: the fitted "fixed fraction of vVO2max" curve,
-  // velocity = (base + slope · VDOT) × vVO2max, carrying the end row's own
-  // correction so the two halves meet exactly. That is the shape the calculator
-  // itself is built from, so runners faster or slower than any published row
-  // stay on the same curve instead of on a straight line thrown off the end.
   function fitZone(anchorPaces) {
     const n = CAL_V.length;
     let S = 0, Sx = 0, Sxx = 0, Sy = 0, Sxy = 0;
@@ -370,9 +386,6 @@
     const lowFix = anchorPaces[0] - shaped(CAL_V[0]);
     const highFix = anchorPaces[n - 1] - shaped(CAL_V[n - 1]);
 
-    // Fritsch–Carlson tangents: the secant slope across each anchor (the average
-    // of the slopes either side of it), scaled back wherever a segment would
-    // otherwise overshoot and break monotonicity.
     const secant = i => (anchorPaces[i + 1] - anchorPaces[i]) / (CAL_V[i + 1] - CAL_V[i]);
     const tang = [];
     for (let i = 0; i < n; i++) {
@@ -406,8 +419,6 @@
     tmp: [fitZone(CAL.tmp.fast), fitZone(CAL.tmp.slow)]
   };
 
-  // Round on total hundredths first, then split into m/s, so a value like
-  // 359.996 carries to 6:00.00 instead of printing 5:60.00.
   function splitTime(sec) {
     const total = Math.round(sec * 100);
     return [Math.floor(total / 6000), (total % 6000) / 100];
@@ -424,7 +435,6 @@
     return t[0] + ':' + t[1].toFixed(2).padStart(5, '0');
   }
 
-  // Every pace for one athlete, from their VDOT.
   function computePaces(vdot) {
     const cv = [ZONES.cv[0](vdot), ZONES.cv[1](vdot)];
     return {
@@ -436,17 +446,13 @@
     };
   }
 
-
   let loadedAthletes = [], manualAthletes = [], schoolSlugToName = {}, activeGender = 'all';
-
-  // Everything the current school returned, kept around so switching season or distance
-  // re-derives the table from memory instead of hitting the database again.
   let schoolResults = [];
   let schoolResultsSlug = '';
   let currentSeason = 'all';
-  let seasonTouched = false;      // true once the user picks a season themselves
-  let athleteGradeIndex = null;   // school+name -> grad year, for rows that carry no class of their own
-  let meetsBySlug = {};           // meet_slug -> meet record; result rows carry no date of their own
+  let seasonTouched = false;      
+  let athleteGradeIndex = null;   
+  let meetsBySlug = {};           
 
   function normGender(r) {
     const g = String(r.gender || '').trim().toUpperCase();
@@ -455,14 +461,6 @@
     return 'M';
   }
 
-  // ------------------------------------------------------------------
-  // Season + class year (same rules as rankings.html and meet.html)
-  // ------------------------------------------------------------------
-  // A season is the calendar year a race was run. Dates are read numerically out of
-  // "YYYY-MM-DD" first so a UTC-parsed date can't slide into the previous year in
-  // western timezones.
-  // Result rows don't carry a date — the date belongs to the meet they were run at, so it's
-  // resolved through the meet record (same fallback rankings.html uses).
   function resultDate(row) {
     if (!row) return null;
     if (row.date) return row.date;
@@ -483,9 +481,6 @@
     return isNaN(d.getTime()) ? null : String(d.getFullYear());
   }
 
-  // The academic year a date belongs to: the calendar year that season's senior class
-  // graduates in. Cross country runs August-November, so 2026-09-15 belongs to the
-  // 2026-27 school year (academic year 2027).
   function academicYearFor(referenceDate) {
     if (typeof referenceDate === 'string') {
       const m = referenceDate.match(/^(\d{4})-(\d{1,2})/);
@@ -499,20 +494,16 @@
     return now.getMonth() >= 7 ? now.getFullYear() + 1 : now.getFullYear();
   }
 
-  // Turns whatever a row carries (a graduation year like 2027, or a literal class label
-  // like "11"/"SR" from older imports) into a class year for the given season.
   function formatGrade(value, referenceDate) {
     if (value == null || value === '') return '';
     const literal = String(value).trim().toUpperCase().replace(/(ST|ND|RD|TH)$/, '');
-    if (/^([6-9]|1[0-2])$/.test(literal)) return literal;              // already a class level
+    if (/^([6-9]|1[0-2])$/.test(literal)) return literal;              
     const literalMap = { FR:'9', FROSH:'9', SO:'10', SOPH:'10', JR:'11', SR:'12' };
     if (literalMap[literal]) return literalMap[literal];
 
     const gradYear = parseInt(literal, 10);
     if (!gradYear || !isFinite(gradYear)) return '';
     const gradeMap = { 0:'12', 1:'11', 2:'10', 3:'9', 4:'8', 5:'7', 6:'6' };
-    // A negative diff means the athlete had already graduated by that season: leave it
-    // blank rather than inventing a class for someone who wasn't there.
     return gradeMap[gradYear - academicYearFor(referenceDate)] || '';
   }
 
@@ -520,10 +511,6 @@
     return `${String(schoolSlug || '').trim().toLowerCase()}|${String(name || '').trim().toLowerCase()}`;
   }
 
-  // Result rows from before the 2026 imports carry no class of their own, so fall back to the
-  // athlete roster (crosscountry/athletes) — loaded once per page, and only when a row is
-  // actually missing a class year. Roster records store the graduation year in `grade`
-  // (confusingly); older ones use `grad_year`.
   async function loadAthleteGradeIndex() {
     if (athleteGradeIndex) return;
     try {
@@ -536,8 +523,6 @@
         const name = gradeIndexKey('', a.name).slice(1);
         if (!name) return;
         bySchoolName[gradeIndexKey(a.school_slug, a.name)] = gradYear;
-        // Name-only fallback, kept only while it stays unambiguous: two athletes sharing a
-        // name at different schools must not inherit each other's graduation year.
         if (byName[name] === undefined) byName[name] = gradYear;
         else if (byName[name] !== gradYear) byName[name] = null;
       });
@@ -548,8 +533,6 @@
     }
   }
 
-  // Class year for a result row: the row's own class first, then the roster, always read
-  // against the season the race was run in (a 2025 race shows that year's seniors as 12s).
   function gradeLabelFor(row) {
     if (!row) return '';
     const ref = resultDate(row);
@@ -563,6 +546,7 @@
     }
     return '';
   }
+
   function toSeconds(t) { return typeof t === 'number' ? t : window.parseTimeToSeconds(t); }
   function showError(msg) { const e = document.getElementById('error'); e.style.display = 'block'; e.textContent = msg; }
   function clearError() { document.getElementById('error').style.display = 'none'; }
@@ -590,7 +574,6 @@
       document.getElementById('school-select').innerHTML = '<option value="">Unavailable — use manual entry</option>';
     }
 
-    // Meets carry the date a result was run on, which is what the season filter keys off.
     try {
       (await window.getMeets() || []).forEach(m => { if (m && m.slug) meetsBySlug[m.slug] = m; });
     } catch (e) {
@@ -601,8 +584,6 @@
     document.getElementById('m-add').addEventListener('click', addManual);
     document.getElementById('search-input').addEventListener('input', render);
 
-    // Season / distance changes re-derive the table from the results already loaded, so
-    // switching seasons never costs another database read.
     document.getElementById('season-select').addEventListener('change', (e) => {
       currentSeason = e.target.value;
       seasonTouched = true;
@@ -645,7 +626,6 @@
       const results = await window.getResultsBySchool(slug) || [];
       schoolResultsSlug = slug;
       schoolResults = results;
-      // The roster index is school-independent, so it survives a school switch.
       if (switchingSchool) { seasonTouched = false; currentSeason = 'all'; }
 
       if (results.length === 0) {
@@ -654,8 +634,6 @@
         return;
       }
 
-      // Class years come off the result rows themselves; only reach for the athlete roster
-      // when some row predates the grad_year field (same rule meet.html uses).
       const needsRoster = results.some(r => !r.grad_year && !r.gradYear && !r.grade);
       if (needsRoster) await loadAthleteGradeIndex();
 
@@ -678,8 +656,6 @@
     }
   }
 
-  // Season dropdown, filled from the seasons this school actually has results in. Defaults
-  // to the current season when the school ran in it, otherwise the most recent season it has.
   function populateSeasonSelect() {
     const sel = document.getElementById('season-select');
     const years = [...new Set(schoolResults.map(r => seasonYearOf(resultDate(r))).filter(Boolean))]
@@ -707,7 +683,6 @@
     sel.disabled = false;
   }
 
-  // Best fitness per athlete within the selected season + distance.
   function computeAthletes() {
     const slug = schoolResultsSlug;
     const distSel = document.getElementById('distance-select').value;
@@ -772,7 +747,6 @@
     list.forEach((a, i) => {
       const p = computePaces(a.vdot);
       const distTag = Math.round(a.dist) === 5000 ? '' : ' <span class="muted">(' + Math.round(a.dist) + 'm)</span>';
-      // Under All-Time, name the season the season best actually came from.
       const sbYear = seasonYearOf(a.date);
       const seasonTag = (currentSeason === 'all' && sbYear) ? ' <span class="muted">' + sbYear + '</span>' : '';
       const sbTitle = a.meet ? ' title="' + escapeHtml(a.meet + (a.date ? ' — ' + a.date : '')) + '"' : '';
@@ -861,27 +835,86 @@
     const list = currentAthletes();
     if (list.length === 0) return;
     if (typeof window.jspdf === 'undefined') { alert('PDF library is still loading — try again in a second.'); return; }
+
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ orientation: 'landscape' });
     const bc = getBrandColorRgbArray();
     const { schoolName, genderText, seasonText: seasonLabel } = exportContext();
     const title = schoolName + ' — ' + genderText + ' Training Paces';
-    const getBase64 = async (url) => {
+
+    // Convert either PNG or SVG to a PNG data URL for reliable jsPDF output.
+    const getPngData = async (url, maxSize = 180) => {
+      if (!url) return null;
       try {
-        const res = await fetch(url); const blob = await res.blob();
-        return await new Promise(resolve => { const fr = new FileReader(); fr.onloadend = () => resolve(fr.result); fr.onerror = () => resolve(null); fr.readAsDataURL(blob); });
-      } catch (e) { return null; }
+        const res = await fetch(url, { cache: 'force-cache' });
+        if (!res.ok) return null;
+        const blob = await res.blob();
+        const objectUrl = URL.createObjectURL(blob);
+        return await new Promise(resolve => {
+          const img = new Image();
+          img.onload = () => {
+            try {
+              const scale = Math.min(1, maxSize / Math.max(img.naturalWidth || maxSize, img.naturalHeight || maxSize));
+              const canvas = document.createElement('canvas');
+              canvas.width = Math.max(1, Math.round((img.naturalWidth || maxSize) * scale));
+              canvas.height = Math.max(1, Math.round((img.naturalHeight || maxSize) * scale));
+              const ctx = canvas.getContext('2d');
+              ctx.clearRect(0, 0, canvas.width, canvas.height);
+              ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+              resolve(canvas.toDataURL('image/png'));
+            } catch (e) { resolve(null); }
+            finally { URL.revokeObjectURL(objectUrl); }
+          };
+          img.onerror = () => { URL.revokeObjectURL(objectUrl); resolve(null); };
+          img.src = objectUrl;
+        });
+      } catch (e) {
+        console.warn('Could not load PDF image:', url, e);
+        return null;
+      }
     };
-    const logo = await getBase64('assets/images/logo.png');
+
+    // Mountain State Miles site logo.
+    const siteLogo = await getPngData('/assets/images/mountainstate.svg');
+
+    // Selected school logo: same SVG -> PNG convention used by school.html.
+    const selectedSlug = document.getElementById('school-select').value;
+    let schoolLogo = null;
+    if (selectedSlug) {
+      schoolLogo = await getPngData('/assets/team logos/' + encodeURIComponent(selectedSlug) + '.png');
+    }
+
     const drawHeader = () => {
+      const pageWidth = doc.internal.pageSize.getWidth();
       doc.setFillColor(bc[0], bc[1], bc[2]);
-      doc.rect(0, 0, doc.internal.pageSize.getWidth(), 24, 'F');
+      doc.rect(0, 0, pageWidth, 30, 'F');
+
+      // Selected school logo on the left.
       let x = 14;
-      if (logo) { try { doc.addImage(logo, 'PNG', 14, 4, 16, 16); x = 36; } catch (e) {} }
-      doc.setFontSize(15); doc.setFont('helvetica', 'bold'); doc.setTextColor(255, 255, 255);
-      doc.text(title, x, 11);
-      doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(225, 225, 225);
-      doc.text('CV / Threshold / Tempo paces — ' + seasonLabel + ' — fast–slow — Mountain State Miles', x, 18);
+      if (schoolLogo) {
+        try {
+          doc.setFillColor(255, 255, 255);
+          doc.roundedRect(10, 3, 22, 24, 3, 3, 'F');
+          doc.addImage(schoolLogo, 'PNG', 13, 5, 16, 20, undefined, 'FAST');
+          x = 36;
+        } catch (e) {}
+      }
+
+      // Mountain State Miles logo on the right.
+      if (siteLogo) {
+        try {
+          doc.addImage(siteLogo, 'PNG', pageWidth - 38, 5, 24, 20, undefined, 'FAST');
+        } catch (e) {}
+      }
+
+      doc.setFontSize(15);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(255, 255, 255);
+      doc.text(title, x, 12);
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(225, 225, 225);
+      doc.text('CV / Threshold / Tempo paces — ' + seasonLabel + ' — fast–slow — Mountain State Miles', x, 20);
     };
     doc.autoTable({
       head: [['#', 'Athlete', 'Yr', 'Season Best', 'Race Pace /mi', 'Race Pace /km', 'CV Mile', 'Threshold Mile', 'Tempo Mile', 'CV 1000', 'CV 800']],
@@ -893,7 +926,7 @@
           fmtRange(p.cvMile[0], p.cvMile[1]), fmtRange(p.thrMile[0], p.thrMile[1]),
           fmtRange(p.tmpMile[0], p.tmpMile[1]), fmtRange(p.cv1000[0], p.cv1000[1]), fmtRange(p.cv800[0], p.cv800[1])];
       }),
-      startY: 22, margin: { top: 22 },
+      startY: 30, margin: { top: 30 },
       styles: { fontSize: 8, cellPadding: 2 },
       headStyles: { fillColor: bc, textColor: [255, 255, 255] },
       alternateRowStyles: { fillColor: [245, 245, 245] },

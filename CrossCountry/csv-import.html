@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="/assets/msm-loader.css" />
-    <title>Cross Country Meet Import Engine</title>
+    <title>CSV Import — Cross Country — Mountain State Miles</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
     <style>
         :root {
@@ -170,7 +169,67 @@
 
         .new-meet-link { font-size: 0.82rem; color: var(--primary); text-decoration: none; cursor: pointer; }
         .new-meet-link:hover { color: var(--primary-hover); text-decoration: underline; }
-    </style>
+
+        /* ---- get-data card ---- */
+        .get-data-card h3 { margin-bottom: 4px; }
+        .bookmarklet-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 6px; }
+        .btn-bookmarklet {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 11px 16px; border-radius: 8px; border: 1px solid var(--border);
+            background: var(--card-bg); color: var(--text-main); font-weight: 700;
+            font-size: 0.9rem; cursor: pointer; transition: all 0.15s;
+        }
+        .btn-bookmarklet:hover { border-color: var(--primary); color: var(--primary); }
+        .btn-bookmarklet.installed { border-color: var(--success); color: var(--success); }
+        .bk-icon { font-size: 1.1rem; }
+        .bookmarklet-howto {
+            margin-top: 14px; padding: 14px 16px; background: rgba(255,123,45,0.08);
+            border: 1px solid rgba(255,123,45,0.3); border-radius: 10px;
+        }
+        .bk-howto-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+        .bk-howto-head strong { color: var(--text-main); font-size: 0.9rem; }
+        .btn-ghost { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 0.8rem; text-decoration: underline; padding: 4px 6px; }
+        .btn-ghost:hover { color: var(--text-main); }
+        .bk-howto-steps { margin: 0; padding-left: 20px; color: var(--text-muted); font-size: 0.85rem; line-height: 1.7; }
+        .bk-howto-steps li strong { color: var(--text-main); }
+        .bookmarklet-tip {
+            margin-top: 14px; display: flex; gap: 10px; align-items: flex-start;
+            background: rgba(148,163,184,0.08); border: 1px solid var(--border); border-radius: 10px;
+            padding: 12px 14px; font-size: 0.85rem; color: var(--text-muted);
+        }
+        .tip-marker { font-size: 1.1rem; line-height: 1.4; }
+        .bookmarklet-tip strong { color: var(--text-main); }
+        .bookmarklet-tip code { color: var(--text-main); }
+
+        /* ---- ingest card ---- */
+        .ingest-card h3 { margin-bottom: 4px; }
+        .paste-wrap { position: relative; margin-top: 6px; }
+        .paste-wrap textarea {
+            min-height: 200px; display: block; width: 100%; box-sizing: border-box;
+            border: 2px dashed var(--border); border-radius: 10px; padding: 14px;
+            transition: border-color 0.15s, background 0.15s;
+        }
+        .paste-wrap textarea:focus { border-color: var(--primary); border-style: solid; background: var(--card-bg); }
+        .paste-wrap.dragover textarea { border-color: var(--primary); background: rgba(255,123,45,0.06); }
+        .paste-foot {
+            display: flex; align-items: center; justify-content: space-between; gap: 10px;
+            margin-top: 8px; flex-wrap: wrap;
+        }
+        .paste-hint { color: var(--text-muted); font-size: 0.8rem; }
+        .paste-meta { font-size: 0.8rem; color: var(--text-muted); }
+        .paste-sep { margin: 0 6px; }
+        .paste-meta strong { color: var(--text-main); font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 0.78rem; }
+
+        /* ---- results card ---- */
+        .results-area h3 { margin-bottom: 4px; }
+        .commit-row { margin-top: 22px; }
+        .team-review-table input, .team-review-table select { min-width: 130px; }
+        .team-review-table .team-name-input { min-width: 220px; }
+        .team-review-note { color: var(--text-muted); font-size: .85rem; margin: 0 0 14px; }
+        .team-count { color: var(--text-muted); font-size: .8rem; margin-left: 8px; }
+        @media (max-width: 700px) { .team-review-table input, .team-review-table select { min-width: 120px; } }
+    .team-review-empty { text-align:center; color:var(--text-muted); padding:18px; }
+</style>
     <link rel="stylesheet" href="/assets/main.css" />
     <script src="/assets/theme-toggle.js" defer></script>
     <script src="/assets/components.js" defer></script>
@@ -180,10 +239,36 @@
   <div id="global-header"></div>
 
   <main class="content-section">
-<script src="/assets/msm-loader.js"></script>
     <div class="container">
-        <h1>Cross Country Meet Import Engine</h1>
-        <p class="subtitle">Run the <code>anet.js</code> bookmarklet on an Athletic.net results page, copy the CSV it generates, then paste it below to import straight into a meet. Expected columns: <code>event_name,place,grade,athlete_name,mark,school,heat,gender</code>. An optional 9th column <code>relay_team</code> (e.g. "Morgantown A") tags relay squads so meet.html can sum each squad's leg times. The <code>grade</code> column is also written to each athlete's roster record on every import, so class years stay current (and is saved on each result for meet.html's Grade column).</p>
+        <h1>CSV Import</h1>
+        <p class="subtitle">Import cross country results straight into a meet. The workflow is: <strong>visit the results page on Athletic.net (or MileSplit), run the matching bookmarklet, copy the CSV it spits out, paste it here, then commit the rows you want.</strong> This page parses that CSV, anchors every grade to the meet's season, keeps the athlete roster current, and writes results + athletes to Firebase — no backend, no export file to manage by hand.</p>
+
+        <div class="card get-data-card">
+            <div class="get-data-head">
+                <h3><span style="color:var(--primary)">0.</span> Get the CSV — choose your source</h3>
+                <span class="new-meet-link" onclick="importer.createNewMeet()">+ Create New Meet</span>
+            </div>
+            <p class="card-hint">These are the two bookmarklets in <code>scripts/</code>. Drag a button to your bookmarks bar, then click it on an open results page. It scrapes the table and copies a CSV to your clipboard; paste that CSV into step 2 below.</p>
+            <div class="bookmarklet-row">
+                <button type="button" class="btn-bookmarklet" id="anetBtn" onclick="importer.installBookmarklet('anet')">
+                    <span class="bk-icon">🏃</span> Athletic.net scraper
+                </button>
+                <button type="button" class="btn-bookmarklet" id="milesplitBtn" onclick="importer.installBookmarklet('milesplit')">
+                    <span class="bk-icon">🗺</span> MileSplit scraper
+                </button>
+            </div>
+            <div class="bookmarklet-howto" id="howtoBox" style="display:none;">
+                <div class="bk-howto-head">
+                    <strong id="bkHowtoTitle">Install the bookmarklet</strong>
+                    <button type="button" class="btn-ghost" onclick="importer.dismissHowto()">Got it</button>
+                </div>
+                <ol class="bk-howto-steps" id="bkHowtoSteps"></ol>
+            </div>
+            <div class="bookmarklet-tip">
+                <span class="tip-marker">ⓘ</span>
+                <div><strong>Already have the CSV?</strong> Skip this step — just paste it in step 2. The scraper columns are <code>event_name,place,grade,athlete_name,mark,school,heat,gender</code>, plus an optional 9th column <code>relay_team</code> (e.g. &ldquo;Morgantown A&rdquo;) for relay meets and an optional 10th column <code>state</code> that the MileSplit scraper adds to disambiguate same-named schools in different states.</div>
+            </div>
+        </div>
 
         <div class="card">
             <div class="card-header-row">
@@ -195,12 +280,12 @@
             </select>
         </div>
 
-        <div class="card" id="importedEventsCard" style="display: none;">
+        <div class="card imported-events-card" id="importedEventsCard" style="display: none;">
             <div class="card-header-row">
-                <h3><span style="color:var(--primary)">1b.</span> Already Imported</h3>
+                <h3><span style="color:var(--primary)">1b.</span> Already Imported for This Meet</h3>
                 <button type="button" class="btn-secondary" id="refreshImportedBtn" onclick="importer.refreshImportedEvents()">↻ Refresh</button>
             </div>
-            <p class="card-hint">Race divisions with results already saved for this meet. Use this while the meet is live so you only paste what is still missing.</p>
+            <p class="card-hint">Race divisions that already have results saved for this meet. Keep this open during a live meet so you only paste what is still missing.</p>
             <div class="imported-toolbar">
                 <input type="text" id="importedSearch" placeholder="Search imported divisions…" oninput="importer.filterImportedEvents()" />
                 <select id="importedGenderFilter" onchange="importer.filterImportedEvents()">
@@ -213,29 +298,29 @@
             <div id="importedEventsList" class="imported-loading">Select a meet to load imported results.</div>
         </div>
 
-        <div class="card">
-            <h3><span style="color:var(--primary)">2.</span> Ingest Data</h3>
+        <div class="card ingest-card">
+            <h3><span style="color:var(--primary)">2.</span> Paste the CSV</h3>
 
             <div class="toolbar">
-                <input type="text" id="findText" placeholder="Find text (e.g., a school name typo)" />
-                <input type="text" id="replaceText" placeholder="Replace with..." />
+                <input type="text" id="findText" placeholder="Find text (e.g. a school name typo)" />
+                <input type="text" id="replaceText" placeholder="Replace with&hellip;" />
                 <button class="btn-secondary" onclick="importer.executeReplace()">Replace All</button>
             </div>
 
             <div class="defaults-row">
                 <div>
-                    <label for="defaultGender">Default Gender (used if a row's gender is blank)</label>
+                    <label for="defaultGender">Default Gender &mdash; used when a row's gender is blank</label>
                     <select id="defaultGender">
                         <option value="M">Boys</option>
                         <option value="F">Girls</option>
                     </select>
                 </div>
                 <div>
-                    <label for="defaultDistance">Default Distance in Meters (used if not detected from event name)</label>
+                    <label for="defaultDistance">Default Distance (meters) &mdash; used when the event name doesn't say</label>
                     <input type="number" id="defaultDistance" value="5000" min="0" step="1" />
                 </div>
                 <div>
-                    <label for="meetHomeState">Meet Home State (out-of-state runners score but stay out of WV rankings)</label>
+                    <label for="meetHomeState">Meet Home State &mdash; out-of-state runners still score, but stay out of WV rankings</label>
                     <select id="meetHomeState">
                         <option value="WV" selected>WV — West Virginia</option>
                         <option value="OH">OH — Ohio</option>
@@ -247,23 +332,48 @@
                 </div>
             </div>
 
-            <textarea id="pasteArea" placeholder="Paste your Athletic.net scraper CSV output here...&#10;event_name,place,grade,athlete_name,mark,school,heat,gender[,relay_team]"></textarea>
+            <div class="paste-wrap">
+                <textarea id="pasteArea" placeholder="Paste the scraper CSV here...&#10;event_name,place,grade,athlete_name,mark,school,heat,gender[,relay_team[,state]]" spellcheck="false"></textarea>
+                <div class="paste-foot">
+                    <span class="paste-hint">Drop a CSV file on this box, or paste. The scraper columns above are what the bookmarklets produce.</span>
+                    <div class="paste-meta" id="pasteMeta" style="display:none;">
+                        <span id="pasteLineCount"></span>
+                        <span class="paste-sep">·</span>
+                        <span id="pasteHeader"></span>
+                    </div>
+                </div>
+            </div>
 
             <div class="btn-group">
                 <button class="btn-primary" onclick="importer.parseData()">Parse &amp; Analyze</button>
-                <button class="btn-secondary" onclick="document.getElementById('pasteArea').value=''">Clear</button>
+                <button class="btn-secondary" onclick="document.getElementById('pasteArea').value=''; importer.clearPasteMeta()">Clear</button>
             </div>
         </div>
 
         <div id="resultsArea" style="display: none;">
 
+            <div class="card" id="teamReviewCard">
+                <div class="card-header-row">
+                    <h3><span style="color:var(--primary)">3.</span> Review Teams &amp; States <span id="teamCount" class="team-count"></span></h3>
+                    <button type="button" class="btn-secondary" onclick="importer.resetTeamEdits()">Reset Team Edits</button>
+                </div>
+                <p class="team-review-note">Every school found in the pasted race data appears here once. Change the imported school name and state before committing. The edited name determines the school slug used for imported athletes and results.</p>
+                <div class="table-container">
+                    <table class="team-review-table">
+                        <thead><tr><th>CSV School Name</th><th>Imported School Name</th><th>CSV State</th><th>Imported State</th><th>School Slug</th><th>Runners</th></tr></thead>
+                        <tbody id="teamReviewBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
             <div class="card">
-                <h3><span style="color:var(--primary)">3.</span> Filter Race Divisions</h3>
+                <h3><span style="color:var(--primary)">4.</span> Pick the Race Divisions to Import</h3>
+                <p class="card-hint">Each unique event name from the CSV becomes a row here. Uncheck any division you do not want to import — the counts and the preview table update immediately. Divisions already in the database for this meet are marked <strong>In DB</strong> and unchecked by default so you don't re-import them.</p>
                 <div id="eventList" class="event-grid"></div>
             </div>
 
             <div class="card">
-                <h3><span style="color:var(--primary)">4.</span> Validation &amp; Import</h3>
+                <h3><span style="color:var(--primary)">5.</span> Review &amp; Commit</h3>
 
                 <div class="stats-grid" id="statsGrid"></div>
 
@@ -273,7 +383,7 @@
                             <tr>
                                 <th>Status</th>
                                 <th>Race Division</th>
-                                <th>CSV Original Event</th>
+                                <th>CSV Event (original)</th>
                                 <th>Athlete</th>
                                 <th>School</th>
                                 <th>Relay Team</th>
@@ -291,7 +401,7 @@
                     <div class="progress-fill" id="progressFill"></div>
                 </div>
 
-                <div style="margin-top: 24px;">
+                <div class="commit-row">
                     <button class="btn-primary" id="importBtn" style="width: 100%; padding: 16px; font-size: 1.1rem;" onclick="importer.executeImport()">
                         Commit Results to Database
                     </button>
@@ -303,17 +413,13 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <script src="firebase-config.js"></script>
-    <script src="/scripts/results-filter.js"></script>
-<script src="firebase-helpers.js"></script>
+    <script src="firebase-helpers.js"></script>
     <script>
-        // NOTE: CC_PREFIX is already declared globally by firebase-helpers.js (loaded above) -
-        // it must NOT be redeclared here with const/let, or the browser throws
-        // "Identifier 'CC_PREFIX' has already been declared" and silently kills this
-        // entire script block (meets never load, createNewMeet never gets defined, etc.).
 
-        // Home state of the site. Any result whose state !== HOME_STATE is treated as
-        // out-of-state: it still counts for team scoring and MSM field/course factors,
-        // but rankings.html filters it out of the individual WV leaderboards.
+
+// `homeState` comes from the meet's home-state dropdown (step 2). Out-of-state results
+        // still count for team scoring and MSM field/course factors, but rankings.html filters
+        // them out of the individual WV leaderboards.
         const HOME_STATE = 'WV';
 
         // Recognized race-division keywords, checked in this order. Anything left over after
@@ -345,6 +451,21 @@
                 this.meetImportedGroups = [];
                 this.meetImportedKeySet = new Set();
                 this.currentMeetSlug = "";
+                this.teamEdits = {};
+                this.originalTeamEdits = {};
+                this.stateOptions = [
+                    ["WV","West Virginia"],["OH","Ohio"],["PA","Pennsylvania"],["VA","Virginia"],
+                    ["MD","Maryland"],["KY","Kentucky"],["DC","District of Columbia"],["DE","Delaware"],
+                    ["NJ","New Jersey"],["NY","New York"],["NC","North Carolina"],["SC","South Carolina"],
+                    ["TN","Tennessee"],["GA","Georgia"],["FL","Florida"],["AL","Alabama"],
+                    ["MS","Mississippi"],["AR","Arkansas"],["LA","Louisiana"],["TX","Texas"],
+                    ["OK","Oklahoma"],["MO","Missouri"],["IL","Illinois"],["IN","Indiana"],
+                    ["MI","Michigan"],["WI","Wisconsin"],["MN","Minnesota"],["IA","Iowa"],
+                    ["ND","North Dakota"],["SD","South Dakota"],["NE","Nebraska"],["KS","Kansas"],
+                    ["CO","Colorado"],["WY","Wyoming"],["MT","Montana"],["ID","Idaho"],
+                    ["UT","Utah"],["AZ","Arizona"],["NM","New Mexico"],["NV","Nevada"],
+                    ["CA","California"],["OR","Oregon"],["WA","Washington"],["AK","Alaska"],["HI","Hawaii"]
+                ];
             }
 
             async init() {
@@ -771,6 +892,103 @@
                 }
             }
 
+            // ---- bookmarklet installer (teaches the workflow, doesn't install a file) ----
+            installBookmarklet(kind) {
+                if (kind !== 'anet' && kind !== 'milesplit') return;
+                const src = kind === 'anet' ? 'scripts/anet.js' : 'scripts/milesplit.js';
+                const title = kind === 'anet'
+                    ? 'MSM — Athletic.net Results Scraper'
+                    : 'MSM — MileSplit Results Scraper';
+                const steps = kind === 'anet'
+                    ? [
+                        'Open any <strong>Athletic.net</strong> individual or team results page for the meet you just raced.',
+                        'Click the <strong>MSM — Athletic.net Results Scraper</strong> bookmark you just added to your bookmarks bar.',
+                        'Watch the page auto-scroll and scrape; when it finishes, a CSV is copied to your clipboard and logged to the console.',
+                        'Come back here, paste the CSV into step 2, and hit <strong>Parse &amp; Analyze</strong>.'
+                      ]
+                    : [
+                        'Open any <strong>MileSplit</strong> meet results page for the meet you just raced.',
+                        'Click the <strong>MSM — MileSplit Results Scraper</strong> bookmark you just added to your bookmarks bar.',
+                        'The scraper copies a CSV (with an extra <code>state</code> column) to your clipboard and logs to the console.',
+                        'Come back here, paste the CSV into step 2, and hit <strong>Parse &amp; Analyze</strong>.'
+                      ];
+                document.getElementById('howtoBox').style.display = '';
+                document.getElementById('bkHowtoTitle').textContent =
+                    `Install the “${title}” bookmarklet`;
+                document.getElementById('bkHowtoSteps').innerHTML = steps.map(s => `<li>${s}</li>`).join('');
+                const btn = document.getElementById(kind === 'anet' ? 'anetBtn' : 'milesplitBtn');
+                if (btn) btn.classList.add('installed');
+                console.log(`Bookmarklet helper shown for ${kind}. The live bookmarklet source is ${src}.`);
+            }
+
+            dismissHowto() {
+                document.getElementById('howtoBox').style.display = 'none';
+                const both = ['anet', 'milesplit'];
+                both.forEach(k => {
+                    const btn = document.getElementById(k === 'anet' ? 'anetBtn' : 'milesplitBtn');
+                    if (btn) btn.classList.remove('installed');
+                });
+            }
+
+            clearPasteMeta() {
+                const m = document.getElementById('pasteMeta');
+                if (m) m.style.display = 'none';
+            }
+
+            handlePasteFile(file) {
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    document.getElementById('pasteArea').value = e.target.result;
+                    this.updatePasteMeta(document.getElementById('pasteArea').value);
+                };
+                reader.readAsText(file);
+            }
+
+            updatePasteMeta(text) {
+                const area = document.getElementById('pasteArea');
+                const meta = document.getElementById('pasteMeta');
+                if (!meta) return;
+                if (!text || !text.trim()) { meta.style.display = 'none'; return; }
+                const lines = text.split('\n').filter(l => l.trim());
+                const header = lines[0] || '';
+                meta.style.display = '';
+                document.getElementById('pasteLineCount').textContent =
+                    `${lines.length} line${lines.length === 1 ? '' : 's'}`;
+                document.getElementById('pasteHeader').textContent = header ? `header: ${header}` : '';
+            }
+
+            // lightweight drag-and-drop onto the paste box
+            attachFileDrop() {
+                const wrap = document.querySelector('.paste-wrap');
+                if (!wrap) return;
+                wrap.addEventListener('dragover', (e) => { e.preventDefault(); wrap.classList.add('dragover'); });
+                wrap.addEventListener('dragleave', () => wrap.classList.remove('dragover'));
+                wrap.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    wrap.classList.remove('dragover');
+                    const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+                    this.handleFileDrop(file);
+                });
+                const ta = document.getElementById('pasteArea');
+                if (ta) {
+                    ta.addEventListener('input', () => this.updatePasteMeta(ta.value));
+                }
+            }
+
+            handleFileDrop(file) {
+                if (!file) return;
+                // accept CSV-ish text files; ignore the rest
+                const name = (file.name || '').toLowerCase();
+                if (!file.type || !file.type.startsWith('text/')) {
+                    if (!name.endsWith('.csv') && !name.endsWith('.txt')) {
+                        alert('Please drop a CSV or text file.');
+                        return;
+                    }
+                }
+                this.handlePasteFile(file);
+            }
+
             // CSV Parser (handles quoted fields with embedded commas, matches anet.js output)
             parseCSVLine(text) {
                 let ret = [], inQuote = false, val = "";
@@ -863,9 +1081,12 @@
                         mark,
                         time_seconds: timeSeconds,
                         school_raw: rawSchool,
+                        school_original_slug: schoolMatch.slug,
                         school_slug: schoolMatch.slug,
                         school_matched: schoolMatch.matched,
                         state: schoolMatch.state,
+                        original_state: schoolMatch.state,
+                        original_school_name: rawSchool,
                         heat,
                         relay_team: relayTeam,
                         meet_slug: meetSlug,
@@ -873,6 +1094,8 @@
                     uniqueEvents.add(rawEvent);
                 });
 
+                this.initializeTeamEdits();
+                this.renderTeamReview();
                 this.renderEventCheckboxes(Array.from(uniqueEvents));
                 if (this.currentMeetSlug !== meetSlug) {
                     this.currentMeetSlug = meetSlug;
@@ -882,6 +1105,106 @@
                 document.getElementById("resultsArea").style.display = "block";
                 document.getElementById("resultsArea").scrollIntoView({ behavior: "smooth" });
 
+                this.updateUI();
+            }
+
+            initializeTeamEdits() {
+                this.teamEdits = {};
+                const groups = new Map();
+                this.parsedRows.forEach(row => {
+                    const key = this.teamKey(row);
+                    if (!groups.has(key)) {
+                        groups.set(key, {
+                            key,
+                            csvName: row.school_raw || "Unattached",
+                            name: row.school_raw || "Unattached",
+                            state: row.state || this.meetHomeState(),
+                            originalState: row.original_state || row.state || this.meetHomeState(),
+                            slug: row.school_original_slug || row.school_slug || "unattached",
+                            matched: !!row.school_matched,
+                            count: 0
+                        });
+                    }
+                    groups.get(key).count++;
+                });
+                groups.forEach(team => { this.teamEdits[team.key] = team; });
+                this.originalTeamEdits = JSON.parse(JSON.stringify(this.teamEdits));
+            }
+
+            teamKey(row) {
+                return `${String(row.school_raw || "Unattached").trim().toLowerCase()}|${String(row.original_state || row.state || "").toUpperCase()}|${row.school_original_slug || row.school_slug || ""}`;
+            }
+
+            renderTeamReview() {
+                const body = document.getElementById("teamReviewBody");
+                if (!body) return;
+                // Only show schools represented in currently selected race divisions.
+                // Keep all edits in this.teamEdits so toggling races never discards changes.
+                const checkedEvents = [...document.querySelectorAll(".evt-cb:checked")].map(cb => cb.value);
+                const visibleKeys = new Set(this.parsedRows
+                    .filter(row => checkedEvents.includes(row.raw_event))
+                    .map(row => this.teamKey(row)));
+                const teams = Object.values(this.teamEdits).filter(team => visibleKeys.has(team.key));
+                const countEl = document.getElementById("teamCount");
+                if (countEl) countEl.textContent = `(${teams.length} team${teams.length === 1 ? "" : "s"} in selected races)`;
+                if (!teams.length) {
+                    body.innerHTML = '<tr><td colspan="6" class="team-review-empty">Select one or more race divisions below to review their schools.</td></tr>';
+                    return;
+                }
+                body.innerHTML = teams.map(team => {
+                    const safeKey = encodeURIComponent(team.key);
+                    const options = this.stateOptions.map(([code, name]) =>
+                        `<option value="${code}" ${code === team.state ? "selected" : ""}>${code} — ${name}</option>`
+                    ).join("");
+                    const slug = this.slugify(team.name) || "unattached";
+                    return `<tr>
+                        <td>${this.escapeHtml(team.csvName)}</td>
+                        <td><input class="team-name-input" aria-label="Imported name for ${this.escapeHtml(team.csvName)}" value="${this.escapeHtml(team.name)}" oninput="importer.updateTeamEdit('${safeKey}','name',this.value)"></td>
+                        <td>${this.escapeHtml(team.originalState || "—")}</td>
+                        <td><select aria-label="Imported state for ${this.escapeHtml(team.csvName)}" onchange="importer.updateTeamEdit('${safeKey}','state',this.value)">${options}</select></td>
+                        <td><code id="team-slug-${safeKey}">${this.escapeHtml(slug)}</code></td>
+                        <td>${team.count}</td>
+                    </tr>`;
+                }).join("");
+            }
+
+            escapeHtml(value) {
+                return String(value ?? "").replace(/[&<>"']/g, ch => ({
+                    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+                }[ch]));
+            }
+
+            updateTeamEdit(encodedKey, field, value) {
+                const key = decodeURIComponent(encodedKey);
+                const team = this.teamEdits[key];
+                if (!team || !["name", "state"].includes(field)) return;
+                team[field] = field === "state" ? String(value || this.meetHomeState()).toUpperCase() : value;
+                const slugCell = document.getElementById(`team-slug-${encodedKey}`);
+                if (slugCell) slugCell.textContent = this.slugify(team.name) || "unattached";
+                this.applyTeamEditsToRows();
+                // Refresh the parser/commit preview without rebuilding the focused input.
+                this.updateUI(false);
+            }
+
+            applyTeamEditsToRows() {
+                this.parsedRows.forEach(row => {
+                    const team = this.teamEdits[this.teamKey(row)];
+                    if (!team) return;
+                    const editedName = String(team.name || "").trim() || team.csvName || "Unattached";
+                    const normalized = this.normalizeSchoolKey(editedName);
+                    // If the edited name exactly matches a known database school, use its canonical slug.
+                    const existingSlug = this.schoolKeyToSlug[normalized];
+                    row.school_slug = existingSlug || this.slugify(editedName) || "unattached";
+                    row.school_raw = editedName;
+                    row.state = team.state || this.meetHomeState();
+                    row.school_matched = !!existingSlug || (!!team.matched && editedName === team.csvName && row.school_slug === team.slug);
+                });
+            }
+
+            resetTeamEdits() {
+                this.teamEdits = JSON.parse(JSON.stringify(this.originalTeamEdits || {}));
+                this.applyTeamEditsToRows();
+                this.renderTeamReview();
                 this.updateUI();
             }
 
@@ -896,13 +1219,14 @@
                         : '<span class="evt-status new">New</span>';
                     container.innerHTML += `
                         <label class="event-checkbox">
-                            <input type="checkbox" class="evt-cb" value="${safe}" ${inDb ? "" : "checked"} onchange="importer.updateUI()">
+                            <input type="checkbox" class="evt-cb" value="${safe}" ${inDb ? "" : "checked"} onchange="importer.updateUI(true)">
                             ${evt}${status}
                         </label>`;
                 });
             }
 
-            updateUI() {
+            updateUI(refreshTeamReview = true) {
+                if (refreshTeamReview) this.renderTeamReview();
                 const checkedEvents = [...document.querySelectorAll(".evt-cb:checked")].map(cb => cb.value);
                 const filtered = this.parsedRows.filter(r => checkedEvents.includes(r.raw_event));
                 const valid = filtered.filter(r => r.athlete_name && !isNaN(r.time_seconds) && r.time_seconds > 0);
@@ -960,8 +1284,8 @@
                         <td>${statusBadge}</td>
                         <td><strong>${r.race_type}</strong><br><span style="font-size:0.7rem;color:var(--text-muted)">${this.genderLabel(r.gender)} · ${r.distance}m</span></td>
                         <td style="color: var(--text-muted); font-size: 0.75rem;">${r.raw_event}</td>
-                        <td>${r.athlete_name}</td>
-                        <td>${r.school_raw}${!r.school_matched ? ` <span style="color:var(--warning);font-size:0.7rem;">(${r.school_slug})</span>` : ''}</td>
+                        <td>${this.escapeHtml(r.athlete_name)}</td>
+                        <td>${this.escapeHtml(r.school_raw)}${!r.school_matched ? ` <span style="color:var(--warning);font-size:0.7rem;">(${this.escapeHtml(r.school_slug)})</span>` : ''}</td>
                         <td>${relayCell}</td>
                         <td>${stateBadge}</td>
                         <td>${this.gradeCell(r)}</td>
@@ -1161,6 +1485,9 @@
                 school_slug: schoolMatch.slug,
                 school_matched: schoolMatch.matched,
                 state: schoolMatch.state,
+                original_state: schoolMatch.state,
+                school_raw: rawSchool,
+                school_original_slug: schoolMatch.slug,
                 relay_team: relayTeam,
                 meet_slug: meetSlug,
               });
@@ -1250,16 +1577,15 @@
 
         const importer = new XCMeetImporter();
         window.importer = importer;
-        importer.init();
+        importer.init().then(() => importer.attachFileDrop());
 
         // Attach the headless window.autoImport(...) entry point the scraper driver calls.
         // NOTE: /scripts/autoImport_snippet.js is a stale paste-in copy of this same function
-        // and used to be loaded in this page as well - being deferred, it ran *after* this
-        // script and silently replaced the newer implementation above (losing grade sync and
-        // the out-of-state disambiguation along with it). This page is now the source of truth.
+        // and is NOT loaded by this page. The live source of truth for autoImport is the
+        // inline implementation below, which includes grade sync and the out-of-state
+        // school disambiguation that the stale copy dropped.
         attachAutoImport();
     </script>
-
 
   </main>
 
