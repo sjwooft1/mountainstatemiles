@@ -128,6 +128,7 @@
     teamIndex: {},    // school slug -> per-gender power, ranks, ranked athletes
     teamForm: {},     // school slug|gender -> meets raced, newest first
     meetIndex: {},    // meet slug -> field, rated leader, finishers, team scores
+    teamPerformances: [], // current-season team race cards with actual top-seven finish order
     watch: { M: [], F: [] },
     divisional: {},   // 'AAAA'|'AAA'|'AA'|'A'|'UNA' -> { top:[], teams:[] }
     upcoming: [],
@@ -557,15 +558,15 @@
         });
       }
 
-      // Recaps: meets from the trailing 21 days that already have results.
-      if (dayDiff < 0 && dayDiff >= -21) {
+      // Recaps: meets from the trailing five weeks that already have results.
+      if (dayDiff < 0 && dayDiff >= -35) {
         const hasResults = state.results.some(r => r.meet_slug === slug);
         if (hasResults) {
           const gendered = {};
           ["M", "F"].forEach(g => {
             const rows = state.results.filter(r => r.meet_slug === slug && r.gender === g && r.msm != null);
             rows.sort((a, b) => b.msm - a.msm);
-            if (rows.length) gendered[g] = rows.slice(0, 3).map(r => ({
+            if (rows.length) gendered[g] = rows.slice(0, 5).map(r => ({
               name: r.athlete_name, school: schoolNameOf(r.school_slug),
               school_slug: r.school_slug, timeSec: r.timeSec, msm: r.msm, place: r.place
             }));
@@ -650,6 +651,7 @@
     computeWeatherCoverage();
     buildTeamIndex(thisYear);
     buildMeetIndex();
+    buildTeamPerformances();
     buildTeamForm();
     // Both caches are keyed by data that just changed, so drop them rather
     // than serving a stale answer from a previous build.
@@ -1054,6 +1056,104 @@
         if (primary) index[slug].primary[gender] = primary;
       });
     });
+  }
+
+  // Current-season team stories are built from finish order within one race,
+  // never from season ratings or rows mixed across varsity/JV/class races.
+  function buildTeamPerformances() {
+    const performances = [];
+    Object.keys(state.meetIndex).forEach(meetSlug => {
+      const meet = state.meets[meetSlug] || {};
+      const date = meet.date || "";
+      if (seasonOf({ date }) !== currentSeason() || isNonCompetitive(meetSlug)) return;
+      const summary = state.meetIndex[meetSlug];
+      // Big out-of-state invitationals still carry WV schools' meet-of-the-day
+      // performances. Keep the meet itself, but only write cards for WV teams.
+      if (!Object.values(summary.races || {}).some(races => Object.values(races || {}).some(race =>
+        race.rows.some(r => isInState(r) && isHomeSchool(r.school_slug))))) return;
+      ["M", "F"].forEach(gender => {
+        const races = summary.races[gender] || {};
+        Object.values(races).forEach(race => {
+          if (LOWER_RACE.test(race.label || "")) return;
+          // Score the whole field, then publish stories only for WV teams. An
+          // out-of-state invite still contributes opposing scorers to the
+          // actual team totals and displaces the WV squads' finish positions.
+          const finishers = race.rows.filter(r => r.school_slug && r.school_slug !== "unattached"
+            && Number.isFinite(r.place) && r.place > 0).slice()
+            .sort((a, b) => a.place - b.place || (a.timeSec || 1e9) - (b.timeSec || 1e9));
+          const bySchool = {};
+          finishers.forEach(r => (bySchool[r.school_slug] || (bySchool[r.school_slug] = [])).push(r));
+          const scoringSchools = new Set(Object.keys(bySchool).filter(schoolSlug => bySchool[schoolSlug].length >= 5));
+          // Match meet scoring: non-scoring teams still occupy finish places,
+          // but only schools with five finishers earn scoring places.
+          let scoringPlace = 0;
+          finishers.forEach(r => {
+            r._teamScoringPlace = scoringSchools.has(r.school_slug) ? ++scoringPlace : null;
+          });
+          const standings = Object.keys(bySchool).map(schoolSlug => {
+            const rows = bySchool[schoolSlug];
+            const scorers = rows.filter(r => r._teamScoringPlace != null).slice(0, 5);
+            const scoreRows = rows.filter(r => r._teamScoringPlace != null);
+            return {
+              school_slug: schoolSlug,
+              school: schoolNameOf(schoolSlug),
+              rows,
+              score: scorers.length === 5 ? scorers.reduce((sum, r) => sum + r._teamScoringPlace, 0) : null,
+              sixthPlace: scoreRows[5] ? scoreRows[5]._teamScoringPlace : 999,
+              seventhPlace: scoreRows[6] ? scoreRows[6]._teamScoringPlace : 999
+            };
+          }).filter(team => team.score != null).sort((a, b) =>
+            a.score - b.score || a.sixthPlace - b.sixthPlace || a.seventhPlace - b.seventhPlace
+          );
+          const homeStandings = standings.filter(team => isInState({ school_slug: team.school_slug })
+            && isHomeSchool(team.school_slug));
+          if (homeStandings.length === 0) return;
+          homeStandings.forEach(team => {
+            const i = standings.indexOf(team);
+            const topSeven = team.rows.slice(0, 7);
+            const topFive = topSeven.slice(0, 5);
+            const rated = topFive.filter(r => r.msm != null);
+            performances.push({
+              meet_slug: meetSlug,
+              meet_name: meet.name || meetSlug,
+              date,
+              location: meet.location || "",
+              gender,
+              race_type: race.race_type,
+              race_label: race.label,
+              school_slug: team.school_slug,
+              school: team.school,
+              teamRank: i + 1,
+              score: team.score,
+              teamCount: standings.length,
+              margin: i === 0 && standings.length > 1 ? standings[1].score - team.score : null,
+              gapToNext: standings[i + 1] ? standings[i + 1].score - team.score : null,
+              topFiveRating: rated.length ? rated.reduce((sum, r) => sum + r.msm, 0) / rated.length : null,
+              topFiveSpread: topFive.length === 5 && topFive[4].timeSec != null && topFive[0].timeSec != null
+                ? topFive[4].timeSec - topFive[0].timeSec : null,
+              runners: topSeven.map((r, runnerIndex) => ({
+                name: r.athlete_name,
+                school_slug: team.school_slug,
+                lineupPlace: runnerIndex + 1,
+                place: r.place,
+                scoringPlace: r._teamScoringPlace,
+                timeSec: r.timeSec,
+                msm: r.msm
+              })),
+              podium: standings.slice(0, 3).map((t, podiumIndex) => ({
+                rank: podiumIndex + 1,
+                school: t.school,
+                score: t.score
+              }))
+            });
+          });
+        });
+      });
+    });
+    performances.sort((a, b) => String(b.date).localeCompare(String(a.date))
+      || a.teamRank - b.teamRank
+      || (b.topFiveRating || 0) - (a.topFiveRating || 0));
+    state.teamPerformances = performances;
   }
 
   function teamStat(slug, spec) {

@@ -399,8 +399,70 @@
       .content { padding: 14px; }
       .topbar { padding: 12px 14px; }
       .topbar-info { display: none; }
+      .topbar { flex-wrap: nowrap; justify-content: space-between; }
+      .topbar h2 { flex: 1; text-align: center; }
+      .mobile-refresh { width:42px; height:42px; align-items:center; justify-content:center; flex-shrink:0; }
       .form-grid { grid-template-columns: 1fr; }
     }
+
+    /* Fast, spreadsheet-style data tools */
+    .grid-container { min-height: min(720px, calc(100vh - 150px)); }
+    .grid-header { align-items: flex-start; }
+    .grid-actions { flex: 1; justify-content: flex-end; }
+    #grid-search { min-width: min(360px, 100%); flex: 1 1 260px; max-width: 460px; }
+    .search-hint { width: 100%; text-align: right; color: var(--muted); font-size: .73rem; }
+    .grid-table { min-width: 720px; }
+    .grid-table th { position: sticky; top: 0; }
+    .grid-table td[ data-editable="true"] { cursor: cell; }
+    .grid-table td[data-editable="true"]:hover { box-shadow: inset 0 0 0 1px var(--accent); }
+    .grid-table td[data-editing="true"] { padding: 4px; }
+    .cell-editor { min-width: 90px; width: 100%; padding: 7px; border: 1px solid var(--accent); border-radius: 4px; background: #101729; color: #fff; font: inherit; outline: 2px solid rgba(255,123,45,.2); }
+    .grid-footer { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; padding:10px 16px; border-top:1px solid var(--border); color:var(--muted); font-size:.82rem; }
+    .grid-footer-controls { display:flex; align-items:center; gap:8px; }
+    .grid-footer select { min-width:70px!important; padding:5px 8px!important; }
+    .bulk-toolbar { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+    .grid-table .row-check { width:40px; text-align:center; }
+    .admin-kicker { color:var(--accent); font-size:.77rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase; }
+    .chart-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; margin-top:18px; }
+    .chart-card { min-width:0; background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:18px; }
+    .chart-card h3 { margin:0 0 4px; font-size:.98rem; }
+    .chart-card p { margin:0; color:var(--muted); font-size:.78rem; }
+    .chart-card svg { width:100%; height:auto; overflow:visible; margin-top:10px; }
+    .chart-empty { padding:34px 10px; text-align:center; color:var(--muted); font-size:.85rem; }
+    .chart-legend { display:flex; flex-wrap:wrap; gap:12px; margin-top:10px; color:var(--muted); font-size:.78rem; }
+    .chart-legend span { display:flex; align-items:center; gap:6px; }
+    .legend-dot { width:9px;height:9px;border-radius:50%;background:var(--accent); }
+    .donut-wrap { display:flex; align-items:center; justify-content:center; gap:24px; min-height:180px; flex-wrap:wrap; }
+    .donut-chart { width:142px;height:142px;border-radius:50%; display:grid;place-items:center;position:relative; }
+    .donut-chart:after { content:""; position:absolute; inset:24px; background:var(--panel); border-radius:50%; }
+    .donut-total { z-index:1;text-align:center;font-size:1.35rem;font-weight:800; }
+    .donut-total small { display:block;font-size:.68rem;color:var(--muted);font-weight:500; }
+    .bar-list { display:grid; gap:12px; margin-top:18px; }
+    .bar-item { display:grid; grid-template-columns:minmax(75px,1fr) 3fr auto; gap:10px; align-items:center; font-size:.8rem; }
+    .bar-track { height:9px; background:rgba(159,180,200,.13); border-radius:8px; overflow:hidden; }
+    .bar-fill { height:100%; background:linear-gradient(90deg,var(--accent),#ffd28c); border-radius:inherit; }
+    .dashboard-heading { display:flex; align-items:flex-end; justify-content:space-between; gap:12px; margin:0 0 18px; flex-wrap:wrap; }
+    .dashboard-heading h3 { margin:4px 0 0; font-size:1.45rem; }
+    .insight-list { display:grid; gap:9px; padding:0; list-style:none; margin:14px 0 0; }
+    .insight-list li { display:flex; align-items:flex-start; gap:9px; color:var(--muted); font-size:.86rem; }
+    .insight-list strong { color:#e6f0f7; }
+    .loading-indicator { width:7px;height:7px;display:inline-block;background:var(--accent);border-radius:50%;animation:pulse 1s infinite alternate; }
+    @keyframes pulse { to { opacity:.25; } }
+    @media(max-width:760px) { .chart-grid { grid-template-columns:1fr; } .grid-actions { justify-content:flex-start; } .search-hint { text-align:left; } }
+    @media(prefers-reduced-motion:reduce) { *,*::before,*::after { scroll-behavior:auto!important; animation-duration:.01ms!important; transition-duration:.01ms!important; } }
+
+    .topbar .refresh-btn { color:var(--muted); background:transparent; border:1px solid var(--border); padding:7px 10px; border-radius:8px; cursor:pointer; }
+    .topbar .refresh-btn:hover { color:#fff; border-color:var(--accent); }
+    .mobile-refresh { display:none; }
+    #admin-toast { position:fixed; z-index:2000; bottom:22px; right:22px; max-width:min(420px,calc(100vw - 32px)); padding:12px 16px; border:1px solid var(--border); border-radius:10px; background:var(--panel); color:#e6f0f7; box-shadow:var(--shadow-soft); }
+    #admin-toast[data-kind="error"] { border-color:var(--danger); }
+    #admin-toast[data-kind="success"] { border-color:var(--success); }
+    #admin-toast[hidden] { display:none; }
+    .sort-mark { color:var(--accent); }
+    .grid-table input[type="checkbox"] { accent-color:var(--accent); }
+    .btn:focus-visible, .nav-btn:focus-visible, .grid-table th:focus-visible, input:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+    @media(max-width:900px) { .grid-container { min-height:calc(100vh - 112px); } .topbar h2 { font-size:1.05rem; } .mobile-refresh { display:inline-flex; } .mobile-menu-button { flex-shrink:0; } }
+
   </style>
 </head>
 <body>
@@ -434,6 +496,7 @@
           <button class="nav-btn" data-section="manual-entry">✏️ Manual Entry</button>
           <button class="nav-btn" data-section="seasons">📅 Seasons</button>
           <button class="nav-btn" data-section="email-tools">✉️ Email Tools</button>
+          <a href="/email-desk.html" class="nav-btn">📮 Email Desk</a>
           <a href="csv-import.html" class="nav-btn">📥 CSV Import</a>
           <a href="courses/course-admin.html" class="nav-btn">🗺️ Course Admin</a>
         </div>
@@ -459,9 +522,11 @@
         <button class="mobile-menu-button" id="mobile-menu-btn">☰</button>
         <h2 id="page-title">Dashboard</h2>
         <div class="topbar-info">
-          <span class="topbar-pill">🔗 Firebase Connected</span>
+          <span class="topbar-pill" id="connection-status">🔗 Connecting…</span>
           <span class="topbar-pill" id="record-count">0 records</span>
+          <button class="refresh-btn" type="button" onclick="refreshCurrentSection()" title="Reload current data (Ctrl/Cmd+R)">↻ Refresh</button>
         </div>
+        <button class="refresh-btn mobile-refresh" type="button" onclick="refreshCurrentSection()" aria-label="Refresh current data">↻</button>
       </div>
       <div class="content" id="content">
         <div class="empty-state">Loading…</div>
@@ -551,10 +616,53 @@
       if (el) el.textContent = `${count} records`;
     }
 
-    async function fetchNodeAsArray(path) {
+    const ADMIN_CACHE_TTL = 30000;
+    const adminDataCache = new Map();
+    const GRID_PAGE_DEFAULT = 100;
+
+    function snapshotToRows(value) {
+      if (!value || typeof value !== 'object') return [];
+      return Object.entries(value).map(([id, row]) => ({ ...(row || {}), id }));
+    }
+
+    async function fetchNodeAsArray(path, options = {}) {
+      const cached = adminDataCache.get(path);
+      if (!options.force && cached && Date.now() - cached.time < ADMIN_CACHE_TTL) return cached.rows;
       const snap = await window.firebaseDatabase.ref(path).once('value');
-      const val = snap.val() || {};
-      return Object.keys(val).map(id => ({ id, ...val[id] }));
+      const rows = snapshotToRows(snap.val());
+      adminDataCache.set(path, { time: Date.now(), rows });
+      return rows;
+    }
+
+    function invalidateAdminCache(path) {
+      if (path) adminDataCache.delete(path);
+      else adminDataCache.clear();
+    }
+
+    function showAdminToast(message, kind = 'success') {
+      let toast = document.getElementById('admin-toast');
+      if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'admin-toast';
+        toast.setAttribute('role', 'status');
+        toast.setAttribute('aria-live', 'polite');
+        document.body.appendChild(toast);
+      }
+      toast.dataset.kind = kind;
+      toast.textContent = message;
+      toast.hidden = false;
+      clearTimeout(showAdminToast.timer);
+      showAdminToast.timer = setTimeout(() => { toast.hidden = true; }, 3200);
+    }
+
+    async function refreshCurrentSection() {
+      invalidateAdminCache();
+      const button = document.querySelector('.refresh-btn');
+      if (button) { button.disabled = true; button.classList.contains('mobile-refresh') ? button.textContent = '…' : button.textContent = '↻ Loading…'; }
+      try { await loadSection(currentSection); }
+      finally {
+        document.querySelectorAll('.refresh-btn').forEach(el => { el.disabled = false; el.textContent = el.classList.contains('mobile-refresh') ? '↻' : '↻ Refresh'; });
+      }
     }
 
     // ==========================================
@@ -563,13 +671,16 @@
     async function createRecord(path, data) {
       const ref = window.firebaseDatabase.ref(path).push();
       await ref.set(data);
+      invalidateAdminCache(path);
       return ref.key;
     }
     async function updateRecord(path, updates) {
       await window.firebaseDatabase.ref(path).update(updates);
+      invalidateAdminCache(path.split('/').slice(0, -1).join('/'));
     }
     async function deleteRecord(path) {
       await window.firebaseDatabase.ref(path).remove();
+      invalidateAdminCache(path.split('/').slice(0, -1).join('/'));
     }
 
     // ==========================================
@@ -666,128 +777,331 @@
     let editingId = null;
 
     function renderGridSection(cfg) {
-      grid = Object.assign({ idKey: 'id', sortCol: null, sortDir: 'asc', searchTerm: '' }, cfg);
+      grid = Object.assign({ idKey: 'id', sortCol: null, sortDir: 'asc', searchTerm: '', page: 0, pageSize: GRID_PAGE_DEFAULT, selectedIds: new Set() }, cfg);
+      grid.data = grid.data || [];
+      grid.searchIndex = new Map(grid.data.map(row => [String(row[grid.idKey]), buildGridSearchText(row)]));
       grid.filtered = grid.data.slice();
       paintGrid();
     }
 
+    function normalizeSearchText(value) {
+      return String(value ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    }
+
+    function buildGridSearchText(row) {
+      return normalizeSearchText(grid.columns.map(column => {
+        const value = typeof column.searchValue === 'function' ? column.searchValue(row) : row[column.key];
+        return Array.isArray(value) ? value.join(' ') : String(value ?? '');
+      }).concat(Object.values(row).filter(value => ['string', 'number'].includes(typeof value)).map(String)).join(' '));
+    }
+
+    function gridSearchMatches(text, token) {
+      if (text.includes(token)) return true;
+      if (token.length < 5) return false;
+      const words = text.split(/\s+/).filter(Boolean);
+      return words.some(word => {
+        if (Math.abs(word.length - token.length) > 1) return false;
+        let i = 0, j = 0, edits = 0;
+        while (i < word.length && j < token.length) {
+          if (word[i] === token[j]) { i++; j++; continue; }
+          if (++edits > 1) return false;
+          if (word.length > token.length) i++;
+          else if (token.length > word.length) j++;
+          else if (word[i] === token[j + 1]) j++;
+          else if (word[i + 1] === token[j]) i++;
+          else { i++; j++; }
+        }
+        return edits + (i < word.length || j < token.length ? 1 : 0) <= 2;
+      });
+    }
+
+    function rankGridRow(row, rawQuery) {
+      const tokens = normalizeSearchText(rawQuery).trim().split(/\s+/).filter(Boolean);
+      if (!tokens.length) return 0;
+      const searchText = buildGridSearchText(row);
+      let score = 0;
+      for (const token of tokens) {
+        const colon = token.indexOf(':');
+        const field = colon > 0 ? token.slice(0, colon) : '';
+        const value = colon > 0 ? token.slice(colon + 1) : token;
+        const column = field && grid.columns.find(c => normalizeSearchText(c.key) === field || normalizeSearchText(c.label) === field || normalizeSearchText(c.key).startsWith(`${field}_`));
+        if (field && !column) return -1;
+        const values = column ? normalizeSearchText(typeof column.searchValue === 'function' ? column.searchValue(row) : row[column.key]) : searchText;
+        if (!value || !gridSearchMatches(values, value)) return -1;
+        score += values === value ? 100 : values.startsWith(value) ? 20 : values.includes(value) ? 10 : 1;
+      }
+      return score;
+    }
+
     function paintGrid() {
+      const pageCount = Math.max(1, Math.ceil(grid.filtered.length / grid.pageSize));
+      grid.page = Math.min(grid.page, pageCount - 1);
+      const pageRows = grid.filtered.slice(grid.page * grid.pageSize, (grid.page + 1) * grid.pageSize);
+      const visibleIds = pageRows.map(row => String(row[grid.idKey]));
+      const selectedOnPage = visibleIds.filter(id => grid.selectedIds.has(id)).length;
       const html = `
         <div class="grid-container">
           <div class="grid-header">
-            <h3 id="grid-title-count">${escapeHtml(grid.title)} (${grid.filtered.length})</h3>
+            <div><div class="admin-kicker">${escapeHtml(grid.title)} workspace</div><h3 id="grid-title-count">${grid.filtered.length.toLocaleString()} records</h3></div>
             <div class="grid-actions">
               ${grid.extraFiltersHTML || ''}
-              <input type="text" id="grid-search" placeholder="🔍 Search..." value="${escapeAttr(grid.searchTerm || '')}">
+              <input type="search" id="grid-search" aria-label="Search ${escapeAttr(grid.title)}" placeholder="⌕  Search everything…  ( / or Ctrl+K )" value="${escapeAttr(grid.searchTerm || '')}" autocomplete="off" spellcheck="false">
+              <span id="search-status" class="loading-indicator" role="status" aria-label="Searching" hidden></span>
               <button class="btn btn-primary" onclick="openGridAddModal()">+ Add</button>
-              <button class="btn btn-secondary" onclick="exportGridCSV()">📥 Export</button>
+              <button class="btn btn-secondary" onclick="exportGridCSV()">↓ Export CSV</button>
+              <span class="search-hint">Search across all columns · use school:field or gender:F · double-click any cell to edit</span>
             </div>
+          </div>
+          <div class="bulk-toolbar" id="bulk-toolbar" style="padding:0 16px;${grid.selectedIds.size ? '' : 'display:none;'}">
+            <span id="selected-count">${grid.selectedIds.size} selected</span>
+            <button class="btn btn-secondary btn-small" onclick="exportGridCSV(true)">Export selected</button>
+            <button class="btn btn-danger btn-small" onclick="deleteSelectedGridRows()">Delete selected</button>
+            <button class="btn btn-secondary btn-small" onclick="clearGridSelection()">Clear selection</button>
           </div>
           <div class="grid-scroll">
             <table class="grid-table">
-              <thead>
-                <tr>
-                  ${grid.columns.map(c => `<th onclick="sortGrid('${c.key}')">${escapeHtml(c.label)}<span id="sort-ind-${c.key}" style="font-size:0.8rem;"></span></th>`).join('')}
-                  <th style="width:140px; cursor:default;">Actions</th>
-                </tr>
-              </thead>
-              <tbody id="grid-body">${renderGridBody()}</tbody>
+              <thead><tr>
+                <th class="row-check"><input type="checkbox" aria-label="Select visible rows" ${visibleIds.length && selectedOnPage === visibleIds.length ? 'checked' : ''} onchange="toggleVisibleGridRows(this.checked)"></th>
+                ${grid.columns.map(c => `<th tabindex="0" onclick="sortGrid('${escapeAttr(c.key)}')" onkeydown="if(event.key==='Enter')sortGrid('${escapeAttr(c.key)}')" aria-sort="${grid.sortCol === c.key ? (grid.sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}">${escapeHtml(c.label)}<span class="sort-mark" id="sort-ind-${escapeAttr(c.key)}">${grid.sortCol === c.key ? (grid.sortDir === 'asc' ? ' ↑' : ' ↓') : ''}</span></th>`).join('')}
+                <th style="width:132px;cursor:default;">Actions</th>
+              </tr></thead>
+              <tbody id="grid-body">${renderGridBody(pageRows)}</tbody>
             </table>
           </div>
-        </div>
-      `;
+          <div class="grid-footer">
+            <span>Showing ${grid.filtered.length ? (grid.page * grid.pageSize + 1).toLocaleString() : 0}–${Math.min((grid.page + 1) * grid.pageSize, grid.filtered.length).toLocaleString()} of ${grid.filtered.length.toLocaleString()}</span>
+            <div class="grid-footer-controls">
+              <label for="grid-page-size">Rows</label><select id="grid-page-size" class="form-input" aria-label="Rows per page">
+                ${[50, 100, 250, 500].map(n => `<option value="${n}" ${grid.pageSize === n ? 'selected' : ''}>${n}</option>`).join('')}
+              </select>
+              <button class="btn btn-secondary btn-small" onclick="changeGridPage(-1)" ${grid.page === 0 ? 'disabled' : ''} aria-label="Previous page">←</button>
+              <span>Page ${grid.page + 1} / ${pageCount}</span>
+              <button class="btn btn-secondary btn-small" onclick="changeGridPage(1)" ${grid.page >= pageCount - 1 ? 'disabled' : ''} aria-label="Next page">→</button>
+            </div>
+          </div>
+        </div>`;
       document.getElementById('content').innerHTML = html;
-      document.getElementById('grid-search')?.addEventListener('input', (e) => {
-        grid.searchTerm = e.target.value;
-        applyGridFilter();
+      const searchInput = document.getElementById('grid-search');
+      searchInput?.addEventListener('input', (event) => {
+        grid.searchTerm = event.target.value;
+        clearTimeout(grid.searchTimer);
+        const spinner = document.getElementById('search-status');
+        if (spinner) spinner.hidden = !grid.searchTerm;
+        grid.searchTimer = setTimeout(() => {
+          applyGridFilter();
+          if (spinner) spinner.hidden = true;
+        }, 90);
       });
+      document.getElementById('grid-page-size')?.addEventListener('change', event => {
+        grid.pageSize = Number(event.target.value) || GRID_PAGE_DEFAULT;
+        grid.page = 0;
+        paintGrid();
+      });
+      document.getElementById('grid-body')?.addEventListener('dblclick', handleGridCellDoubleClick);
+      document.getElementById('grid-body')?.addEventListener('keydown', handleGridCellKeydown);
+      document.getElementById('grid-body')?.addEventListener('change', handleGridSelectionChange);
       if (grid.bindExtra) grid.bindExtra();
       updateRecordCount(grid.filtered.length);
     }
 
-    function renderGridBody() {
-      if (!grid.filtered.length) {
-        return `<tr><td colspan="${grid.columns.length + 1}" class="empty-state">No records found.</td></tr>`;
-      }
-      return renderGridRows();
-    }
-
-    function renderGridRows() {
-      return grid.filtered.map(row => `
-        <tr>
-          ${grid.columns.map(c => {
-            const val = c.render ? c.render(row) : formatCell(row[c.key]);
-            return `<td>${val}</td>`;
+    function renderGridBody(rows = grid.filtered.slice(grid.page * grid.pageSize, (grid.page + 1) * grid.pageSize)) {
+      if (!rows.length) return `<tr><td colspan="${grid.columns.length + 2}" class="empty-state">No records found. Try a different search or filter.</td></tr>`;
+      return rows.map(row => {
+        const id = String(row[grid.idKey]);
+        return `<tr data-row-id="${escapeAttr(id)}">
+          <td class="row-check"><input type="checkbox" data-select-id="${escapeAttr(id)}" aria-label="Select row" ${grid.selectedIds.has(id) ? 'checked' : ''}></td>
+          ${grid.columns.map(column => {
+            const raw = row[column.key];
+            const value = column.render ? column.render(row) : formatCell(raw);
+            const editable = column.editable !== false && !['textarea', 'multiselect'].includes(column.type) && !column.formExclude;
+            return `<td data-cell-id="${escapeAttr(id)}" data-cell-key="${escapeAttr(column.key)}" data-editable="${editable ? 'true' : 'false'}" title="${editable ? 'Double-click to edit · press Enter to edit' : ''}">${value}</td>`;
           }).join('')}
-          <td>
-            <button class="btn btn-secondary btn-small" onclick="openGridEditModal('${row[grid.idKey]}')">Edit</button>
-            <button class="btn btn-danger btn-small" onclick="confirmGridDelete('${row[grid.idKey]}')">Delete</button>
-          </td>
-        </tr>
-      `).join('');
+          <td><button class="btn btn-secondary btn-small" onclick="openGridEditModal('${escapeAttr(id)}')" aria-label="Edit row">Edit</button> <button class="btn btn-danger btn-small" onclick="confirmGridDelete('${escapeAttr(id)}')" aria-label="Delete row">Delete</button></td>
+        </tr>`;
+      }).join('');
     }
 
     function refreshGridBody() {
       const body = document.getElementById('grid-body');
       if (body) body.innerHTML = renderGridBody();
-      const titleEl = document.getElementById('grid-title-count');
-      if (titleEl) titleEl.textContent = `${grid.title} (${grid.filtered.length})`;
+      const heading = document.querySelector('#grid-title-count');
+      if (heading) heading.textContent = `${grid.filtered.length.toLocaleString()} records`;
       updateRecordCount(grid.filtered.length);
+      const range = document.querySelector('.grid-footer > span');
+      if (range) range.textContent = `Showing ${grid.filtered.length ? (grid.page * grid.pageSize + 1).toLocaleString() : 0}–${Math.min((grid.page + 1) * grid.pageSize, grid.filtered.length).toLocaleString()} of ${grid.filtered.length.toLocaleString()}`;
+      const pager = document.querySelector('.grid-footer-controls');
+      if (pager) pager.innerHTML = `<label for="grid-page-size">Rows</label><select id="grid-page-size" class="form-input" aria-label="Rows per page">${[50, 100, 250, 500].map(n => `<option value="${n}" ${grid.pageSize === n ? 'selected' : ''}>${n}</option>`).join('')}</select><button class="btn btn-secondary btn-small" onclick="changeGridPage(-1)" ${grid.page === 0 ? 'disabled' : ''} aria-label="Previous page">←</button><span>Page ${grid.page + 1} / ${Math.max(1, Math.ceil(grid.filtered.length / grid.pageSize))}</span><button class="btn btn-secondary btn-small" onclick="changeGridPage(1)" ${grid.page >= Math.ceil(grid.filtered.length / grid.pageSize) - 1 ? 'disabled' : ''} aria-label="Next page">→</button>`;
+      document.getElementById('grid-page-size')?.addEventListener('change', event => { grid.pageSize = Number(event.target.value) || GRID_PAGE_DEFAULT; grid.page = 0; paintGrid(); });
+      updateBulkToolbar();
     }
 
     function applyGridFilter() {
-      const term = (grid.searchTerm || '').toLowerCase();
-      grid.filtered = grid.data.filter(row => {
-        if (grid.customFilter && !grid.customFilter(row)) return false;
-        if (!term) return true;
-        return grid.columns.some(c => {
-          const v = row[c.key];
-          const s = Array.isArray(v) ? v.join(' ') : String(v ?? '');
-          return s.toLowerCase().includes(term);
-        });
-      });
+      const matches = grid.data.filter(row => !grid.customFilter || grid.customFilter(row))
+        .map((row, order) => ({ row, order, score: rankGridRow(row, grid.searchTerm) }))
+        .filter(item => item.score >= 0);
+      if (grid.searchTerm.trim()) matches.sort((a, b) => b.score - a.score || a.order - b.order);
+      grid.searchIndex = new Map(grid.data.map(row => [String(row[grid.idKey]), buildGridSearchText(row)]));
+      grid.filtered = matches.map(item => item.row);
+      grid.page = 0;
       refreshGridBody();
     }
 
     function sortGrid(col) {
       if (grid.sortCol === col) grid.sortDir = grid.sortDir === 'asc' ? 'desc' : 'asc';
       else { grid.sortCol = col; grid.sortDir = 'asc'; }
-
       grid.data.sort((a, b) => {
         let av = a[col], bv = b[col];
         if (Array.isArray(av)) av = av.length;
         if (Array.isArray(bv)) bv = bv.length;
         av = av ?? ''; bv = bv ?? '';
         const an = parseFloat(av), bn = parseFloat(bv);
-        let cmp;
-        if (!isNaN(an) && !isNaN(bn) && String(av).trim() !== '' && String(bv).trim() !== '') cmp = an - bn;
-        else cmp = String(av).localeCompare(String(bv));
+        const cmp = !isNaN(an) && !isNaN(bn) && String(av).trim() && String(bv).trim() ? an - bn : String(av).localeCompare(String(bv), undefined, { numeric: true, sensitivity: 'base' });
         return grid.sortDir === 'asc' ? cmp : -cmp;
       });
-
-      applyGridFilter();
-      document.querySelectorAll('[id^="sort-ind-"]').forEach(el => el.textContent = '');
-      const ind = document.getElementById('sort-ind-' + col);
-      if (ind) ind.textContent = grid.sortDir === 'asc' ? ' ↑' : ' ↓';
+      grid.filtered = grid.data.filter(row => (!grid.customFilter || grid.customFilter(row)) && rankGridRow(row, grid.searchTerm) >= 0);
+      grid.page = 0;
+      paintGrid();
     }
 
-    function exportGridCSV() {
-      const headers = grid.columns.map(c => c.label).join(',');
-      const rows = grid.filtered.map(row => grid.columns.map(c => {
-        let v = row[c.key];
-        if (Array.isArray(v)) v = v.join('; ');
-        v = v ?? '';
-        return `"${String(v).replace(/"/g, '""')}"`;
-      }).join(','));
-      const csv = [headers, ...rows].join('\n');
-      const blob = new Blob([csv], { type: 'text/csv' });
+    function changeGridPage(delta) {
+      grid.page = Math.max(0, Math.min(grid.page + delta, Math.ceil(grid.filtered.length / grid.pageSize) - 1));
+      paintGrid();
+    }
+
+    function handleGridSelectionChange(event) {
+      const checkbox = event.target.closest('[data-select-id]');
+      if (!checkbox) return;
+      const id = checkbox.dataset.selectId;
+      if (checkbox.checked) grid.selectedIds.add(id); else grid.selectedIds.delete(id);
+      updateBulkToolbar();
+    }
+
+    function updateBulkToolbar() {
+      const toolbar = document.getElementById('bulk-toolbar');
+      if (!toolbar) return;
+      toolbar.style.display = grid.selectedIds.size ? 'flex' : 'none';
+      const count = document.getElementById('selected-count');
+      if (count) count.textContent = `${grid.selectedIds.size} selected`;
+    }
+
+    function toggleVisibleGridRows(checked) {
+      const rows = grid.filtered.slice(grid.page * grid.pageSize, (grid.page + 1) * grid.pageSize);
+      rows.forEach(row => { const id = String(row[grid.idKey]); if (checked) grid.selectedIds.add(id); else grid.selectedIds.delete(id); });
+      paintGrid();
+    }
+
+    function clearGridSelection() { grid.selectedIds.clear(); paintGrid(); }
+
+    async function deleteSelectedGridRows() {
+      const ids = Array.from(grid.selectedIds);
+      if (!ids.length || !confirm(`Permanently delete ${ids.length} selected ${singularize(grid.title).toLowerCase()} record(s)? This cannot be undone.`)) return;
+      const button = document.querySelector('#bulk-toolbar .btn-danger');
+      if (button) button.disabled = true;
+      try {
+        await Promise.all(ids.map(id => grid.onDelete(id)));
+        showAdminToast(`Deleted ${ids.length} records.`);
+        await loadSection(currentSection);
+      } catch (error) {
+        console.error('Bulk delete failed', error);
+        showAdminToast(`Some records were not deleted: ${error.message}`, 'error');
+        await loadSection(currentSection);
+      }
+    }
+
+    function handleGridCellDoubleClick(event) {
+      const cell = event.target.closest('td[data-editable="true"]');
+      if (cell) beginGridCellEdit(cell);
+    }
+
+    function handleGridCellKeydown(event) {
+      const cell = event.target.closest('td[data-editable="true"]');
+      if (cell && (event.key === 'Enter' || event.key === 'F2')) { event.preventDefault(); beginGridCellEdit(cell); }
+    }
+
+    function beginGridCellEdit(cell) {
+      if (!cell || cell.dataset.editing === 'true') return;
+      const row = grid.data.find(item => String(item[grid.idKey]) === cell.dataset.cellId);
+      const column = grid.columns.find(item => item.key === cell.dataset.cellKey);
+      if (!row || !column || column.type === 'checkbox') return;
+      const initial = row[column.key] ?? '';
+      let editor;
+      if (column.type === 'select') {
+        editor = document.createElement('select');
+        const choices = typeof column.options === 'function' ? column.options() : (column.options || []);
+        editor.innerHTML = `<option value="">—</option>${choices.map(option => `<option value="${escapeAttr(option.value)}">${escapeHtml(option.label)}</option>`).join('')}`;
+        editor.value = String(initial);
+      } else {
+        editor = document.createElement('input');
+        editor.type = column.type === 'number' ? 'number' : (column.inputType === 'date' ? 'date' : 'text');
+        if (editor.type === 'number') editor.step = 'any';
+        editor.value = column.key === 'time' && initial !== '' ? formatSecondsToTime(Number(initial)) : String(initial);
+      }
+      editor.className = 'cell-editor';
+      editor.setAttribute('aria-label', `Edit ${column.label}`);
+      const originalHtml = cell.innerHTML;
+      cell.dataset.editing = 'true';
+      cell.replaceChildren(editor);
+      let finished = false;
+      const finish = async (save) => {
+        if (finished) return;
+        finished = true;
+        if (!save) { cell.innerHTML = originalHtml; delete cell.dataset.editing; return; }
+        const raw = editor.value.trim();
+        let value = raw;
+        try {
+          if (raw === '') value = null;
+          if (column.transform && raw !== '') value = column.transform(raw, row);
+          else if (column.type === 'number' && raw !== '') value = Number(raw);
+          if (value === undefined || (typeof value === 'number' && !Number.isFinite(value))) throw new Error('Enter a valid value.');
+          const patch = value === null ? { [column.key]: null } : { [column.key]: value };
+          if (column.key === 'name' && grid.title === 'Meets' && !row.slug) patch.slug = slugify(raw);
+          await grid.onUpdate(row[grid.idKey], patch);
+          Object.assign(row, patch);
+          grid.searchIndex.set(String(row[grid.idKey]), buildGridSearchText(row));
+          cell.removeAttribute('data-editing');
+          showAdminToast(`${column.label} saved.`);
+          applyGridFilter();
+        } catch (error) {
+          console.error('Inline edit failed', error);
+          cell.innerHTML = originalHtml;
+          delete cell.dataset.editing;
+          showAdminToast(`Could not save: ${error.message}`, 'error');
+        }
+      };
+      editor.addEventListener('keydown', event => {
+        if (event.key === 'Enter') { event.preventDefault(); event.stopPropagation(); editor.blur(); }
+        if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); finish(false); }
+        if (event.key === 'Tab') { event.preventDefault(); editor.blur(); }
+      });
+      editor.addEventListener('blur', () => finish(true));
+      if (editor.tagName === 'SELECT') editor.addEventListener('change', () => editor.blur());
+      editor.focus();
+      if (editor.select && editor.type !== 'date') editor.select();
+    }
+
+    function exportGridCSV(selectedOnly = false) {
+      const records = selectedOnly ? grid.filtered.filter(row => grid.selectedIds.has(String(row[grid.idKey]))) : grid.filtered;
+      const csvCell = value => `"${String(value ?? '').replace(/"/g, '""')}"`;
+      const headers = grid.columns.map(column => csvCell(column.label)).join(',');
+      const rows = records.map(row => grid.columns.map(column => csvCell(Array.isArray(row[column.key]) ? row[column.key].join('; ') : row[column.key])).join(','));
+      const blob = new Blob(['\uFEFF', headers, '\r\n', rows.join('\r\n')], { type: 'text/csv;charset=utf-8' });
       const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${grid.title.toLowerCase().replace(/\s+/g, '-')}-${new Date().toISOString().split('T')[0]}.csv`;
-      a.click();
-      URL.revokeObjectURL(url);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = `${grid.title.toLowerCase().replace(/\s+/g, '-')}-${selectedOnly ? 'selected-' : ''}${new Date().toISOString().slice(0, 10)}.csv`;
+      anchor.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
     }
+
+    document.addEventListener('keydown', event => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+        const search = document.getElementById('grid-search');
+        if (search) { event.preventDefault(); search.focus(); search.select(); }
+      } else if (event.key === '/' && !['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName)) {
+        const search = document.getElementById('grid-search');
+        if (search) { event.preventDefault(); search.focus(); }
+      }
+    });
 
     function singularize(title) {
       if (title.endsWith('ies')) return title.slice(0, -3) + 'y';
@@ -935,53 +1249,88 @@
     // Dashboard
     // ==========================================
     async function renderDashboard() {
-      const [meetsSnap, schoolsSnap, athletesSnap, resultsSnap, season] = await Promise.all([
-        window.firebaseDatabase.ref('crosscountry/meets').once('value'),
-        window.firebaseDatabase.ref('crosscountry/schools').once('value'),
-        window.firebaseDatabase.ref('crosscountry/athletes').once('value'),
-        window.firebaseDatabase.ref('crosscountry/results').once('value'),
+      const [meets, schools, athletes, results, season] = await Promise.all([
+        fetchNodeAsArray('crosscountry/meets'),
+        fetchNodeAsArray('crosscountry/schools'),
+        fetchNodeAsArray('crosscountry/athletes'),
+        fetchNodeAsArray('crosscountry/results'),
         getCurrentSeason()
       ]);
+      const stats = { meets: meets.length, schools: schools.length, athletes: athletes.length, results: results.length };
+      const schoolNames = Object.fromEntries(schools.map(school => [school.slug, school.name]));
+      const meetNames = Object.fromEntries(meets.map(meet => [meet.slug, meet.name]));
+      const meetDates = Object.fromEntries(meets.map(meet => [meet.slug, meet.date]));
 
-      const stats = {
-        meets: meetsSnap.numChildren(),
-        schools: schoolsSnap.numChildren(),
-        athletes: athletesSnap.numChildren(),
-        results: resultsSnap.numChildren()
-      };
-
+      const thisMonth = new Date().toISOString().slice(0, 7);
+      const monthly = new Map();
+      const schoolCounts = new Map();
+      const meetCounts = new Map();
+      const genderCounts = { M: 0, F: 0, Other: 0 };
+      let recentResults = 0;
+      results.forEach(result => {
+        const month = String(result.date || meetDates[result.meet_slug] || result.created_at || '').slice(0, 7);
+        if (/^\d{4}-\d{2}$/.test(month)) monthly.set(month, (monthly.get(month) || 0) + 1);
+        if (month === thisMonth) recentResults++;
+        const school = result.school_slug || 'Unattached';
+        schoolCounts.set(school, (schoolCounts.get(school) || 0) + 1);
+        if (result.meet_slug) meetCounts.set(result.meet_slug, (meetCounts.get(result.meet_slug) || 0) + 1);
+        const gender = String(result.gender || '').toUpperCase();
+        genderCounts[gender === 'M' ? 'M' : gender === 'F' ? 'F' : 'Other']++;
+      });
+      const trendPoints = Array.from({ length: 12 }, (_, index) => {
+        const date = new Date(); date.setDate(1); date.setMonth(date.getMonth() - (11 - index));
+        const key = date.toISOString().slice(0, 7);
+        return { key, label: date.toLocaleDateString(undefined, { month: 'short' }), value: monthly.get(key) || 0 };
+      });
+      const topSchools = [...schoolCounts.entries()].sort((a,b) => b[1]-a[1]).slice(0, 5).map(([slug,count]) => ({ label: schoolNames[slug] || slug, count }));
+      const topMeets = [...meetCounts.entries()].sort((a,b) => b[1]-a[1]).slice(0, 5).map(([slug,count]) => ({ label: meetNames[slug] || slug, count }));
+      const upcoming = meets.filter(meet => meet.date && meet.date >= new Date().toISOString().slice(0, 10)).sort((a,b) => a.date.localeCompare(b.date)).slice(0, 4);
+      const activeAthletes = athletes.filter(athlete => !['Graduated', 'Unknown'].includes(computeAthleteStatus(athlete).label)).length;
       document.getElementById('content').innerHTML = `
+        <div class="dashboard-heading"><div><div class="admin-kicker">Cross country · season ${escapeHtml(season?.year ?? '—')}</div><h3>Your season at a glance</h3></div><span class="muted">${stats.results.toLocaleString()} performances · live data</span></div>
         <div class="stats-grid">
-          <div class="stat-card"><div class="stat-number">${stats.meets}</div><div class="stat-label">Meets</div></div>
-          <div class="stat-card"><div class="stat-number">${stats.schools}</div><div class="stat-label">Schools</div></div>
-          <div class="stat-card"><div class="stat-number">${stats.athletes}</div><div class="stat-label">Athletes</div></div>
-          <div class="stat-card"><div class="stat-number">${stats.results}</div><div class="stat-label">Results</div></div>
+          <button class="stat-card" onclick="setActiveNav('meets');loadSection('meets')"><div class="stat-number">${stats.meets}</div><div class="stat-label">Meets <span aria-hidden="true">→</span></div></button>
+          <button class="stat-card" onclick="setActiveNav('schools');loadSection('schools')"><div class="stat-number">${stats.schools}</div><div class="stat-label">Schools <span aria-hidden="true">→</span></div></button>
+          <button class="stat-card" onclick="setActiveNav('athletes');loadSection('athletes')"><div class="stat-number">${activeAthletes}</div><div class="stat-label">Active athletes <span aria-hidden="true">→</span></div></button>
+          <button class="stat-card" onclick="setActiveNav('results');loadSection('results')"><div class="stat-number">${stats.results.toLocaleString()}</div><div class="stat-label">Recorded results <span aria-hidden="true">→</span></div></button>
           <div class="stat-card"><div class="stat-number">${season?.year ?? '—'}</div><div class="stat-label">Current Season</div></div>
         </div>
-        <div class="panel">
-          <h3>Quick Actions</h3>
-          <div style="display:flex; gap:12px; flex-wrap:wrap; margin-top:12px;">
-            <button class="btn btn-primary" onclick="setActiveNav('meets');loadSection('meets')">🏁 Manage Meets</button>
-            <button class="btn btn-primary" onclick="setActiveNav('schools');loadSection('schools')">🏫 Manage Schools</button>
-            <button class="btn btn-primary" onclick="setActiveNav('athletes');loadSection('athletes')">🏃 Manage Athletes</button>
-            <button class="btn btn-primary" onclick="setActiveNav('results');loadSection('results')">🏆 Manage Results</button>
-            <button class="btn btn-primary" onclick="setActiveNav('manual-entry');loadSection('manual-entry')">✏️ Manual Entry</button>
-            <button class="btn btn-primary" onclick="setActiveNav('seasons');loadSection('seasons')">📅 Seasons</button>
-            <button class="btn btn-primary" onclick="setActiveNav('email-tools');loadSection('email-tools')">✉️ Email Tools</button>
-          </div>
+        <div class="chart-grid">
+          <section class="chart-card"><h3>Results over time</h3><p>Recorded performances by meet month · trailing 12 months</p>${renderResultsTrendChart(trendPoints)}</section>
+          <section class="chart-card"><h3>Who’s racing?</h3><p>Result mix by gender</p>${renderGenderDonut(genderCounts)}</section>
+          <section class="chart-card"><h3>Most active schools</h3><p>Result entries by school · top five</p>${renderHorizontalBars(topSchools, schoolCounts.size)}</section>
+          <section class="chart-card"><h3>Busiest meets</h3><p>Entries recorded per meet · top five</p>${renderHorizontalBars(topMeets, meetCounts.size)}</section>
         </div>
-        <div class="panel" style="margin-top:20px;">
-          <h3>External Tools</h3>
-          <div style="display:flex; gap:12px; flex-wrap:wrap; margin-top:12px;">
-            <a class="btn btn-secondary" href="meets-dashboard.html">📋 Meets Dashboard</a>
-            <a class="btn btn-secondary" href="csv-import.html">📥 CSV Import</a>
-            <a class="btn btn-secondary" href="courses/course-admin.html">🗺️ Course Admin</a>
-            <a class="btn btn-secondary" href="rankings.html">🥇 Rankings</a>
-            <a class="btn btn-secondary" href="analytics.html">📈 Analytics</a>
-          </div>
+        <div class="two-col">
+          <section class="panel"><h3>Coming up</h3>${upcoming.length ? `<ul class="insight-list">${upcoming.map(meet => `<li><span>🏁</span><span><strong>${escapeHtml(meet.name)}</strong> · ${new Date(meet.date + 'T00:00:00').toLocaleDateString()}${meet.location ? ` · ${escapeHtml(meet.location)}` : ''}</span></li>`).join('')}</ul>` : '<p class="muted">No future meets on the schedule. <button class="btn btn-secondary btn-small" onclick="setActiveNav(\'meets\');loadSection(\'meets\')">Add a meet</button></p>'}</section>
+          <section class="panel"><h3>Quick actions</h3><div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;"><button class="btn btn-primary" onclick="setActiveNav('manual-entry');loadSection('manual-entry')">✏️ Add result</button><button class="btn btn-secondary" onclick="setActiveNav('meets');loadSection('meets')">🏁 Manage meets</button><a class="btn btn-secondary" href="csv-import.html">📥 Import results</a><a class="btn btn-secondary" href="analytics.html">📈 Full analytics</a></div><p class="muted" style="margin:13px 0 0;font-size:.82rem;">${recentResults.toLocaleString()} results were logged this month.</p></section>
         </div>
-      `;
+        <div class="panel" style="margin-top:18px;"><h3>More tools</h3><div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;"><a class="btn btn-secondary" href="meets-dashboard.html">📋 Meets Dashboard</a><a class="btn btn-secondary" href="courses/course-admin.html">🗺️ Course Admin</a><a class="btn btn-secondary" href="rankings.html">🥇 Rankings</a><a class="btn btn-secondary" href="/email-desk.html">📮 Email Desk</a></div></div>`;
       updateRecordCount(stats.meets + stats.schools + stats.athletes + stats.results);
+    }
+
+    function renderResultsTrendChart(points) {
+      if (!points.some(point => point.value)) return '<div class="chart-empty">No dated results to chart yet.</div>';
+      const width = 560, height = 190, left = 36, right = 12, top = 14, bottom = 28;
+      const max = Math.max(1, ...points.map(point => point.value));
+      const step = (width - left - right) / (points.length - 1);
+      const coords = points.map((point, index) => ({ x: left + index * step, y: height - bottom - point.value / max * (height - top - bottom), ...point }));
+      const line = coords.map(point => `${point.x},${point.y}`).join(' ');
+      const area = `${left},${height-bottom} ${line} ${coords.at(-1).x},${height-bottom}`;
+      return `<svg viewBox="0 0 ${width} ${height}" role="img" aria-label="Results over time line chart"><defs><linearGradient id="admin-chart-fill" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#ff7b2d" stop-opacity=".35"/><stop offset="1" stop-color="#ff7b2d" stop-opacity="0"/></linearGradient></defs>${[0,.5,1].map(ratio => { const y=top+ratio*(height-top-bottom); return `<line x1="${left}" y1="${y}" x2="${width-right}" y2="${y}" stroke="rgba(159,180,200,.18)"/><text x="${left-7}" y="${y+4}" fill="#9fb4c8" font-size="10" text-anchor="end">${Math.round(max*(1-ratio))}</text>`; }).join('')}<polygon points="${area}" fill="url(#admin-chart-fill)"/><polyline points="${line}" fill="none" stroke="#ff7b2d" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>${coords.map(point => `<circle cx="${point.x}" cy="${point.y}" r="3.4" fill="#ff9a4f"><title>${point.label}: ${point.value} results</title></circle>`).join('')}${coords.filter((_,i)=>i%2===0||i===coords.length-1).map(point=>`<text x="${point.x}" y="${height-7}" fill="#9fb4c8" font-size="10" text-anchor="middle">${point.label}</text>`).join('')}</svg>`;
+    }
+
+    function renderGenderDonut(counts) {
+      const total = counts.M + counts.F + counts.Other;
+      if (!total) return '<div class="chart-empty">No result gender data to chart yet.</div>';
+      const male = counts.M / total * 100, female = counts.F / total * 100;
+      return `<div class="donut-wrap"><div class="donut-chart" style="background:conic-gradient(#38bdf8 0% ${male}%,#ff7b2d ${male}% ${male+female}%,#64748b ${male+female}% 100%)" role="img" aria-label="${counts.M} boys, ${counts.F} girls and ${counts.Other} other results"><div class="donut-total">${total.toLocaleString()}<small>results</small></div></div><div class="chart-legend"><span><i class="legend-dot" style="background:#38bdf8"></i>Boys ${counts.M.toLocaleString()}</span><span><i class="legend-dot" style="background:#ff7b2d"></i>Girls ${counts.F.toLocaleString()}</span>${counts.Other ? `<span><i class="legend-dot" style="background:#64748b"></i>Other ${counts.Other}</span>` : ''}</div></div>`;
+    }
+
+    function renderHorizontalBars(items, totalGroups) {
+      if (!items.length) return '<div class="chart-empty">No entries available to chart yet.</div>';
+      const max = Math.max(1, ...items.map(item => item.count));
+      return `<div class="bar-list" role="list">${items.map(item => `<div class="bar-item" role="listitem"><span title="${escapeAttr(item.label)}">${escapeHtml(item.label.length > 22 ? item.label.slice(0,21)+'…' : item.label)}</span><div class="bar-track"><div class="bar-fill" style="width:${Math.max(2, item.count/max*100)}%"></div></div><strong>${item.count.toLocaleString()}</strong></div>`).join('')}</div><p style="margin-top:14px">${totalGroups.toLocaleString()} total</p>`;
     }
 
     // ==========================================
@@ -992,15 +1341,14 @@
     let coursesCache = [];
 
     async function renderMeets() {
-      const [meets, schools, coursesSnap] = await Promise.all([
-        getAllMeets(9999),
-        getAllSchools(),
-        window.firebaseDatabase.ref('crosscountry/courses').once('value')
+      const [meets, schools, courses] = await Promise.all([
+        fetchNodeAsArray('crosscountry/meets'),
+        fetchNodeAsArray('crosscountry/schools'),
+        fetchNodeAsArray('crosscountry/courses')
       ]);
       schoolsCache = schools;
       meetsCache = meets;
-      const cData = coursesSnap.val() || {};
-      coursesCache = Object.keys(cData).map(id => ({ id, ...cData[id] }));
+      coursesCache = courses;
 
       const schoolMap = {}; schools.forEach(s => { schoolMap[s.slug] = s.name; });
       const courseMap = {}; coursesCache.forEach(c => { if (c.slug) courseMap[c.slug] = c.name; });
@@ -1013,6 +1361,7 @@
           { key: 'slug', label: 'Slug', type: 'text', placeholder: 'auto-generated if blank' },
           { key: 'date', label: 'Date', type: 'text', inputType: 'date',
             render: row => row.date ? new Date(row.date + 'T00:00:00').toLocaleDateString() : '—' },
+
           { key: 'location', label: 'Location', type: 'text' },
           { key: 'is_state_championship', label: 'WV State Championship meet', type: 'checkbox',
             hint: 'Shows this meet in the Past State Championship Results section after the meet date passes.',
@@ -1047,7 +1396,7 @@
     // Schools
     // ==========================================
     async function renderSchools() {
-      const schools = await getAllSchools();
+      const schools = await fetchNodeAsArray('crosscountry/schools');
       schoolsCache = schools;
 
       renderGridSection({
@@ -1072,7 +1421,7 @@
     // Athletes
     // ==========================================
     async function renderAthletes() {
-      const [athletes, schools] = await Promise.all([fetchNodeAsArray('crosscountry/athletes'), getAllSchools()]);
+      const [athletes, schools] = await Promise.all([fetchNodeAsArray('crosscountry/athletes'), fetchNodeAsArray('crosscountry/schools')]);
       schoolsCache = schools;
       const schoolMap = {}; schools.forEach(s => { schoolMap[s.slug] = s.name; });
 
@@ -1085,6 +1434,7 @@
             options: [{ value: 'M', label: 'Male' }, { value: 'F', label: 'Female' }] },
           { key: 'school_slug', label: 'School', type: 'select',
             options: () => schools.map(s => ({ value: s.slug, label: s.name })),
+            searchValue: row => `${row.school_slug || ''} ${schoolMap[row.school_slug] || ''}`,
             render: row => escapeHtml(schoolMap[row.school_slug] || (row.school_slug ? row.school_slug : 'Unattached')) },
           { key: 'grade', label: 'Graduation Year', type: 'number', placeholder: 'e.g. 2027',
             transform: v => v === '' ? undefined : Number(v) },
@@ -1106,8 +1456,8 @@
     async function renderResults() {
       const [results, schools, meets] = await Promise.all([
         fetchNodeAsArray('crosscountry/results'),
-        getAllSchools(),
-        getAllMeets(9999)
+        fetchNodeAsArray('crosscountry/schools'),
+        fetchNodeAsArray('crosscountry/meets')
       ]);
       schoolsCache = schools;
       meetsCache = meets;
@@ -1121,6 +1471,7 @@
           { key: 'athlete_name', label: 'Athlete', type: 'text' },
           { key: 'school_slug', label: 'School', type: 'select',
             options: () => schools.map(s => ({ value: s.slug, label: s.name })),
+            searchValue: row => `${row.school_slug || ''} ${schoolMap[row.school_slug] || ''}`,
             render: row => escapeHtml(schoolMap[row.school_slug] || (row.school_slug ? row.school_slug : 'Unattached')) },
           { key: 'gender', label: 'Gender', type: 'select',
             options: [{ value: 'M', label: 'M' }, { value: 'F', label: 'F' }] },
@@ -1135,6 +1486,7 @@
           { key: 'race_type', label: 'Race / Division', type: 'text', placeholder: 'varsity, jv, emerging-elite…' },
           { key: 'meet_slug', label: 'Meet', type: 'select',
             options: () => meets.map(m => ({ value: m.slug, label: m.name })),
+            searchValue: row => `${row.meet_slug || ''} ${meetMap[row.meet_slug] || ''}`,
             render: row => escapeHtml(meetMap[row.meet_slug] || row.meet_slug || '—') }
         ],
         extraFiltersHTML: `
@@ -1173,7 +1525,7 @@
     let manualEntryRecent = [];
 
     async function renderManualEntry() {
-      const [meets, schools] = await Promise.all([getAllMeets(9999), getAllSchools()]);
+      const [meets, schools] = await Promise.all([fetchNodeAsArray('crosscountry/meets'), fetchNodeAsArray('crosscountry/schools')]);
       meetsCache = meets;
       schoolsCache = schools;
 
@@ -1405,6 +1757,13 @@
       ]);
 
       document.getElementById('content').innerHTML = `
+        <div class="panel" style="margin-bottom:20px; border-left:4px solid var(--primary);">
+          <h3 style="margin-top:0;">📮 The Email Desk is the supported tool now</h3>
+          <p class="muted" style="line-height:1.6;">This older panel still writes to the Cross Country-only records and queues mail that no worker ever sends. The Email Desk adds one shared audience for Cross Country and Track, recipient validation and suppression, templates, live inbox preview, scheduling and export for your delivery platform.</p>
+          <p style="margin-bottom:0;"><a class="btn btn-primary" href="/email-desk.html">Open the Email Desk →</a></p>
+          <p class="muted" style="margin:12px 0 0;">Your existing lists and templates are not deleted — open the desk and choose “Import legacy lists” to bring them across.</p>
+        </div>
+
         <div class="stats-grid">
           <div class="stat-card"><div class="stat-number">${analytics?.totalEmails ?? 0}</div><div class="stat-label">Total Emails</div></div>
           <div class="stat-card"><div class="stat-number">${analytics?.sent ?? 0}</div><div class="stat-label">Sent</div></div>
@@ -1540,6 +1899,12 @@
     // ==========================================
     document.addEventListener('DOMContentLoaded', async () => {
       await waitForFirebase();
+      const connection = document.getElementById('connection-status');
+      if (connection) connection.textContent = window.firebaseDatabase ? '🔗 Firebase connected' : '⚠️ Firebase unavailable';
+      if (!window.firebaseDatabase) {
+        document.getElementById('content').innerHTML = '<div class="panel"><h3>Database connection unavailable</h3><p class="muted">Check your connection and Firebase configuration, then refresh this page.</p><button class="btn btn-primary" onclick="refreshCurrentSection()">Try again</button></div>';
+        return;
+      }
       loadSection('dashboard');
     });
   </script>

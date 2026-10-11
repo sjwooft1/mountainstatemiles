@@ -242,6 +242,32 @@
         .recap-line a:hover { color: var(--primary); }
         .recap-line .rl-msm { color: var(--primary); font-weight: 800; }
 
+        /* ---- Meet team-performance reports ---- */
+        .team-story-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 1rem; }
+        .team-story { background: var(--bg-primary); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+        .team-story-head { padding: 1.1rem 1.25rem .9rem; background: linear-gradient(135deg, var(--bg-secondary), var(--bg-primary)); border-bottom: 1px solid var(--border); }
+        .team-story-kicker { display: flex; justify-content: space-between; align-items: center; gap: .6rem; color: var(--text-tertiary); font-size: .68rem; font-weight: 800; text-transform: uppercase; letter-spacing: .09em; }
+        .team-story-kicker a { color: var(--primary); text-decoration: none; white-space: nowrap; }
+        .team-story h3 { font-size: 1.12rem; line-height: 1.25; margin: .5rem 0 .25rem; }
+        .team-story h3 a { color: inherit; text-decoration: none; }
+        .team-story h3 a:hover, .team-story-kicker a:hover { text-decoration: underline; }
+        .team-story-meta { color: var(--text-secondary); font-size: .76rem; }
+        .team-story-copy { color: var(--text-secondary); font-size: .84rem; line-height: 1.55; margin: .7rem 0 0; }
+        .team-story-podium { display: flex; flex-wrap: wrap; gap: .35rem; margin-top: .75rem; }
+        .team-story-podium span { border-radius: 99px; padding: .2rem .55rem; background: var(--bg-secondary); color: var(--text-secondary); font-size: .69rem; font-weight: 700; }
+        .team-story-podium span:first-child { background: rgba(63,125,99,.14); color: var(--primary); }
+        .team-seven { padding: .8rem 1.25rem 1rem; }
+        .team-seven-title { display: flex; justify-content: space-between; gap: .6rem; font-size: .66rem; font-weight: 800; text-transform: uppercase; letter-spacing: .09em; color: var(--text-tertiary); margin-bottom: .35rem; }
+        .team-seven-row { display: grid; grid-template-columns: 1.5rem minmax(0, 1fr) auto; align-items: center; gap: .55rem; padding: .34rem 0; border-bottom: 1px dashed var(--border-light); font-size: .8rem; }
+        .team-seven-row:last-child { border-bottom: 0; }
+        .team-seven-row .ts-place { color: var(--text-tertiary); font-weight: 800; font-variant-numeric: tabular-nums; }
+        .team-seven-row a { min-width: 0; color: inherit; text-decoration: none; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .team-seven-row a:hover { color: var(--primary); }
+        .team-seven-row .ts-time { color: var(--text-secondary); font-size: .76rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+        .team-seven-row:nth-child(n+7) { background: linear-gradient(90deg, transparent, rgba(224,166,63,.07)); }
+        .team-seven-row .ts-depth { color: var(--msm-clay); font-size: .62rem; font-weight: 800; text-transform: uppercase; }
+        @media (max-width: 520px) { .team-story-grid { grid-template-columns: 1fr; } .team-story-head, .team-seven { padding-left: 1rem; padding-right: 1rem; } .team-seven-row { grid-template-columns: 1.25rem minmax(0, 1fr) auto; gap: .35rem; } .team-seven-row .ts-time { font-size: .69rem; } }
+
         /* ---- State of the state ---- */
         .sots-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(215px, 1fr)); gap: 1rem; }
         .sots-card { background: var(--bg-primary); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1.05rem 1.15rem; }
@@ -365,12 +391,22 @@
             <div class="banner-grid" id="meetBanners"></div>
         </section>
 
+        <!-- ============ Meet-by-meet team features ============ -->
+        <section class="hub-section" id="teamStoriesSection" style="display:none;">
+            <div class="hub-section-head">
+                <h2><i class="fas fa-people-group"></i> Seven Deep: Team Performances</h2>
+                <a class="see-all" href="meets.html">More meet results →</a>
+            </div>
+            <p class="hub-sub">Race-by-race reports on the leading squads: the scoring five, each runner&rsquo;s finish and MSM mark, the team gap, and sixth/seventh-runner depth.</p>
+            <div class="team-story-grid" id="teamStoryGrid"></div>
+        </section>
+
         <!-- ============ Meet recaps ============ -->
         <section class="hub-section" id="recapsSection" style="display:none;">
             <div class="hub-section-head">
                 <h2><i class="fas fa-newspaper"></i> Fresh Recaps</h2>
             </div>
-            <p class="hub-sub">Auto-generated from finish-line data — top MSM-rated performances from the last three weeks.</p>
+            <p class="hub-sub">Auto-generated from finish-line data — top five MSM-rated performances in each gender from the last five weeks.</p>
             <div class="recap-grid" id="recapGrid"></div>
         </section>
 
@@ -405,7 +441,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <script src="firebase-config.js"></script>
     <script src="/scripts/msm-rating.js"></script>
-    <script src="/scripts/hub-engine.js"></script>
+    <script src="/scripts/hub-engine.js?v=team-seven-recap-20261005"></script>
 
     <script>
         /* ═══════════════════════════════════════════════════
@@ -709,7 +745,7 @@
                         <span><span class="rl-msm">${p.msm}</span> · ${fmtTime(p.timeSec)}</span>
                     </div>`;
                 const col = (rows, label) => rows && rows.length
-                    ? `<div class="recap-col"><div class="rc-label">${label}</div>${rows.slice(0, 3).map(line).join("")}</div>`
+                    ? `<div class="recap-col"><div class="rc-label">${label}</div>${rows.slice(0, 5).map(line).join("")}</div>`
                     : "";
                 return `
                     <div class="recap-card">
@@ -719,8 +755,65 @@
                     </div>`;
             };
             document.getElementById("recapGrid").innerHTML = H.recaps.slice(0, 6).map(card).join("") ||
-                `<div class="hub-empty">No meets with results in the last three weeks — the season&rsquo;s first recaps will land here.</div>`;
+                `<div class="hub-empty">No recent meets with results — fresh recaps will land here as results are posted.</div>`;
             document.getElementById("recapsSection").style.display = "";
+        }
+
+        /* ---- Meet-by-meet top-seven team stories ---- */
+        function renderTeamPerformances(H) {
+            const seen = new Set();
+            const leaders = (H.teamPerformances || []).filter(p => {
+                if (p.teamRank > 3 || !p.runners || p.runners.length < 5) return false;
+                const key = `${p.meet_slug}|${p.gender}|${p.race_type}|${p.school_slug}`;
+                if (seen.has(key)) return false;
+                seen.add(key);
+                return true;
+            }).slice(0, 12);
+            const card = p => {
+                const ordinal = value => `${value}${value % 100 >= 11 && value % 100 <= 13 ? "th" : ({ 1: "st", 2: "nd", 3: "rd" }[value % 10] || "th")}`;
+                const runnerList = p.runners.slice(0, 7).map(r => `
+                    <div class="team-seven-row">
+                        <span class="ts-place">${r.lineupPlace}</span>
+                        <a href="${athleteHref(r.name, p.school_slug)}" title="${esc(r.name)}">${esc(r.name)}</a>
+                        <span class="ts-time">${fmtTime(r.timeSec)}${r.msm != null ? ` · ${r.msm} MSM` : ""}${r.lineupPlace > 5 ? ` <span class="ts-depth">${r.lineupPlace === 6 ? "6th runner" : "7th runner"}</span>` : ""}</span>
+                    </div>`).join("");
+                const podium = (p.podium || []).filter(t => (t.rank || 1) <= 3)
+                    .map(t => `<span>${ordinal(t.rank || 1)} ${esc(t.school)} · ${t.score} pts</span>`).join("");
+                const teamLabel = p.teamRank === 1 ? "won" : `finished ${ordinal(p.teamRank)}`;
+                const teamGap = p.gapToNext != null ? `${p.gapToNext} points from the next team` : `${ordinal(p.teamRank)} in the standings`;
+                const leader = p.runners[0];
+                const fifth = p.runners[4];
+                const individualStory = leader
+                    ? ` ${leader.name} led the team's finishers in ${fmtTime(leader.timeSec)}${leader.msm != null ? ` (${leader.msm} MSM)` : ""}${fifth ? `, with ${fifth.name} closing the scoring five in ${fmtTime(fifth.timeSec)}${fifth.msm != null ? ` (${fifth.msm} MSM)` : ""}` : ""}.`
+                    : "";
+                const topFive = p.topFiveRating != null ? ` The scoring five averaged ${Math.round(p.topFiveRating)} MSM` : "";
+                const pack = p.topFiveSpread != null ? ` and spanned ${fmtTime(p.topFiveSpread)} from first scorer to fifth` : "";
+                const marginLine = p.teamRank === 1 && p.margin != null
+                    ? `${p.margin} points clear of the runner-up`
+                    : p.teamRank === 1 && p.teamCount === 1 ? "the only full five-runner team in the race"
+                    : p.teamRank === 1 ? "the only highlighted WV team with a complete five-runner score"
+                    : teamGap;
+                const depth = p.runners.length >= 7
+                    ? ` ${p.runners[5].name} and ${p.runners[6].name} finished sixth and seventh, giving the team two more finishers beyond its scoring five.`
+                    : ` The team had ${p.runners.length} finishers in this race.`;
+                return `
+                    <article class="team-story">
+                        <div class="team-story-head">
+                            <div class="team-story-kicker"><span>${p.gender === "F" ? "Girls" : "Boys"} · ${esc(p.race_label || "Race")}</span><a href="meet.html?slug=${encodeURIComponent(p.meet_slug)}">Full meet results <i class="fas fa-arrow-right"></i></a></div>
+                            <h3><a href="school.html?slug=${encodeURIComponent(p.school_slug)}">${esc(p.school)}</a> ${teamLabel} at ${esc(p.meet_name)}</h3>
+                            <div class="team-story-meta">${fmtDate(p.date)}${p.location ? ` · ${esc(p.location)}` : ""} · ${p.score} team points · ${p.teamCount} scoring teams</div>
+                            <p class="team-story-copy">${esc(p.school)} ${teamLabel} with ${p.score} points, ${esc(marginLine)}.${esc(individualStory)}${esc(topFive)}${esc(pack)}. The first five score; places six and seven show the lineup&rsquo;s depth.${esc(depth)}</p>
+                            <div class="team-story-podium">${podium}</div>
+                        </div>
+                        <div class="team-seven">
+                            <div class="team-seven-title"><span>Top seven · actual finish order</span><span>${p.runners.length} finishers</span></div>
+                            ${runnerList}
+                        </div>
+                    </article>`;
+            };
+            document.getElementById("teamStoryGrid").innerHTML = leaders.map(card).join("") ||
+                `<div class="hub-empty">Team top-seven reports will appear when complete race results are added.</div>`;
+            document.getElementById("teamStoriesSection").style.display = "";
         }
 
         /* ---- State of the state ---- */
@@ -774,6 +867,7 @@
                 renderWatch(H);
                 renderDivisional(H);
                 renderMeets(H);
+                renderTeamPerformances(H);
                 renderRecaps(H);
                 renderSOTS(H);
                 renderNews(H);
