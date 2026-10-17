@@ -310,7 +310,7 @@ a:hover {
   border-bottom: 1px solid var(--border);
   padding: 0;
   position: fixed;
-  top: 0;
+  top: var(--msm-ticker-h, 0px);
   left: 0;
   right: 0;
   z-index: 1000;
@@ -438,7 +438,7 @@ a:hover {
 main {
   padding-top: var(--spacing-3xl);
   padding-bottom: var(--spacing-3xl);
-  margin-top: 60px;
+  margin-top: calc(60px + var(--msm-ticker-h, 0px));
 }
 
 .content-section {
@@ -823,7 +823,7 @@ body.home-page {
   position: relative;
   z-index: 2;
   flex: 1;
-  margin-top: 60px;
+  margin-top: calc(60px + var(--msm-ticker-h, 0px));
 }
 
 .hero {
@@ -963,7 +963,7 @@ body.home-page {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 28px;
-  margin-top: 60px;
+  margin-top: calc(60px + var(--msm-ticker-h, 0px));
   list-style: none;
   margin: 0;
   padding: 0;
@@ -1899,7 +1899,7 @@ body.home-page {
 
 @media (max-width: 768px) {
   body {
-    padding-top: 60px;
+    padding-top: calc(60px + var(--msm-ticker-h, 0px));
     padding-bottom: 60px;
   }
 
@@ -2139,7 +2139,7 @@ main.content-section {
 /* Header Styles */
 .site-header {
   position: fixed;
-  top: 0;
+  top: var(--msm-ticker-h, 0px);
   left: 0;
   width: 100%;
   z-index: 1000;
@@ -2148,6 +2148,8 @@ main.content-section {
   -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--border);
   transition: background 0.3s, border-color 0.3s;
+  overflow: hidden;
+  isolation: isolate;
 }
 
 .header-container {
@@ -2157,15 +2159,430 @@ main.content-section {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  position: relative;
+  z-index: 1;
+}
+
+/* --- Header scene: sunrise over the WV mountains, trail & runner --- */
+.header-scene {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+  background: linear-gradient(180deg, rgba(224, 166, 63, 0) 45%, rgba(224, 166, 63, 0.12) 100%);
+}
+
+.header-sun {
+  position: absolute;
+  right: 14%;
+  bottom: 0;
+  width: 130px;
+  height: 110px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center,
+    rgba(224, 166, 63, 0.55) 0%,
+    rgba(224, 166, 63, 0.22) 45%,
+    rgba(224, 166, 63, 0) 72%);
+}
+
+.header-ridges {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 6px;
+  width: 100%;
+  height: 62%;
+}
+
+.header-ridges .ridge-far  { fill: var(--msm-pine);      opacity: 0.16; }
+.header-ridges .ridge-mid  { fill: var(--msm-pine);      opacity: 0.30; }
+.header-ridges .ridge-near { fill: var(--msm-pine-deep); opacity: 0.55; }
+
+.header-lanes {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 6px;
+  overflow: hidden;
+  background: linear-gradient(90deg, var(--msm-clay) 0%, var(--msm-gold) 50%, var(--msm-clay) 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28);
+}
+
+.header-lanes::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: repeating-linear-gradient(90deg,
+    rgba(255, 255, 255, 0) 0 26px,
+    rgba(255, 255, 255, 0.7) 26px 29px);
+  animation: lanes-scroll 3.2s linear infinite;
+}
+
+@keyframes lanes-scroll {
+  to { background-position: -29px 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .header-lanes::after {
+    animation: none;
+  }
+}
+
+@media (max-width: 900px) {
+  .header-sun { right: 6%; width: 96px; height: 84px; }
+}
+
+/* --- Sport / nav icons --- */
+.nav-ico,
+.sport-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nav-ico svg {
+  width: 17px;
+  height: 17px;
+}
+
+.nav-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.sport-badge {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  border: 1.5px solid var(--border);
+  background: var(--bg-secondary);
+  color: var(--primary);
+  flex: none;
+}
+
+.sport-badge svg {
+  width: 22px;
+  height: 22px;
+}
+
+.sport-badge.crosscountry { color: var(--msm-pine-deep); }
+.sport-badge.track         { color: var(--msm-clay); }
+
+.mega-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--primary);
+  color: var(--bg-primary);
+  border: none;
+  border-radius: 999px;
+  padding: 9px 18px;
+  font-weight: 800;
+  font-size: 0.92rem;
+  letter-spacing: 0.4px;
+  cursor: pointer;
+  transition: transform 0.2s, background 0.2s, box-shadow 0.2s;
+}
+
+.mega-toggle svg {
+  width: 18px;
+  height: 18px;
+}
+
+.mega-toggle:hover {
+  transform: translateY(-2px);
+  background: var(--primary-light);
+  box-shadow: 0 8px 20px var(--shadow-medium);
+}
+
+/* ============================================
+   Full-screen Explore menu — WV mountains
+   ============================================ */
+.mega-menu {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 0.35s ease, visibility 0.35s;
+}
+
+.mega-menu.open {
+  visibility: visible;
+  opacity: 1;
+}
+
+.mega-backdrop {
+  position: absolute;
+  inset: 0;
+  background: #17130e;
+}
+
+/* Sunrise over layered WV ridges filling the screen.
+   The menu is always a dusk scene, so its text colors are fixed
+   light values rather than theme tokens (which flip in dark mode). */
+.mega-scene {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: linear-gradient(180deg, #17130e 0%, #2c2218 55%, #4a3a22 100%);
+}
+
+.mega-sun {
+  position: absolute;
+  left: 50%;
+  bottom: 24vh;
+  width: 42vw;
+  height: 42vw;
+  max-width: 560px;
+  max-height: 560px;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center,
+    rgba(224, 166, 63, 0.5) 0%,
+    rgba(224, 166, 63, 0.2) 42%,
+    rgba(224, 166, 63, 0) 70%);
+}
+
+.mega-ridges {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 58vh;
+}
+
+.mega-ridges .mridge-1 { fill: rgba(109, 184, 148, 0.34); }
+.mega-ridges .mridge-2 { fill: rgba(79, 154, 120, 0.52); }
+.mega-ridges .mridge-3 { fill: rgba(44, 90, 71, 0.78); }
+.mega-ridges .mridge-4 { fill: rgba(27, 49, 41, 0.95); }
+
+.mega-menu.open .mridge-1 { animation: ridge-rise 0.7s ease both; }
+.mega-menu.open .mridge-2 { animation: ridge-rise 0.7s ease 0.08s both; }
+.mega-menu.open .mridge-3 { animation: ridge-rise 0.7s ease 0.16s both; }
+.mega-menu.open .mridge-4 { animation: ridge-rise 0.7s ease 0.24s both; }
+
+@keyframes ridge-rise {
+  from { transform: translateY(60px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+.mega-bar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 22px 32px;
+}
+
+.mega-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #f6efe1;
+  font-weight: 500;
+  letter-spacing: 2px;
+  font-size: 0.95rem;
+}
+
+.mega-brand-logo {
+  height: 44px;
+  width: 44px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.mega-close {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1.5px solid rgba(255, 255, 255, 0.25);
+  color: #f6efe1;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  font-size: 1.75rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: transform 0.25s, background 0.25s;
+}
+
+.mega-close:hover {
+  transform: rotate(90deg);
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.mega-inner {
+  position: relative;
+  height: calc(100% - 220px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 24px;
+  box-sizing: border-box;
+}
+
+.mega-links {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(240px, 380px));
+  gap: 14px 28px;
+}
+
+.mega-link {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  text-decoration: none;
+  border: none;
+  color: #f6efe1;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 18px;
+  padding: 18px 22px;
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 600;
+  opacity: 0;
+  transform: translateY(26px);
+  transition: background 0.25s, border-color 0.25s, transform 0.25s;
+}
+
+.mega-menu.open .mega-link {
+  animation: mega-in 0.55s ease forwards;
+  animation-delay: calc(0.18s + var(--i, 0) * 0.07s);
+}
+
+@keyframes mega-in {
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.mega-link:hover {
+  background: rgba(224, 166, 63, 0.18);
+  border-color: rgba(224, 166, 63, 0.5);
+}
+
+.mega-link.active {
+  border-color: var(--msm-gold);
+  background: rgba(224, 166, 63, 0.12);
+}
+
+.mega-ico {
+  display: inline-flex;
+  width: 30px;
+  height: 30px;
+  color: var(--msm-gold);
+  flex: none;
+}
+
+.mega-ico svg {
+  width: 100%;
+  height: 100%;
+}
+
+.mega-name {
+  flex: 1;
+}
+
+.mega-arrow {
+  font-size: 1.35rem;
+  color: var(--msm-gold);
+  opacity: 0;
+  transform: translateX(-8px);
+  transition: opacity 0.25s, transform 0.25s;
+}
+
+.mega-link:hover .mega-arrow {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.mega-foot {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  text-align: center;
+  padding: 18px 24px 26px;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 0.85rem;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+
+@media (max-width: 760px) {
+  .mega-links {
+    grid-template-columns: 1fr;
+    width: min(420px, 100%);
+  }
+  .mega-link {
+    font-size: 1.25rem;
+    padding: 15px 18px;
+  }
+  .mega-inner {
+    height: calc(100% - 190px);
+    overflow-y: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mega-menu.open .mridge-1,
+  .mega-menu.open .mridge-2,
+  .mega-menu.open .mridge-3,
+  .mega-menu.open .mridge-4,
+  .mega-menu.open .mega-link {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
 }
 
 .brand-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   letter-spacing: 1px;
   text-decoration: none;
   color: var(--text-primary);
-  max-height: 50px;
+  max-height: 62px;
   height: auto;
   border: none;
+  flex-shrink: 0;
+}
+
+.brand-logo-img {
+  height: 52px;
+  width: 52px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.25));
+}
+
+.brand-wordmark {
+  font-weight: 800;
+  font-size: 1.05rem;
+  letter-spacing: 1.5px;
+  white-space: nowrap;
+  line-height: 1.1;
+}
+
+@media (max-width: 1599px) {
+  .brand-wordmark {
+    display: none;
+  }
+}
+
+@media (max-width: 1600px) {
+  .desktop-nav {
+    gap: 16px;
+  }
+}
+
+@media (max-width: 720px) {
+  .brand-logo-img {
+    height: 42px;
+    width: 42px;
+  }
 }
 
 .footer-logo {
@@ -2181,7 +2598,25 @@ main.content-section {
 .desktop-nav {
   display: flex;
   align-items: center;
-  gap: 24px;
+  gap: 20px;
+}
+
+@media (max-width: 1650px) {
+  .desktop-nav {
+    gap: 13px;
+  }
+  .nav-link {
+    font-size: 0.86rem;
+  }
+}
+
+@media (max-width: 1320px) {
+  .desktop-nav {
+    gap: 10px;
+  }
+  .nav-link .nav-ico {
+    display: none;
+  }
 }
 
 .nav-link {
@@ -2193,6 +2628,7 @@ main.content-section {
   padding: 6px 0;
   position: relative;
   border: none;
+  white-space: nowrap;
 }
 
 .nav-link:hover, .nav-link.active {
@@ -2645,3 +3081,125 @@ table.podium td:last-child {
   font-variant-numeric: tabular-nums;
 }
 
+/* ============================================
+   Smoothness, Motion & Interactive Polish
+   ============================================ */
+:root {
+  --ease-out-expo: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+button,
+.btn,
+.sport-card,
+.meet-card,
+.meet-banner,
+.news-card,
+.recap-card,
+.sots-card,
+.nav-link {
+  transition: transform 0.24s var(--ease-out-expo),
+              box-shadow 0.24s var(--ease-out-expo),
+              background-color 0.2s ease,
+              border-color 0.2s ease,
+              color 0.2s ease;
+}
+
+.list-item {
+  transition: background-color 0.18s ease, transform 0.18s var(--ease-out-expo);
+}
+
+
+/* ============================================
+   Site-wide polish — brings every page up to the home page feel
+   (soft depth, hover lift, eased motion, page fade-in)
+   ============================================ */
+
+@keyframes msm-page-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+body {
+  /* 'backwards' (not 'both') so no transform is kept on body after the fade:
+     a retained transform would make body the containing block for fixed headers. */
+  animation: msm-page-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+.card,
+.meet-card,
+.stat-card,
+.news-card,
+.feature-tile,
+.sim-card,
+.table-card {
+  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.25s ease, border-color 0.25s ease;
+}
+
+.card:hover,
+.stat-card:hover,
+.feature-tile:hover,
+.sim-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 30px var(--shadow-medium);
+}
+
+.meet-card:hover,
+.news-card:hover {
+  transform: translateY(-2px);
+}
+
+.btn {
+  transition: transform 0.18s ease, box-shadow 0.2s ease, background 0.2s ease, filter 0.2s ease;
+}
+
+.btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px var(--shadow-light);
+}
+
+.btn:active:not(:disabled) {
+  transform: translateY(0) scale(0.98);
+}
+
+:focus-visible {
+  outline: 2px solid var(--msm-pine);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+table tbody tr {
+  transition: background 0.18s ease;
+}
+
+table tbody tr:hover {
+  background: color-mix(in srgb, var(--msm-pine) 7%, transparent);
+}
+
+::selection {
+  background: var(--msm-clay-soft);
+  color: var(--msm-ink);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body,
+  .card,
+  .meet-card,
+  .stat-card,
+  .news-card,
+  .feature-tile,
+  .sim-card,
+  .table-card,
+  .btn {
+    animation: none !important;
+    transition: none !important;
+  }
+  .card:hover,
+  .stat-card:hover,
+  .feature-tile:hover,
+  .sim-card:hover,
+  .meet-card:hover,
+  .news-card:hover,
+  .btn:hover:not(:disabled) {
+    transform: none !important;
+  }
+}
