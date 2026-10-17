@@ -21,6 +21,7 @@
   <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.7.1/jspdf.plugin.autotable.min.js"></script>
+  <script defer src="/assets/pdf-branding.js"></script>
 
   <script src="/assets/theme-toggle.js" defer></script>
   <script src="/assets/components.js" defer></script>
@@ -1985,41 +1986,17 @@
       return [63, 125, 99];
     }
 
-    // Shared branded page header for PDF exports: coloured bar, logo, title, and
-    // a subtitle line that surfaces the active season.
-    function makePdfHeader(doc, mainTitle, subtitle) {
+    // Shared branded page header for PDF exports: coloured band, school logo
+    // chip, title/subtitle, and the mountainstate.svg wordmark (via MSMPdf).
+    async function makePdfHeader(doc, mainTitle, subtitle) {
       const brandColor = getTeamColorRgbArray();
-      return function drawHeader() {
-        doc.setFillColor(brandColor[0], brandColor[1], brandColor[2]);
-        doc.rect(0, 0, doc.internal.pageSize.getWidth(), 24, 'F');
-
-        let textX = 14;
-        try {
-          const logoImg = document.getElementById('school-logo');
-          const isFallback = logoImg && /\/logob\.(png|svg)$/.test(logoImg.src || '');
-          if (logoImg && logoImg.complete && logoImg.naturalWidth > 0 && !isFallback) {
-            doc.addImage(logoImg, 'PNG', 14, 4, 16, 16);
-            textX = 36;
-          }
-        } catch (e) {
-          console.warn('Could not add logo to PDF:', e);
-        }
-
-        doc.setFontSize(15);
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(255, 255, 255);
-        doc.text(mainTitle, textX, subtitle ? 11 : 14);
-
-        if (subtitle) {
-          doc.setFontSize(10);
-          doc.setFont('helvetica', 'normal');
-          doc.setTextColor(235, 235, 235);
-          doc.text(subtitle, textX, 18);
-        }
-      };
+      const schoolPng = typeof schoolSlug !== 'undefined' && schoolSlug
+        ? await MSMPdf.teamLogoPng(schoolSlug)
+        : null;
+      return MSMPdf.brandHeader(doc, { title: mainTitle, subtitle: subtitle, color: brandColor, schoolPng: schoolPng });
     }
 
-    function exportSchedulePDF() {
+    async function exportSchedulePDF() {
       if (!upcomingScheduleData.length) { toast('No upcoming meets to export yet.'); return; }
       if (typeof window.jspdf === 'undefined') { toast('PDF library still loading — try again in a moment.'); return; }
 
@@ -2047,14 +2024,15 @@
         styles: { fontSize: 8.5, overflow: 'linebreak' },
         headStyles: { fillColor: brandColor, textColor: [255, 255, 255] },
         alternateRowStyles: { fillColor: [246, 243, 236] },
-        didDrawPage: makePdfHeader(doc, mainTitle, subtitle)
+        didDrawPage: await makePdfHeader(doc, mainTitle, subtitle)
       });
 
+      MSMPdf.finalize(doc);
       doc.save(`${schoolSlug}_schedule.pdf`);
       toast('✓ Schedule exported as PDF');
     }
 
-    function exportPerformancePDF() {
+    async function exportPerformancePDF() {
       if (!seasonResults.length) {
         toast(currentSeason === 'all' ? 'No performance results to export yet.' : `No ${currentSeason} results to export.`);
         return;
@@ -2098,8 +2076,9 @@
         styles: { fontSize: 8 },
         headStyles: { fillColor: brandColor, textColor: [255, 255, 255] },
         alternateRowStyles: { fillColor: [246, 243, 236] },
-        didDrawPage: makePdfHeader(doc, mainTitle, subtitle)
+        didDrawPage: await makePdfHeader(doc, mainTitle, subtitle)
       });
+      MSMPdf.finalize(doc);
       doc.save(`${schoolSlug}_performance_${currentSeason}.pdf`);
       toast('✓ Performance report exported as PDF');
     }

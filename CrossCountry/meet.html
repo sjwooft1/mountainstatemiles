@@ -16,6 +16,7 @@
   <link rel="stylesheet" href="/assets/main.css" />
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.7.1/jspdf.plugin.autotable.min.js"></script>
+  <script defer src="/assets/pdf-branding.js"></script>
   <script src="/assets/components.js" defer></script>
   <script src="/assets/theme-toggle.js" defer></script>
   <script>
@@ -2148,59 +2149,13 @@
       const exportSelect = document.getElementById('team-export-select')?.value;
       const subtitle = exportSelect && exportSelect !== 'all' ? `Filtered by Team: ${exportSelect}` : '';
 
-      // 2. Safely load the site logo using Fetch & FileReader (Bypasses Canvas CORS issues)
-      const getBase64Image = async (url) => {
-        try {
-            const response = await fetch(url);
-            const blob = await response.blob();
-            return new Promise((resolve) => {
-                const reader = new FileReader();
-                reader.onloadend = () => resolve(reader.result);
-                reader.onerror = () => resolve(null);
-                reader.readAsDataURL(blob);
-            });
-        } catch (e) {
-            console.warn("Could not load logo for PDF:", e);
-            return null;
-        }
-      };
-
-      const logoBase64 = await getBase64Image('assets/images/logo.png');
-
-      // 3. Custom PDF Header with Logo and Titles
-      const drawHeader = () => {
-        // Draw Header Background
-        doc.setFillColor(bc[0], bc[1], bc[2]);
-        doc.rect(0, 0, doc.internal.pageSize.getWidth(), 24, 'F');
-
-        let textX = 14;
-        if (logoBase64) {
-          try {
-            // Add Logo (Image Data, Format, X, Y, Width, Height)
-            doc.addImage(logoBase64, 'PNG', 14, 4, 16, 16);
-            textX = 36; // Shift text over to make room for the logo
-          } catch (e) {
-            console.warn("Failed to draw image to PDF", e);
-          }
-        }
-
-        // Draw Main Title
-        doc.setFontSize(15);
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(255, 255, 255); // White text
-
-        // If there is a subtitle, shift the main title up slightly
-        const titleY = subtitle ? 11 : 14;
-        doc.text(raceTitle, textX, titleY);
-
-        // Draw Subtitle (if a specific team is selected)
-        if (subtitle) {
-            doc.setFontSize(10);
-            doc.setFont('helvetica', 'normal');
-            doc.setTextColor(220, 220, 220); // Light Gray text
-            doc.text(subtitle, textX, 18);
-        }
-      };
+      // 2–3. Branded PDF header via the shared MSMPdf helper: runner
+      //      silhouette + mountainstate.svg wordmark on the coloured band.
+      const drawHeader = await MSMPdf.brandHeader(doc, {
+        title: raceTitle,
+        subtitle: subtitle,
+        color: bc
+      });
 
       // 4. Coach's Report extras: storyline blurb + a quick score-comparison bar
       //    chart, drawn straight from the FULL (unfiltered) standings so the
@@ -2296,6 +2251,7 @@
           });
       }
 
+      MSMPdf.finalize(doc);
       doc.save(`${slugify(raceTitle)}.pdf`);
     }
   </script>

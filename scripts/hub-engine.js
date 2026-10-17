@@ -2325,16 +2325,39 @@
         .sort((a, b) => String(b.date).localeCompare(String(a.date)));
       if (!races.length) return;
       const projected = races.map(r => ({ r, timeSec: projectSimulationResult(r, targetCourse, targetDistance) }));
+      let timeSec;
       let chosen;
-      if (basis === "best") chosen = [projected.slice().sort((a, b) => a.timeSec - b.timeSec)[0]];
-      else if (basis === "median") {
+      if (basis === "best") {
+        chosen = [projected.slice().sort((a, b) => a.timeSec - b.timeSec)[0]];
+        timeSec = chosen[0].timeSec;
+      } else if (basis === "median") {
         const times = projected.map(x => x.timeSec).sort((a, b) => a - b);
         const med = times.length % 2 ? times[(times.length - 1) / 2] : (times[times.length / 2 - 1] + times[times.length / 2]) / 2;
         chosen = [{ r: projected[0].r, timeSec: med }];
-      } else chosen = projected.slice(0, 3);
-      const weights = chosen.map((_, i) => basis === "recent" ? [0.5, 0.3, 0.2][i] || 0.1 : 1 / chosen.length);
-      const totalWeight = weights.reduce((s, w) => s + w, 0);
-      const timeSec = chosen.reduce((s, x, i) => s + x.timeSec * weights[i], 0) / totalWeight;
+        timeSec = med;
+      } else {
+        // Multi-factor current form: 48/27/15/10% recency blend + 20% best adjusted fitness
+        // + course-affinity adjustment + trajectory momentum.
+        chosen = projected.slice(0, 4);
+        const weights = [0.48, 0.27, 0.15, 0.10].slice(0, chosen.length);
+        const totalWeight = weights.reduce((s, w) => s + w, 0);
+        const recencyAvg = chosen.reduce((s, x, i) => s + x.timeSec * weights[i], 0) / totalWeight;
+        const bestProj = projected.slice().sort((a, b) => a.timeSec - b.timeSec)[0].timeSec;
+        timeSec = recencyAvg * 0.80 + bestProj * 0.20;
+        // Course affinity if they've already raced targetCourse
+        const onCourse = projected.filter(x => (x.r.course_slug || x.r.meet_slug) === targetCourse);
+        if (onCourse.length) {
+          const courseBest = Math.min(...onCourse.map(x => x.timeSec));
+          timeSec += (courseBest - timeSec) * 0.18;
+        }
+        // Trajectory adjustment if >= 2 races
+        if (chosen.length >= 2) {
+          const newest = chosen[0].timeSec;
+          const older = chosen[chosen.length - 1].timeSec;
+          const trendDelta = Math.max(-8, Math.min(8, (newest - older) * 0.15));
+          timeSec += trendDelta;
+        }
+      }
       const latest = races[0];
       form[key] = {
         name: latest.athlete_name, schoolSlug: latest.school_slug, gender,

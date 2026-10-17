@@ -488,65 +488,210 @@
   }
 
   // =====================================================================
-  //  MEET SIMULATION
+  //  MEET SIMULATION — Multi-Factor Prediction Model
   // =====================================================================
-  // Project an athlete's effort onto a target course + distance.
-  // The shared MSM performance boost removes source-course, field, and weather
-  // effects; the target course factor is then applied. This keeps simulations
-  // from treating an easy-course PR as an athlete's portable ability.
-  function projectOntoCourse(sourceRow, targetCourseSlug, targetDistance) {
+  // Combines:
+  //  1. Personal Riegel distance scaling (fitted from multi-distance PBs when available)
+  //  2. Source race normalization via MSM performance boost (course + field + weather)
+  //  3. Course-specific affinity / familiarity (historically strong or weak on target venue)
+  //  4. Season trajectory / momentum adjustment (linear regression on dated MSM ratings)
+  //  5. Target course difficulty + surface footing + optional race-day weather (tempF / humidityPct / windMph)
+  //  6. Pack-drafting synergy (tight teammate pack within 8s pulls trailing scorers up to 1.8s faster)
+  //  7. Per-runner consistency / variance band (±sd) & Monte Carlo win probability
+
+  const SURFACE_PENALTIES = {
+    "Track": 1.000,
+    "Asphalt": 1.000,
+    "Dirt Trail": 1.012,
+    "Gravel": 1.020,
+    "Grass": 1.032,
+  };
+
+  function surfaceFactorForCourse(courseSlug) {
+    const c = state.coursesMap[courseSlug] || {};
+    let surfaces = c.surfaces;
+    if (!surfaces && window.XC_COURSE_MANIFEST) {
+      const m = window.XC_COURSE_MANIFEST.find((x) => x.slug === courseSlug || x.slug === String(courseSlug).replace(/-5k$/, ""));
+      if (m && m.surfaces) surfaces = m.surfaces;
+    }
+    if (!Array.isArray(surfaces) || !surfaces.length) return 1.0;
+    let total = 0, weighted = 0;
+    surfaces.forEach((s) => {
+      const pct = parseFloat(s.pct);
+      if (!isFinite(pct) || pct <= 0) return;
+      const f = SURFACE_PENALTIES[s.type] || 1.018;
+      total += pct;
+      weighted += pct * f;
+    });
+    if (!total) return 1.0;
+    // Normalize relative to standard WV grass course (~1.028) so we don't double-count
+    // what is already in the empirical courseFactor, while still differentiating fast turf vs heavy trail.
+    const raw = weighted / total;
+    return 1 + (raw - 1.028) * 0.45;
+  }
+
+  function simWeatherMultiplier(wx) {
+    if (!wx) return 1.0;
+    const tempF = isFinite(wx.tempF) ? Number(wx.tempF) : 55;
+    const hum = isFinite(wx.humidityPct) ? Math.max(0, Math.min(100, Number(wx.humidityPct))) / 100 : 0.5;
+    const windMph = isFinite(wx.windMph) ? Math.max(0, Number(wx.windMph)) : 0;
+    let mult = 1.0;
+    if (tempF > 52) {
+      const perDeg = 0.0022 + 0.0032 * hum * hum;
+      mult += (tempF - 52) * perDeg;
+    } else if (tempF < 34) {
+      mult += (34 - tempF) * 0.0012;
+    }
+    if (windMph > 10) {
+      mult += Math.min(0.045, (windMph - 10) * 0.0022);
+    }
+    return Math.max(0.98, Math.min(1.16, mult));
+  }
+
+  function projectOntoCourse(sourceRow, targetCourseSlug, targetDistance, athleteExp) {
     if (!sourceRow || sourceRow.timeSec == null) return null;
+    const exp = athleteExp && isFinite(athleteExp) ? Math.max(1.01, Math.min(1.12, athleteExp)) : RIEGEL;
     const srcDist = sourceRow.distance ? parseInt(sourceRow.distance, 10) : 5000;
     const srcCourse = sourceRow.course_slug || (state.meetsMap[sourceRow.meet_slug] && state.meetsMap[sourceRow.meet_slug].course_slug) || "";
     const sourceBoost = sourceRow._msm && Number(sourceRow._msm.boost) > 0
       ? Number(sourceRow._msm.boost)
       : (state.factors.course[srcCourse] || 1.0);
-    const targetFactor = state.factors.course[targetCourseSlug] || 1.0;
-    const neutral5k = riegel(sourceRow.timeSec, srcDist, 5000) / sourceBoost;
-    const target5k = neutral5k * targetFactor;
-    return riegel(target5k, 5000, targetDistance);
+    const targetFactor = state.factors.course[targetCourseSlug]
+      || (state.coursesMap[targetCourseSlug] && difficultyLabelFactor(state.coursesMap[targetCourseSlug].difficulty))
+      || 1.0;
+    const surfMult = surfaceFactorForCourse(targetCourseSlug);
+    const neutral5k = (sourceRow.timeSec * Math.pow(5000 / srcDist, exp)) / sourceBoost;
+    const target5k = neutral5k * targetFactor * surfMult;
+    return target5k * Math.pow((targetDistance || 5000) / 5000, exp);
   }
 
   // Best projected time for an athlete onto a course.
-  // basis: "recent" (weighted last three efforts, default), "adjusted"
-  // (best course-adjusted effort), or "raw" (fastest raw time diagnostic).
-  function athleteProjectedTime(summary, courseSlug, distance, basis) {
+  // basis:
+  //   • "smart" / "recent" (multi-factor form + trajectory + course affinity + personal Riegel)
+  //   • "adjusted" (best course-adjusted effort)
+  //   • "raw" (fastest raw time diagnostic)
+  function athleteProjectedTime(summary, courseSlug, distance, basis, simOpts) {
     if (!summary || !summary.rows.length) return null;
-    const timed = summary.rows.filter((r) => r.timeSec != null).slice().sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")));
+    const timed = summary.rows
+      .filter((r) => r.timeSec != null && r.timeSec > 0)
+      .slice()
+      .sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")));
     if (!timed.length) return null;
+
+    const personalExp = personalRiegelExponent(summary) || RIEGEL;
+    const wxMult = simOpts && simOpts.weather ? simWeatherMultiplier(simOpts.weather) : 1.0;
+
     if (basis === "raw") {
       const best = timed.slice().sort((a, b) => a.timeSec - b.timeSec)[0];
-      return best ? { timeSec: best.timeSec, source: best, projected: false } : null;
+      return best ? {
+        timeSec: best.timeSec * wxMult,
+        source: best,
+        projected: false,
+        uncertaintySec: 12,
+        factors: { basis: "raw", personalExp, weatherMult: wxMult, trajectorySec: 0, courseAffinitySec: 0 }
+      } : null;
     }
-    const projected = timed.map((r) => ({ source: r, timeSec: projectOntoCourse(r, courseSlug, distance) })).filter((x) => x.timeSec != null);
+
+    const projected = timed
+      .map((r) => ({ source: r, timeSec: projectOntoCourse(r, courseSlug, distance, personalExp) }))
+      .filter((x) => x.timeSec != null);
     if (!projected.length) return null;
+
+    // Measure runner's race-to-race consistency (standard deviation of projected times)
+    const pTimes = projected.map((x) => x.timeSec);
+    const pMean = pTimes.reduce((s, x) => s + x, 0) / pTimes.length;
+    const variance = pTimes.length >= 2
+      ? pTimes.reduce((s, x) => s + (x - pMean) * (x - pMean), 0) / pTimes.length
+      : 144; // default ±12s when only 1 race
+    const uncertaintySec = Math.max(4.5, Math.min(28, Math.sqrt(variance)));
+
     if (basis === "adjusted") {
       const best = projected.slice().sort((a, b) => a.timeSec - b.timeSec)[0];
-      return { timeSec: best.timeSec, source: best.source, projected: true };
+      return {
+        timeSec: best.timeSec * wxMult,
+        source: best.source,
+        projected: true,
+        sourceCount: 1,
+        uncertaintySec,
+        factors: { basis: "adjusted", personalExp, weatherMult: wxMult, trajectorySec: 0, courseAffinitySec: 0 }
+      };
     }
-    // Recent form is deliberately not a PR: 50/30/20% over the latest three
-    // usable races, with fewer races re-normalized instead of invented.
-    const recent = projected.slice(0, 3);
-    const weights = [0.5, 0.3, 0.2].slice(0, recent.length);
+
+    // "recent" or "smart": Exponential recency blend over up to 4 races (48% / 27% / 15% / 10%)
+    // blended with peak adjusted fitness so one off-day doesn't tank a top contender.
+    const recent = projected.slice(0, 4);
+    const weights = [0.48, 0.27, 0.15, 0.10].slice(0, recent.length);
     const weightTotal = weights.reduce((s, w) => s + w, 0);
-    const timeSec = recent.reduce((s, x, i) => s + x.timeSec * weights[i], 0) / weightTotal;
-    return { timeSec, source: recent[0].source, projected: true, sourceCount: recent.length };
+    const recencyAvg = recent.reduce((s, x, i) => s + x.timeSec * weights[i], 0) / weightTotal;
+    const bestProj = projected.slice().sort((a, b) => a.timeSec - b.timeSec)[0].timeSec;
+
+    // Blend 78% recency form + 22% best adjusted fitness
+    let baseTime = recencyAvg * 0.78 + bestProj * 0.22;
+
+    // Factor A: Season trajectory momentum (from dated MSM ratings)
+    let trajectorySec = 0;
+    const useTrajectory = !simOpts || simOpts.includeTrajectory !== false;
+    if (useTrajectory && summary.forecast && isFinite(summary.forecast.slopePerWeek) && projected.length >= 2) {
+      // Convert rating points/week into seconds over the next ~1.5 weeks (1 MSM pt ≈ 0.27s at 5K)
+      const ptsDelta = Math.max(-14, Math.min(14, summary.forecast.slopePerWeek * 1.4));
+      trajectorySec = -ptsDelta * 0.26 * ((distance || 5000) / 5000);
+      baseTime += trajectorySec;
+    }
+
+    // Factor B: Course-specific affinity (if the runner has actually raced on targetCourseSlug)
+    let courseAffinitySec = 0;
+    if (courseSlug) {
+      const onCourse = projected.filter((x) => {
+        const ck = x.source.course_slug || (state.meetsMap[x.source.meet_slug] && state.meetsMap[x.source.meet_slug].course_slug) || "";
+        return ck && ck === courseSlug;
+      });
+      if (onCourse.length) {
+        const courseBest = Math.min(...onCourse.map((x) => x.timeSec));
+        // 18% pull toward their proven performance on this exact course
+        courseAffinitySec = (courseBest - baseTime) * 0.18;
+        baseTime += courseAffinitySec;
+      }
+    }
+
+    const finalTime = baseTime * wxMult;
+    return {
+      timeSec: finalTime,
+      source: recent[0].source,
+      projected: true,
+      sourceCount: recent.length,
+      uncertaintySec,
+      factors: {
+        basis: basis || "recent",
+        personalExp,
+        weatherMult: wxMult,
+        trajectorySec,
+        courseAffinitySec,
+        recencyAvg,
+        bestProj,
+      },
+    };
   }
 
   // Build the entrant list for one team.
-  // includedNames: optional Set/array of athlete names to include (else top 7 by time).
-  // sourceMeetSlugs: optional meet-result sample selected by the coach. When
-  // present, only efforts from those meets are used; this makes the simulator
-  // reproducible and prevents a lifetime/PR lookup from sneaking in.
-  function teamEntrants(schoolSlug, gender, season, courseSlug, distance, basis, includedNames, sourceMeetSlugs) {
+  function teamEntrants(schoolSlug, gender, season, courseSlug, distance, basis, includedNames, sourceMeetSlugs, simOpts) {
     const roster = rosterForSchool(schoolSlug, gender, season);
     const sourceSet = sourceMeetSlugs && sourceMeetSlugs.length ? new Set(sourceMeetSlugs) : null;
     let entrants = roster.map((s) => {
       const teamRows = s.rows.filter((r) => r.school_slug === schoolSlug && (!sourceSet || sourceSet.has(r.meet_slug)));
       if (!teamRows.length) return null;
       const teamSummary = { ...s, rows: teamRows };
-      const t = athleteProjectedTime(teamSummary, courseSlug, distance, basis);
-      return t ? { name: s.name, schoolSlug, timeSec: t.timeSec, projected: t.projected, source: t.source, sourceCount: t.sourceCount || 1, summary: s } : null;
+      const t = athleteProjectedTime(teamSummary, courseSlug, distance, basis, simOpts);
+      return t ? {
+        name: s.name,
+        schoolSlug,
+        timeSec: t.timeSec,
+        uncertaintySec: t.uncertaintySec || 10,
+        projected: t.projected,
+        source: t.source,
+        sourceCount: t.sourceCount || 1,
+        factors: t.factors || {},
+        summary: s
+      } : null;
     }).filter(Boolean).sort((a, b) => a.timeSec - b.timeSec);
     if (includedNames && includedNames.length) {
       const set = new Set(includedNames.map(norm));
@@ -554,22 +699,40 @@
     } else {
       entrants = entrants.slice(0, 7); // default: top 7
     }
+
+    // Pack-drafting synergy: teammates projected within 8 seconds of the runner
+    // ahead of them get a realistic Cross Country pack-running boost (up to 1.6s).
+    const usePack = !simOpts || simOpts.includePackSynergy !== false;
+    if (usePack && basis !== "raw" && entrants.length >= 2) {
+      for (let i = 1; i < entrants.length; i++) {
+        const gap = entrants[i].timeSec - entrants[i - 1].timeSec;
+        if (gap >= 0 && gap <= 8.5) {
+          const pull = Math.min(1.6, (8.5 - gap) * 0.22);
+          entrants[i].timeSec -= pull;
+          entrants[i].factors = Object.assign({}, entrants[i].factors, { packBonusSec: -pull });
+        }
+      }
+      entrants.sort((a, b) => a.timeSec - b.timeSec);
+    }
     return entrants;
   }
 
   // Run the full simulation. teams: [{schoolSlug, includedNames?}].
-  // Returns { field:[{...place, scoringPlace}], teams:[{school, score, ...}], distance, courseSlug }.
-  // Scoring mirrors meet.html: displacement scoring (non-scorers still take a
-  // place); teams need 5+ finishers to score.
+  // Returns { field:[{...place, scoringPlace}], teams:[{school, score, winProb, ...}], distance, courseSlug }.
   function simulateMeet(opts) {
     const { teamList, gender, season, courseSlug, basis } = opts;
     const sourceMeetSlugs = Array.isArray(opts.sourceMeetSlugs) ? opts.sourceMeetSlugs : null;
     const distance = opts.distance || (state.coursesMap[courseSlug] && parseInt(state.coursesMap[courseSlug].distance, 10)) || 5000;
+    const simOpts = {
+      weather: opts.weather || null,
+      includeTrajectory: opts.includeTrajectory !== false,
+      includePackSynergy: opts.includePackSynergy !== false,
+    };
 
     // Assemble the field.
     let field = [];
     teamList.forEach((t) => {
-      const ents = teamEntrants(t.schoolSlug, gender, season, courseSlug, distance, basis, t.includedNames, sourceMeetSlugs);
+      const ents = teamEntrants(t.schoolSlug, gender, season, courseSlug, distance, basis, t.includedNames, sourceMeetSlugs, simOpts);
       field = field.concat(ents);
     });
     field.sort((a, b) => a.timeSec - b.timeSec);
@@ -579,9 +742,6 @@
     const bySchool = {};
     field.forEach((e) => { (bySchool[e.schoolSlug] = bySchool[e.schoolSlug] || []).push(e); });
     const scoringSchools = new Set(Object.keys(bySchool).filter((s) => bySchool[s].length >= 5));
-    // Meet scoring is based on absolute finish places. Incomplete teams still
-    // occupy places and displace complete teams; they simply do not receive a
-    // team score themselves.
     field.forEach((e) => { e.scoringPlace = scoringSchools.has(e.schoolSlug) ? e.place : null; });
 
     const teams = Object.keys(bySchool).map((slug) => {
@@ -600,6 +760,7 @@
         score, complete, teamAvg, spread15, spread17,
         top5, top7, depth: runners.length,
         sixth: runners[5] || null, seventh: runners[6] || null,
+        winProb: 0, podiumProb: 0, scoreRange: null,
       };
     }).sort((a, b) => {
       if (a.score == null && b.score == null) return (a.teamAvg ?? Infinity) - (b.teamAvg ?? Infinity);
@@ -610,7 +771,67 @@
       return a6 - b6;
     });
 
-    return { field, teams, distance, courseSlug, basis, sourceMeetSlugs: sourceMeetSlugs || [] };
+    // Monte Carlo confidence simulation (250 trials using each runner's historical consistency σ)
+    const completeList = teams.filter((t) => t.complete);
+    if (completeList.length >= 2 && field.length >= 10) {
+      const trials = 250;
+      const wins = {}, podiums = {}, scoreSamples = {};
+      completeList.forEach((t) => { wins[t.schoolSlug] = 0; podiums[t.schoolSlug] = 0; scoreSamples[t.schoolSlug] = []; });
+
+      // Deterministic pseudo-random generator so repeated clicks give identical probabilities
+      let seed = 1337;
+      const randNorm = () => {
+        seed = (seed * 1664525 + 1013904223) >>> 0;
+        const u1 = Math.max(1e-6, seed / 4294967296);
+        seed = (seed * 1664525 + 1013904223) >>> 0;
+        const u2 = seed / 4294967296;
+        return Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+      };
+
+      for (let t = 0; t < trials; t++) {
+        const simRunners = field.map((e) => ({
+          schoolSlug: e.schoolSlug,
+          simTime: e.timeSec + randNorm() * (e.uncertaintySec || 10),
+        })).sort((a, b) => a.simTime - b.simTime);
+
+        const counts = {}, sums = {}, sixthPlace = {};
+        simRunners.forEach((r, idx) => {
+          const s = r.schoolSlug;
+          if (!scoringSchools.has(s)) return;
+          const c = (counts[s] || 0) + 1;
+          counts[s] = c;
+          if (c <= 5) sums[s] = (sums[s] || 0) + (idx + 1);
+          else if (c === 6) sixthPlace[s] = idx + 1;
+        });
+
+        const ranked = completeList.map((tm) => ({
+          slug: tm.schoolSlug,
+          sc: sums[tm.schoolSlug] || 9999,
+          six: sixthPlace[tm.schoolSlug] || 9999,
+        })).sort((a, b) => a.sc - b.sc || a.six - b.six);
+
+        ranked.forEach((r, idx) => {
+          scoreSamples[r.slug].push(r.sc);
+          if (idx === 0) wins[r.slug]++;
+          if (idx < 3) podiums[r.slug]++;
+        });
+      }
+
+      completeList.forEach((tm) => {
+        const s = tm.schoolSlug;
+        tm.winProb = Math.round((wins[s] / trials) * 100);
+        tm.podiumProb = Math.round((podiums[s] / trials) * 100);
+        const arr = scoreSamples[s].sort((a, b) => a - b);
+        if (arr.length) {
+          tm.scoreRange = [arr[Math.floor(arr.length * 0.15)], arr[Math.floor(arr.length * 0.85)]];
+        }
+      });
+    } else if (completeList.length === 1) {
+      completeList[0].winProb = 100;
+      completeList[0].podiumProb = 100;
+    }
+
+    return { field, teams, distance, courseSlug, basis, sourceMeetSlugs: sourceMeetSlugs || [], weather: simOpts.weather };
   }
 
   // =====================================================================

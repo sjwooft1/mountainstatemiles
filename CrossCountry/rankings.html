@@ -17,6 +17,7 @@
   <!-- Required for PDF Export (matches meet.html) -->
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.7.1/jspdf.plugin.autotable.min.js"></script>
+  <script defer src="/assets/pdf-branding.js"></script>
 
   <style>
     /* --- Ranking-mode toggle --- */
@@ -648,49 +649,13 @@
           if (currentClassification !== 'all') subParts.push(`Class ${currentClassification}`);
           const subtitle = subParts.join('  •  ');
 
-          const getBase64Image = async (url) => {
-              try {
-                  const response = await fetch(url);
-                  const blob = await response.blob();
-                  return new Promise((resolve) => {
-                      const reader = new FileReader();
-                      reader.onloadend = () => resolve(reader.result);
-                      reader.onerror = () => resolve(null);
-                      reader.readAsDataURL(blob);
-                  });
-              } catch (e) {
-                  console.warn('Could not load logo for PDF:', e);
-                  return null;
-              }
-          };
-          const logoBase64 = await getBase64Image('/assets/images/logo.svg');
-
-          const drawHeader = () => {
-              doc.setFillColor(bc[0], bc[1], bc[2]);
-              doc.rect(0, 0, doc.internal.pageSize.getWidth(), 24, 'F');
-
-              let textX = 14;
-              if (logoBase64) {
-                  try {
-                      doc.addImage(logoBase64, 'SVG', 14, 4, 16, 16);
-                      textX = 36;
-                  } catch (e) {
-                      console.warn('Failed to draw image to PDF', e);
-                  }
-              }
-
-              doc.setFontSize(15);
-              doc.setFont('helvetica', 'bold');
-              doc.setTextColor(255, 255, 255);
-              doc.text(mainTitle, textX, subtitle ? 11 : 14);
-
-              if (subtitle) {
-                  doc.setFontSize(10);
-                  doc.setFont('helvetica', 'normal');
-                  doc.setTextColor(220, 220, 220);
-                  doc.text(subtitle, textX, 18);
-              }
-          };
+          // Branded header: runner silhouette + mountainstate.svg wordmark on
+          // the coloured band (handled by the shared MSMPdf helper).
+          const drawHeader = await MSMPdf.brandHeader(doc, {
+              title: mainTitle,
+              subtitle: subtitle,
+              color: bc
+          });
 
           const startY = 30;
 
@@ -746,6 +711,7 @@
               });
           }
 
+          MSMPdf.finalize(doc);
           doc.save(`${slugify(mainTitle)}_${rankMode}_${currentSeason}.pdf`);
       }
 

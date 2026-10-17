@@ -1,0 +1,1154 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>XC Virtual Meet Simulator | Mountain State Miles</title>
+  <meta name="description" content="Simulate West Virginia Cross Country meets with multi-factor time predictions — course terrain, surface footing, weather, personal Riegel scaling, season trajectory, and Monte Carlo win probabilities." />
+
+  <link rel="icon" type="image/png" href="/assets/images/favicon/favicon-96x96.png" sizes="96x96" />
+  <link rel="icon" type="image/svg+xml" href="/assets/images/favicon/favicon.svg" />
+  <link rel="shortcut icon" href="/assets/images/favicon/favicon.ico" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/images/favicon/apple-touch-icon.png" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link rel="stylesheet" href="/assets/main.css" />
+
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.7.1/jspdf.plugin.autotable.min.js"></script>
+  <script defer src="/assets/pdf-branding.js"></script>
+  <script defer src="/assets/theme-toggle.js"></script>
+  <script defer src="/assets/components.js"></script>
+
+  <style>
+    .sim-page {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 100px 1.25rem 4rem;
+    }
+
+    /* Hero Masthead */
+    .sim-hero {
+      background: linear-gradient(135deg, #1b3b2f 0%, #2c5a47 55%, #173328 100%);
+      color: #fbf7ef;
+      border-radius: var(--radius-xl, 24px);
+      padding: 2.2rem 2.4rem;
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 1.75rem;
+      box-shadow: 0 14px 36px rgba(23, 51, 40, 0.25);
+    }
+    .sim-hero::before {
+      content: "";
+      position: absolute;
+      right: -80px;
+      top: -80px;
+      width: 300px;
+      height: 300px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(224, 166, 63, 0.25), transparent 70%);
+      pointer-events: none;
+    }
+    .sim-hero-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+      position: relative;
+      z-index: 1;
+    }
+    .sim-kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.75rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: var(--msm-gold, #e0a63f);
+      margin-bottom: 0.5rem;
+    }
+    .sim-hero h1 {
+      font-family: var(--font-display);
+      font-size: clamp(2rem, 4.5vw, 3rem);
+      font-weight: 800;
+      color: #fbf7ef;
+      margin: 0 0 0.45rem;
+      letter-spacing: -0.02em;
+    }
+    .sim-hero p {
+      color: rgba(251, 247, 239, 0.84);
+      max-width: 680px;
+      font-size: 0.98rem;
+      margin: 0;
+      line-height: 1.55;
+    }
+    .sim-hero-art {
+      height: 64px;
+      width: auto;
+      opacity: 0.9;
+    }
+    .sim-pills {
+      display: flex;
+      gap: 0.55rem;
+      flex-wrap: wrap;
+      margin-top: 1.25rem;
+      position: relative;
+      z-index: 1;
+    }
+    .sim-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 0.35rem 0.8rem;
+      border-radius: 999px;
+      background: rgba(251, 247, 239, 0.11);
+      border: 1px solid rgba(251, 247, 239, 0.2);
+      font-size: 0.76rem;
+      font-weight: 700;
+      color: #fbf7ef;
+    }
+    .sim-pill i {
+      color: var(--msm-gold, #e0a63f);
+    }
+
+    /* Main Grid */
+    .sim-grid {
+      display: grid;
+      grid-template-columns: 360px minmax(0, 1fr);
+      gap: 1.5rem;
+      align-items: start;
+    }
+    @media (max-width: 960px) {
+      .sim-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Controls Sidebar */
+    .sim-panel {
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg, 18px);
+      padding: 1.35rem;
+      box-shadow: 0 4px 18px var(--shadow-light);
+    }
+    .sim-panel-title {
+      font-family: var(--font-display);
+      font-size: 1.15rem;
+      font-weight: 800;
+      margin: 0 0 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+    }
+    .ctrl-group {
+      margin-bottom: 1rem;
+    }
+    .ctrl-label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.72rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-tertiary);
+      margin-bottom: 0.38rem;
+    }
+    .ctrl-select,
+    .ctrl-input {
+      width: 100%;
+      padding: 0.62rem 0.8rem;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      font-family: inherit;
+      font-size: 0.9rem;
+      font-weight: 600;
+      outline: none;
+    }
+    .ctrl-select:focus,
+    .ctrl-input:focus {
+      border-color: var(--primary);
+    }
+
+    .seg-bar {
+      display: flex;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 3px;
+      gap: 3px;
+    }
+    .seg-btn {
+      flex: 1;
+      padding: 0.48rem 0.6rem;
+      border: none;
+      background: transparent;
+      color: var(--text-secondary);
+      font-family: inherit;
+      font-size: 0.8rem;
+      font-weight: 800;
+      border-radius: 7px;
+      cursor: pointer;
+    }
+    .seg-btn.active {
+      background: var(--primary);
+      color: #fff;
+    }
+
+    /* School checklist */
+    .school-picker-box {
+      max-height: 220px;
+      overflow-y: auto;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--bg-secondary);
+      margin-top: 0.45rem;
+    }
+    .school-opt {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      padding: 0.48rem 0.7rem;
+      border-bottom: 1px solid var(--border-light);
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+    .school-opt:last-child {
+      border-bottom: none;
+    }
+    .school-opt:hover {
+      background: var(--bg-primary);
+    }
+    .school-opt img {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      object-fit: contain;
+      background: #fff;
+      padding: 1px;
+      border: 1px solid var(--border);
+    }
+    .school-opt .cls-tag {
+      margin-left: auto;
+      font-size: 0.66rem;
+      font-weight: 800;
+      color: var(--text-tertiary);
+    }
+
+    /* Weather & Model Toggles */
+    .wx-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.65rem;
+    }
+    .toggle-check {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.83rem;
+      font-weight: 700;
+      color: var(--text-secondary);
+      margin-top: 0.45rem;
+      cursor: pointer;
+    }
+    .toggle-check input {
+      accent-color: var(--primary);
+      width: 15px;
+      height: 15px;
+    }
+
+    .btn-run-sim {
+      width: 100%;
+      padding: 0.85rem 1rem;
+      border-radius: 12px;
+      border: none;
+      background: var(--primary);
+      color: #fff;
+      font-family: var(--font-display);
+      font-size: 1.02rem;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.55rem;
+      box-shadow: 0 6px 20px rgba(63, 125, 99, 0.32);
+      margin-top: 0.75rem;
+    }
+    .btn-run-sim:hover {
+      filter: brightness(1.06);
+      transform: translateY(-1px);
+    }
+    .quick-presets {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-top: 0.5rem;
+    }
+    .preset-chip {
+      font-size: 0.72rem;
+      font-weight: 800;
+      padding: 0.28rem 0.6rem;
+      border-radius: 99px;
+      border: 1px solid var(--border);
+      background: var(--bg-secondary);
+      color: var(--text-secondary);
+      cursor: pointer;
+    }
+    .preset-chip:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    /* Right Output Area */
+    .sim-output {
+      display: flex;
+      flex-direction: column;
+      gap: 1.35rem;
+    }
+    .sim-card {
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg, 18px);
+      padding: 1.35rem;
+      box-shadow: 0 4px 18px var(--shadow-light);
+    }
+    .sim-card-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.8rem;
+      flex-wrap: wrap;
+      margin-bottom: 1rem;
+      padding-bottom: 0.65rem;
+      border-bottom: 2px solid var(--border);
+    }
+    .sim-card-head h2 {
+      font-size: 1.25rem;
+      font-weight: 800;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .sim-card-head h2 i {
+      color: var(--primary);
+    }
+
+    /* Podium Banner Cards */
+    .podium-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 0.9rem;
+      margin-bottom: 1.15rem;
+    }
+    .pod-box {
+      border: 1.5px solid var(--border);
+      border-radius: 14px;
+      padding: 1rem 1.1rem;
+      background: var(--bg-secondary);
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+    .pod-box.rank-1 {
+      border-color: var(--msm-gold, #e0a63f);
+      background: linear-gradient(135deg, rgba(224, 166, 63, 0.14), var(--bg-primary));
+    }
+    .pod-box.rank-2 {
+      border-color: #a8b2bd;
+    }
+    .pod-box.rank-3 {
+      border-color: #cd8c52;
+    }
+    .pod-top {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+    }
+    .pod-top img {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      object-fit: contain;
+      background: #fff;
+      padding: 2px;
+      border: 1px solid var(--border);
+    }
+    .pod-place {
+      font-family: var(--font-display);
+      font-size: 1.55rem;
+      font-weight: 800;
+      color: var(--primary);
+      margin-left: auto;
+    }
+    .pod-box.rank-1 .pod-place {
+      color: var(--msm-gold, #e0a63f);
+    }
+    .pod-score-line {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      margin-top: 0.25rem;
+    }
+    .pod-pts {
+      font-size: 1.4rem;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+    }
+    .pod-prob {
+      font-size: 0.76rem;
+      font-weight: 800;
+      padding: 0.2rem 0.55rem;
+      border-radius: 99px;
+      background: rgba(63, 125, 99, 0.15);
+      color: var(--primary);
+    }
+
+    /* Pack Compression Visual Bars */
+    .pack-vis-row {
+      display: grid;
+      grid-template-columns: 165px minmax(0, 1fr) 90px;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.55rem 0;
+      border-bottom: 1px dashed var(--border-light);
+    }
+    .pack-vis-row:last-child {
+      border-bottom: none;
+    }
+    @media (max-width: 640px) {
+      .pack-vis-row {
+        grid-template-columns: 120px minmax(0, 1fr) 70px;
+      }
+    }
+    .pack-track {
+      position: relative;
+      height: 26px;
+      background: var(--bg-secondary);
+      border-radius: 999px;
+      border: 1px solid var(--border);
+    }
+    .pack-span {
+      position: absolute;
+      top: 5px;
+      bottom: 5px;
+      background: rgba(63, 125, 99, 0.28);
+      border-radius: 999px;
+    }
+    .pack-dot {
+      position: absolute;
+      top: 50%;
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      background: var(--primary);
+      border: 2px solid var(--bg-primary);
+      cursor: pointer;
+    }
+    .pack-dot.sixth {
+      background: var(--msm-clay, #e0794f);
+      opacity: 0.8;
+    }
+
+    /* Factor Badges */
+    .f-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      font-size: 0.65rem;
+      font-weight: 800;
+      padding: 2px 6px;
+      border-radius: 6px;
+      background: var(--bg-secondary);
+      color: var(--text-secondary);
+      margin-left: 4px;
+      vertical-align: middle;
+    }
+    .f-badge.good {
+      background: rgba(63, 125, 99, 0.15);
+      color: var(--primary);
+    }
+    .f-badge.gold {
+      background: rgba(224, 166, 63, 0.18);
+      color: #b57c1e;
+    }
+    html[data-theme="dark"] .f-badge.gold {
+      color: #f0be63;
+    }
+
+    .export-btns {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+    .btn-sm {
+      padding: 0.42rem 0.8rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      font-size: 0.78rem;
+      font-weight: 800;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn-sm:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+  </style>
+</head>
+<body>
+  <div id="global-header"></div>
+  <script src="/assets/msm-loader.js"></script>
+
+  <main class="sim-page">
+    <!-- Hero Banner -->
+    <section class="sim-hero">
+      <div class="sim-hero-top">
+        <div>
+          <div class="sim-kicker"><i class="fa-solid fa-microchip"></i> Multi-Factor XC Race Engine</div>
+          <h1>XC Virtual Meet Simulator</h1>
+          <p>
+            Project team scores, individual finish order, and Monte Carlo win probabilities on any West Virginia course.
+            Powered by course terrain calibration, personal Riegel endurance curves, season trajectory momentum, pack-drafting synergy, and race-day weather.
+          </p>
+        </div>
+        <img src="/assets/images/mountainstate.svg" alt="Mountain State Miles" class="sim-hero-art" />
+      </div>
+      <div class="sim-pills">
+        <span class="sim-pill"><i class="fa-solid fa-mountain"></i> Course Terrain &amp; Footing</span>
+        <span class="sim-pill"><i class="fa-solid fa-arrow-trend-up"></i> Season Trajectory Momentum</span>
+        <span class="sim-pill"><i class="fa-solid fa-people-group"></i> Teammate Pack-Drafting Pull</span>
+        <span class="sim-pill"><i class="fa-solid fa-dice"></i> 250-Trial Monte Carlo Win %</span>
+      </div>
+    </section>
+
+    <div class="sim-grid">
+      <!-- Left Configuration Panel -->
+      <aside class="sim-panel">
+        <div class="sim-panel-title">
+          <span><i class="fa-solid fa-sliders" style="color:var(--primary);"></i> Race Setup</span>
+          <span id="sim-status-tag" style="font-size:0.72rem;color:var(--text-tertiary);font-family:var(--font-sans);">Loading DB…</span>
+        </div>
+
+        <div class="ctrl-group">
+          <div class="ctrl-label"><span>Division</span></div>
+          <div class="seg-bar" id="xc-sim-gender">
+            <button type="button" class="seg-btn active" data-g="M">Boys Varsity</button>
+            <button type="button" class="seg-btn" data-g="F">Girls Varsity</button>
+          </div>
+        </div>
+
+        <div class="ctrl-group">
+          <div class="ctrl-label"><span>Field Mode</span></div>
+          <div class="seg-bar" id="xc-sim-mode">
+            <button type="button" class="seg-btn active" data-m="class">By Class / Preset</button>
+            <button type="button" class="seg-btn" data-m="meet">From Meet</button>
+            <button type="button" class="seg-btn" data-m="custom">Custom Pick</button>
+          </div>
+        </div>
+
+        <!-- Mode 1: Class / Quick Presets -->
+        <div id="mode-box-class" class="ctrl-group">
+          <div class="ctrl-label"><span>WVSSAC Classification</span></div>
+          <select id="xc-sim-class" class="ctrl-select">
+            <option value="ALL">All WV Schools (Statewide Open)</option>
+            <option value="AAAA">Class AAAA Championship</option>
+            <option value="AAA" selected>Class AAA Championship</option>
+            <option value="AA">Class AA Championship</option>
+            <option value="A">Class A Championship</option>
+          </select>
+        </div>
+
+        <!-- Mode 2: Meet Field -->
+        <div id="mode-box-meet" class="ctrl-group" style="display:none;">
+          <div class="ctrl-label"><span>Select Scheduled / Past Meet</span></div>
+          <select id="xc-sim-meet" class="ctrl-select">
+            <option value="">Loading meets…</option>
+          </select>
+        </div>
+
+        <!-- Mode 3: Custom School Picker -->
+        <div id="mode-box-custom" class="ctrl-group" style="display:none;">
+          <div class="ctrl-label">
+            <span>Select Teams</span>
+            <span id="custom-count-lbl">0 selected</span>
+          </div>
+          <input type="search" id="school-filter-input" class="ctrl-input" placeholder="Filter schools…" />
+          <div class="quick-presets">
+            <button type="button" class="preset-chip" id="btn-select-top10">Top 10 Teams</button>
+            <button type="button" class="preset-chip" id="btn-clear-schools">Clear All</button>
+          </div>
+          <div class="school-picker-box" id="school-checklist"></div>
+        </div>
+
+        <div class="ctrl-group">
+          <div class="ctrl-label"><span>Target Course &amp; Venue</span></div>
+          <select id="xc-sim-course" class="ctrl-select">
+            <option value="cabell-midland">Cabell Midland (WV State Meet Course)</option>
+          </select>
+        </div>
+
+        <div class="ctrl-group">
+          <div class="ctrl-label"><span>Prediction Model Basis</span></div>
+          <select id="xc-sim-basis" class="ctrl-select">
+            <option value="recent" selected>Multi-Factor Smart Form (Recency + Peak + Trajectory + Course)</option>
+            <option value="adjusted">Peak Course-Adjusted Season Best</option>
+            <option value="raw">Raw Fastest Time (Diagnostic What-If)</option>
+          </select>
+        </div>
+
+        <div class="ctrl-group">
+          <div class="ctrl-label"><span>Season</span></div>
+          <select id="xc-sim-season" class="ctrl-select"></select>
+        </div>
+
+        <!-- Race-Day Weather & Multi-Factor Controls -->
+        <div class="ctrl-group" style="border-top:1px solid var(--border);padding-top:0.85rem;">
+          <div class="ctrl-label">
+            <span>Race-Day Conditions</span>
+            <span id="wx-impact-lbl" style="color:var(--primary);">Ideal (1.00×)</span>
+          </div>
+          <div class="wx-grid">
+            <div>
+              <label class="ctrl-label" style="font-size:0.65rem;">Temp (°F): <b id="lbl-temp">55°F</b></label>
+              <input type="range" id="wx-temp" min="32" max="90" value="55" style="width:100%;accent-color:var(--primary);" />
+            </div>
+            <div>
+              <label class="ctrl-label" style="font-size:0.65rem;">Humidity: <b id="lbl-hum">50%</b></label>
+              <input type="range" id="wx-hum" min="20" max="95" value="50" style="width:100%;accent-color:var(--primary);" />
+            </div>
+          </div>
+          <label class="toggle-check">
+            <input type="checkbox" id="chk-trajectory" checked />
+            Include Season Trajectory Momentum
+          </label>
+          <label class="toggle-check">
+            <input type="checkbox" id="chk-pack" checked />
+            Include Teammate Pack-Drafting Synergy
+          </label>
+        </div>
+
+        <button type="button" class="btn-run-sim" id="btn-run-xc-sim">
+          <i class="fa-solid fa-play"></i> Run Virtual Meet
+        </button>
+      </aside>
+
+      <!-- Right Simulation Results -->
+      <section class="sim-output" id="sim-output">
+        <div class="sim-card" id="sim-placeholder">
+          <div style="text-align:center;padding:3rem 1rem;color:var(--text-secondary);">
+            <i class="fa-solid fa-stopwatch" style="font-size:2.4rem;color:var(--primary);margin-bottom:0.75rem;"></i>
+            <h3 style="margin-bottom:0.4rem;">Calibrating West Virginia XC Performance Models…</h3>
+            <p style="margin:0;font-size:0.9rem;">Loading course difficulty factors, athlete histories, and team rosters.</p>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <div id="global-footer"></div>
+
+  <!-- Firebase + Shared MSM Rating & Portal Engine -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+  <script src="/CrossCountry/firebase-config.js"></script>
+  <script src="/CrossCountry/courses/courses-data.js"></script>
+  <script src="/scripts/msm-rating.js"></script>
+  <script src="/Portal/portal-engine.js"></script>
+
+  <script>
+    (function () {
+      "use strict";
+
+      const esc = (s) => String(s == null ? "" : s)
+        .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+
+      let activeGender = "M";
+      let activeMode = "class";
+      let selectedCustomSlugs = new Set();
+      let lastSimOutput = null;
+
+      function fmtTime(sec) {
+        return window.MSMEngine ? window.MSMEngine.formatTime(sec) : "—";
+      }
+      function fmtClock(sec) {
+        return window.MSMEngine ? window.MSMEngine.formatClock(sec) : "—";
+      }
+
+      function updateWeatherLabel() {
+        const tempF = Number(document.getElementById("wx-temp").value);
+        const hum = Number(document.getElementById("wx-hum").value);
+        document.getElementById("lbl-temp").textContent = tempF + "°F";
+        document.getElementById("lbl-hum").textContent = hum + "%";
+        let mult = 1.0;
+        if (tempF > 52) {
+          const h = hum / 100;
+          mult += (tempF - 52) * (0.0022 + 0.0032 * h * h);
+        } else if (tempF < 34) {
+          mult += (34 - tempF) * 0.0012;
+        }
+        const lbl = document.getElementById("wx-impact-lbl");
+        if (mult <= 1.005) {
+          lbl.textContent = "Fast / Ideal (" + mult.toFixed(3) + "×)";
+          lbl.style.color = "var(--primary)";
+        } else if (mult <= 1.03) {
+          lbl.textContent = "Warm (+" + ((mult - 1) * 100).toFixed(1) + "% time)";
+          lbl.style.color = "var(--msm-gold, #e0a63f)";
+        } else {
+          lbl.textContent = "Hot / Slow (+" + ((mult - 1) * 100).toFixed(1) + "% time)";
+          lbl.style.color = "var(--danger, #c65b46)";
+        }
+      }
+
+      function populateControls() {
+        const E = window.MSMEngine;
+        const courses = E.listCourses();
+        const courseSel = document.getElementById("xc-sim-course");
+        if (courses.length) {
+          courseSel.innerHTML = courses.map((c) => {
+            const f = E.state.factors.course[c.slug];
+            const fStr = f ? ` · ${(f >= 1 ? "+" : "") + ((f - 1) * 100).toFixed(1)}% vs neutral` : "";
+            return `<option value="${esc(c.slug)}"${c.slug.includes("cabell") ? " selected" : ""}>${esc(c.name)}${fStr}</option>`;
+          }).join("");
+        }
+
+        const seasons = E.listSeasons();
+        const seasonSel = document.getElementById("xc-sim-season");
+        seasonSel.innerHTML = seasons.map((y, i) => `<option value="${y}"${i === 0 ? " selected" : ""}>${y} Season</option>`).join("") +
+          `<option value="all">All-Time</option>`;
+
+        const meets = E.listMeets().slice(0, 60);
+        const meetSel = document.getElementById("xc-sim-meet");
+        meetSel.innerHTML = meets.map((m) => `<option value="${esc(m.slug)}">${esc(m.name)}${m.date ? " (" + String(m.date).slice(0, 10) + ")" : ""}</option>`).join("");
+
+        renderSchoolChecklist();
+      }
+
+      function renderSchoolChecklist() {
+        const E = window.MSMEngine;
+        const q = (document.getElementById("school-filter-input").value || "").toLowerCase().trim();
+        const schools = E.listSchools().filter((s) => !q || (s.name || "").toLowerCase().includes(q));
+        const box = document.getElementById("school-checklist");
+        box.innerHTML = schools.map((s) => {
+          const checked = selectedCustomSlugs.has(s.slug) ? "checked" : "";
+          const cls = s.classification || s.division || "";
+          return `<label class="school-opt">
+            <input type="checkbox" data-slug="${esc(s.slug)}" ${checked} />
+            <img src="/assets/team logos/${encodeURIComponent(s.slug)}.png" alt="" onerror="this.onerror=null;this.src='/assets/images/msmrunner.svg'" />
+            <span>${esc(s.name)}</span>
+            ${cls ? `<span class="cls-tag">${esc(cls)}</span>` : ""}
+          </label>`;
+        }).join("");
+
+        box.querySelectorAll("input[data-slug]").forEach((cb) => {
+          cb.addEventListener("change", () => {
+            if (cb.checked) selectedCustomSlugs.add(cb.dataset.slug);
+            else selectedCustomSlugs.delete(cb.dataset.slug);
+            document.getElementById("custom-count-lbl").textContent = selectedCustomSlugs.size + " selected";
+          });
+        });
+        document.getElementById("custom-count-lbl").textContent = selectedCustomSlugs.size + " selected";
+      }
+
+      function resolveTeamList() {
+        const E = window.MSMEngine;
+        const season = document.getElementById("xc-sim-season").value;
+        if (activeMode === "class") {
+          const cls = document.getElementById("xc-sim-class").value;
+          const schools = E.listSchools().filter((s) => {
+            if (cls === "ALL") return true;
+            const sc = String(s.classification || s.division || "").toUpperCase().trim();
+            return sc === cls;
+          });
+          // If classification metadata is sparse for the chosen class, fall back to top active schools
+          if (schools.length >= 2) {
+            return schools.map((s) => ({ schoolSlug: s.slug }));
+          }
+          const activeSlugs = [...new Set(E.state.results.filter((r) => r.gender === activeGender && E.seasonMatch(r, season) && r.school_slug && r.school_slug !== "unattached").map((r) => r.school_slug))];
+          return activeSlugs.slice(0, 20).map((slug) => ({ schoolSlug: slug }));
+        }
+
+        if (activeMode === "meet") {
+          const meetSlug = document.getElementById("xc-sim-meet").value;
+          const expected = E.meetExpectedTeams(meetSlug).map((t) => t.slug);
+          const raced = [...new Set(E.state.results.filter((r) => r.meet_slug === meetSlug && r.school_slug).map((r) => r.school_slug))];
+          const union = [...new Set([...expected, ...raced])].filter((s) => s && s !== "unattached");
+          return union.map((slug) => ({ schoolSlug: slug }));
+        }
+
+        return [...selectedCustomSlugs].map((slug) => ({ schoolSlug: slug }));
+      }
+
+      function runSimulation() {
+        const E = window.MSMEngine;
+        if (!E || !E.state.loaded) return;
+
+        const courseSlug = document.getElementById("xc-sim-course").value;
+        const basis = document.getElementById("xc-sim-basis").value;
+        const season = document.getElementById("xc-sim-season").value;
+        const tempF = Number(document.getElementById("wx-temp").value);
+        const humidityPct = Number(document.getElementById("wx-hum").value);
+        const includeTrajectory = document.getElementById("chk-trajectory").checked;
+        const includePackSynergy = document.getElementById("chk-pack").checked;
+
+        const teamList = resolveTeamList();
+        const sim = E.simulateMeet({
+          teamList,
+          gender: activeGender,
+          season,
+          courseSlug,
+          basis,
+          weather: { tempF, humidityPct },
+          includeTrajectory,
+          includePackSynergy,
+        });
+
+        const courseObj = E.state.coursesMap[courseSlug] || { name: courseSlug };
+        lastSimOutput = {
+          sim,
+          gender: activeGender,
+          season,
+          courseName: courseObj.name || courseSlug,
+          courseFactor: E.state.factors.course[courseSlug] || 1.0,
+        };
+        renderSimulationOutput(lastSimOutput);
+      }
+
+      function renderSimulationOutput(ctx) {
+        const out = document.getElementById("sim-output");
+        const { sim, gender, courseName, courseFactor } = ctx;
+
+        if (!sim.field.length) {
+          out.innerHTML = `<div class="sim-card"><div style="text-align:center;padding:2.5rem 1rem;color:var(--text-secondary);">No projected runners found for this filter combination. Try switching Season to All-Time or selecting additional schools.</div></div>`;
+          return;
+        }
+
+        const completeTeams = sim.teams.filter((t) => t.complete);
+        const top3 = completeTeams.slice(0, 3);
+
+        // 1. Podium Cards
+        const podiumHTML = top3.map((t, idx) => {
+          const rangeStr = t.scoreRange ? `${t.scoreRange[0]}–${t.scoreRange[1]} pts (70% CI)` : "Scoring 5";
+          return `<div class="pod-box rank-${idx + 1}">
+            <div class="pod-top">
+              <img src="/assets/team logos/${encodeURIComponent(t.schoolSlug)}.png" alt="" onerror="this.onerror=null;this.src='/assets/images/msmrunner.svg'" />
+              <div>
+                <div style="font-weight:800;font-size:1rem;line-height:1.2;">${esc(t.school)}</div>
+                <div style="font-size:0.74rem;color:var(--text-secondary);">Avg ${fmtTime(t.teamAvg)} · Spread ${fmtTime(t.spread15)}</div>
+              </div>
+              <div class="pod-place">#${idx + 1}</div>
+            </div>
+            <div class="pod-score-line">
+              <div>
+                <span class="pod-pts">${t.score} pts</span>
+                <div style="font-size:0.7rem;color:var(--text-tertiary);font-weight:700;">${rangeStr}</div>
+              </div>
+              <span class="pod-prob" title="250-trial Monte Carlo win probability">${t.winProb}% Win · ${t.podiumProb}% Podium</span>
+            </div>
+          </div>`;
+        }).join("");
+
+        // 2. Pack Compression Graphic for top 8 complete teams
+        const packTeams = completeTeams.slice(0, 8);
+        let packVisHTML = "";
+        if (packTeams.length) {
+          const allTimes = packTeams.flatMap((t) => t.top7.map((r) => r.timeSec));
+          const minT = Math.min(...allTimes) - 5;
+          const maxT = Math.max(...allTimes) + 5;
+          const spanT = Math.max(10, maxT - minT);
+
+          packVisHTML = packTeams.map((t, idx) => {
+            const firstPct = ((t.top5[0].timeSec - minT) / spanT) * 100;
+            const fifthPct = ((t.top5[4].timeSec - minT) / spanT) * 100;
+            const dots = t.top7.map((r, rIdx) => {
+              const left = ((r.timeSec - minT) / spanT) * 100;
+              return `<span class="pack-dot${rIdx >= 5 ? " sixth" : ""}" style="left:${left.toFixed(1)}%;" title="#${r.place} ${esc(r.name)} — ${fmtTime(r.timeSec)}"></span>`;
+            }).join("");
+            return `<div class="pack-vis-row">
+              <div style="font-weight:800;font-size:0.84rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                <span style="color:var(--text-tertiary);margin-right:4px;">${idx + 1}.</span>${esc(t.school)}
+              </div>
+              <div class="pack-track">
+                <div class="pack-span" style="left:${firstPct.toFixed(1)}%;width:${Math.max(1.5, fifthPct - firstPct).toFixed(1)}%;"></div>
+                ${dots}
+              </div>
+              <div style="text-align:right;font-size:0.76rem;font-weight:800;color:var(--text-secondary);font-variant-numeric:tabular-nums;">
+                Δ ${fmtTime(t.spread15)}
+              </div>
+            </div>`;
+          }).join("");
+        }
+
+        // 3. Full Team Standings Table
+        const teamRowsHTML = sim.teams.map((t, idx) => {
+          const places = t.top5.map((r) => "#" + (r.scoringPlace || r.place)).join(" · ");
+          const sixthStr = t.sixth ? `#${t.sixth.scoringPlace || t.sixth.place} (${fmtTime(t.sixth.timeSec)})` : "—";
+          return `<tr>
+            <td style="font-weight:800;">${t.complete ? idx + 1 : "INC"}</td>
+            <td>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <img src="/assets/team logos/${encodeURIComponent(t.schoolSlug)}.png" alt="" style="width:24px;height:24px;border-radius:50%;object-fit:contain;background:#fff;padding:1px;border:1px solid var(--border);" onerror="this.onerror=null;this.src='/assets/images/msmrunner.svg'" />
+                <a href="/CrossCountry/school.html?slug=${encodeURIComponent(t.schoolSlug)}" style="font-weight:800;color:var(--text-primary);">${esc(t.school)}</a>
+              </div>
+            </td>
+            <td class="mark-col" style="font-weight:800;font-size:1.02rem;">${t.score != null ? t.score : "—"}</td>
+            <td>${t.complete ? `<span class="f-badge good">${t.winProb}%</span>` : "—"}</td>
+            <td class="mark-col">${t.teamAvg != null ? fmtTime(t.teamAvg) : "—"}</td>
+            <td class="mark-col">${t.spread15 != null ? fmtTime(t.spread15) : "—"}</td>
+            <td style="font-size:0.78rem;color:var(--text-secondary);">${places}</td>
+            <td style="font-size:0.78rem;color:var(--text-tertiary);">${sixthStr}</td>
+          </tr>`;
+        }).join("");
+
+        // 4. Individual Finish Table (top 100 shown cleanly)
+        const indivRowsHTML = sim.field.slice(0, 120).map((e) => {
+          const f = e.factors || {};
+          let tags = "";
+          if (f.trajectorySec && f.trajectorySec < -0.9) {
+            tags += `<span class="f-badge good" title="Improving season rating trajectory">↗ ${Math.abs(f.trajectorySec).toFixed(1)}s</span>`;
+          }
+          if (f.courseAffinitySec && f.courseAffinitySec < -0.8) {
+            tags += `<span class="f-badge gold" title="Strong historical performance on this course">★ Venue</span>`;
+          }
+          if (f.packBonusSec && f.packBonusSec < -0.3) {
+            tags += `<span class="f-badge" title="Teammate pack-drafting pull">⚡ Pack ${f.packBonusSec.toFixed(1)}s</span>`;
+          }
+          const paceMi = fmtClock((e.timeSec / sim.distance) * 1609.34);
+          return `<tr>
+            <td style="font-weight:800;">${e.place}</td>
+            <td>
+              <a href="/CrossCountry/athlete.html?name=${encodeURIComponent(e.name)}&school=${encodeURIComponent(e.schoolSlug)}" style="font-weight:700;color:var(--text-primary);">${esc(e.name)}</a>
+              ${tags}
+            </td>
+            <td><a href="/CrossCountry/school.html?slug=${encodeURIComponent(e.schoolSlug)}" style="color:var(--text-secondary);font-size:0.86rem;">${esc((window.MSMEngine.state.schoolsMap[e.schoolSlug] || {}).name || e.schoolSlug)}</a></td>
+            <td class="mark-col" style="font-weight:800;">${fmtTime(e.timeSec)} <span style="font-size:0.72rem;color:var(--text-tertiary);font-weight:500;">±${Math.round(e.uncertaintySec || 10)}s</span></td>
+            <td class="mark-col" style="color:var(--text-secondary);">${paceMi}/mi</td>
+            <td class="mark-col" style="font-weight:700;color:var(--primary);">${e.scoringPlace ? "+" + e.scoringPlace : "—"}</td>
+          </tr>`;
+        }).join("");
+
+        const diffPct = ((courseFactor - 1) * 100).toFixed(1);
+        const courseBadge = `${courseFactor >= 1 ? "+" : ""}${diffPct}% vs neutral 5K`;
+
+        out.innerHTML = `
+          <div class="sim-card">
+            <div class="sim-card-head">
+              <div>
+                <h2><i class="fa-solid fa-trophy"></i> Projected Team Standings (${gender === "M" ? "Boys" : "Girls"})</h2>
+                <div style="font-size:0.82rem;color:var(--text-secondary);margin-top:2px;">
+                  Venue: <b>${esc(courseName)}</b> (${courseBadge}) · ${completeTeams.length} complete teams · ${sim.field.length} runners
+                </div>
+              </div>
+              <div class="export-btns">
+                <button type="button" class="btn-sm" id="btn-export-sim-pdf"><i class="fa-solid fa-file-pdf"></i> Branded PDF</button>
+                <button type="button" class="btn-sm" id="btn-export-sim-csv"><i class="fa-solid fa-file-csv"></i> Export CSV</button>
+              </div>
+            </div>
+
+            ${top3.length ? `<div class="podium-cards">${podiumHTML}</div>` : ""}
+
+            ${packVisHTML ? `
+              <div style="margin:1.1rem 0 1.3rem;padding:1rem 1.15rem;border-radius:14px;background:var(--bg-secondary);border:1px solid var(--border);">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.55rem;">
+                  <span style="font-size:0.75rem;font-weight:800;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-secondary);">
+                    <i class="fa-solid fa-People-arrows" style="color:var(--primary);"></i> Top-5 Pack Compression &amp; 6th/7th Displacers
+                  </span>
+                  <span style="font-size:0.72rem;color:var(--text-tertiary);">Green = Scorers 1–5 · Clay = 6th &amp; 7th</span>
+                </div>
+                ${packVisHTML}
+              </div>
+            ` : ""}
+
+            <div class="table-card" style="margin-bottom:0;">
+              <table class="rt">
+                <thead>
+                  <tr>
+                    <th>Place</th><th>School</th><th>Score</th><th>Win %</th><th>Top-5 Avg</th><th>1–5 Split</th><th>Scorers</th><th>6th Tiebreaker</th>
+                  </tr>
+                </thead>
+                <tbody>${teamRowsHTML}</tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="sim-card">
+            <div class="sim-card-head">
+              <h2><i class="fa-solid fa-person-running"></i> Projected Individual Finish Order</h2>
+              <span style="font-size:0.78rem;color:var(--text-tertiary);">Showing top ${Math.min(120, sim.field.length)} of ${sim.field.length} projected finishers</span>
+            </div>
+            <div class="table-card" style="margin-bottom:0;">
+              <table class="rt">
+                <thead>
+                  <tr>
+                    <th>Place</th><th>Athlete &amp; Model Factors</th><th>School</th><th>Projected Time</th><th>Pace</th><th>Team Pts</th>
+                  </tr>
+                </thead>
+                <tbody>${indivRowsHTML}</tbody>
+              </table>
+            </div>
+          </div>
+        `;
+
+        document.getElementById("btn-export-sim-csv")?.addEventListener("click", exportSimCSV);
+        document.getElementById("btn-export-sim-pdf")?.addEventListener("click", exportSimPDF);
+      }
+
+      function exportSimCSV() {
+        if (!lastSimOutput) return;
+        const { sim, gender, courseName } = lastSimOutput;
+        const csvCell = (v) => '"' + String(v == null ? "" : v).replace(/"/g, '""') + '"';
+        const rows = [
+          ["XC VIRTUAL MEET SIMULATION", courseName, gender === "M" ? "Boys" : "Girls"],
+          ["Place", "School", "Score", "Win %", "Top-5 Avg", "1-5 Split"],
+        ];
+        sim.teams.forEach((t, i) => {
+          rows.push([t.complete ? i + 1 : "INC", t.school, t.score ?? "", t.winProb + "%", fmtTime(t.teamAvg), fmtTime(t.spread15)]);
+        });
+        rows.push([], ["Place", "Athlete", "School", "Projected Time", "Uncertainty (s)", "Scoring Place"]);
+        sim.field.forEach((e) => {
+          rows.push([
+            e.place,
+            e.name,
+            (window.MSMEngine.state.schoolsMap[e.schoolSlug] || {}).name || e.schoolSlug,
+            fmtTime(e.timeSec),
+            Math.round(e.uncertaintySec || 10),
+            e.scoringPlace ?? "",
+          ]);
+        });
+        const csv = "\ufeff" + rows.map((r) => r.map(csvCell).join(",")).join("\r\n");
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = `xc-virtual-meet-${gender.toLowerCase()}.csv`;
+        a.click();
+      }
+
+      async function exportSimPDF() {
+        if (!lastSimOutput || typeof window.jspdf === "undefined") return;
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        const { sim, gender, courseName } = lastSimOutput;
+        const drawHeader = await window.MSMPdf.brandHeader(doc, {
+          title: `XC Virtual Meet — ${gender === "M" ? "Boys" : "Girls"} Projection`,
+          subtitle: `${courseName} · Multi-Factor Prediction Model · ${ sim.teams.filter(t => t.complete).length } Scoring Teams`,
+        });
+        const head = { fillColor: window.MSMPdf.PINE, textColor: [255, 255, 255], fontStyle: "bold" };
+        const alt = { fillColor: window.MSMPdf.CREAM };
+        doc.autoTable({
+          head: [["Place", "School", "Score", "Win %", "Top-5 Avg", "1–5 Split"]],
+          body: sim.teams.map((t, i) => [
+            t.complete ? i + 1 : "INC",
+            t.school,
+            t.score ?? "—",
+            t.complete ? t.winProb + "%" : "—",
+            fmtTime(t.teamAvg),
+            fmtTime(t.spread15),
+          ]),
+          startY: 31,
+          margin: { top: 30 },
+          didDrawPage: drawHeader,
+          styles: { fontSize: 9 },
+          headStyles: head,
+          alternateRowStyles: alt,
+        });
+        doc.autoTable({
+          head: [["Place", "Athlete", "School", "Proj Time", "±Sec", "Team Pts"]],
+          body: sim.field.slice(0, 80).map((e) => [
+            e.place,
+            e.name,
+            (window.MSMEngine.state.schoolsMap[e.schoolSlug] || {}).name || e.schoolSlug,
+            fmtTime(e.timeSec),
+            "±" + Math.round(e.uncertaintySec || 10) + "s",
+            e.scoringPlace ? "+" + e.scoringPlace : "—",
+          ]),
+          startY: doc.lastAutoTable.finalY + 8,
+          margin: { top: 30 },
+          didDrawPage: drawHeader,
+          styles: { fontSize: 8 },
+          headStyles: head,
+          alternateRowStyles: alt,
+        });
+        window.MSMPdf.finalize(doc);
+        doc.save(`xc-virtual-meet-${gender.toLowerCase()}.pdf`);
+      }
+
+      document.addEventListener("DOMContentLoaded", async () => {
+        // Wire segment buttons
+        document.querySelectorAll("#xc-sim-gender .seg-btn").forEach((b) => {
+          b.addEventListener("click", () => {
+            document.querySelectorAll("#xc-sim-gender .seg-btn").forEach((x) => x.classList.remove("active"));
+            b.classList.add("active");
+            activeGender = b.dataset.g;
+            runSimulation();
+          });
+        });
+
+        document.querySelectorAll("#xc-sim-mode .seg-btn").forEach((b) => {
+          b.addEventListener("click", () => {
+            document.querySelectorAll("#xc-sim-mode .seg-btn").forEach((x) => x.classList.remove("active"));
+            b.classList.add("active");
+            activeMode = b.dataset.m;
+            document.getElementById("mode-box-class").style.display = activeMode === "class" ? "" : "none";
+            document.getElementById("mode-box-meet").style.display = activeMode === "meet" ? "" : "none";
+            document.getElementById("mode-box-custom").style.display = activeMode === "custom" ? "" : "none";
+          });
+        });
+
+        document.getElementById("school-filter-input").addEventListener("input", renderSchoolChecklist);
+        document.getElementById("btn-clear-schools").addEventListener("click", () => {
+          selectedCustomSlugs.clear();
+          renderSchoolChecklist();
+        });
+        document.getElementById("btn-select-top10").addEventListener("click", () => {
+          const E = window.MSMEngine;
+          const season = document.getElementById("xc-sim-season").value;
+          const cmp = E.teamStatewideComparison("", activeGender, season);
+          selectedCustomSlugs = new Set((cmp.teams || []).slice(0, 10).map((t) => t.schoolSlug));
+          renderSchoolChecklist();
+          runSimulation();
+        });
+
+        document.getElementById("wx-temp").addEventListener("input", updateWeatherLabel);
+        document.getElementById("wx-hum").addEventListener("input", updateWeatherLabel);
+        document.getElementById("btn-run-xc-sim").addEventListener("click", runSimulation);
+        ["xc-sim-class", "xc-sim-meet", "xc-sim-course", "xc-sim-basis", "xc-sim-season"].forEach((id) => {
+          document.getElementById(id).addEventListener("change", runSimulation);
+        });
+
+        try {
+          await window.MSMEngine.load();
+          document.getElementById("sim-status-tag").textContent = "Ready · " + window.MSMEngine.state.results.length.toLocaleString() + " results";
+          populateControls();
+          // Pre-select top 8 teams for custom mode convenience
+          const cmp = window.MSMEngine.teamStatewideComparison("", "M", window.MSMEngine.listSeasons()[0] || "all");
+          selectedCustomSlugs = new Set((cmp.teams || []).slice(0, 8).map((t) => t.schoolSlug));
+          renderSchoolChecklist();
+          runSimulation();
+        } catch (err) {
+          console.error(err);
+          document.getElementById("sim-status-tag").textContent = "Offline";
+        } finally {
+          document.dispatchEvent(new Event("MSMDataLoaded"));
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

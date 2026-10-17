@@ -505,16 +505,19 @@
     makeChart("chartPred", { type: "bar", data: { labels: preds.map((p) => p.label), datasets: [{ data: preds.map((p) => p.seconds), backgroundColor: c.fill, borderColor: c.line, borderWidth: 1.5, borderRadius: 4 }] }, options: opts });
   }
 
-  function athletePDF(sum, rank) {
+  async function athletePDF(sum, rank) {
     const { jsPDF } = window.jspdf; const doc = new jsPDF();
-    doc.setFontSize(18); doc.setFont("helvetica", "bold");
-    doc.text(`${sum.name} — Athlete Report`, 14, 20);
-    doc.setFontSize(9); doc.setFont("helvetica", "normal");
     const rankLine = rank ? ` · State Rank ${rank.rank}${ordinal(rank.rank)} of ${rank.total}` : "";
-    doc.text(`Mountain State Miles · ${new Date().toLocaleDateString()}${sum.bestMsm != null ? ` · Best MSM ${sum.bestMsm}` : ""}${rankLine}`, 14, 27);
-    doc.autoTable({ head: [["Distance", "Personal Best"]], body: Object.values(sum.pbs).sort((a, b) => a.distance - b.distance).map((p) => [E().distanceLabel(p.distance), fmt(p.timeSec)]), startY: 33, styles: { fontSize: 10 }, headStyles: { fillColor: [0, 0, 0] } });
-    if (sum.predictions) doc.autoTable({ head: [["Predicted Distance", "Time", "Pace/Mile"]], body: sum.predictions.map((p) => [p.label, fmt(p.seconds), clock((p.seconds / p.distance) * E().MILE_M)]), startY: doc.lastAutoTable.finalY + 8, styles: { fontSize: 10 }, headStyles: { fillColor: [0, 0, 0] } });
-    if (sum.paces) doc.autoTable({ head: [["Training Zone", "Pace / Mile"]], body: [["Easy", clock(sum.paces.easy)], ["Steady", clock(sum.paces.marathon)], ["Threshold", clock(sum.paces.threshold)], ["Interval", clock(sum.paces.interval)], ["Repetition", clock(sum.paces.repetition)]], startY: doc.lastAutoTable.finalY + 8, styles: { fontSize: 10 }, headStyles: { fillColor: [0, 0, 0] } });
+    const drawHeader = await MSMPdf.brandHeader(doc, {
+      title: `${sum.name} — Athlete Report`,
+      subtitle: `${new Date().toLocaleDateString()}${sum.bestMsm != null ? ` · Best MSM ${sum.bestMsm}` : ""}${rankLine}`
+    });
+    const head = { fillColor: MSMPdf.PINE, textColor: [255, 255, 255], fontStyle: "bold" };
+    const alt = { fillColor: MSMPdf.CREAM };
+    doc.autoTable({ head: [["Distance", "Personal Best"]], body: Object.values(sum.pbs).sort((a, b) => a.distance - b.distance).map((p) => [E().distanceLabel(p.distance), fmt(p.timeSec)]), startY: 33, margin: { top: 30 }, didDrawPage: drawHeader, styles: { fontSize: 10 }, headStyles: head, alternateRowStyles: alt });
+    if (sum.predictions) doc.autoTable({ head: [["Predicted Distance", "Time", "Pace/Mile"]], body: sum.predictions.map((p) => [p.label, fmt(p.seconds), clock((p.seconds / p.distance) * E().MILE_M)]), startY: doc.lastAutoTable.finalY + 8, margin: { top: 30 }, didDrawPage: drawHeader, styles: { fontSize: 10 }, headStyles: head, alternateRowStyles: alt });
+    if (sum.paces) doc.autoTable({ head: [["Training Zone", "Pace / Mile"]], body: [["Easy", clock(sum.paces.easy)], ["Steady", clock(sum.paces.marathon)], ["Threshold", clock(sum.paces.threshold)], ["Interval", clock(sum.paces.interval)], ["Repetition", clock(sum.paces.repetition)]], startY: doc.lastAutoTable.finalY + 8, margin: { top: 30 }, didDrawPage: drawHeader, styles: { fontSize: 10 }, headStyles: head, alternateRowStyles: alt });
+    MSMPdf.finalize(doc);
     doc.save(`${E().slugify(sum.name)}_report.pdf`); toast("✓ PDF report");
   }
 
@@ -798,14 +801,17 @@
     const opts = baseOpts("Athletes", "MSM Rating");
     makeChart("chartDist", { type: "bar", data: { labels, datasets: [{ data: counts, backgroundColor: c.fill, borderColor: c.line, borderWidth: 1.5, borderRadius: 4 }] }, options: opts });
   }
-  function coachPDF(school, gender, ci, roster) {
+  async function coachPDF(school, gender, ci, roster) {
     const { jsPDF } = window.jspdf; const doc = new jsPDF();
-    doc.setFontSize(18); doc.setFont("helvetica", "bold");
-    doc.text(`${school.name} — ${gender === "M" ? "Boys" : "Girls"} Coach Sheet`, 14, 20);
-    doc.setFontSize(9); doc.setFont("helvetica", "normal");
-    doc.text(`Mountain State Miles · ${new Date().toLocaleDateString()} · Scoring-5 Avg ${ci.scoringAvg != null ? fmt(ci.scoringAvg) : "—"} · 1–5 Spread ${ci.spread15 != null ? fmt(ci.spread15) : "—"}`, 14, 27);
-    doc.autoTable({ head: [["#", "Athlete", "Best Effort", "Best MSM", "Races", "Trend"]], body: ci.scoring5.map((s, i) => [i + 1, s.name, fmt(s.best5k.timeSec), s.bestMsm ?? "—", s.raceCount, s.forecast ? s.forecast.trend : "—"]), startY: 33, styles: { fontSize: 10 }, headStyles: { fillColor: [0, 0, 0] } });
-    doc.autoTable({ head: [["Athlete", "Best Effort", "Best MSM", "Races", "Meets"]], body: roster.map((s) => [s.name, s.best5k ? fmt(s.best5k.timeSec) : "—", s.bestMsm ?? "—", s.raceCount, s.meetCount]), startY: doc.lastAutoTable.finalY + 8, styles: { fontSize: 9 }, headStyles: { fillColor: [0, 0, 0] } });
+    const drawHeader = await MSMPdf.brandHeader(doc, {
+      title: `${school.name} — ${gender === "M" ? "Boys" : "Girls"} Coach Sheet`,
+      subtitle: `${new Date().toLocaleDateString()} · Scoring-5 Avg ${ci.scoringAvg != null ? fmt(ci.scoringAvg) : "—"} · 1–5 Spread ${ci.spread15 != null ? fmt(ci.spread15) : "—"}`
+    });
+    const head = { fillColor: MSMPdf.PINE, textColor: [255, 255, 255], fontStyle: "bold" };
+    const alt = { fillColor: MSMPdf.CREAM };
+    doc.autoTable({ head: [["#", "Athlete", "Best Effort", "Best MSM", "Races", "Trend"]], body: ci.scoring5.map((s, i) => [i + 1, s.name, fmt(s.best5k.timeSec), s.bestMsm ?? "—", s.raceCount, s.forecast ? s.forecast.trend : "—"]), startY: 33, margin: { top: 30 }, didDrawPage: drawHeader, styles: { fontSize: 10 }, headStyles: head, alternateRowStyles: alt });
+    doc.autoTable({ head: [["Athlete", "Best Effort", "Best MSM", "Races", "Meets"]], body: roster.map((s) => [s.name, s.best5k ? fmt(s.best5k.timeSec) : "—", s.bestMsm ?? "—", s.raceCount, s.meetCount]), startY: doc.lastAutoTable.finalY + 8, margin: { top: 30 }, didDrawPage: drawHeader, styles: { fontSize: 9 }, headStyles: head, alternateRowStyles: alt });
+    MSMPdf.finalize(doc);
     doc.save(`${school.name || "team"}_coach_sheet.pdf`); toast("✓ Coach sheet PDF");
   }
 
@@ -1003,10 +1009,14 @@
     const standingsHTML = sim.teams.map((t, i) => {
       const isWinner = t.schoolSlug === winnerSlug && t.score != null;
       const isMine = t.schoolSlug === mySlug;
+      const probTag = t.complete && t.winProb != null
+        ? `<span class="pill ${t.winProb >= 40 ? 'up' : 'flat'}" style="font-size:0.65rem;" title="Monte Carlo Win Probability (${t.podiumProb || 0}% Podium)">${t.winProb}% win</span>`
+        : "";
+      const rangeTag = t.scoreRange ? ` <span style="font-size:0.72rem;color:var(--text-tertiary);" title="70% confidence score band">(${t.scoreRange[0]}–${t.scoreRange[1]} pts)</span>` : "";
       return `<div class="sim-team-card${isWinner ? ' sim-winner' : ''}" style="margin-bottom:8px;padding:10px 14px;border:1px solid var(--border);border-radius:var(--radius-lg);background:var(--bg-primary);display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
         <span class="sim-place" style="font-family:var(--font-display);font-size:1.4rem;font-weight:800;min-width:32px;">${t.complete ? i + 1 : "—"}</span>
-        <span style="font-weight:700;font-size:0.9rem;flex:1;">${esc(t.school)}${isMine ? ' <span class="pill up" style="font-size:0.6rem;">YOU</span>' : ""}${t.complete ? "" : ' <span class="section-sub">(incomplete)</span>'}</span>
-        <span class="sim-score" style="font-family:var(--font-display);font-size:1.3rem;font-weight:800;color:${isWinner ? 'var(--success, #10b981)' : 'var(--text-primary)'};">${t.score != null ? t.score : "—"}</span>
+        <span style="font-weight:700;font-size:0.9rem;flex:1;">${esc(t.school)}${isMine ? ' <span class="pill up" style="font-size:0.6rem;">YOU</span>' : ""} ${probTag}${t.complete ? "" : ' <span class="section-sub">(incomplete)</span>'}</span>
+        <span class="sim-score" style="font-family:var(--font-display);font-size:1.3rem;font-weight:800;color:${isWinner ? 'var(--success, #10b981)' : 'var(--text-primary)'};">${t.score != null ? t.score : "—"}${rangeTag}</span>
         <span style="font-size:0.78rem;color:var(--text-tertiary);">${t.teamAvg != null ? fmt(t.teamAvg) + ' avg' : ''}${t.spread15 != null ? ' · ' + fmt(t.spread15) + ' spread' : ''}</span>
         <span style="font-size:0.78rem;color:var(--text-tertiary);margin-left:auto;">${t.top5.map((r) => "#" + r.scoringPlace).filter((x) => !x.includes("null")).join(" ") || "—"}</span>
       </div>`;
@@ -1014,11 +1024,16 @@
 
     const fieldHTML = sim.field.map((e) => {
       const isWinner = e.schoolSlug === winnerSlug && e.scoringPlace != null && e.scoringPlace <= 5;
+      const f = e.factors || {};
+      const badges = [];
+      if (f.trajectorySec && f.trajectorySec < -1.0) badges.push(`<span class="pill up" style="font-size:0.55rem;" title="Surging season trajectory">↗ ${Math.abs(f.trajectorySec).toFixed(1)}s</span>`);
+      if (f.courseAffinitySec && f.courseAffinitySec < -0.8) badges.push(`<span class="pill up" style="font-size:0.55rem;" title="Proven fast on this course">★ Course</span>`);
+      if (f.packBonusSec && f.packBonusSec < -0.3) badges.push(`<span class="pill flat" style="font-size:0.55rem;" title="Teammate pack-drafting pull">⚡ Pack</span>`);
       return `<tr style="${e.schoolSlug === mySlug ? "background:var(--bg-secondary);" : ""}${isWinner && e.place <= 7 ? "background:rgba(16,185,129,0.08);" : ""}">
         <td class="mark-col sim-place" style="font-family:var(--font-display);font-weight:800;">${e.place}</td>
-        <td data-label="Athlete">${esc(e.name)}${isWinner ? ' <span class="pill up" style="font-size:0.55rem;">🏆</span>' : ""}</td>
+        <td data-label="Athlete">${esc(e.name)}${isWinner ? ' <span class="pill up" style="font-size:0.55rem;">🏆</span>' : ""} ${badges.join(" ")}</td>
         <td data-label="School">${esc((E().state.schoolsMap[e.schoolSlug] || {}).name || e.schoolSlug)}</td>
-        <td class="mark-col">${fmt(e.timeSec)}</td>
+        <td class="mark-col">${fmt(e.timeSec)} <span style="font-size:0.7rem;color:var(--text-tertiary);font-weight:500;">±${Math.round(e.uncertaintySec || 10)}s</span></td>
         <td>${clock((e.timeSec / sim.distance) * E().MILE_M)}</td>
         <td class="mark-col">${e.scoringPlace ? "+" + e.scoringPlace : "—"}</td>
       </tr>`;
@@ -1042,15 +1057,18 @@
     sim.field.forEach((e) => rows.push([e.place, e.name, (E().state.schoolsMap[e.schoolSlug] || {}).name || e.schoolSlug, fmt(e.timeSec), clock((e.timeSec / sim.distance) * E().MILE_M), e.scoringPlace ?? ""]));
     dl(`meet_simulation_${lastSim.gender}.csv`, "text/csv", rows.map(csvRow).join("\n")); toast("✓ Simulation CSV");
   }
-  function simExportPDF() {
+  async function simExportPDF() {
     if (!lastSim) return toast("Run a simulation first.");
     const { jsPDF } = window.jspdf; const doc = new jsPDF(); const { sim, courseName, gender } = lastSim;
-    doc.setFontSize(16); doc.setFont("helvetica", "bold");
-    doc.text(`Meet Simulation — ${gender === "M" ? "Boys" : "Girls"}`, 14, 18);
-    doc.setFontSize(9); doc.setFont("helvetica", "normal");
-    doc.text(`${courseName} · ${E().distanceLabel(sim.distance)} · ${sim.basis === "raw" ? "fastest raw what-if" : sim.basis === "recent" ? "weighted recent form" : "best course-adjusted effort"} · ${new Date().toLocaleDateString()}`, 14, 25);
-    doc.autoTable({ head: [["Place", "School", "Score", "Top-5 Avg", "1-5 Split"]], body: sim.teams.map((t, i) => [t.complete ? i + 1 : "—", t.school, t.score ?? "—", t.teamAvg != null ? fmt(t.teamAvg) : "—", t.spread15 != null ? fmt(t.spread15) : "—"]), startY: 31, styles: { fontSize: 9 }, headStyles: { fillColor: [0, 0, 0] } });
-    doc.autoTable({ head: [["Place", "Athlete", "School", "Proj Time", "Pace/Mi", "Pts"]], body: sim.field.map((e) => [e.place, e.name, (E().state.schoolsMap[e.schoolSlug] || {}).name || e.schoolSlug, fmt(e.timeSec), clock((e.timeSec / sim.distance) * E().MILE_M), e.scoringPlace ?? "—"]), startY: doc.lastAutoTable.finalY + 8, styles: { fontSize: 8 }, headStyles: { fillColor: [0, 0, 0] } });
+    const drawHeader = await MSMPdf.brandHeader(doc, {
+      title: `Meet Simulation — ${gender === "M" ? "Boys" : "Girls"}`,
+      subtitle: `${courseName} · ${E().distanceLabel(sim.distance)} · ${sim.basis === "raw" ? "fastest raw what-if" : sim.basis === "recent" ? "weighted recent form" : "best course-adjusted effort"} · ${new Date().toLocaleDateString()}`
+    });
+    const head = { fillColor: MSMPdf.PINE, textColor: [255, 255, 255], fontStyle: "bold" };
+    const alt = { fillColor: MSMPdf.CREAM };
+    doc.autoTable({ head: [["Place", "School", "Score", "Top-5 Avg", "1-5 Split"]], body: sim.teams.map((t, i) => [t.complete ? i + 1 : "—", t.school, t.score ?? "—", t.teamAvg != null ? fmt(t.teamAvg) : "—", t.spread15 != null ? fmt(t.spread15) : "—"]), startY: 31, margin: { top: 30 }, didDrawPage: drawHeader, styles: { fontSize: 9 }, headStyles: head, alternateRowStyles: alt });
+    doc.autoTable({ head: [["Place", "Athlete", "School", "Proj Time", "Pace/Mi", "Pts"]], body: sim.field.map((e) => [e.place, e.name, (E().state.schoolsMap[e.schoolSlug] || {}).name || e.schoolSlug, fmt(e.timeSec), clock((e.timeSec / sim.distance) * E().MILE_M), e.scoringPlace ?? "—"]), startY: doc.lastAutoTable.finalY + 8, margin: { top: 30 }, didDrawPage: drawHeader, styles: { fontSize: 8 }, headStyles: head, alternateRowStyles: alt });
+    MSMPdf.finalize(doc);
     doc.save(`meet_simulation_${gender}.pdf`); toast("✓ Simulation PDF");
   }
 
