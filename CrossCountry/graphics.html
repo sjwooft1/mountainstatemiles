@@ -1,0 +1,353 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Graphics Studio | Mountain State Miles</title>
+<style>
+:root{--navy:#002855;--orange:#FF5722;--ink:#132238;--muted:#6d7a8d;--line:#dfe5ec;--panel:#fff;--bg:#f3f6fa}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);font:14px/1.45 Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink)}
+.top{background:var(--navy);color:white;padding:18px clamp(16px,3vw,34px);display:flex;align-items:center;justify-content:space-between;gap:16px;border-bottom:4px solid var(--orange)}
+.brand{display:flex;align-items:center;gap:12px}.mark{width:40px;height:40px;border:2px solid #fff;border-radius:10px;display:grid;place-items:center;font-weight:900;letter-spacing:-1px}.brand h1{font-size:18px;margin:0;letter-spacing:.2px}.brand p{margin:2px 0 0;color:#c9d7e8;font-size:12px}.pill{border:1px solid #52708e;border-radius:99px;padding:6px 10px;font-size:11px;white-space:nowrap}
+main{max-width:1440px;margin:0 auto;padding:24px 18px 42px}.intro{display:flex;justify-content:space-between;gap:20px;align-items:end;margin-bottom:18px}.intro h2{font-size:26px;margin:0 0 4px;letter-spacing:-.6px}.intro p{margin:0;color:var(--muted)}.actions{display:flex;gap:8px;flex-wrap:wrap}
+.layout{display:grid;grid-template-columns:minmax(310px,390px) minmax(0,1fr);gap:18px;align-items:start}.panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:0 6px 24px #17365d0a;overflow:hidden}.panelhead{padding:16px 18px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}.panelhead h3{margin:0;font-size:15px}.panelbody{padding:18px}.field{display:flex;flex-direction:column;gap:6px;margin-bottom:15px}.field label{font-weight:700;font-size:12px;color:#35445a}.field input,.field select,.field textarea{width:100%;padding:11px 12px;border:1px solid #cfd8e3;border-radius:9px;background:#fff;color:var(--ink);font:inherit;outline:none}.field input:focus,.field select:focus,.field textarea:focus{border-color:#4677ad;box-shadow:0 0 0 3px #4677ad1b}.field small{color:var(--muted);font-size:11px}.twocol{display:grid;grid-template-columns:1fr 1fr;gap:12px}.btn{border:0;border-radius:9px;padding:10px 13px;background:var(--navy);color:#fff;font:700 12px inherit;cursor:pointer;min-height:38px}.btn:hover{filter:brightness(1.12)}.btn.orange{background:var(--orange)}.btn.light{background:#edf2f7;color:var(--navy);border:1px solid #d8e0ea}.btn:disabled{opacity:.45;cursor:not-allowed}.full{width:100%}.status{padding:11px 12px;border-radius:9px;background:#f0f4f8;color:#4c5c70;font-size:12px;margin:12px 0 0;overflow-wrap:anywhere}.status.good{background:#eaf7ef;color:#17653a}.status.warn{background:#fff4e8;color:#895014}.status.bad{background:#fff0ef;color:#9d2d25}.datahead{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px}.datahead strong{font-size:13px}.statline{display:flex;gap:8px;flex-wrap:wrap}.stat{background:#f2f5f9;border:1px solid #e1e7ef;border-radius:8px;padding:6px 9px;font-size:11px;color:#516176}.previewwrap{background:#e9eef4;padding:16px;border-radius:12px}.preview{width:100%;aspect-ratio:16/9;background:#071426;position:relative;overflow:hidden;box-shadow:0 10px 28px #00152b28}.preview canvas{display:block;width:100%;height:100%}.previewnote{display:flex;justify-content:space-between;gap:12px;color:var(--muted);font-size:11px;margin-top:9px}.previewnote span:last-child{text-align:right}.empty{min-height:200px;display:grid;place-items:center;text-align:center;color:var(--muted);padding:20px}.empty b{display:block;color:#33445a;margin-bottom:5px}.tablewrap{overflow:auto;max-height:280px;border:1px solid var(--line);border-radius:9px;margin-top:12px}table{width:100%;border-collapse:collapse;font-size:12px;white-space:nowrap}th,td{text-align:left;padding:9px 10px;border-bottom:1px solid #e9edf2}th{position:sticky;top:0;background:#f5f7fa;font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:#66768a}tr:last-child td{border-bottom:0}.sectiontitle{font-size:12px;font-weight:800;margin:20px 0 10px}.hidden{display:none!important}.footer{font-size:11px;color:#8190a3;margin-top:18px}
+@media(max-width:980px){.layout{grid-template-columns:1fr}.intro{align-items:start;flex-direction:column}.panelbody{padding:15px}}@media(max-width:520px){main{padding:15px 10px}.top{padding:14px 12px}.brand h1{font-size:15px}.pill{display:none}.twocol{grid-template-columns:1fr}.previewwrap{padding:7px}.actions{width:100%}.actions .btn{flex:1}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand"><div class="mark">MSM</div><div><h1>Mountain State Miles</h1><p>MEET-TO-GRAPHICS STUDIO</p></div></div>
+  <div class="pill">OBS-READY PNG EXPORT · 1920 × 1080</div>
+</header>
+<main>
+  <div class="intro"><div><h2>Turn meet results into graphics.</h2><p>Import a meet, choose a template, export a polished still graphic for OBS.</p></div><div class="actions"><button class="btn light" id="resetBtn">Reset</button><button class="btn orange" id="exportBtn" disabled>↓ Export PNG</button></div></div>
+  <div class="layout">
+    <section class="panel">
+      <div class="panelhead"><h3>01 / Meet & graphic settings</h3><span class="stat">NO DEMO DATA</span></div>
+      <div class="panelbody">
+        <div class="field"><label for="meetUrl">Mountain State Miles meet URL</label><input id="meetUrl" value="https://mountainstatemiles.com/CrossCountry/meet.html?slug=msac-championships" placeholder="Paste meet.html?slug=..."><small>Direct import reuses the meet page’s own Firebase helpers. Deploy this file on mountainstatemiles.com (not file://) for same-origin access.</small></div>
+        <button class="btn full" id="loadBtn">↻ Import meet data</button>
+        <div id="status" class="status">No meet data loaded. Import a URL or load a CSV/JSON file. Exports stay disabled until valid data is available.</div>
+        <div class="sectiontitle">Graphic settings</div>
+        <div class="field"><label for="template">Template</label><select id="template"><option>Team standings</option><option>Individual leaderboard</option><option>Team comparison</option><option>Athlete spotlight</option></select></div>
+        <div class="field"><label for="division">Division / race</label><select id="division"><option>Boys Varsity</option><option>Girls Varsity</option><option>Boys Open</option><option>Girls Open</option><option>All results</option></select></div>
+        <div class="twocol"><div class="field"><label for="rows">Rows to show</label><select id="rows"><option>3</option><option>5</option><option selected>10</option></select></div><div class="field"><label for="accent">Accent color</label><select id="accent"><option value="#FF5722" selected>Mountain orange</option><option value="#D4AF37">Championship gold</option><option value="#FFFFFF">White</option></select></div></div>
+        <div class="field"><label for="headline">Graphic headline</label><input id="headline" value="MSAC CHAMPIONSHIPS"></div>
+        <div class="field"><label for="subhead">Subtitle (optional)</label><input id="subhead" placeholder="e.g. Boys Varsity · 5K"></div>
+        <div class="field"><label for="school">Highlight school (optional)</label><input id="school" placeholder="Exact school name"></div>
+        <div class="sectiontitle">Import fallback</div>
+        <div class="field"><label for="dataFile">Load results file</label><input id="dataFile" type="file" accept=".json,.csv,.tsv,.txt"><small>CSV/TSV should include columns such as athlete_name, school/school_slug, gender, time/mark, place. JSON can be an array or an object containing results.</small></div>
+        <button class="btn light full" id="clearBtn">Clear imported data</button>
+        <div class="footer">Team standings use the live meet page’s own scoring functions. If scoring cannot be computed from the imported results, standings export stays disabled.</div>
+      </div>
+    </section>
+    <section class="panel">
+      <div class="panelhead"><h3>02 / Live graphic preview</h3><span class="stat">16:9 · 1080p</span></div>
+      <div class="panelbody">
+        <div class="datahead"><strong id="meetName">No meet loaded</strong><div class="statline"><span class="stat" id="athleteCount">0 athletes</span><span class="stat" id="teamCount">0 schools</span></div></div>
+        <div class="previewwrap"><div class="preview"><canvas id="art" width="1920" height="1080"></canvas><div id="empty" class="empty" style="position:absolute;inset:0;background:#071426;color:#afbed0"><div><b style="color:white">Waiting for real results</b>Import a meet to preview the selected graphic.<br>No placeholder athletes or scores will be exported.</div></div></div></div>
+        <div class="previewnote"><span>Preview scales to fit. Export uses full 1920 × 1080 resolution.</span><span id="sourceNote">No data source</span></div>
+        <div class="sectiontitle">Imported data check</div>
+        <div id="dataSummary" class="status">No records available yet.</div>
+        <div id="tablewrap" class="tablewrap hidden"><table id="dataTable"></table></div>
+        <div class="actions" style="margin-top:14px"><button class="btn light" id="downloadJson" disabled>Download imported JSON</button><button class="btn orange" id="exportBtn2" disabled>Export 1920 × 1080 PNG</button></div>
+      </div>
+    </section>
+  </div>
+</main>
+<script>
+(() => {
+ const $ = id => document.getElementById(id);
+ const state = {meet:{name:'',date:'',location:'',slug:''}, rows:[], teamScores:[], source:'', errors:[], loaded:false};
+ const safe = v => String(v ?? '').trim();
+ const norm = s => safe(s).toLowerCase().replace(/[^a-z0-9]/g,'');
+ function setStatus(msg,kind=''){ $('status').className='status '+kind; $('status').textContent=msg; }
+ function escapeHtml(s){return safe(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+ function parseTime(v){v=safe(v).replace(/\*/g,''); if(!v)return null; if(/^(dnf|dns|dq|dnc|nh|nm|scr)$/i.test(v))return null; if(!v.includes(':') && /^\d+(?:\.\d+)?$/.test(v)){const n=Number(v);return Number.isFinite(n)&&n>=0?n:null;} let m=v.match(/^(?:(\d+):)?(\d{1,2})(?:\.(\d+))?$/); if(!m)return null; return (Number(m[1]||0)*60)+Number(m[2])+(Number('0.'+(m[3]||'0'))); }
+ function fmtTime(v){const s=safe(v);if(!s)return '—';if(!s.includes(':') && /^\d+(?:\.\d+)?$/.test(s)){const n=Number(s);if(Number.isFinite(n)&&n>=60&&n<100000)return `${Math.floor(n/60)}:${(n%60).toFixed(2).padStart(5,'0')}`;}return s;}
+ function field(obj, keys){for(const k of keys){if(obj && obj[k]!==undefined && obj[k]!==null && safe(obj[k])!=='')return obj[k]; const hit=Object.keys(obj||{}).find(x=>norm(x)===norm(k)); if(hit && safe(obj[hit])!=='')return obj[hit];}return '';}
+ function normalizeRow(r){
+   const name=field(r,['athlete_name','athlete','runner','name','competitor','individual']);
+   const school=field(r,['school','school_name','team','team_name','school_slug','team_name_slug']);
+   const gender=field(r,['gender','sex']);
+   const race=field(r,['race_type','event_name','race','division','event','category']);
+   const place=field(r,['place','placing','position','rank','overall_place']);
+   const time=field(r,['time','mark','result','performance','finish_time','result_time']);
+   return {name:safe(name),school:safe(school),gender:safe(gender),race:safe(race),place:Number.parseInt(place,10)||null,time:fmtTime(time),timeSec:parseTime(time),raw:r};
+ }
+ function getDivisionRows(){
+   const all=state.rows;
+   const d=$('division').value.toLowerCase();
+   if(d==='all results')return all;
+   const wantGirls=d.startsWith('girls'), wantOpen=d.includes('open');
+   let filtered=all.filter(r=>{
+     const g=safe(r.gender).toLowerCase();
+     const race=safe(r.race).toLowerCase();
+     const girls=/^(f|female|girl|girls|women|womens)$/.test(g)||/girl|female|women/.test(g+' '+race);
+     const boys=/^(m|male|boy|boys|men|mens|b)$/.test(g)||/boy|male|men/.test(g+' '+race);
+     if(wantGirls && !girls)return false;
+     if(!wantGirls && !boys)return false;
+     if(wantOpen && race && !/open|jv|junior varsity|emerging/.test(race))return false;
+     if(!wantOpen && d.includes('varsity') && race && !/varsity|championship|elite/.test(race))return false;
+     return true;
+   });
+   // Some older meet imports label gender but not race type. If no explicit varsity/open
+   // labels exist for that gender, retain the gender-filtered records rather than hiding all data.
+   if(!filtered.length && d.includes('varsity')) {
+     const genderRows=all.filter(r=>{
+       const g=safe(r.gender).toLowerCase(),race=safe(r.race).toLowerCase();
+       return wantGirls ? (/^(f|female|girl|girls|women|womens)$/.test(g)||/girl|female|women/.test(g+' '+race)) : (/^(m|male|boy|boys|men|mens|b)$/.test(g)||/boy|male|men/.test(g+' '+race));
+     });
+     const hasDivisionLabels=genderRows.some(r=>/varsity|open|junior varsity|\bjv\b|freshman|middle school|emerging|elite|championship/.test(safe(r.race).toLowerCase()));
+     if(!hasDivisionLabels) filtered=genderRows;
+   }
+   return filtered;
+ }
+ function getScores(){
+   const d=$('division').value.toLowerCase();
+   return state.teamScores.filter(t=>{
+     const g=safe(t.gender).toLowerCase(),race=safe(t.race||t.division).toLowerCase();
+     const girls=/^(f|female|girl|girls|women|womens)$/.test(g)||/girl|female|women/.test(g);
+     const boys=/^(m|male|boy|boys|men|mens|b)$/.test(g)||/boy|male|men/.test(g);
+     if(d==='all results')return true;
+     if(d.startsWith('girls')&&!girls)return false;
+     if(d.startsWith('boys')&&!boys)return false;
+     if(d.includes('open')&&race&&!/open|jv|junior varsity|emerging/.test(race))return false;
+     if(d.includes('varsity')&&race&&!/varsity|championship|elite/.test(race))return false;
+     return true;
+   });
+ }
+ function summarize(){
+   const rows=getDivisionRows();
+   $('meetName').textContent=state.meet.name||'Imported results';
+   $('athleteCount').textContent=rows.length+' result'+(rows.length===1?'':'s');
+   $('teamCount').textContent=new Set(rows.map(r=>r.school).filter(Boolean)).size+' schools';
+   $('sourceNote').textContent=state.source||'No data source';
+   const valid=rows.filter(r=>r.name).length, missingName=rows.filter(r=>!r.name).length, missingSchool=rows.filter(r=>!r.school).length, missingTime=rows.filter(r=>!r.time).length;
+   const notes=[];
+   notes.push(`${valid} named results in selected division.`);
+   if(missingName)notes.push(`${missingName} row(s) have no athlete name.`);
+   if(missingSchool)notes.push(`${missingSchool} result(s) have no school/team.`);
+   if(missingTime)notes.push(`${missingTime} result(s) have no time/mark.`);
+   if($('template').value==='Team standings' && !getScores().length)notes.push('No team standings were calculated for this race. The live importer uses the meet page’s scoring functions and will not invent scores.');
+   $('dataSummary').textContent=notes.join(' ');
+   const table=$('dataTable');
+   const previewRows=rows.slice(0,20);
+   table.innerHTML='<thead><tr><th>Place</th><th>Athlete / Team</th><th>School</th><th>Time / Mark</th><th>Race</th></tr></thead><tbody>'+previewRows.map(r=>`<tr><td>${r.place??'—'}</td><td>${escapeHtml(r.name||'Missing name')}</td><td>${escapeHtml(r.school||'Missing school')}</td><td>${escapeHtml(r.time?fmtTime(r.time):'Missing time')}</td><td>${escapeHtml(r.race||'—')}</td></tr>`).join('')+'</tbody>';
+   $('tablewrap').classList.toggle('hidden',!rows.length);
+   const can=state.loaded && rows.length>0 && ( $('template').value!=='Team standings' || getScores().length>0 );
+   $('exportBtn').disabled=!can; $('exportBtn2').disabled=!can; $('downloadJson').disabled=!state.loaded;
+   draw();
+ }
+ function extractArrays(obj, found=[]){
+   if(!obj||typeof obj!=='object')return found;
+   if(Array.isArray(obj)){if(obj.some(x=>x&&typeof x==='object'))found.push(obj); for(const x of obj) if(x&&typeof x==='object')extractArrays(x,found);}
+   else for(const v of Object.values(obj)) if(v&&typeof v==='object')extractArrays(v,found);
+   return found;
+ }
+ function parseJsonPayload(payload){
+   let results=Array.isArray(payload)?payload:(payload.results||payload.data?.results||payload.meetResults||payload.result||[]);
+   if(!Array.isArray(results)){
+     const candidates=extractArrays(payload).filter(a=>a.some(x=>x&&typeof x==='object'&&(field(x,['athlete_name','athlete','runner','name','competitor'])||field(x,['time','mark','result']))));
+     results=candidates.sort((a,b)=>b.length-a.length)[0]||[];
+   }
+   const rawScores=payload.teamScores||payload.team_scores||payload.teamStandings||payload.team_standings||payload.teamscores||payload.data?.teamScores||payload.teams||[];
+   const teamScores=Array.isArray(rawScores)?rawScores.filter(t=>t&&typeof t==='object'&&(field(t,['score','points','team_score','total'])!=='')): [];
+   const meta=payload.meet||payload.metadata||payload.data?.meet||{};
+   return {results,teamScores,meet:{name:field(meta,['name','meet_name','title'])||field(payload,['meet_name','name','title']),date:field(meta,['date','meet_date']),location:field(meta,['location','venue']),slug:field(meta,['slug'])}};
+ }
+ function parseDelimited(text){
+   const first=text.split(/\r?\n/).find(x=>x.trim())||'';
+   const delim=first.includes('\t')?'\t':',';
+   const lines=text.replace(/^\uFEFF/,'').split(/\r?\n/).filter(x=>x.trim());
+   function split(line){let out=[],v='',q=false;for(let i=0;i<line.length;i++){let c=line[i];if(c==='"'&&line[i+1]==='"'&&q){v+='"';i++;}else if(c==='"')q=!q;else if(c===delim&&!q){out.push(v.trim());v='';}else v+=c;}out.push(v.trim());return out;}
+   const headers=split(lines.shift()).map(h=>h.replace(/^"|"$/g,''));
+   return lines.map(line=>{const vals=split(line),o={};headers.forEach((h,i)=>o[h]=vals[i]||'');return o;});
+ }
+ function loadPayload(payload,source){
+   const parsed=Array.isArray(payload)||typeof payload==='object'?parseJsonPayload(payload):{results:[],teamScores:[],meet:{}};
+   const rows=parsed.results.map(normalizeRow).filter(r=>r.name||r.school||r.time);
+   state.rows=rows;state.teamScores=parsed.teamScores.map(t=>({...t,school:safe(field(t,['school','team','team_name','name'])),score:field(t,['score','points','team_score','total','place']),place:field(t,['place','rank','team_place']),gender:field(t,['gender','sex']),race:field(t,['race_type','race','division','event_name'])}));
+   state.meet={...state.meet,...parsed.meet};state.source=source;state.loaded=rows.length>0;state.errors=[];
+   if(!rows.length){setStatus('Import completed, but no recognizable result rows were found. No graphic will be exported. Try a CSV/JSON export from the meet page.', 'warn');}
+   else setStatus(`Imported ${rows.length} recognizable result rows${state.teamScores.length?` and ${state.teamScores.length} team standings`:''}. Verify the preview before export.`, 'good');
+   summarize();
+ }
+ function parsePageDocument(doc,url){
+   const title=doc.querySelector('h1')?.textContent?.trim()||doc.title||'';
+   const meetText=doc.body?.innerText||'';
+   const tables=[...doc.querySelectorAll('table')];
+   let best=[];
+   for(const table of tables){
+     const trs=[...table.querySelectorAll('tr')]; if(trs.length<2)continue;
+     const headers=[...trs[0].querySelectorAll('th,td')].map(x=>x.textContent.trim());
+     if(!headers.length)continue;
+     const arr=trs.slice(1).map(tr=>{const cells=[...tr.querySelectorAll('td,th')].map(x=>x.textContent.trim()),o={};headers.forEach((h,i)=>o[h]=cells[i]||'');return o;});
+     if(arr.length>best.length && arr.some(r=>field(r,['athlete','athlete_name','runner','name','competitor','time','mark','result'])))best=arr;
+   }
+   // Many sites render results through JavaScript and expose JSON in script tags.
+   let jsonResults=null;
+   for(const script of doc.querySelectorAll('script[type="application/json"],script#__NEXT_DATA__')){
+     try{const p=JSON.parse(script.textContent);const parsed=parseJsonPayload(p);if(parsed.results.length> (jsonResults?.results.length||0))jsonResults=parsed;}catch(e){}
+   }
+   const payload=jsonResults||{results:best,teamScores:[],meet:{name:title,slug:new URL(url).searchParams.get('slug')||''}};
+   payload.meet=payload.meet||{};payload.meet.name=payload.meet.name||title;payload.meet.slug=payload.meet.slug||new URL(url).searchParams.get('slug')||'';
+   return {payload, body:meetText};
+ }
+ async function importMeet(){
+   const url=safe($('meetUrl').value);
+   if(!url){setStatus('Paste a meet URL first.','warn');return;}
+   let parsedUrl;try{parsedUrl=new URL(url)}catch(e){setStatus('That URL is not valid. Paste the full https:// URL.','bad');return;}
+   if(!/^https?:$/.test(parsedUrl.protocol)){setStatus('Only HTTP/HTTPS meet URLs are supported.','bad');return;}
+   $('loadBtn').disabled=true;$('loadBtn').textContent='Importing…';
+   setStatus('Connecting to the meet page and its existing data loader…');
+   let iframe=null;
+   try{
+     if(location.protocol==='http:'||location.protocol==='https:'){
+       if(location.origin!==parsedUrl.origin) throw new Error('For secure direct import, host this Graphics Studio on the same origin as the meet page (mountainstatemiles.com). Browser cross-origin security prevents access to the site’s Firebase helpers from another origin.');
+       iframe=document.createElement('iframe');
+       iframe.title='Mountain State Miles meet data connection';
+       iframe.setAttribute('aria-hidden','true');
+       iframe.style.cssText='position:fixed;left:-12000px;top:0;width:1280px;height:900px;border:0;opacity:0;pointer-events:none';
+       iframe.src=parsedUrl.href;
+       document.body.appendChild(iframe);
+       await new Promise((resolve,reject)=>{
+         const timer=setTimeout(()=>reject(new Error('The meet page did not finish loading within 25 seconds.')),25000);
+         iframe.addEventListener('load',()=>{clearTimeout(timer);resolve();},{once:true});
+         iframe.addEventListener('error',()=>{clearTimeout(timer);reject(new Error('The meet page could not be loaded.'));},{once:true});
+       });
+       const win=iframe.contentWindow;
+       if(!win) throw new Error('The meet page window is unavailable.');
+       const slug=parsedUrl.searchParams.get('slug');
+       if(!slug) throw new Error('The URL needs a ?slug=meet-slug parameter.');
+       if(typeof win.getMeetBySlug!=='function'||typeof win.getResultsByMeet!=='function') throw new Error('The meet page loaded, but its Firebase helpers (getMeetBySlug/getResultsByMeet) were not available. Check that firebase-helpers.js loads successfully on the hosted page.');
+       setStatus('Loading meet metadata, athlete results, and school names from the site’s Firebase helpers…');
+       const meet=await win.getMeetBySlug(slug);
+       if(!meet) throw new Error(`No meet record was found for slug “${slug}”.`);
+       const raw=await win.getResultsByMeet(slug);
+       if(!Array.isArray(raw)||!raw.length) throw new Error('The meet record exists, but it has no result rows. Check that results have been imported for this meet.');
+       let schools=[];
+       try{if(typeof win.getAllSchools==='function')schools=await win.getAllSchools()||[];}catch(e){console.warn('School lookup unavailable',e);}
+       const schoolNames={};schools.forEach(x=>{schoolNames[safe(x.slug)]=safe(x.name)||safe(x.slug);});
+       const normalizeGender=typeof win.normalizeGender==='function'?win.normalizeGender:(r=>safe(r.gender));
+       const normalizeRace=typeof win.normalizeRaceType==='function'?win.normalizeRaceType:(r=>safe(r.race_type||r.division||r.event_name));
+       const rows=raw.map(r=>{
+         const schoolSlug=safe(r.school_slug);
+         const school=safe(r.school_name||r.school)||schoolNames[schoolSlug]||schoolSlug;
+         const gender=normalizeGender(r);
+         const race=normalizeRace(r);
+         return {...r,athlete_name:safe(r.athlete_name||r.name),school,school_name:school,school_slug:schoolSlug,gender,race_type:race,event_name:race,place:r.place??r.placing??'',time:r.time??r.mark??'',meet_slug:slug};
+       }).filter(r=>r.athlete_name||r.school||r.time);
+       const raceGroups=new Map();
+       for(const row of rows){
+         const gender=safe(row.gender).toUpperCase().startsWith('F')?'F':(safe(row.gender).toUpperCase().startsWith('M')?'M':safe(row.gender));
+         const race=safe(row.race_type)||'Race';
+         const key=gender+'|'+race;
+         if(!raceGroups.has(key))raceGroups.set(key,{gender,race,rows:[]});
+         raceGroups.get(key).rows.push(row);
+       }
+       const teamScores=[];
+       for(const group of raceGroups.values()){
+         const scoringRows=group.rows.map(r=>({...r}));
+         const isRelay=typeof win.isRelayRace==='function'&&win.isRelayRace(scoringRows);
+         let scores=[];
+         try{
+           if(isRelay&&typeof win.calculateRelayScores==='function')scores=win.calculateRelayScores(scoringRows);
+           else if(typeof win.calculateTeamScores==='function')scores=win.calculateTeamScores(scoringRows);
+         }catch(e){console.warn('Official site scoring function failed for race',group.race,e);}
+         scores.forEach((t,i)=>teamScores.push({school:safe(t.school),score:t.score,place:i+1,gender:group.gender,race:group.race,division:group.race,isRelay:!!t.isRelay,teamAvg:t.teamAvg,teamSplit:t.teamSplit}));
+       }
+       state.rows=rows.map(normalizeRow);
+       // Keep race labels/gender codes exactly as returned by the site's normalizers.
+       state.rows.forEach((r,i)=>{r.gender=safe(rows[i].gender);r.race=safe(rows[i].race_type);r.school=safe(rows[i].school_name||rows[i].school);});
+       state.teamScores=teamScores;
+       state.meet={name:safe(meet.name)||slug.replace(/-/g,' ').toUpperCase(),date:safe(meet.date),location:safe(meet.location),slug};
+       if(!$('headline').value.trim()||$('headline').value.trim()==='MSAC CHAMPIONSHIPS')$('headline').value=state.meet.name.toUpperCase();
+       state.source='Firebase via meet.html';state.loaded=state.rows.length>0;state.errors=[];
+       if(!state.loaded)throw new Error('The Firebase query returned no recognizable athlete rows.');
+       setStatus(`Imported ${state.rows.length} real results across ${raceGroups.size} race group(s), plus ${teamScores.length} team standings generated using the meet page’s existing scoring functions. Review the preview before export.`,teamScores.length?'good':'warn');
+       summarize();
+       if(!teamScores.length)setStatus(`Loaded ${state.rows.length} real athlete results, but no team standings were produced. This may mean fewer than five finishers per school or missing scoring fields. Team standings export remains blocked; choose another template or check the race data.`, 'warn');
+       return;
+     }
+     throw new Error('This file is opened from file://. Upload it to mountainstatemiles.com (for example, /CrossCountry/graphics.html) to use the site’s Firebase data securely. CSV/JSON imports still work from a local file.');
+   }catch(err){
+     setStatus(`Could not import this URL: ${err.message} You can still load a CSV/JSON export using Import fallback.`, 'bad');
+   }finally{if(iframe)iframe.remove();$('loadBtn').disabled=false;$('loadBtn').textContent='↻ Import meet data';}
+ }
+ function roundRect(ctx,x,y,w,h,r,fill){ctx.beginPath();ctx.roundRect(x,y,w,h,r);ctx.fillStyle=fill;ctx.fill();}
+ function draw(){
+   const canvas=$('art'),ctx=canvas.getContext('2d'),W=canvas.width,H=canvas.height,navy='#071426',orange=$('accent').value;
+   ctx.clearRect(0,0,W,H);ctx.fillStyle=navy;ctx.fillRect(0,0,W,H);
+   // Subtle angular brand pattern.
+   ctx.fillStyle='#0b2039';ctx.beginPath();ctx.moveTo(1330,0);ctx.lineTo(W,0);ctx.lineTo(W,H);ctx.lineTo(1710,H);ctx.closePath();ctx.fill();
+   ctx.fillStyle=orange;ctx.fillRect(0,0,18,H);
+   ctx.fillStyle=orange;ctx.font='800 28px Inter,Arial,sans-serif';ctx.fillText('MOUNTAIN STATE MILES',90,74);
+   ctx.fillStyle='#FFFFFF';ctx.font='900 58px Inter,Arial,sans-serif';ctx.fillText(($('headline').value||state.meet.name||'MEET RESULTS').toUpperCase().slice(0,38),90,158);
+   const subtitle=$('subhead').value||[state.meet.date,state.meet.location].filter(Boolean).join('  •  ')||$('division').value.toUpperCase();
+   ctx.fillStyle='#aabbd0';ctx.font='600 25px Inter,Arial,sans-serif';ctx.fillText(subtitle.toUpperCase().slice(0,90),92,207);
+   ctx.fillStyle=orange;ctx.fillRect(90,238,1740,4);
+   const template=$('template').value,limit=Number($('rows').value),rows=getDivisionRows().filter(r=>r.name).sort((a,b)=>(a.place??9999)-(b.place??9999));
+   const scores=getScores();
+   ctx.fillStyle='#FFFFFF';ctx.font='800 30px Inter,Arial,sans-serif';ctx.fillText(template.toUpperCase(),90,300);
+   if(!state.loaded || !rows.length){
+     ctx.fillStyle='#b6c4d5';ctx.font='600 34px Inter,Arial,sans-serif';ctx.fillText('IMPORT REAL MEET RESULTS TO PREVIEW',90,430);
+     ctx.font='24px Inter,Arial,sans-serif';ctx.fillText('No sample athletes or scores are used.',90,480);$('empty').classList.remove('hidden');return;
+   }
+   $('empty').classList.add('hidden');
+   if(template==='Team standings' && !scores.length){
+     ctx.fillStyle='#ffb49f';ctx.font='800 36px Inter,Arial,sans-serif';ctx.fillText('OFFICIAL TEAM SCORES NOT FOUND',90,430);
+     ctx.fillStyle='#b6c4d5';ctx.font='24px Inter,Arial,sans-serif';ctx.fillText('Import official team-score data to export this graphic.',90,480);return;
+   }
+   const startY=345,rowH=Math.min(65,Math.floor(610/Math.max(1,Math.min(limit,10))));
+   let display=[];
+   if(template==='Team standings'){
+     display=scores.slice().sort((a,b)=>(Number(a.place)||9999)-(Number(b.place)||9999)).slice(0,limit).map((t,i)=>({place:t.place||i+1,name:t.school||'Unnamed team',school:'TEAM SCORE',time:t.isRelay?fmtTime(t.score):`${t.score} pts`}));
+   }else if(template==='Team comparison'){
+     const selected=$('school').value.trim();
+     const schools=[...new Set(rows.map(r=>r.school).filter(Boolean))].filter(s=>!selected||s.toLowerCase().includes(selected.toLowerCase())).slice(0,limit);
+     display=schools.map((s,i)=>({place:i+1,name:s,school:'TEAM',time:rows.filter(r=>r.school===s).length+' results'}));
+   }else if(template==='Athlete spotlight'){
+     const selected=$('school').value.trim();
+     display=rows.filter(r=>!selected||r.school.toLowerCase().includes(selected.toLowerCase())).slice(0,1).map((r,i)=>({place:r.place||i+1,name:r.name,school:r.school,time:r.time||'TIME NOT PROVIDED'}));
+   }else display=rows.slice(0,limit).map((r,i)=>({place:r.place||i+1,name:r.name,school:r.school||'SCHOOL NOT PROVIDED',time:r.time||'TIME NOT PROVIDED'}));
+   if(!display.length){ctx.fillStyle='#ffb49f';ctx.font='700 30px Inter,Arial,sans-serif';ctx.fillText('NO MATCHING RECORDS',90,430);return;}
+   display.forEach((r,i)=>{
+     const y=startY+i*rowH;
+     roundRect(ctx,90,y,1740,rowH-7,8,i===0?'#18304b':'#0e2035');
+     if(i===0){roundRect(ctx,90,y,8,rowH-7,4,orange);}
+     ctx.fillStyle=i===0?orange:'#c6d4e4';ctx.font='800 25px Inter,Arial,sans-serif';ctx.fillText(String(r.place||i+1),122,y+rowH/2+8);
+     ctx.fillStyle='#fff';ctx.font='750 25px Inter,Arial,sans-serif';ctx.fillText(String(r.name||'').slice(0,43),205,y+rowH/2+7);
+     ctx.fillStyle='#a9bad0';ctx.font='500 18px Inter,Arial,sans-serif';ctx.fillText(String(r.school||'').slice(0,38),205,y+rowH/2+29);
+     ctx.fillStyle='#fff';ctx.font='800 25px Inter,Arial,sans-serif';ctx.textAlign='right';ctx.fillText(String(r.time||'—').slice(0,22),1790,y+rowH/2+8);ctx.textAlign='left';
+   });
+   ctx.fillStyle='#71859e';ctx.font='600 17px Inter,Arial,sans-serif';ctx.fillText('MOUNTAINSTATEMILES.COM',90,1025);
+   ctx.textAlign='right';ctx.fillText(`${display.length} RECORDS · 1920 × 1080`,1830,1025);ctx.textAlign='left';
+ }
+ function exportPng(){
+   if($('exportBtn').disabled)return;
+   draw();
+   $('art').toBlob(blob=>{if(!blob){setStatus('PNG export failed. Try again.','bad');return;}const a=document.createElement('a');const slug=(state.meet.slug||new URL($('meetUrl').value).searchParams.get('slug')||'meet').replace(/[^a-z0-9-]/gi,'-');const suffix=$('template').value.toLowerCase().replace(/[^a-z0-9]+/g,'-');a.href=URL.createObjectURL(blob);a.download=`${slug}-${$('division').value.toLowerCase().replace(/[^a-z0-9]+/g,'-')}-${suffix}.png`;a.click();URL.revokeObjectURL(a.href);setStatus('PNG exported at 1920 × 1080. Add it to OBS using Sources → + → Image.','good');},'image/png');
+ }
+ $('loadBtn').addEventListener('click',importMeet);
+ $('exportBtn').addEventListener('click',exportPng);$('exportBtn2').addEventListener('click',exportPng);
+ ['template','division','rows','accent','headline','subhead','school'].forEach(id=>$(id).addEventListener('input',summarize));
+ $('dataFile').addEventListener('change',async e=>{
+   const file=e.target.files?.[0];if(!file)return;
+   try{const text=await file.text();let payload,source=file.name;
+     if(file.name.toLowerCase().endsWith('.json'))payload=JSON.parse(text);
+     else payload=parseDelimited(text);
+     if(Array.isArray(payload)){loadPayload({results:payload,meet:{name:file.name.replace(/\.[^.]+$/,'')}},source);}
+     else loadPayload(payload,source);
+     if(state.loaded)setStatus(`Loaded ${state.rows.length} result rows from ${file.name}. Verify gender/race and team-scoring data before export.`,state.teamScores.length?'good':'warn');
+   }catch(err){setStatus(`Could not read ${file.name}: ${err.message}`,'bad');}
+ });
+ $('downloadJson').addEventListener('click',()=>{const blob=new Blob([JSON.stringify({meet:state.meet,results:state.rows.map(r=>({athlete_name:r.name,school:r.school,gender:r.gender,race_type:r.race,place:r.place,time:r.time})),teamScores:state.teamScores},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=(state.meet.slug||'meet')+'-graphics-data.json';a.click();URL.revokeObjectURL(a.href);});
+ $('clearBtn').addEventListener('click',()=>{state.rows=[];state.teamScores=[];state.meet={name:'',date:'',location:'',slug:''};state.source='';state.loaded=false;$('dataFile').value='';setStatus('Imported data cleared. No graphic can be exported until real data is loaded.');summarize();});
+ $('resetBtn').addEventListener('click',()=>{ $('meetUrl').value='https://mountainstatemiles.com/CrossCountry/meet.html?slug=msac-championships';$('template').value='Team standings';$('division').value='Boys Varsity';$('rows').value='10';$('headline').value='MSAC CHAMPIONSHIPS';$('subhead').value='';$('accent').value='#FF5722';$('school').value='';summarize();});
+ // Explicitly start with no results. Defaults are design settings only.
+ summarize();
+})();
+</script>
+</body>
+</html>
