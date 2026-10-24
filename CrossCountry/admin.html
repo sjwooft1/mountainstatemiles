@@ -8,6 +8,9 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="/assets/theme-toggle.js" defer></script>
   <script src="/assets/components.js" defer></script>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.7.1/jspdf.plugin.autotable.min.js"></script>
+  <script defer src="/assets/pdf-branding.js"></script>
   <style>
     * { box-sizing: border-box; }
 
@@ -463,6 +466,21 @@
     .btn:focus-visible, .nav-btn:focus-visible, .grid-table th:focus-visible, input:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
     @media(max-width:900px) { .grid-container { min-height:calc(100vh - 112px); } .topbar h2 { font-size:1.05rem; } .mobile-refresh { display:inline-flex; } .mobile-menu-button { flex-shrink:0; } }
 
+    /* State qualification (regionals → states) */
+    .qual-hero-note { display:flex; gap:10px; align-items:flex-start; padding:12px 14px; border-radius:10px; background:rgba(56,189,248,.08); border:1px solid rgba(56,189,248,.25); font-size:.82rem; color:var(--muted); line-height:1.45; margin-bottom:18px; }
+    .qual-fields-disabled { opacity:.45; pointer-events:none; }
+    .qual-preview { display:grid; gap:10px; margin-top:12px; }
+    .qual-preview-race { border:1px solid var(--border); border-radius:10px; padding:11px 13px; background:var(--card); }
+    .qual-preview-head { display:flex; align-items:baseline; justify-content:space-between; gap:10px; font-size:.88rem; }
+    .qual-preview-head span { color:var(--muted); font-size:.74rem; white-space:nowrap; }
+    .qual-preview-line { margin-top:6px; font-size:.8rem; color:var(--muted); line-height:1.45; }
+    .qual-preview-line strong { color:#e6f0f7; font-weight:600; }
+    .qual-preview-tag { display:inline-block; min-width:82px; margin-right:6px; color:var(--accent); font-size:.66rem; font-weight:700; letter-spacing:.09em; text-transform:uppercase; }
+    .qual-empty { padding:16px; text-align:center; border:1px dashed var(--border); border-radius:10px; color:var(--muted); font-size:.82rem; }
+    .qual-stats { display:flex; gap:16px; flex-wrap:wrap; font-size:.78rem; color:var(--muted); }
+    .qual-stats b { color:#e6f0f7; }
+    .qual-check { display:flex; align-items:center; gap:8px; font-weight:600; color:#e6f0f7; font-size:.92rem; cursor:pointer; }
+
   </style>
 </head>
 <body>
@@ -558,6 +576,7 @@
   <script src="firebase-config.js"></script>
   <script src="/scripts/results-filter.js"></script>
 <script src="firebase-helpers.js"></script>
+  <script src="/assets/regional-qualifiers.js"></script>
   <script>
     // ==========================================
     // Auth Gate (must match CrossCountry/login.html EXACTLY)
@@ -849,12 +868,14 @@
               <span id="search-status" class="loading-indicator" role="status" aria-label="Searching" hidden></span>
               <button class="btn btn-primary" onclick="openGridAddModal()">+ Add</button>
               <button class="btn btn-secondary" onclick="exportGridCSV()">↓ Export CSV</button>
+              <button class="btn btn-secondary" onclick="exportGridPDF()">↧ Export PDF</button>
               <span class="search-hint">Search across all columns · use school:field or gender:F · double-click any cell to edit</span>
             </div>
           </div>
           <div class="bulk-toolbar" id="bulk-toolbar" style="padding:0 16px;${grid.selectedIds.size ? '' : 'display:none;'}">
             <span id="selected-count">${grid.selectedIds.size} selected</span>
             <button class="btn btn-secondary btn-small" onclick="exportGridCSV(true)">Export selected</button>
+            <button class="btn btn-secondary btn-small" onclick="exportGridPDF(true)">Export selected PDF</button>
             <button class="btn btn-danger btn-small" onclick="deleteSelectedGridRows()">Delete selected</button>
             <button class="btn btn-secondary btn-small" onclick="clearGridSelection()">Clear selection</button>
           </div>
@@ -1091,6 +1112,92 @@
       anchor.download = `${grid.title.toLowerCase().replace(/\s+/g, '-')}-${selectedOnly ? 'selected-' : ''}${new Date().toISOString().slice(0, 10)}.csv`;
       anchor.click();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    // PDF export of the current grid view (respects search + extra filters, or
+    // just the selected rows). Uses the shared MSM PDF branding so admin exports
+    // match the public meet/rankings PDFs.
+    function htmlToPlainText(html) {
+      try {
+        const parsed = new DOMParser().parseFromString(String(html), 'text/html');
+        return (parsed.body.textContent || '').replace(/\s+/g, ' ').trim();
+      } catch (e) {
+        return String(html).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+      }
+    }
+
+    function gridCellExportText(column, row) {
+      if (column.key === 'qualification') {
+        const q = row.qualification || {};
+        const on = q.enabled === true || q.enabled === 'true' || q.enabled === 1;
+        if (!on) return 'Not set';
+        const target = q.target_name || (meetsCache.find(m => m.slug === q.target_slug) || {}).name || q.target_slug || 'State';
+        return `→ ${target} · ${q.team_spots ?? 3} teams / ${q.individual_spots ?? 5} individuals / ${q.wildcard_spots || 0} wildcards`;
+      }
+      if (column.render) {
+        const text = htmlToPlainText(column.render(row));
+        return text || '—';
+      }
+      const raw = row[column.key];
+      if (Array.isArray(raw)) return raw.length ? raw.join('; ') : '—';
+      if (raw === true) return 'Yes';
+      if (raw === false) return '—';
+      if (raw === null || raw === undefined || raw === '') return '—';
+      return String(raw);
+    }
+
+    async function exportGridPDF(selectedOnly = false) {
+      if (!selectedOnly) selectedOnly = false;
+      const records = selectedOnly
+        ? grid.filtered.filter(row => grid.selectedIds.has(String(row[grid.idKey])))
+        : grid.filtered;
+      if (!records.length) {
+        showAdminToast('Nothing to export yet — adjust the search or filters.', 'error');
+        return;
+      }
+      if (typeof MSMPdf === 'undefined') {
+        showAdminToast('PDF library is still loading. Try again in a second.', 'error');
+        return;
+      }
+      try {
+        const jsPDF = await MSMPdf.ready();
+        const doc = new jsPDF({ orientation: 'landscape' });
+        const subtitleBits = [`${records.length.toLocaleString()} ${singularize(grid.title).toLowerCase()} record${records.length === 1 ? '' : 's'}`];
+        if (selectedOnly) subtitleBits.push('selected rows');
+        if (grid.searchTerm.trim()) subtitleBits.push(`search “${grid.searchTerm.trim()}”`);
+        if (grid.filterMeet) subtitleBits.push(`meet: ${grid.filterMeet}`);
+        if (grid.filterSchool) subtitleBits.push(`school: ${grid.filterSchool}`);
+        subtitleBits.push(new Date().toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }));
+
+        const drawHeader = await MSMPdf.brandHeader(doc, {
+          title: `${grid.title} — Mountain State Miles`,
+          subtitle: subtitleBits.join(' · ')
+        });
+
+        const head = [['#', ...grid.columns.map(column => column.label)]];
+        const body = records.map((row, index) => [
+          index + 1,
+          ...grid.columns.map(column => gridCellExportText(column, row))
+        ]);
+        const base = MSMPdf.tableStyles();
+        doc.autoTable({
+          head,
+          body,
+          startY: 30,
+          margin: { top: 30 },
+          styles: { ...base.styles, fontSize: 7, cellPadding: 1.4, overflow: 'linebreak', valign: 'top' },
+          headStyles: base.headStyles,
+          alternateRowStyles: base.alternateRowStyles,
+          didDrawPage: drawHeader
+        });
+
+        MSMPdf.finalize(doc);
+        doc.save(`${slugify(grid.title)}-${selectedOnly ? 'selected-' : ''}${new Date().toISOString().slice(0, 10)}.pdf`);
+        showAdminToast(`PDF exported (${records.length.toLocaleString()} row${records.length === 1 ? '' : 's'}).`);
+      } catch (error) {
+        console.error('PDF export failed', error);
+        showAdminToast(`Could not build the PDF: ${error.message}`, 'error');
+      }
     }
 
     document.addEventListener('keydown', event => {
@@ -1379,6 +1486,21 @@
               if (!arr.length) return '<span class="badge badge-muted">0 teams</span>';
               const names = arr.map(sl => schoolMap[sl] || sl).join(', ');
               return `<span class="badge badge-info" title="${escapeAttr(names)}">${arr.length} team${arr.length === 1 ? '' : 's'}</span>`;
+            } },
+          { key: 'qualification', label: 'State Qualification', type: 'textarea', formExclude: true, editable: false,
+            searchValue: row => {
+              const q = row.qualification || {};
+              const on = q.enabled === true || q.enabled === 'true' || q.enabled === 1;
+              return on ? `regional qualifier ${q.target_name || q.target_slug || ''} state` : 'not a qualifier';
+            },
+            render: row => {
+              const q = row.qualification || {};
+              const on = q.enabled === true || q.enabled === 'true' || q.enabled === 1;
+              const target = q.target_name || (meetsCache.find(m => m.slug === q.target_slug) || {}).name || q.target_slug;
+              const badge = on
+                ? `<span class="badge badge-info" title="${escapeAttr(`${q.team_spots ?? 3} teams · ${q.individual_spots ?? 5} individuals · ${q.wildcard_spots || 0} wildcards per race`)}">→ ${escapeHtml(target || 'State')}</span>`
+                : '<span class="badge badge-muted">Not set</span>';
+              return `${badge} <button class="btn btn-secondary btn-small" onclick="openQualificationModal('${escapeAttr(row.id)}')">Rules</button>`;
             } }
         ],
         onCreate: async (data) => {
@@ -1390,6 +1512,226 @@
         onDelete: async (id) => deleteRecord(`crosscountry/meets/${id}`),
         validate: data => !data.name ? 'Meet name is required.' : null
       });
+    }
+
+    // ==========================================
+    // State qualification rules (regionals → states)
+    // ==========================================
+    // Stored on the meet as meet.qualification. The public meet page reads the
+    // same object through /assets/regional-qualifiers.js, so this editor is the
+    // single place the rules are set.
+    function stateMeetOptions(selectedSlug) {
+      const isState = meet => meet.is_state_championship || /state/i.test(meet.name || '');
+      const sorted = meetsCache.slice().sort((a, b) => {
+        const stateA = isState(a) ? 0 : 1;
+        const stateB = isState(b) ? 0 : 1;
+        if (stateA !== stateB) return stateA - stateB;
+        return String(b.date || '').localeCompare(String(a.date || ''));
+      });
+      return sorted.map(meet => {
+        const date = meet.date
+          ? new Date(meet.date + 'T00:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+          : 'no date';
+        const tag = isState(meet) ? ' · State' : '';
+        return `<option value="${escapeAttr(meet.slug)}" ${selectedSlug === meet.slug ? 'selected' : ''}>${escapeHtml(meet.name || meet.slug)} (${escapeHtml(date)}${tag})</option>`;
+      }).join('');
+    }
+
+    // A new regional usually feeds the next state meet. Prefer the closest
+    // championship on or after the meet's date, then the closest one in time.
+    function defaultQualificationTarget(meet) {
+      const meetTime = Date.parse(meet && meet.date) || 0;
+      const candidates = meetsCache.filter(m =>
+        m.slug && m.slug !== (meet && meet.slug) && (m.is_state_championship || /state/i.test(m.name || ''))
+      );
+      if (!candidates.length) return '';
+      const time = m => Date.parse(m.date) || 0;
+      const upcoming = candidates.filter(m => time(m) >= meetTime).sort((a, b) => time(a) - time(b));
+      if (upcoming.length) return upcoming[0].slug;
+      return candidates.sort((a, b) => time(b) - time(a))[0].slug;
+    }
+
+    function qualificationFormHTML(meet, existing) {
+      const q = existing || {};
+      const defaults = (window.MSMQualifiers && window.MSMQualifiers.RAW_DEFAULTS) || { team_spots: 3, team_members: 7, individual_spots: 5, wildcard_spots: 0, race_scope: 'varsity' };
+      const enabled = q.enabled === true || q.enabled === 'true' || q.enabled === 1;
+      const fallbackState = defaultQualificationTarget(meet);
+      const num = (value, fallback) => (value === undefined || value === null || value === '' ? fallback : value);
+      const scope = q.race_scope === 'all' ? 'all' : 'varsity';
+      return `
+        <div class="qual-hero-note"><span aria-hidden="true">🏁</span><span>Set who advances from this meet to a championship. The meet page publishes these rules as a <strong>Road to States</strong> graphic, built from the meet's own results.</span></div>
+        <div class="form-group">
+          <label class="qual-check"><input type="checkbox" id="qual-enabled" ${enabled ? 'checked' : ''}> This meet is a regional qualifier</label>
+          <p class="muted" style="font-size:.78rem;margin:0;">Turn this on for regional meets. Leave it off for invitationals, JV meets and the state meet itself.</p>
+        </div>
+        <div id="qual-fields" class="qual-fields${enabled ? '' : ' qual-fields-disabled'}">
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label">Advancing to meet</label>
+              <select class="form-input" id="qual-target">
+                <option value="">— Not linked to a meet —</option>
+                ${stateMeetOptions(q.target_slug || fallbackState)}
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Label override (optional)</label>
+              <input class="form-input" id="qual-target-name" value="${escapeAttr(q.target_name || '')}" placeholder="e.g. WV State Championship">
+            </div>
+          </div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label">Teams advancing per race</label>
+              <input type="number" min="0" max="25" class="form-input" id="qual-team-spots" value="${escapeAttr(num(q.team_spots, defaults.team_spots))}">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Runners per advancing team</label>
+              <input type="number" min="1" max="12" class="form-input" id="qual-team-members" value="${escapeAttr(num(q.team_members, defaults.team_members))}">
+              <p class="muted" style="font-size:.78rem;margin:0;">Roster spots that travel with a qualifying team (usually 7).</p>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Additional individuals per race</label>
+              <input type="number" min="0" max="60" class="form-input" id="qual-individual-spots" value="${escapeAttr(num(q.individual_spots, defaults.individual_spots))}">
+              <p class="muted" style="font-size:.78rem;margin:0;">Best finishers not already going with a qualifying team.</p>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Wildcard spots per race</label>
+              <input type="number" min="0" max="60" class="form-input" id="qual-wildcard-spots" value="${escapeAttr(num(q.wildcard_spots, defaults.wildcard_spots))}">
+              <p class="muted" style="font-size:.78rem;margin:0;">Extra at-large spots, awarded by finish order after the individuals.</p>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Which races count</label>
+              <select class="form-input" id="qual-race-scope">
+                <option value="varsity" ${scope === 'varsity' ? 'selected' : ''}>Varsity races only</option>
+                <option value="all" ${scope === 'all' ? 'selected' : ''}>Every race</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Public note (optional)</label>
+              <input class="form-input" id="qual-note" value="${escapeAttr(q.note || '')}" placeholder="Shown under the qualifier graphic">
+            </div>
+          </div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:4px 0 8px;">
+            <button type="button" class="btn btn-secondary btn-small" id="qual-preview-btn">👀 Preview qualifiers</button>
+            ${meet.slug ? `<a class="btn btn-secondary btn-small" href="meet.html?slug=${encodeURIComponent(meet.slug)}" target="_blank" rel="noopener">Open meet page ↗</a>` : ''}
+            <span class="muted" style="font-size:.78rem;">Preview uses the meet's posted results and these unsaved rules.</span>
+          </div>
+          <div id="qual-preview" class="qual-preview" hidden></div>
+        </div>`;
+    }
+
+    function toggleQualificationFields() {
+      const enabled = !!document.getElementById('qual-enabled')?.checked;
+      const fields = document.getElementById('qual-fields');
+      if (!fields) return;
+      fields.classList.toggle('qual-fields-disabled', !enabled);
+      fields.querySelectorAll('input, select, button').forEach(el => { el.disabled = !enabled; });
+    }
+
+    function readQualificationForm() {
+      const value = id => String(document.getElementById(id)?.value || '').trim();
+      const number = (id, fallback) => {
+        const n = parseInt(value(id), 10);
+        return isNaN(n) ? fallback : n;
+      };
+      const defaults = (window.MSMQualifiers && window.MSMQualifiers.RAW_DEFAULTS) || { team_spots: 3, team_members: 7, individual_spots: 5, wildcard_spots: 0 };
+      return {
+        enabled: !!document.getElementById('qual-enabled')?.checked,
+        target_slug: value('qual-target'),
+        target_name: value('qual-target-name'),
+        team_spots: number('qual-team-spots', defaults.team_spots),
+        team_members: number('qual-team-members', defaults.team_members),
+        individual_spots: number('qual-individual-spots', defaults.individual_spots),
+        wildcard_spots: number('qual-wildcard-spots', defaults.wildcard_spots),
+        race_scope: value('qual-race-scope') === 'all' ? 'all' : 'varsity',
+        note: value('qual-note'),
+        updated_at: new Date().toISOString(),
+      };
+    }
+
+    function openQualificationModal(id) {
+      const meet = meetsCache.find(m => String(m.id) === String(id));
+      if (!meet) return;
+      openModal(`State qualification — ${meet.name || meet.slug}`, qualificationFormHTML(meet, meet.qualification), 'Save rules');
+      const submit = document.getElementById('modal-submit');
+      if (submit) submit.onclick = () => saveQualificationRules(meet.id);
+      const previewBtn = document.getElementById('qual-preview-btn');
+      if (previewBtn) previewBtn.onclick = () => previewQualification(meet.id);
+      const enabled = document.getElementById('qual-enabled');
+      if (enabled) enabled.addEventListener('change', toggleQualificationFields);
+      toggleQualificationFields();
+    }
+
+    async function saveQualificationRules(id) {
+      const meet = meetsCache.find(m => String(m.id) === String(id));
+      if (!meet) return;
+      const rules = readQualificationForm();
+      if (rules.enabled) {
+        if (rules.team_spots + rules.individual_spots + rules.wildcard_spots <= 0) {
+          alert('Set at least one way to advance: a team spot, an individual spot or a wildcard.');
+          return;
+        }
+        if (rules.team_spots > 0 && rules.team_members < 5) {
+          alert('A team needs at least five runners to post a score, so an advancing team must travel at least five.');
+          return;
+        }
+      }
+      try {
+        await updateRecord(`crosscountry/meets/${id}`, { qualification: rules });
+        closeModal();
+        showAdminToast(rules.enabled ? 'Qualification rules saved.' : 'Qualification rules turned off.');
+        await loadSection('meets');
+      } catch (error) {
+        console.error('Could not save qualification rules', error);
+        alert('Could not save the rules: ' + error.message);
+      }
+    }
+
+    async function previewQualification(id) {
+      const meet = meetsCache.find(m => String(m.id) === String(id));
+      const box = document.getElementById('qual-preview');
+      if (!meet || !box || !window.MSMQualifiers) return;
+      const formRules = readQualificationForm();
+      const rules = window.MSMQualifiers.rulesFromMeet({ qualification: { ...formRules, enabled: true } });
+      box.hidden = false;
+      box.innerHTML = '<div class="qual-empty">Loading the meet\'s results…</div>';
+      try {
+        const [all, schools] = await Promise.all([
+          fetchNodeAsArray('crosscountry/results'),
+          fetchNodeAsArray('crosscountry/schools')
+        ]);
+        // Public imports often store only school_slug; meet.html resolves names
+        // from the schools table, so do the same here or every team is "Unknown".
+        const schoolNames = Object.fromEntries(schools.map(s => [s.slug, s.name]));
+        const results = all
+          .filter(r => r.meet_slug === meet.slug)
+          .map(r => ({ ...r, school_name: r.school_name || r.school || schoolNames[r.school_slug] || r.school_slug }));
+        if (!results.length) {
+          box.innerHTML = `<div class="qual-empty">No results are posted for ${escapeHtml(meet.name || meet.slug)} yet, so there is nobody to qualify.</div>`;
+          return;
+        }
+        const data = window.MSMQualifiers.computeQualifiers({ results, rules });
+        if (!data.races.length) {
+          box.innerHTML = '<div class="qual-empty">No races match this rule set. Try “Every race”, or check the meet\'s race labels.</div>';
+          return;
+        }
+        const names = list => list.map(a => escapeHtml(a.name)).join(', ');
+        box.innerHTML =
+          `<div class="qual-stats"><span><b>${data.totals.athletes}</b> athletes</span><span><b>${data.totals.teams}</b> teams</span><span><b>${data.totals.races}</b> races</span></div>` +
+          data.races.map(race => {
+            const teams = race.teams.length
+              ? race.teams.map(t => `<strong>${escapeHtml(t.school)}</strong>${t.score != null ? ` (${t.score})` : ''}`).join(', ')
+              : '—';
+            return `<div class="qual-preview-race">
+              <div class="qual-preview-head"><strong>${race.gender === 'F' ? 'Girls' : 'Boys'} · ${escapeHtml(race.race)}</strong><span>${race.advanceCount} advancing</span></div>
+              <div class="qual-preview-line"><span class="qual-preview-tag">Teams</span>${teams}</div>
+              <div class="qual-preview-line"><span class="qual-preview-tag">Individuals</span>${race.individuals.length ? names(race.individuals) : '—'}</div>
+              ${race.wildcards.length ? `<div class="qual-preview-line"><span class="qual-preview-tag">Wildcards</span>${names(race.wildcards)}</div>` : ''}
+              ${race.bubble.length ? `<div class="qual-preview-line"><span class="qual-preview-tag">First out</span>${names(race.bubble)}</div>` : ''}
+            </div>`;
+          }).join('');
+      } catch (error) {
+        box.innerHTML = `<div class="qual-empty">Could not load results: ${escapeHtml(error.message)}</div>`;
+      }
     }
 
     // ==========================================

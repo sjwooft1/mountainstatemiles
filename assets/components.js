@@ -19,6 +19,7 @@ const BASE_LINKS = [
       { name: 'XC Simulator', url: '/CrossCountry/simulator.html' },
       { name: 'Training Paces', url: '/CrossCountry/paces.html' },
       { name: 'Portal', url: '/Portal/portal.html' },
+      { name: 'Fantasy', url: '/Fantasy/index.html' },
       { name: 'Track Home', url: '/Track/index.html' },
     ],
     track: [
@@ -28,6 +29,7 @@ const BASE_LINKS = [
       { name: 'Events', url: '/Track/events.html' },
       { name: 'Analytics', url: '/Track/analytics.html'},
       { name: 'Portal', url: '/Portal/portal.html' },
+      { name: 'Fantasy', url: '/Fantasy/index.html' },
       { name: 'Cross Country', url: '/CrossCountry/xc.html' },
     ],
     default: [
@@ -35,6 +37,7 @@ const BASE_LINKS = [
       { name: 'Track', url: '/Track/index.html' },
       { name: 'Cross Country', url: '/CrossCountry/xc.html' },
       { name: 'Portal', url: '/Portal/portal.html' },
+      { name: 'Fantasy', url: '/Fantasy/index.html' },
     ]
   };
   

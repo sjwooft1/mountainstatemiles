@@ -29,6 +29,7 @@
     });
   </script>
   <script src="meet-analytics.js" defer></script>
+  <script src="/assets/regional-qualifiers.js" defer></script>
 
 
   <style>
@@ -740,6 +741,9 @@
         </div>
       </div>
 
+      <!-- Road to States: admin-set regional qualification rules -->
+      <div id="qualifier-mount" hidden></div>
+
       <section class="circuit-section" id="circuit-section" style="display:none;" aria-labelledby="circuit-title">
         <div class="circuit-heading"><h2 id="circuit-title">Around the circuit</h2><p>Nearby meets and the latest finish-line snapshots</p></div>
         <div class="circuit-grid" id="circuit-grid"></div>
@@ -1095,6 +1099,7 @@
     let currentIsRelay = false;
     let h2hTeamA = null;
     let h2hTeamB = null;
+    let qualifierTargetName = '';   // state meet name resolved for PDF/qualifier labels
 
     // ==========================================
     // 3. MAIN INITIALIZATION
@@ -1217,6 +1222,10 @@
         document.getElementById('stat-athletes').textContent = allResults.length || '-';
         document.getElementById('meet-stats').style.display = 'flex';
 
+        // Regional meets can publish admin-set qualification rules. If this
+        // meet has them, paint the "Road to States" graphics from its results.
+        renderQualifierGraphics();
+
         selectorDiv.style.display = "block";
 
         setupSearchAndControls();
@@ -1231,6 +1240,41 @@
         document.dispatchEvent(new Event("MSMDataLoaded"));
       }
     });
+
+    // ==========================================
+    // REGIONAL QUALIFIERS (Road to States)
+    // ==========================================
+    // The rules live on the meet record (meet.qualification) and are set in the
+    // admin. assets/regional-qualifiers.js owns the maths and the graphics, so
+    // the admin preview and this page always agree. Team standings are handed in
+    // from calculateTeamScores/calculateRelayScores so qualifiers match the
+    // standings already rendered above.
+    async function renderQualifierGraphics() {
+      const mount = document.getElementById('qualifier-mount');
+      if (!mount || !window.MSMQualifiers) return;
+      try {
+        const rules = window.MSMQualifiers.rulesFromMeet(currentMeetData);
+        if (!rules) return;
+
+        let targetMeet = null;
+        if (rules.targetSlug && typeof window.getAllMeets === 'function') {
+          const meets = await window.getAllMeets(1000);
+          targetMeet = (meets || []).find(m => m && m.slug === rules.targetSlug) || null;
+        }
+        qualifierTargetName = rules.targetName || (targetMeet && targetMeet.name) || '';
+
+        window.MSMQualifiers.render(mount, {
+          meet: currentMeetData,
+          rules,
+          targetMeet,
+          results: allResults,
+          computeTeams: rows => (isRelayRace(rows) ? calculateRelayScores(rows) : calculateTeamScores(rows)),
+        });
+      } catch (err) {
+        console.warn('Qualifier graphics unavailable:', err);
+        mount.hidden = true;
+      }
+    }
 
     function formatMeetDate(dateStr) {
       if (!dateStr) return "Date TBD";
@@ -2129,6 +2173,64 @@
       ctx.fillText(line, x, curY);
     }
 
+    // Human summary of the admin's qualification rules, e.g.
+    // "top 3 teams · next 5 individuals · 2 wildcards".
+    function qualificationRuleSummary(rules) {
+      if (!rules) return '';
+      const parts = [];
+      if (rules.teamSpots) parts.push(`top ${rules.teamSpots} team${rules.teamSpots === 1 ? '' : 's'}`);
+      if (rules.individualSpots) parts.push(`next ${rules.individualSpots} individual${rules.individualSpots === 1 ? '' : 's'}`);
+      if (rules.wildcardSpots) parts.push(`${rules.wildcardSpots} wildcard${rules.wildcardSpots === 1 ? '' : 's'}`);
+      return parts.join(' · ');
+    }
+
+    // Who is advancing to states from the race currently on screen, so the PDF
+    // export can flag them with a Q. Returns null when the meet has no rules or
+    // the active race produced no qualifiers.
+    function activeRaceQualifiers() {
+      if (!window.MSMQualifiers) return null;
+      const rules = window.MSMQualifiers.rulesFromMeet(currentMeetData);
+      if (!rules) return null;
+      try {
+        const data = window.MSMQualifiers.computeQualifiers({
+          results: allResults,
+          rules,
+          computeTeams: rows => (isRelayRace(rows) ? calculateRelayScores(rows) : calculateTeamScores(rows)),
+        });
+        const race = data.races.find(r => r.gender === activeGender && r.race === activeRaceType);
+        if (!race) return null;
+        const athletes = [...race.teams.flatMap(t => t.athletes), ...race.individuals, ...race.wildcards];
+        return {
+          rules,
+          targetName: qualifierTargetName || rules.targetName || 'States',
+          keys: new Set(athletes.map(a => a.key)),
+          teamSchools: new Set(race.teams.map(t => t.school)),
+          count: athletes.length,
+          summary: qualificationRuleSummary(rules),
+        };
+      } catch (err) {
+        console.warn('Qualifier flags unavailable for the PDF:', err);
+        return null;
+      }
+    }
+
+    // Gold "Q" cells so state qualifiers pop off the printed page.
+    function markQualifierCell(columnIndex) {
+      return function (data) {
+        if (data.section === 'body' && data.column.index === columnIndex && data.cell.raw === 'Q') {
+          data.cell.styles.fillColor = [245, 201, 106];
+          data.cell.styles.textColor = [58, 43, 12];
+        }
+      };
+    }
+
+    function qualifierKeyFor(row) {
+      if (!window.MSMQualifiers) return '';
+      const school = row.school_name || row.school || row.school_slug || 'Unknown';
+      const name = row.athlete_name || row.name || '';
+      return window.MSMQualifiers.normalizeSchool(school).toLowerCase() + '|' + String(name).trim().toLowerCase();
+    }
+
     async function exportResultsPDF() {
       const hasIndiv = currentFilteredResults && currentFilteredResults.length > 0;
       const hasTeams = currentTeamScores && currentTeamScores.length > 0;
@@ -2148,6 +2250,10 @@
 
       const exportSelect = document.getElementById('team-export-select')?.value;
       const subtitle = exportSelect && exportSelect !== 'all' ? `Filtered by Team: ${exportSelect}` : '';
+
+      // Regional qualifiers (admin-set rules): flag advancing athletes/teams
+      // with a Q column and explain the cut above the tables.
+      const qualifiers = activeRaceQualifiers();
 
       // 2–3. Branded PDF header via the shared MSMPdf helper: runner
       //      silhouette + mountainstate.svg wordmark on the coloured band.
@@ -2197,30 +2303,57 @@
         startY += chartTeams.length * rowH + 8;
       }
 
+      if (qualifiers) {
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8.5);
+        doc.setTextColor(105, 105, 105);
+        const legend = `Q = advances to ${qualifiers.targetName}` +
+          (qualifiers.summary ? ` · ${qualifiers.summary}` : '') +
+          ` · ${qualifiers.count} qualifier${qualifiers.count === 1 ? '' : 's'} in this race`;
+        doc.text(legend, 14, startY);
+        startY += 7;
+      }
+
       // 5. Generate the Tables
 
       // Draw Team / Relay Scores Table (if applicable and not hidden)
       if (hasTeams && activeViewMode !== 'indiv') {
         if (relay) {
+          const relayHead = [['Place', 'Relay Team', 'Total Time', 'Avg Leg', 'Legs']];
+          if (qualifiers) relayHead[0].push('Q');
           doc.autoTable({
-              head: [['Place', 'Relay Team', 'Total Time', 'Avg Leg', 'Legs']],
-              body: currentTeamScores.map((t, i) => [i + 1, t.school, formatTime(t.score), formatTime(t.teamAvg), t.athletes.length + (t.complete ? '' : ' (inc.)')]),
+              head: relayHead,
+              body: currentTeamScores.map((t, i) => {
+                const row = [i + 1, t.school, formatTime(t.score), formatTime(t.teamAvg), t.athletes.length + (t.complete ? '' : ' (inc.)')];
+                if (qualifiers) row.push(qualifiers.teamSchools.has(t.school) ? 'Q' : '');
+                return row;
+              }),
               startY: startY,
               margin: { top: 30 },
               styles: { fontSize: 8 },
               headStyles: { fillColor: bc, textColor: [255, 255, 255] },
               alternateRowStyles: { fillColor: [245, 245, 245] },
+              columnStyles: qualifiers ? { [relayHead[0].length - 1]: { cellWidth: 10, halign: 'center', fontStyle: 'bold' } } : undefined,
+              didParseCell: qualifiers ? markQualifierCell(relayHead[0].length - 1) : undefined,
               didDrawPage: drawHeader
           });
         } else {
+          const teamHead = [['Place', 'School', 'Score', 'Avg / Split', 'Scoring Top 5']];
+          if (qualifiers) teamHead[0].push('Q');
           doc.autoTable({
-              head: [['Place', 'School', 'Score', 'Avg / Split', 'Scoring Top 5']],
-              body: currentTeamScores.map((t, i) => [i + 1, t.school, t.score, `${formatTime(t.teamAvg)} / ${formatTime(t.teamSplit)}`, t.athletes.map(a => `${scorerBadgeText(a)} ${a.athlete_name||a.name}`).join(', ')]),
+              head: teamHead,
+              body: currentTeamScores.map((t, i) => {
+                const row = [i + 1, t.school, t.score, `${formatTime(t.teamAvg)} / ${formatTime(t.teamSplit)}`, t.athletes.map(a => `${scorerBadgeText(a)} ${a.athlete_name||a.name}`).join(', ')];
+                if (qualifiers) row.push(qualifiers.teamSchools.has(t.school) ? 'Q' : '');
+                return row;
+              }),
               startY: startY,
               margin: { top: 30 },
               styles: { fontSize: 8 },
               headStyles: { fillColor: bc, textColor: [255, 255, 255] },
               alternateRowStyles: { fillColor: [245, 245, 245] },
+              columnStyles: qualifiers ? { [teamHead[0].length - 1]: { cellWidth: 10, halign: 'center', fontStyle: 'bold' } } : undefined,
+              didParseCell: qualifiers ? markQualifierCell(teamHead[0].length - 1) : undefined,
               didDrawPage: drawHeader
           });
         }
@@ -2232,21 +2365,26 @@
           const indivHead = relay
             ? [['Place', 'Name', 'Relay Team', 'School', 'Time', 'Pace/Mile']]
             : [['Place', 'Name', 'Grade', 'School', 'Time', 'Pace/Mile']];
+          if (qualifiers) indivHead[0].splice(1, 0, 'Q');
           doc.autoTable({
               head: indivHead,
               body: currentFilteredResults.map(r => {
                 const t = r.time ? parseFloat(r.time) : 0;
                 const school = r.school_name || r.school || '';
                 const pace = calculatePacePerMile(t, distance);
-                return relay
+                const row = relay
                   ? [r.place || '-', r.athlete_name || r.name || '', r.relay_team || '', school, formatTime(t), pace]
                   : [r.place || '-', r.athlete_name || r.name || '', gradeLabelFor(r), school, formatTime(t), pace];
+                if (qualifiers) row.splice(1, 0, qualifiers.keys.has(qualifierKeyFor(r)) ? 'Q' : '');
+                return row;
               }),
               startY: startY,
               margin: { top: 30 },
               styles: { fontSize: 8 },
               headStyles: { fillColor: bc, textColor: [255, 255, 255] },
               alternateRowStyles: { fillColor: [245, 245, 245] },
+              columnStyles: qualifiers ? { 1: { cellWidth: 9, halign: 'center', fontStyle: 'bold' } } : undefined,
+              didParseCell: qualifiers ? markQualifierCell(1) : undefined,
               didDrawPage: drawHeader
           });
       }
