@@ -16,6 +16,7 @@
 <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.7.1/jspdf.plugin.autotable.min.js"></script>
+<script defer src="/assets/pdf-branding.js"></script>
 
   <link rel="stylesheet" href="/assets/main.css" />
 
@@ -1738,22 +1739,26 @@ function exportPBsCSV() {
   dl(`${athleteSlug()}_PBs.csv`,'text/csv', rows.map(toCSVRow).join('\n'));
   toast('✓ PBs exported as CSV');
 }
-function exportPBsPDF() {
+async function exportPBsPDF() {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
   const name = athlete ? `${athlete.first_name} ${athlete.last_name}` : 'Athlete';
-  doc.setFontSize(18); doc.setFont('helvetica','bold');
-  doc.text(`${name} — Personal Bests`, 14, 20);
-  doc.setFontSize(9); doc.setFont('helvetica','normal');
   const rankLine = athleteStateRank != null ? ` · State Rank ${athleteStateRank}${ord(athleteStateRank)}` : '';
-  doc.text(`Mountain State Miles · ${new Date().toLocaleDateString()}${athleteBestMsm!=null?` · Best MSM ${athleteBestMsm}`:''}${rankLine}`, 14, 27);
+  const drawHeader = await MSMPdf.brandHeader(doc, {
+    title: `${name} — Personal Bests`,
+    subtitle: `${new Date().toLocaleDateString()}${athleteBestMsm!=null?` · Best MSM ${athleteBestMsm}`:''}${rankLine}`
+  });
   doc.autoTable({
     head:[['Event','Personal Best','MSM Rating']],
     body: Object.entries(pbs).map(([ev,pb])=>[ev,pb.display, pb.msm!=null?pb.msm:'—']),
     startY: 33,
+    margin: { top: 30 },
+    didDrawPage: drawHeader,
     styles:{fontSize:10},
-    headStyles:{fillColor:[0,0,0],textColor:[255,255,255]}
+    headStyles:{fillColor:MSMPdf.PINE,textColor:[255,255,255],fontStyle:'bold'},
+    alternateRowStyles:{fillColor:MSMPdf.CREAM}
   });
+  MSMPdf.finalize(doc);
   doc.save(`${athleteSlug()}_PBs.pdf`);
   toast('✓ PBs exported as PDF');
 }
@@ -1780,23 +1785,26 @@ function exportResultsJSON() {
     })),null,2));
   toast('✓ Results exported as JSON');
 }
-function exportResultsPDF() {
+async function exportResultsPDF() {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ orientation:'landscape' });
   const name = athlete ? `${athlete.first_name} ${athlete.last_name}` : 'Athlete';
-  doc.setFontSize(18); doc.setFont('helvetica','bold');
-  doc.text(`${name} — Results`, 14, 16);
-  doc.setFontSize(9); doc.setFont('helvetica','normal');
   const rankLine = athleteStateRank != null ? ` · State Rank ${athleteStateRank}${ord(athleteStateRank)}` : '';
-  doc.text(`Mountain State Miles · ${new Date().toLocaleDateString()} · ${tFiltered.length} results${athleteBestMsm!=null?` · Best MSM ${athleteBestMsm}`:''}${rankLine}`, 14, 23);
+  const drawHeader = await MSMPdf.brandHeader(doc, {
+    title: `${name} — Results`,
+    subtitle: `${new Date().toLocaleDateString()} · ${tFiltered.length} results${athleteBestMsm!=null?` · Best MSM ${athleteBestMsm}`:''}${rankLine}`
+  });
   doc.autoTable({
     head:[['Date','Event','Mark','MSM Rating','Meet','Place']],
     body: resultRows(),
-    startY:28,
+    startY:30,
+    margin: { top: 30 },
+    didDrawPage: drawHeader,
     styles:{fontSize:9},
-    headStyles:{fillColor:[0,0,0],textColor:[255,255,255]},
-    alternateRowStyles:{fillColor:[245,245,245]}
+    headStyles:{fillColor:MSMPdf.PINE,textColor:[255,255,255],fontStyle:'bold'},
+    alternateRowStyles:{fillColor:MSMPdf.CREAM}
   });
+  MSMPdf.finalize(doc);
   doc.save(`${athleteSlug()}_Results.pdf`);
   toast('✓ Results exported as PDF');
 }

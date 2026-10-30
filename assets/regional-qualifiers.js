@@ -164,7 +164,24 @@
   // Rules
   // ------------------------------------------------------------------
   function rulesFromMeet(meet) {
-    const raw = meet && meet.qualification;
+    let raw = meet && meet.qualification;
+    // Some imported meet records contain Java-style map strings instead of a
+    // Firebase object. Read those existing settings without changing the record.
+    if (typeof raw === "string") {
+      const text = raw.trim();
+      if (!/^\{[\s\S]*\}$/.test(text)) return null;
+      const body = text.slice(1, -1);
+      const keyPattern = /(?:^|,\s*)([a-z_]+)=/g;
+      const entries = [...body.matchAll(keyPattern)];
+      if (!entries.length || entries[0].index !== 0) return null;
+      const parsed = {};
+      entries.forEach((entry, i) => {
+        const start = entry.index + entry[0].length;
+        const end = i + 1 < entries.length ? entries[i + 1].index : body.length;
+        parsed[entry[1]] = body.slice(start, end).trim();
+      });
+      raw = parsed;
+    }
     if (!raw || typeof raw !== "object") return null;
     const enabled = raw.enabled === true || raw.enabled === "true" || raw.enabled === 1;
     if (!enabled) return null;
@@ -604,23 +621,56 @@
     .msq-runner b { color: var(--text-primary, #2f2a24); font-weight: 700; }
     .msq-runner i { font-style: normal; font-variant-numeric: tabular-nums; color: var(--text-secondary, #6b6154); }
     .msq-indivs { display: grid; grid-template-columns: repeat(auto-fill, minmax(215px, 1fr)); gap: 8px; margin-bottom: 10px; }
-    .msq-indiv {
+    .msq-indiv-wrap {
       display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 9px 11px;
+      align-items: stretch;
+      min-width: 0;
       border-radius: 10px;
       border: 1px solid var(--border, #e6dcc8);
       background: var(--bg-primary, #fffdf8);
-      text-decoration: none;
-      color: inherit;
       transition: border-color .18s ease, transform .18s ease, box-shadow .18s ease;
     }
-    .msq-indiv:hover {
+    .msq-indiv-wrap:hover {
       border-color: var(--primary, #3f7d63);
       transform: translateY(-1px);
       box-shadow: 0 4px 12px var(--shadow-light, rgba(63,55,40,.08));
     }
+    .msq-indiv {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 6px 9px 11px;
+      text-decoration: none;
+      color: inherit;
+    }
+    .msq-ticket-btn {
+      flex: 0 0 auto;
+      align-self: center;
+      width: 26px;
+      height: 26px;
+      padding: 0;
+      display: grid;
+      place-items: center;
+      border-radius: 7px;
+      border: 1px solid var(--border, #e6dcc8);
+      background: var(--bg-secondary, #f4ecdd);
+      color: var(--text-secondary, #6b6154);
+      font-size: .8rem;
+      line-height: 1;
+      cursor: pointer;
+      transition: border-color .18s ease, background .18s ease;
+    }
+    .msq-ticket-btn:hover {
+      border-color: var(--msq-gold);
+      background: rgba(224,166,63,.18);
+      color: var(--text-primary, #2f2a24);
+    }
+    .msq-ticket-btn:focus-visible { outline: 2px solid var(--primary, #3f7d63); outline-offset: 1px; }
+    .msq-ticket-btn:disabled { opacity: .5; cursor: progress; }
+    .msq-indiv-wrap .msq-ticket-btn { margin-right: 7px; }
+    .msq-ticket-top .msq-ticket-btn { margin-left: 6px; }
     .msq-medal {
       flex: 0 0 auto;
       min-width: 28px;
@@ -667,7 +717,7 @@
       white-space: nowrap;
     }
     .msq-block-wild h4 { color: var(--msq-gold); }
-    .msq-block-wild .msq-indiv { border-style: dashed; border-color: rgba(224,166,63,.55); }
+    .msq-block-wild .msq-indiv-wrap { border-style: dashed; border-color: rgba(224,166,63,.55); }
     .msq-bubble { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 12px; }
     .msq-bubblerow {
       display: inline-flex;
@@ -703,12 +753,14 @@
     @media (prefers-reduced-motion: reduce) {
       .msq-hero::after { animation: none; display: none; }
       .msq-race, .msq-ticket { animation: none; }
-      .msq-indiv:hover { transform: none; }
+      .msq-indiv-wrap:hover { transform: none; }
+      .msq-ticket-btn { transition: none; }
     }
     @media print {
       .msq-section { box-shadow: none; break-inside: avoid; }
       .msq-hero { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-      .msq-ticket, .msq-indiv { break-inside: avoid; }
+      .msq-ticket, .msq-indiv-wrap { break-inside: avoid; }
+      .msq-ticket-btn { display: none !important; }
     }
   `;
 
@@ -746,12 +798,51 @@
     return (race.gender === "F" ? "Girls" : "Boys") + " · " + race.race;
   }
 
-  function teamHtml(team, index, options) {
+  // Every qualifier card carries a hidden payload for its printable ticket.
+  // Tickets are rendered client-side (jsPDF) so they print at a real ticket size.
+  function pushAthleteTicket(tickets, athlete, race, via) {
+    return tickets.items.push({
+      kind: "athlete",
+      name: athlete.name,
+      school: athlete.school,
+      place: athlete.place,
+      time: athlete.timeText,
+      race: race.race,
+      gender: race.gender,
+      via,
+      roster: [],
+    }) - 1;
+  }
+
+  function pushTeamTicket(tickets, team, race) {
+    return tickets.items.push({
+      kind: "team",
+      name: team.school,
+      school: team.school,
+      place: team.rank,
+      score: team.score,
+      isRelay: team.isRelay,
+      time: team.isRelay ? timeText(team.score) : "",
+      race: race.race,
+      gender: race.gender,
+      via: "team",
+      roster: team.athletes.map((athlete) => athlete.name),
+    }) - 1;
+  }
+
+  function ticketButton(index, label) {
+    return `<button type="button" class="msq-ticket-btn" data-msq-ticket="${index}" title="Download ticket PDF" aria-label="Download state ticket for ${esc(
+      label
+    )}">🎟</button>`;
+  }
+
+  function teamHtml(team, index, options, tickets, race) {
     const slug = slugify(team.school);
     const score = team.isRelay ? timeText(team.score) : team.score != null ? team.score + " pts" : "";
     const meta = [score, team.athletes.length + " runner" + (team.athletes.length === 1 ? "" : "s") + " advancing"]
       .filter(Boolean)
       .join(" · ");
+    const ticketIndex = pushTeamTicket(tickets, team, race);
     return `
       <div class="msq-ticket" style="--msq-i:${index}">
         <span class="msq-rank ${medalClass(team.rank)}">${team.rank}</span>
@@ -760,6 +851,7 @@
             <img class="msq-logo" src="/assets/team logos/${esc(slug)}.png" alt="" loading="lazy" onerror="this.style.display='none'">
             <a class="msq-ticket-school" href="school.html?slug=${encodeURIComponent(slug)}"${linkAttrs(options)}>${esc(team.school)}</a>
             <span class="msq-stamp">To States</span>
+            ${ticketButton(ticketIndex, team.school)}
           </div>
           <div class="msq-ticket-meta">${esc(meta)}</div>
           <div class="msq-runners">${team.athletes
@@ -772,18 +864,22 @@
       </div>`;
   }
 
-  function individualHtml(athlete, options) {
+  function individualHtml(athlete, options, tickets, race, via) {
     const name = esc(athlete.name);
     const href = `athlete.html?name=${encodeURIComponent(athlete.name)}&school=${encodeURIComponent(athlete.schoolSlug || "")}`;
+    const ticketIndex = pushAthleteTicket(tickets, athlete, race, via);
     return `
-      <a class="msq-indiv" href="${href}"${linkAttrs(options)}>
-        <span class="msq-medal ${medalClass(athlete.place)}">${athlete.place != null ? esc(athlete.place) : "–"}</span>
-        <span class="msq-indiv-body">
-          <span class="msq-indiv-name">${name}</span>
-          <span class="msq-indiv-school">${esc(athlete.school)}</span>
-        </span>
-        <span class="msq-indiv-time">${esc(athlete.timeText || "")}</span>
-      </a>`;
+      <div class="msq-indiv-wrap">
+        <a class="msq-indiv" href="${href}"${linkAttrs(options)}>
+          <span class="msq-medal ${medalClass(athlete.place)}">${athlete.place != null ? esc(athlete.place) : "–"}</span>
+          <span class="msq-indiv-body">
+            <span class="msq-indiv-name">${name}</span>
+            <span class="msq-indiv-school">${esc(athlete.school)}</span>
+          </span>
+          <span class="msq-indiv-time">${esc(athlete.timeText || "")}</span>
+        </a>
+        ${ticketButton(ticketIndex, athlete.name)}
+      </div>`;
   }
 
   function bubbleHtml(race) {
@@ -806,7 +902,7 @@
       </div>`;
   }
 
-  function raceHtml(race, index, options) {
+  function raceHtml(race, index, options, tickets) {
     return `
       <article class="msq-race" style="--msq-i:${index}">
         <header class="msq-race-head">
@@ -820,7 +916,7 @@
           race.teams.length
             ? `<div class="msq-block">
                  <h4><span aria-hidden="true">🎽</span> Team tickets</h4>
-                 <div class="msq-teams">${race.teams.map((team, i) => teamHtml(team, i, options)).join("")}</div>
+                 <div class="msq-teams">${race.teams.map((team, i) => teamHtml(team, i, options, tickets, race)).join("")}</div>
                </div>`
             : ""
         }
@@ -828,7 +924,7 @@
           race.individuals.length
             ? `<div class="msq-block">
                  <h4><span aria-hidden="true">🎟️</span> Individual qualifiers</h4>
-                 <div class="msq-indivs">${race.individuals.map((athlete) => individualHtml(athlete, options)).join("")}</div>
+                 <div class="msq-indivs">${race.individuals.map((athlete) => individualHtml(athlete, options, tickets, race, "individual")).join("")}</div>
                </div>`
             : ""
         }
@@ -836,7 +932,7 @@
           race.wildcards.length
             ? `<div class="msq-block msq-block-wild">
                  <h4><span aria-hidden="true">✨</span> Wildcards</h4>
-                 <div class="msq-indivs">${race.wildcards.map((athlete) => individualHtml(athlete, options)).join("")}</div>
+                 <div class="msq-indivs">${race.wildcards.map((athlete) => individualHtml(athlete, options, tickets, race, "wildcard")).join("")}</div>
                </div>`
             : ""
         }
@@ -893,6 +989,9 @@
       ? `<a class="msq-target" href="${targetHref}"${linkAttrs(opts)}>${esc(targetName)}</a>`
       : `<b>${esc(targetName)}</b>`;
 
+    const tickets = { items: [] };
+    const ticketContext = { meet: opts.meet || null, targetMeet, targetName, rules };
+
     mount.hidden = false;
     mount.innerHTML = `
       <section class="msq-section" aria-labelledby="msq-title" data-msq="qualifiers">
@@ -909,13 +1008,307 @@
           </div>
           <div class="msq-trophy" aria-hidden="true">🏆</div>
         </div>
-        <div class="msq-races">${data.races.map((race, index) => raceHtml(race, index, opts)).join("")}</div>
+        <div class="msq-races">${data.races.map((race, index) => raceHtml(race, index, opts, tickets)).join("")}</div>
         <p class="msq-footnote">${
           rules.note
             ? esc(rules.note)
-            : "Projected from this meet&rsquo;s results using the qualification rules the meet admin set. Spots can change if a qualifier scratches."
+            : "Projected from this meet&rsquo;s results using the qualification rules the meet admin set. Spots can change if a qualifier scratches. Use the 🎟 button on any card to download a printable ticket."
         }</p>
       </section>`;
+
+    mount.__msqTicketItems = tickets.items;
+    wireTicketButtons(mount, ticketContext);
+  }
+
+  // ------------------------------------------------------------------
+  // Printable "ticket to states" (A5 landscape, one ticket per qualifier)
+  // ------------------------------------------------------------------
+  function pdfText(value) {
+    return String(value == null ? "" : value)
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[\u2018\u2019]/g, "'")
+      .replace(/[\u201C\u201D]/g, '"')
+      .replace(/[\u2013\u2014]/g, "-");
+  }
+
+  // Imported results sometimes carry a slug ("st-peters-prep") instead of a
+  // school name. On a printed keepsake, read those back as words.
+  function ticketSchool(value) {
+    const text = String(value == null ? "" : value);
+    if (!text || /[A-Z]/.test(text) || !text.includes("-")) return text;
+    return text
+      .split("-")
+      .map((word) => (word ? word.charAt(0).toUpperCase() + word.slice(1) : word))
+      .join(" ");
+  }
+
+  function ticketDate(dateStr) {
+    if (!dateStr) return "";
+    const parts = String(dateStr).split("T")[0].split("-");
+    if (parts.length !== 3) return "";
+    return new Date(+parts[0], +parts[1] - 1, +parts[2]).toLocaleDateString(undefined, {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  }
+
+  function ticketMeta(meet) {
+    if (!meet) return "";
+    return [ticketDate(meet.date), meet.location].filter(Boolean).join(" · ");
+  }
+
+  function drawTicket(doc, item, ctx, mark) {
+    const W = doc.internal.pageSize.getWidth();
+    const H = doc.internal.pageSize.getHeight();
+    const PAGE = [246, 243, 236];
+    const PINE = [35, 74, 59];
+    const GOLD = [224, 166, 63];
+    const GOLD_LIGHT = [245, 201, 106];
+    const GOLD_DARK = [150, 108, 35];
+    const INK = [47, 42, 36];
+    const GRAY = [107, 97, 84];
+
+    doc.setFillColor(PAGE[0], PAGE[1], PAGE[2]);
+    doc.rect(0, 0, W, H, "F");
+
+    const x0 = 6;
+    const y0 = 6;
+    const w = W - 12;
+    const h = H - 12;
+    const stubW = Math.min(58, w * 0.29);
+    const seam = x0 + stubW;
+
+    // Ticket body: pine stub, cream main panel, punched notches at the seam.
+    doc.setFillColor(PINE[0], PINE[1], PINE[2]);
+    doc.roundedRect(x0, y0, w, h, 4, 4, "F");
+    doc.setFillColor(PAGE[0], PAGE[1], PAGE[2]);
+    doc.roundedRect(seam, y0, w - stubW, h, 4, 4, "F");
+    doc.setFillColor(PAGE[0], PAGE[1], PAGE[2]);
+    doc.circle(seam, y0, 3, "F");
+    doc.circle(seam, y0 + h, 3, "F");
+
+    // Dashed tear line.
+    doc.setDrawColor(GOLD[0], GOLD[1], GOLD[2]);
+    doc.setLineWidth(0.4);
+    doc.setLineDashPattern([1.3, 1.5], 0);
+    doc.line(seam, y0 + 5, seam, y0 + h - 5);
+    doc.setLineDashPattern([], 0);
+
+    // ---- Stub ----
+    const sx = x0 + 9;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(5.6);
+    doc.setTextColor(255, 255, 255);
+    doc.text("MOUNTAIN STATE MILES", sx, y0 + 15, { charSpace: 0.25 });
+    doc.setFillColor(GOLD[0], GOLD[1], GOLD[2]);
+    doc.rect(sx, y0 + 19, 22, 0.8, "F");
+    doc.setTextColor(GOLD_LIGHT[0], GOLD_LIGHT[1], GOLD_LIGHT[2]);
+    doc.setFontSize(6);
+    doc.text("ROAD TO STATES", sx, y0 + 27, { charSpace: 0.45 });
+
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(16);
+    doc.text("STATE", sx, y0 + 45);
+    doc.setFontSize(8.2);
+    doc.text("CHAMPIONSHIP", sx, y0 + 52);
+
+    doc.setFontSize(5.8);
+    doc.setTextColor(GOLD_LIGHT[0], GOLD_LIGHT[1], GOLD_LIGHT[2]);
+    doc.text(item.kind === "team" ? "TEAM TICKET" : "ATHLETE TICKET", sx, y0 + 64, { charSpace: 0.65 });
+
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(8.2);
+    doc.text("ADMIT ONE", sx, y0 + 101, { charSpace: 1.1 });
+
+    if (mark && mark.data) {
+      try {
+        const markH = 5.2;
+        const markW = markH * (mark.w / mark.h);
+        if (markW <= stubW - 14) doc.addImage(mark.data, "PNG", sx, y0 + 107, markW, markH, undefined, "FAST");
+      } catch (e) { /* the wordmark is decorative */ }
+    }
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(5.2);
+    doc.setTextColor(255, 255, 255);
+    doc.text("mountainstatemiles.com", sx, y0 + h - 8);
+
+    // ---- Main panel ----
+    const mx = seam + 8;
+    const right = x0 + w - 7;
+    const mw = right - mx;
+
+    const year = ctx.targetMeet && ctx.targetMeet.date
+      ? String(ctx.targetMeet.date).slice(0, 4)
+      : ctx.meet && ctx.meet.date
+      ? String(ctx.meet.date).slice(0, 4)
+      : "";
+    const via = item.via === "team" ? "TEAM QUALIFIER" : item.via === "wildcard" ? "WILDCARD" : "INDIVIDUAL QUALIFIER";
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(6.2);
+    doc.setTextColor(GOLD_DARK[0], GOLD_DARK[1], GOLD_DARK[2]);
+    doc.text(pdfText(`ROAD TO STATES${year ? " · " + year : ""} · ${via}`), mx, y0 + 14, { charSpace: 0.55 });
+
+    // Name: shrink until it fits two lines.
+    doc.setTextColor(INK[0], INK[1], INK[2]);
+    let nameSize = 21;
+    doc.setFontSize(nameSize);
+    const displayName = ticketSchool(item.name);
+    let nameLines = doc.splitTextToSize(pdfText(displayName), mw);
+    while (nameLines.length > 2 && nameSize > 12) {
+      nameSize -= 1;
+      doc.setFontSize(nameSize);
+      nameLines = doc.splitTextToSize(pdfText(displayName), mw);
+    }
+    nameLines = nameLines.slice(0, 2);
+    const nameTop = y0 + 27;
+    const lineGap = nameSize * 0.35;
+    nameLines.forEach((line, i) => doc.text(line, mx, nameTop + i * lineGap));
+
+    // Athlete tickets show the school under the name; a team ticket's name IS
+    // the school, so printing it twice would just look like a mistake.
+    const subtitle = String(ticketSchool(item.school) || "").trim().toLowerCase() !== String(displayName || "").trim().toLowerCase()
+      ? ticketSchool(item.school)
+      : "";
+    if (subtitle) {
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9.6);
+      doc.setTextColor(GRAY[0], GRAY[1], GRAY[2]);
+      doc.text(pdfText(subtitle), mx, nameTop + (nameLines.length - 1) * lineGap + 8);
+    }
+
+    // Stat boxes.
+    const stats = item.kind === "team"
+      ? [
+          { label: "TEAM FINISH", value: item.place != null ? "#" + item.place : "—" },
+          { label: "TEAM SCORE", value: item.isRelay ? item.time || "—" : item.score != null ? item.score + " pts" : "—" },
+          { label: "ROSTER", value: (item.roster || []).length + " runners" },
+        ]
+      : [
+          { label: "PLACE", value: item.place != null ? "#" + item.place : "—" },
+          { label: "TIME", value: item.time || "—" },
+          { label: "RACE", value: item.race || "—" },
+        ];
+
+    const statsY = y0 + 55;
+    const gap = 4;
+    const boxW = (mw - gap * (stats.length - 1)) / stats.length;
+    const boxH = 19;
+    stats.forEach((stat, i) => {
+      const bx = mx + i * (boxW + gap);
+      doc.setFillColor(240, 234, 221);
+      doc.roundedRect(bx, statsY, boxW, boxH, 1.6, 1.6, "F");
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(5.5);
+      doc.setTextColor(GOLD_DARK[0], GOLD_DARK[1], GOLD_DARK[2]);
+      doc.text(stat.label, bx + 3, statsY + 5.6, { charSpace: 0.35 });
+      let size = 11.5;
+      doc.setFontSize(size);
+      const value = pdfText(String(stat.value));
+      while (size > 7 && doc.getTextWidth(value) > boxW - 6) {
+        size -= 0.5;
+        doc.setFontSize(size);
+      }
+      doc.setTextColor(INK[0], INK[1], INK[2]);
+      doc.text(value, bx + 3, statsY + 13.4);
+    });
+
+    // Advancing roster for team tickets.
+    if (item.kind === "team" && (item.roster || []).length) {
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7.2);
+      doc.setTextColor(GRAY[0], GRAY[1], GRAY[2]);
+      const rosterLines = doc.splitTextToSize(pdfText("Roster: " + item.roster.join(" · ")), mw).slice(0, 2);
+      rosterLines.forEach((line, i) => doc.text(line, mx, statsY + 25 + i * 4));
+    }
+
+    const dividerY = y0 + 90;
+    doc.setDrawColor(GOLD[0], GOLD[1], GOLD[2]);
+    doc.setLineWidth(0.4);
+    doc.line(mx, dividerY, right, dividerY);
+
+    const colGap = 8;
+    const colW = (mw - colGap) / 2;
+    const labelY = dividerY + 6;
+    const titleY = dividerY + 11;
+    const metaY = dividerY + 20;
+    const drawBlock = (x, label, title, meta) => {
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(5.6);
+      doc.setTextColor(GOLD_DARK[0], GOLD_DARK[1], GOLD_DARK[2]);
+      doc.text(label, x, labelY, { charSpace: 0.45 });
+
+      let size = 9;
+      doc.setFontSize(size);
+      let lines = doc.splitTextToSize(pdfText(title || ""), colW);
+      while (lines.length > 2 && size > 6.8) {
+        size -= 0.4;
+        doc.setFontSize(size);
+        lines = doc.splitTextToSize(pdfText(title || ""), colW);
+      }
+      doc.setTextColor(INK[0], INK[1], INK[2]);
+      lines.slice(0, 2).forEach((line, i) => doc.text(line, x, titleY + i * 3.9));
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(6.6);
+      doc.setTextColor(GRAY[0], GRAY[1], GRAY[2]);
+      doc.text(pdfText(meta || ""), x, metaY);
+    };
+
+    drawBlock(mx, "QUALIFIED AT", (ctx.meet && ctx.meet.name) || "Regional meet", ticketMeta(ctx.meet));
+    drawBlock(
+      mx + colW + colGap,
+      "STATE MEET",
+      ctx.targetName || (ctx.targetMeet && ctx.targetMeet.name) || "State Championship",
+      ticketMeta(ctx.targetMeet)
+    );
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(5.6);
+    doc.setTextColor(168, 156, 138);
+    doc.text("Qualifier ticket · mountainstatemiles.com", right, y0 + h - 8, { align: "right" });
+  }
+
+  function wireTicketButtons(mount, context) {
+    const items = mount.__msqTicketItems || [];
+    mount.querySelectorAll("[data-msq-ticket]").forEach((button) => {
+      button.addEventListener("click", async (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        const item = items[Number(button.dataset.msqTicket)];
+        if (!item) return;
+        button.disabled = true;
+        try {
+          await downloadQualifierTicket(item, context);
+        } catch (err) {
+          console.warn("Ticket PDF failed:", err);
+          if (typeof window.alert === "function") window.alert(err.message || "Could not build the ticket PDF.");
+        } finally {
+          button.disabled = false;
+        }
+      });
+    });
+  }
+
+  async function downloadQualifierTicket(item, context) {
+    if (!item) return;
+    let JsPDF = null;
+    if (global.MSMPdf && typeof global.MSMPdf.ready === "function") {
+      JsPDF = await global.MSMPdf.ready().catch(() => null);
+    } else if (global.jspdf && global.jspdf.jsPDF) {
+      JsPDF = global.jspdf.jsPDF;
+    }
+    if (!JsPDF) throw new Error("The PDF library is still loading. Please try again in a second.");
+
+    let mark = null;
+    if (global.MSMPdf && typeof global.MSMPdf.wordmark === "function") {
+      mark = await global.MSMPdf.wordmark("#ffffff").catch(() => null);
+    }
+
+    const doc = new JsPDF({ orientation: "landscape", unit: "mm", format: "a5" });
+    drawTicket(doc, item, context || {}, mark);
+    doc.save(`state-ticket-${slugify(item.name) || "qualifier"}.pdf`);
   }
 
   global.MSMQualifiers = {
@@ -924,6 +1317,7 @@
     computeQualifiers,
     compute: computeQualifiers,
     render,
+    downloadTicket: downloadQualifierTicket,
     timeText,
     normalizeSchool,
   };

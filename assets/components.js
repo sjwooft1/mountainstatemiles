@@ -12,10 +12,10 @@ const BASE_LINKS = [
   // Contextual Sport Navigation configurations
   const SPORT_LINKS = {
     crosscountry: [
-      { name: 'XC Meets', url: 'CrossCountry/meets.html' },
-      { name: 'XC Rankings', url: 'CrossCountry/rankings.html' },
-      { name: 'Schools', url: 'CrossCountry/schools.html' },
-      { name: 'Courses', url: 'CrossCountry/courses/course%20viewer.html' },
+      { name: 'XC Meets', url: '/CrossCountry/meets.html' },
+      { name: 'XC Rankings', url: '/CrossCountry/rankings.html' },
+      { name: 'Schools', url: '/CrossCountry/schools.html' },
+      { name: 'Courses', url: '/CrossCountry/courses/course%20viewer.html' },
       { name: 'XC Simulator', url: '/CrossCountry/simulator.html' },
       { name: 'Training Paces', url: '/CrossCountry/paces.html' },
       { name: 'Portal', url: '/Portal/portal.html' },
@@ -104,7 +104,7 @@ const BASE_LINKS = [
     const currentNavConfig = [...BASE_LINKS, ...SPORT_LINKS[context]];
   
     const linksHtml = currentNavConfig.map(link => {
-      const resolvedUrl = prefix + link.url;
+      const resolvedUrl = link.url.startsWith('/') ? link.url : prefix + link.url;
       // Highlight if current url path structure contains the exact link criteria
       const isActive = currentPath.includes(link.url.split('.')[0]) ? 'active' : '';
       
@@ -113,7 +113,7 @@ const BASE_LINKS = [
 
     // Full-screen expand links — big rows with icons and staggered entrance
     const megaLinksHtml = currentNavConfig.map((link, i) => {
-      const resolvedUrl = prefix + link.url;
+      const resolvedUrl = link.url.startsWith('/') ? link.url : prefix + link.url;
       const isActive = currentPath.includes(link.url.split('.')[0]) ? 'active' : '';
 
       return `<a href="${resolvedUrl}" class="mega-link ${isActive}" style="--i:${i}">
@@ -136,7 +136,7 @@ const BASE_LINKS = [
         </div>
         
         <div class="header-container">
-          <a href="${prefix || 'index.html'}" class="brand-logo" aria-label="Mountain State Miles home">
+          <a href="/home/" class="brand-logo" aria-label="Mountain State Miles home">
             <img class="brand-logo-img" src="/assets/images/logo1.svg" alt="Mountain State Miles"
                  width="52" height="52"
                  data-theme-light-src="/assets/images/logo1.svg"
@@ -223,7 +223,7 @@ const BASE_LINKS = [
           <div class="footer-links">
             <h4>Navigation (${context === 'default' ? 'General' : context === 'track' ? 'Track & Field' : 'Cross Country'})</h4>
             <ul>
-              ${currentNavConfig.map(link => `<li><a href="${prefix + link.url}">${link.name}</a></li>`).join('')}
+              ${currentNavConfig.map(link => `<li><a href="${link.url.startsWith('/') ? link.url : prefix + link.url}">${link.name}</a></li>`).join('')}
             </ul>
           </div>
         </div>

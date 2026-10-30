@@ -276,6 +276,11 @@
           time_in_seconds: secOf(r.time),  // field name the MSMRating engine expects
           place: r.place != null ? parseInt(r.place, 10) : null,
           race_type: r.race_type || "",
+          division: r.division || "",
+          event: r.event || "",
+          event_name: r.event_name || "",
+          relay_team: r.relay_team || "",
+          raw_gender: r.gender || "",
           grad_year: r.grad_year || null,
           date: meet.date || r.created_at || "",
           state: (r.state || meet.state || "WV").toString().toUpperCase()

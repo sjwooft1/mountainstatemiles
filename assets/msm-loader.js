@@ -198,6 +198,22 @@
         });
       });
     }
+    const timeInSeconds = r.time; // e.g., 1134.56
+    
+    const minutes = Math.floor(timeInSeconds / 60);
+    const seconds = Math.floor(timeInSeconds % 60);
+    
+    // Extract milliseconds and round to 2 decimal places
+    const milliseconds = Math.round((timeInSeconds % 1) * 100); 
+    
+    // Pad with leading zeros so single digits display correctly
+    const mm = String(minutes).padStart(2, '0');
+    const ss = String(seconds).padStart(2, '0');
+    const ms = String(milliseconds).padStart(2, '0');
+    
+    const formattedTime = `${mm}:${ss}.${ms}`; 
+    console.log(formattedTime); // Outputs: "18:54.56"
+
 
     // Then the latest news headlines (newest first)
     const news = snapshotEntries(newsSnap)

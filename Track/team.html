@@ -27,6 +27,7 @@
   <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.7.1/jspdf.plugin.autotable.min.js"></script>
+  <script defer src="/assets/pdf-branding.js"></script>
 
   <script src="/assets/theme-toggle.js" defer></script>
   <script src="/assets/components.js" defer></script>
@@ -580,7 +581,7 @@
       toast('✓ Results exported as CSV');
     }
 
-    function exportResultsPDF() {
+    async function exportResultsPDF() {
       const data = filteredResults();
       if (!data.length) { toast('No results to export yet.'); return; }
       if (typeof window.jspdf === 'undefined') { toast('PDF library still loading — try again in a moment.'); return; }
@@ -588,17 +589,14 @@
       const doc = new jsPDF({ orientation: 'landscape' });
       const brand = getTeamColorRgbArray();
 
-      doc.setFillColor(brand[0], brand[1], brand[2]);
-      doc.rect(0, 0, doc.internal.pageSize.getWidth(), 5, 'F');
-      let textX = 14;
-      try {
-        const logo = document.getElementById('team-logo');
-        if (logo && logo.complete && logo.naturalWidth > 0 && !logo.src.includes('Wvruns Logo')) { doc.addImage(logo, 'PNG', 14, 10, 15, 15); textX = 34; }
-      } catch (e) {}
-      doc.setFontSize(18); doc.setFont('helvetica','bold'); doc.setTextColor(0,0,0);
-      doc.text(`${schoolName} — Track Results${activeEvent!=='ALL'?' ('+activeEvent+')':''}`, textX, 18);
-      doc.setFontSize(9); doc.setFont('helvetica','normal'); doc.setTextColor(100,100,100);
-      doc.text(`Mountain State Miles · Generated ${new Date().toLocaleDateString()} · ${data.length} mark(s)`, textX, 24);
+      // Branded header via the shared MSMPdf helper: team logo chip + the
+      // mountainstate.svg wordmark on the team-coloured band.
+      const drawHeader = await MSMPdf.brandHeader(doc, {
+        title: `${schoolName} — Track Results${activeEvent!=='ALL'?' ('+activeEvent+')':''}`,
+        subtitle: `Generated ${new Date().toLocaleDateString()} · ${data.length} mark(s)`,
+        color: brand,
+        schoolPng: await MSMPdf.teamLogoPng(schoolSlug)
+      });
 
       const rows = [];
       performanceMeetsSorted.forEach(meet => meet.results.forEach(r => {
@@ -608,8 +606,10 @@
       }));
       doc.autoTable({
         head: [['Date','Meet','Athlete','Event','Gender','Time','Place','PR']], body: rows, startY: 32,
+        margin: { top: 30 }, didDrawPage: drawHeader,
         styles: { fontSize: 8 }, headStyles: { fillColor: brand, textColor: [255,255,255] }, alternateRowStyles: { fillColor: [245,245,245] }
       });
+      MSMPdf.finalize(doc);
       doc.save(`${schoolSlug}_track_results.pdf`);
       toast('✓ Results exported as PDF');
     }
