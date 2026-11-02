@@ -7,7 +7,7 @@
 <style>
 :root{--navy:#002855;--orange:#FF5722;--ink:#132238;--muted:#6d7a8d;--line:#dfe5ec;--panel:#fff;--bg:#f3f6fa}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);font:14px/1.45 Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink)}
-.top{background:var(--navy);color:white;padding:18px clamp(16px,3vw,34px);display:flex;align-items:center;justify-space-between;gap:16px;border-bottom:4px solid var(--orange)}
+.top{background:var(--navy);color:white;padding:18px clamp(16px,3vw,34px);display:flex;align-items:center;justify-content:space-between;gap:16px;border-bottom:4px solid var(--orange)}
 .brand{display:flex;align-items:center;gap:12px}.mark{width:40px;height:40px;border:2px solid #fff;border-radius:10px;display:grid;place-items:center;font-weight:900;letter-spacing:-1px}.brand h1{font-size:18px;margin:0;letter-spacing:.2px}.brand p{margin:2px 0 0;color:#c9d7e8;font-size:12px}.pill{border:1px solid #52708e;border-radius:99px;padding:6px 10px;font-size:11px;white-space:nowrap}
 main{max-width:1440px;margin:0 auto;padding:24px 18px 42px}.intro{display:flex;justify-content:space-between;gap:20px;align-items:end;margin-bottom:18px}.intro h2{font-size:26px;margin:0 0 4px;letter-spacing:-.6px}.intro p{margin:0;color:var(--muted)}.actions{display:flex;gap:8px;flex-wrap:wrap}
 .layout{display:grid;grid-template-columns:minmax(310px,390px) minmax(0,1fr);gap:18px;align-items:start}.panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:0 6px 24px #17365d0a;overflow:hidden}.panelhead{padding:16px 18px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}.panelhead h3{margin:0;font-size:15px}.panelbody{padding:18px}.field{display:flex;flex-direction:column;gap:6px;margin-bottom:15px}.field label{font-weight:700;font-size:12px;color:#35445a}.field input,.field select,.field textarea{width:100%;padding:11px 12px;border:1px solid #cfd8e3;border-radius:9px;background:#fff;color:var(--ink);font:inherit;outline:none}.field input:focus,.field select:focus,.field textarea:focus{border-color:#4677ad;box-shadow:0 0 0 3px #4677ad1b}.field small{color:var(--muted);font-size:11px}.twocol{display:grid;grid-template-columns:1fr 1fr;gap:12px}.btn{border:0;border-radius:9px;padding:10px 13px;background:var(--navy);color:#fff;font:700 12px inherit;cursor:pointer;min-height:38px;display:inline-flex;align-items:center;justify-content:center;gap:6px}.btn:hover{filter:brightness(1.12)}.btn.orange{background:var(--orange)}.btn.light{background:#edf2f7;color:var(--navy);border:1px solid #d8e0ea}.btn:disabled{opacity:.45;cursor:not-allowed}.full{width:100%}.status{padding:11px 12px;border-radius:9px;background:#f0f4f8;color:#4c5c70;font-size:12px;margin:12px 0 0;overflow-wrap:anywhere}.status.good{background:#eaf7ef;color:#17653a}.status.warn{background:#fff4e8;color:#895014}.status.bad{background:#fff0ef;color:#9d2d25}.datahead{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px}.datahead strong{font-size:13px}.statline{display:flex;gap:8px;flex-wrap:wrap}.stat{background:#f2f5f9;border:1px solid #e1e7ef;border-radius:8px;padding:6px 9px;font-size:11px;color:#516176}.previewwrap{background:#e9eef4;padding:16px;border-radius:12px;position:relative}.preview{width:100%;aspect-ratio:16/9;background:#071426;position:relative;overflow:hidden;box-shadow:0 10px 28px #00152b28}.preview canvas{display:block;width:100%;height:100%}.previewnote{display:flex;justify-content:space-between;gap:12px;color:var(--muted);font-size:11px;margin-top:9px}.previewnote span:last-child{text-align:right}.empty{min-height:200px;display:grid;place-items:center;text-align:center;color:var(--muted);padding:20px}.empty b{display:block;color:#33445a;margin-bottom:5px}.tablewrap{overflow:auto;max-height:280px;border:1px solid var(--line);border-radius:9px;margin-top:12px}table{width:100%;border-collapse:collapse;font-size:12px;white-space:nowrap}th,td{text-align:left;padding:9px 10px;border-bottom:1px solid #e9edf2}th{position:sticky;top:0;background:#f5f7fa;font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:#66768a}tr:last-child td{border-bottom:0}.sectiontitle{font-size:12px;font-weight:800;margin:20px 0 10px}.hidden{display:none!important}.footer{font-size:11px;color:#8190a3;margin-top:18px}
@@ -37,7 +37,7 @@ body.obs-mode{margin:0;background:#071426;overflow:hidden}body.obs-mode header,b
         <div id="status" class="status">No meet data loaded. Import a URL or load a CSV/JSON file. Exports stay disabled until valid data is available.</div>
         <div class="sectiontitle">Graphic settings</div>
         <div class="field"><label for="template">Template</label><select id="template"><option>Team standings</option><option>Individual leaderboard</option><option>Team comparison</option><option>Athlete spotlight</option><option>State rankings</option><option>MSM Rating rankings</option><option>ESPN-style ticker</option></select></div>
-        <div class="field"><label for="division">Division / race</label><select id="division"><option>Boys Varsity</option><option>Girls Varsity</option><option>Boys Open</option><option>Girls Open</option><option>All results</option></select></div>
+        <div class="field"><label for="division">Division / race</label><select id="division"><option value="All results">All results (Import meet data to populate)</option></select></div>
         <div class="twocol"><div class="field"><label for="rows">Rows to show</label><select id="rows"><option>3</option><option>5</option><option selected>10</option><option>15</option><option>20</option><option>25</option></select></div><div class="field"><label for="accent">Accent color</label><select id="accent"><option value="#FF5722" selected>Mountain orange</option><option value="#D4AF37">Championship gold</option><option value="#FFFFFF">White</option></select></div></div>
         <div class="twocol"><div class="field"><label for="background">Background style</label><select id="background"><option value="angular">MSM angular</option><option value="stadium">Stadium lights</option><option value="track">Track lanes</option><option value="gradient">Clean gradient</option><option value="minimal">Minimal dark</option><option value="image">Custom image / Gallery</option></select></div><div class="field"><label for="animation">Animation</label><select id="animation"><option value="slide">Slide in</option><option value="sweep">Light sweep</option><option value="pulse">Pulse accent</option><option value="fade">Fade transition</option><option value="zoom">Zoom scale</option><option value="slideup">Slide up</option><option value="none">None (static)</option></select></div></div>
         <div class="field"><label for="bgImageFile">Meet Photos / Background Gallery</label><input id="bgImageFile" type="file" accept="image/*" multiple><small>Choose one or multiple JPG/PNG meet photos. You can switch or auto-cycle through them.</small></div>
@@ -121,20 +121,39 @@ body.obs-mode{margin:0;background:#071426;overflow:hidden}body.obs-mode header,b
    const schoolSlug=safe(field(r,['school_slug','slug'])) || slugify(school);
    return {name:safe(name),school:safe(school),schoolSlug,gender:safe(gender),race:safe(race),place:Number.parseInt(place,10)||null,time:fmtTime(time),timeSec:parseTime(time),raw:r};
  }
- function normalizeGenderValue(r){const g=safe(r.gender).toUpperCase();if(['M','BOYS','BOY','MALE','B'].includes(g))return 'M';if(['F','GIRLS','GIRL','FEMALE','G'].includes(g))return 'F';const t=(safe(r.race)+' '+safe(r.raw?.race_type)+' '+safe(r.raw?.event_name)).toLowerCase();return /girl|female|women/.test(t)?'F':/boy|male|men/.test(t)?'M':'';}
+
+ function populateRaceDivisions(){
+   const select = $('division');
+   const currentVal = select.value;
+   const divisionsSet = new Set();
+
+   state.rows.forEach(r => {
+     const raceLabel = safe(r.race || r.raw?.race_type || r.raw?.division || r.raw?.event_name);
+     if(raceLabel) divisionsSet.add(raceLabel);
+   });
+
+   const divisions = Array.from(divisionsSet).sort();
+   select.innerHTML = '<option value="All results">All results</option>';
+
+   divisions.forEach(d => {
+     const opt = document.createElement('option');
+     opt.value = d;
+     opt.textContent = d;
+     select.appendChild(opt);
+   });
+
+   if(divisions.includes(currentVal)){
+     select.value = currentVal;
+   } else {
+     select.selectedIndex = 0;
+   }
+ }
 
  function getDivisionRows(){
-   const all=state.rows; const d=$('division').value;
-   if(d==='All results')return all;
-   const gender=d.startsWith('Boys')?'M':'F';
-   const raceNeed=d.endsWith('Varsity')?'varsity':'open';
-   return all.filter(r=>{
-     if(normalizeGenderValue(r)!==gender)return false;
-     const race=safe(r.race).toLowerCase();
-     if(!race)return true;
-     if(raceNeed==='varsity')return /varsity|high school|\bhs\b/.test(race) && !/open|jv|middle school/.test(race);
-     return /open|jv|junior varsity/.test(race);
-   });
+   const all = state.rows;
+   const selectedDiv = $('division').value;
+   if(selectedDiv === 'All results') return all;
+   return all.filter(r => safe(r.race || r.raw?.race_type || r.raw?.division || r.raw?.event_name) === selectedDiv);
  }
 
  function calculateImportedTeamScores(rows){
@@ -148,24 +167,19 @@ body.obs-mode{margin:0;background:#071426;overflow:hidden}body.obs-mode header,b
    sorted.forEach(r=>{if(eligibleNames.has(safe(r.school)||safe(r.schoolSlug)||'Unknown'))r.scoringPlace=++scoringPlace;else r.scoringPlace=null;});
    return eligible.map(([school,athletes])=>{
      const ordered=athletes.slice().sort((a,b)=>(a.scoringPlace||9999)-(b.scoringPlace||9999));
-     return {school,schoolSlug:ordered[0]?.schoolSlug||slugify(school),score:ordered.slice(0,5).reduce((sum,r)=>sum+(r.scoringPlace||999),0),place:0,gender:normalizeGenderValue(ordered[0]||{}),race:ordered[0]?.race||'',athletes:ordered.slice(0,5)};
+     return {school,schoolSlug:ordered[0]?.schoolSlug||slugify(school),score:ordered.slice(0,5).reduce((sum,r)=>sum+(r.scoringPlace||999),0),place:0,gender:ordered[0]?.gender||'',race:ordered[0]?.race||'',athletes:ordered.slice(0,5)};
    }).sort((a,b)=>a.score-b.score).map((t,i)=>({...t,place:i+1}));
  }
 
  function getScores(){
-   const division=$('division').value;
-   const scores=state.teamScores.filter(t=>{
-     if(division==='All results')return true;
-     const wantedGender=division.startsWith('Boys')?'M':'F';
-     const actualGender=normalizeGenderValue({gender:t.gender,race:t.race,raw:{race_type:t.race, event_name:t.race}});
-     if(actualGender && actualGender!==wantedGender)return false;
-     const race=safe(t.race||t.division).toLowerCase();
-     if(!race)return true;
-     if(division.endsWith('Varsity'))return /varsity|high school|\bhs\b/.test(race) && !/open|jv|middle school/.test(race);
-     return /open|jv|junior varsity/.test(race);
+   const selectedDiv = $('division').value;
+   const scores = state.teamScores.filter(t => {
+     if(selectedDiv === 'All results') return true;
+     const race = safe(t.race || t.division || t.race_type);
+     return race === selectedDiv;
    });
-   if(scores.length)return scores;
-   if(state.source==='Mountain State Miles Firebase')return calculateImportedTeamScores(getDivisionRows());
+   if(scores.length) return scores;
+   if(state.source === 'Mountain State Miles Firebase') return calculateImportedTeamScores(getDivisionRows());
    return [];
  }
 
@@ -225,6 +239,7 @@ body.obs-mode{margin:0;background:#071426;overflow:hidden}body.obs-mode header,b
      }
      state.rows=raw.map(mapRankingResult).filter(r=>r.name&&r.time);state.teamScores=[];state.meet={name:wantsRating?'WV MSM RATING RANKINGS':'WV STATE RANKINGS',date:String(new Date().getFullYear()),location:'West Virginia',slug:'state-rankings'};state.source=wantsRating?'State rankings · MSM Rating':'State rankings · Raw time';state.loaded=state.rows.length>0;state.rankingMode=wantsRating?'dynamic':'raw';
      if(!state.loaded)throw new Error('No eligible ranking rows were found.');
+     populateRaceDivisions();
      setStatus(`Loaded ${state.rows.length} real ${wantsRating?'MSM Rating':'raw-time'} ranking performances.`, 'good');summarize();await preloadVisibleLogos();
    } finally {if(iframe)iframe.remove();}
  }
@@ -267,6 +282,7 @@ body.obs-mode{margin:0;background:#071426;overflow:hidden}body.obs-mode header,b
    const rows=(parsed.results||[]).map(normalizeRow).filter(r=>r.name||r.school||r.time);
    state.rows=rows;state.teamScores=parsed.teamScores||[];
    state.meet={...state.meet,...parsed.meet};state.source=source;state.loaded=rows.length>0;state.errors=[];
+   populateRaceDivisions();
    if(!rows.length){setStatus('Import completed, but no recognizable result rows were found.', 'warn');}
    else setStatus(`Imported ${rows.length} result rows.`, 'good');
    summarize();
@@ -287,10 +303,11 @@ body.obs-mode{margin:0;background:#071426;overflow:hidden}body.obs-mode header,b
    document.body.classList.add('obs-mode');
    $('dataSource').value=params.get('source')||'meet';
    $('meetUrl').value=$('dataSource').value==='rankings'?`${location.origin}/CrossCountry/rankings.html`:`${location.origin}/CrossCountry/meet.html?slug=${encodeURIComponent(params.get('slug')||'')}`;
-   ['template','division','rows','headline','accent','subhead','school','background','animation','tickerText','wvssacLogo','autoCycle'].forEach(k=>{if(params.has(k))$(k).value=params.get(k);});
+   ['template','rows','headline','accent','subhead','school','background','animation','tickerText','wvssacLogo','autoCycle'].forEach(k=>{if(params.has(k))$(k).value=params.get(k);});
    state.animationStart=performance.now();
    $('empty').classList.add('hidden');
    try{await importMeet();if(!state.loaded)throw new Error('No results were loaded.');
+     if(params.has('division'))$('division').value=params.get('division');
      $('empty').classList.add('hidden');await preloadVisibleLogos();draw();
    }catch(err){const ctx=$('art').getContext('2d');ctx.fillStyle='#071426';ctx.fillRect(0,0,1920,1080);ctx.fillStyle='#FF5722';ctx.font='800 46px Arial';ctx.fillText('GRAPHIC UNAVAILABLE',90,180);}
    return true;
@@ -329,6 +346,7 @@ body.obs-mode{margin:0;background:#071426;overflow:hidden}body.obs-mode header,b
        state.meet={name:safe(meet?.name)||slug.replace(/-/g,' ').toUpperCase(),date:safe(meet?.date),location:safe(meet?.location),slug};
        if(!$('headline').value.trim()||$('headline').value.trim()==='MSAC CHAMPIONSHIPS')$('headline').value=state.meet.name.toUpperCase();
        state.source='Firebase via meet.html';state.loaded=state.rows.length>0;
+       populateRaceDivisions();
        setStatus(`Imported ${state.rows.length} results.`, 'good');
        summarize();
        return;
@@ -377,7 +395,6 @@ body.obs-mode{margin:0;background:#071426;overflow:hidden}body.obs-mode header,b
    const t=state.paused ? 0 : (performance.now()-state.animationStart)/1000;
    const anim=$('animation')?.value||'none';
 
-   // Custom Gallery Background Image handling
    if(bg==='image' && state.backgroundImages.length > 0){
      const curImg = state.backgroundImages[state.bgImageIndex];
      if(curImg && curImg.complete){
@@ -425,7 +442,6 @@ body.obs-mode{margin:0;background:#071426;overflow:hidden}body.obs-mode header,b
    }
    $('empty').classList.add('hidden');
 
-   // Calculate Pagination
    const startIndex = state.page * limit;
    const pageRows = rows.slice(startIndex, startIndex + limit);
 
@@ -437,7 +453,6 @@ body.obs-mode{margin:0;background:#071426;overflow:hidden}body.obs-mode header,b
      display=ranked.slice(startIndex, startIndex+limit).map((r,i)=>({place:startIndex+i+1,name:r.name,school:r.school||'SCHOOL NOT PROVIDED',schoolSlug:r.schoolSlug,time:template==='MSM Rating rankings'?(r.rating!=null?`${Math.round(r.rating)} MSM`:'—'):r.time,detail:template==='MSM Rating rankings'?(r.time||''):(r.meet_name||'')}));
    }else display=pageRows.map((r,i)=>({place:r.place||startIndex+i+1,name:r.name,school:r.school||'SCHOOL NOT PROVIDED',schoolSlug:r.schoolSlug,time:r.time||'TIME NOT PROVIDED'}));
 
-   // Dynamic Layout Scaling for up to 25 items
    const startY=270;
    const availableH=720;
    const rowCount=Math.max(1, display.length);
@@ -518,7 +533,6 @@ body.obs-mode{margin:0;background:#071426;overflow:hidden}body.obs-mode header,b
    },'image/png');
  }
 
- // Keyboard & Control Shortcuts
  window.addEventListener('keydown', e => {
    if(['input','textarea','select'].includes(document.activeElement.tagName.toLowerCase())) return;
    if(e.key === ' ' || e.key.toLowerCase() === 'p'){
