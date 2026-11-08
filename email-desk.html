@@ -1,0 +1,1068 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Email Desk — Mountain State Miles</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" type="image/png" href="/assets/images/favicon/favicon-96x96.png" sizes="96x96">
+  <link rel="icon" type="image/svg+xml" href="/assets/images/favicon/favicon.svg">
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/images/favicon/apple-touch-icon.png">
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <style>
+    /* Native controls (date pickers, selects, scrollbars) follow the theme. */
+    html[data-theme="dark"]{color-scheme:dark}
+    html[data-theme="light"]{color-scheme:light}
+    @media (prefers-color-scheme: dark){html:not([data-theme="light"]){color-scheme:dark}}
+
+    .desk-main{max-width:1180px;margin:0 auto;padding:2rem 1.25rem 5rem}
+    .desk-head{display:flex;flex-wrap:wrap;gap:1rem;justify-content:space-between;align-items:flex-end;margin-bottom:1.4rem}
+    .desk-head h1{margin:0 0 .35rem;font-size:clamp(1.7rem,4vw,2.4rem)}
+    .desk-head p{margin:0;color:var(--text-secondary);max-width:62ch}
+
+    .stat-strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:.7rem;margin-bottom:1.4rem}
+    .stat-tile{background:var(--bg-primary);border:1px solid var(--border);border-radius:var(--radius-md);padding:.85rem 1rem;box-shadow:0 4px 14px var(--shadow-light)}
+    .stat-tile b{display:block;font-family:var(--font-display);font-size:1.65rem;line-height:1.1;color:var(--primary)}
+    .stat-tile span{display:block;font-size:.68rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--text-tertiary);padding-top:.2rem}
+
+    .desk-tabs{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1.2rem;border-bottom:1px solid var(--border);padding-bottom:.7rem}
+    .desk-tab{border:1px solid var(--border);border-radius:99px;background:var(--bg-primary);color:var(--text-secondary);padding:.55rem 1rem;font:inherit;font-weight:800;cursor:pointer;transition:background .18s ease,color .18s ease,border-color .18s ease}
+    .desk-tab:hover{border-color:var(--primary);color:var(--primary)}
+    .desk-tab.active{background:var(--primary);border-color:var(--primary);color:#fff}
+    .desk-panel{display:none}
+    .desk-panel.active{display:block;animation:panel-in .22s ease both}
+    @keyframes panel-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+    @media (prefers-reduced-motion: reduce){.desk-panel.active{animation:none}}
+
+    .desk-card{background:var(--bg-primary);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem;margin-bottom:1rem;box-shadow:0 5px 18px var(--shadow-light)}
+    .desk-card h2{font-size:1.15rem;margin:0 0 .3rem}
+    .desk-card .help{color:var(--text-secondary);font-size:.84rem;line-height:1.55;margin:.2rem 0 1rem}
+    .split{display:grid;grid-template-columns:1fr 1fr;gap:1rem;align-items:start}
+    @media (max-width:980px){.split{grid-template-columns:1fr}}
+    .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+    @media (max-width:700px){.form-grid{grid-template-columns:1fr}}
+    .field{display:flex;flex-direction:column;gap:.35rem}
+    .field.full{grid-column:1/-1}
+    .field label{font-weight:800;font-size:.82rem}
+    .field .hint{font-size:.72rem;color:var(--text-tertiary);font-weight:600}
+    .field input,.field select,.field textarea{font:inherit;border:1px solid var(--border);border-radius:var(--radius-md);background:var(--bg-secondary);color:var(--text-primary);padding:.7rem .8rem;transition:border-color .18s ease,box-shadow .18s ease}
+    .field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent)}
+    .field textarea{min-height:110px;resize:vertical;line-height:1.6}
+    .field textarea.tall{min-height:210px}
+    .checkline{display:flex;gap:.55rem;align-items:center;font-size:.88rem;font-weight:700;cursor:pointer}
+    .button-row{display:flex;gap:.6rem;flex-wrap:wrap;margin-top:1rem;align-items:center}
+    .desk-btn{border:0;border-radius:var(--radius-md);padding:.7rem 1rem;font:inherit;font-weight:800;cursor:pointer;background:var(--primary);color:#fff;transition:transform .16s ease,filter .16s ease}
+    .desk-btn:hover:not(:disabled){filter:brightness(1.08);transform:translateY(-1px)}
+    .desk-btn:active:not(:disabled){transform:none}
+    .desk-btn.secondary{background:var(--bg-secondary);color:var(--text-primary);border:1px solid var(--border)}
+    .desk-btn.gold{background:var(--msm-gold);color:#3a2c05}
+    .desk-btn.danger{background:var(--danger);color:#fff}
+    .desk-btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+    .desk-btn:focus-visible,.desk-tab:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+
+    .alert{display:none;border-radius:var(--radius-md);padding:.75rem 1rem;margin-bottom:1rem;font-weight:700;line-height:1.5}
+    .alert.show{display:block;animation:panel-in .2s ease both}
+    .alert.success{background:rgba(63,125,99,.14);color:var(--primary)}
+    .alert.error{background:rgba(198,91,70,.14);color:var(--danger)}
+    .alert.info{background:rgba(224,166,63,.16);color:#8a5f10}
+    html[data-theme="dark"] .alert.info{color:var(--msm-gold)}
+
+    /* ---- recipient picker ---- */
+    .list-picker{display:flex;flex-direction:column;gap:.45rem;max-height:230px;overflow:auto;border:1px solid var(--border);border-radius:var(--radius-md);padding:.6rem;background:var(--bg-secondary)}
+    .list-pick{display:flex;align-items:center;gap:.6rem;padding:.4rem .5rem;border-radius:var(--radius-sm);cursor:pointer;font-size:.88rem;font-weight:700}
+    .list-pick:hover{background:var(--bg-primary)}
+    .list-pick .count{margin-left:auto;color:var(--text-tertiary);font-size:.76rem;font-weight:800}
+
+    /* ---- preview ---- */
+    .preview-shell{border:1px solid var(--border);border-radius:var(--radius-md);overflow:hidden;background:var(--bg-secondary)}
+    .preview-bar{display:flex;align-items:center;gap:.5rem;padding:.5rem .6rem;border-bottom:1px solid var(--border);background:var(--bg-primary)}
+    .preview-bar .dot{width:9px;height:9px;border-radius:50%;background:var(--border)}
+    .preview-bar .subj{font-size:.76rem;font-weight:800;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .preview-bar .spacer{margin-left:auto}
+    .seg{display:flex;border:1px solid var(--border);border-radius:99px;overflow:hidden}
+    .seg button{border:0;background:var(--bg-primary);color:var(--text-secondary);font:inherit;font-size:.72rem;font-weight:800;padding:.3rem .7rem;cursor:pointer}
+    .seg button.on{background:var(--primary);color:#fff}
+    #preview-frame{width:100%;height:560px;border:0;display:block;background:#fff;margin:0 auto;transition:width .25s ease}
+
+    /* ---- tables ---- */
+    .table-scroll{overflow-x:auto;border:1px solid var(--border);border-radius:var(--radius-md)}
+    table.grid{width:100%;border-collapse:collapse;font-size:.85rem;min-width:640px}
+    table.grid th{text-align:left;padding:.7rem .8rem;background:var(--bg-secondary);color:var(--text-secondary);font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;font-weight:800;white-space:nowrap}
+    table.grid td{padding:.7rem .8rem;border-top:1px solid var(--border-light);vertical-align:top}
+    table.grid tr:hover td{background:color-mix(in srgb, var(--primary) 5%, transparent)}
+    .badge{display:inline-block;border-radius:99px;padding:.2rem .6rem;font-size:.68rem;font-weight:800;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap}
+    .badge.draft{background:var(--bg-secondary);color:var(--text-tertiary);border:1px solid var(--border)}
+    .badge.queued{background:rgba(224,166,63,.18);color:#8a5f10}
+    .badge.scheduled{background:rgba(224,166,63,.18);color:#8a5f10}
+    .badge.sending{background:rgba(63,125,99,.16);color:var(--primary)}
+    .badge.sent{background:rgba(63,125,99,.18);color:var(--primary)}
+    .badge.failed{background:rgba(198,91,70,.16);color:var(--danger)}
+    .badge.canceled{background:var(--bg-secondary);color:var(--text-tertiary);border:1px solid var(--border)}
+    html[data-theme="dark"] .badge.queued,html[data-theme="dark"] .badge.scheduled{color:var(--msm-gold)}
+    .row-actions{display:flex;gap:.35rem;flex-wrap:wrap}
+    .mini{border:1px solid var(--border);background:var(--bg-primary);color:var(--text-secondary);border-radius:var(--radius-sm);font:inherit;font-size:.72rem;font-weight:800;padding:.3rem .55rem;cursor:pointer}
+    .mini:hover{border-color:var(--primary);color:var(--primary)}
+    .mini.danger{color:var(--danger)}
+    .mini.danger:hover{border-color:var(--danger);color:var(--danger)}
+    .muted{color:var(--text-tertiary);font-size:.85rem}
+    .chip-row{display:flex;flex-wrap:wrap;gap:.35rem;margin-top:.5rem}
+    .chip{display:inline-flex;align-items:center;gap:.4rem;border:1px solid var(--border);border-radius:99px;background:var(--bg-secondary);padding:.28rem .4rem .28rem .7rem;font-size:.76rem;font-weight:700}
+    .chip button{border:0;background:transparent;color:var(--text-tertiary);cursor:pointer;font-size:1rem;line-height:1;padding:0 .1rem}
+    .chip button:hover{color:var(--danger)}
+    .starter{display:flex;justify-content:space-between;gap:.8rem;align-items:flex-start;border:1px solid var(--border-light);border-radius:var(--radius-md);padding:.8rem;background:var(--bg-secondary);margin-bottom:.5rem}
+    .starter b{display:block;font-size:.92rem}
+    .starter p{margin:.2rem 0 0;color:var(--text-secondary);font-size:.8rem;line-height:1.45}
+    .lock-note{background:var(--bg-secondary);border:1px dashed var(--border);border-radius:var(--radius-md);padding:.8rem 1rem;font-size:.82rem;line-height:1.55;color:var(--text-secondary)}
+    .lock-screen{max-width:460px;margin:12vh auto;text-align:center}
+    .lock-screen h1{font-size:1.5rem;margin:0 0 .5rem}
+    .lock-screen p{color:var(--text-secondary);line-height:1.6}
+  </style>
+  <script src="/assets/theme-toggle.js" defer></script>
+  <script src="/assets/components.js" defer></script>
+</head>
+<body>
+  <div id="global-header"></div>
+
+  <!-- The desk stays hidden until the admin session is confirmed. -->
+  <main class="desk-main" id="desk" hidden>
+    <header class="desk-head">
+      <div>
+        <h1>✉️ Email Desk</h1>
+        <p>One audience for Cross Country and Track. Build the list, write the mail, preview exactly what lands in the inbox, then queue it for your delivery platform.</p>
+      </div>
+      <div class="button-row" style="margin:0">
+        <button class="desk-btn secondary" type="button" id="import-legacy">⤓ Import legacy lists</button>
+        <button class="desk-btn secondary" type="button" id="refresh-all">↻ Refresh</button>
+      </div>
+    </header>
+
+    <div id="alert" class="alert"></div>
+
+    <div class="stat-strip" id="stat-strip"></div>
+
+    <nav class="desk-tabs" aria-label="Email desk sections">
+      <button class="desk-tab active" data-panel="compose" type="button">✍️ Compose</button>
+      <button class="desk-tab" data-panel="recipients" type="button">👥 Recipients</button>
+      <button class="desk-tab" data-panel="templates" type="button">📄 Templates</button>
+      <button class="desk-tab" data-panel="history" type="button">🕓 History</button>
+      <button class="desk-tab" data-panel="delivery" type="button">🔌 Delivery</button>
+    </nav>
+
+    <!-- ============================ COMPOSE ============================ -->
+    <section id="compose-panel" class="desk-panel active">
+      <div class="split">
+        <div>
+          <div class="desk-card">
+            <h2>Who is this going to?</h2>
+            <p class="help">Pick one or more lists. Addresses are de-duplicated across lists and anyone unsubscribed or bounced is removed automatically.</p>
+            <div class="list-picker" id="list-picker"><p class="muted">Loading lists…</p></div>
+            <div class="button-row">
+              <label class="checkline"><input type="checkbox" id="pick-all"> Select all lists</label>
+              <span class="muted" id="audience-count"></span>
+            </div>
+            <p class="muted" id="audience-detail" style="margin-top:.5rem"></p>
+          </div>
+
+          <div class="desk-card">
+            <h2>The message</h2>
+            <p class="help">Separate paragraphs with a blank line. The preview on the right updates as you type.</p>
+            <div class="form-grid">
+              <div class="field"><label for="m-kicker">Kicker</label><input id="m-kicker" placeholder="Weekly Recap" value="Mountain State Miles"></div>
+              <div class="field"><label for="m-author">Byline</label><input id="m-author" placeholder="MSM Data Desk" value="MSM Data Desk"></div>
+              <div class="field full"><label for="m-subject">Subject *</label><input id="m-subject" placeholder="This week in West Virginia running"></div>
+              <div class="field full"><label for="m-preheader">Preheader<span class="hint"> — the grey line beside the subject in most inboxes</span></label><input id="m-preheader" placeholder="Results, risers and what it means for the standings."></div>
+              <div class="field full"><label for="m-headline">Headline *</label><input id="m-headline" placeholder="This week in West Virginia running"></div>
+              <div class="field full"><label for="m-dek">Standfirst</label><textarea id="m-dek" style="min-height:70px" placeholder="One sharp sentence under the headline."></textarea></div>
+              <div class="field full"><label for="m-body">Body *</label><textarea id="m-body" class="tall" placeholder="Write the mail here.&#10;&#10;Blank line starts a new paragraph."></textarea></div>
+            </div>
+
+            <div class="form-grid" style="margin-top:1rem">
+              <div class="field"><label for="m-stat1-v">Stat 1</label><input id="m-stat1-v" placeholder="1,204"><input id="m-stat1-l" class="hint" placeholder="rated runs" style="margin-top:.3rem"></div>
+              <div class="field"><label for="m-stat3-v">Stat 2</label><input id="m-stat3-v" placeholder="38"><input id="m-stat3-l" class="hint" placeholder="schools" style="margin-top:.3rem"></div>
+            </div>
+
+            <div class="form-grid" style="margin-top:1rem">
+              <div class="field"><label for="m-cta-text">Button label</label><input id="m-cta-text" placeholder="See the full results"></div>
+              <div class="field"><label for="m-cta-href">Button link</label><input id="m-cta-href" placeholder="https://mountainstatemiles.com/CrossCountry/meets.html"></div>
+            </div>
+
+            <div class="button-row">
+              <button class="desk-btn" type="button" id="btn-save-template">💾 Save as template</button>
+              <button class="desk-btn secondary" type="button" id="btn-clear">Clear</button>
+            </div>
+          </div>
+
+          <div class="desk-card">
+            <h2>Send</h2>
+            <p class="help" id="send-help">Send a test to yourself first — it goes to one address only and is tagged as a test in the history.</p>
+            <div class="form-grid">
+              <div class="field"><label for="m-test-to">Test address</label><input id="m-test-to" type="email" placeholder="you@example.com"></div>
+              <div class="field"><label for="m-when">Schedule for</label><input id="m-when" type="datetime-local"></div>
+            </div>
+            <div class="button-row">
+              <button class="desk-btn secondary" type="button" id="btn-test">Send test</button>
+              <button class="desk-btn secondary" type="button" id="btn-draft">Save draft</button>
+              <button class="desk-btn gold" type="button" id="btn-schedule">Schedule</button>
+              <button class="desk-btn" type="button" id="btn-send">Send now</button>
+            </div>
+            <div class="button-row" style="margin-top:.75rem">
+              <button class="desk-btn secondary" type="button" id="btn-copy-html">📋 Copy HTML</button>
+              <button class="desk-btn secondary" type="button" id="btn-download-html">⤓ Download .html</button>
+              <button class="desk-btn secondary" type="button" id="btn-copy-text">📋 Copy plain text</button>
+              <button class="desk-btn secondary" type="button" id="btn-open-preview">↗ Open in new tab</button>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="desk-card" style="position:sticky;top:1rem">
+            <h2>Inbox preview</h2>
+            <p class="help">Rendered with the same engine that builds the outgoing HTML, so what you see is what gets sent.</p>
+            <div class="preview-shell">
+              <div class="preview-bar">
+                <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+                <span class="subj" id="preview-subject">Subject preview</span>
+                <span class="spacer"></span>
+                <div class="seg" role="group" aria-label="Preview width">
+                  <button type="button" class="on" data-width="desktop">Desktop</button>
+                  <button type="button" data-width="mobile">Mobile</button>
+                </div>
+              </div>
+              <iframe id="preview-frame" title="Email preview" sandbox=""></iframe>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================ RECIPIENTS ============================ -->
+    <section id="recipients-panel" class="desk-panel">
+      <div class="split">
+        <div class="desk-card">
+          <h2>New list</h2>
+          <p class="help">Paste addresses separated by commas, spaces or new lines. Anything that does not look like an email is reported back rather than silently dropped.</p>
+          <div class="form-grid">
+            <div class="field full"><label for="l-name">List name *</label><input id="l-name" placeholder="Coaches — Region 1"></div>
+            <div class="field full"><label for="l-desc">Description</label><input id="l-desc" placeholder="Who is on this list"></div>
+            <div class="field full"><label for="l-emails">Addresses</label><textarea id="l-emails" placeholder="coach1@school.edu, coach2@school.edu"></textarea></div>
+          </div>
+          <div class="button-row"><button class="desk-btn" type="button" id="btn-create-list">+ Create list</button></div>
+        </div>
+
+        <div class="desk-card">
+          <h2>Add to an existing list</h2>
+          <p class="help">Append addresses to lists you already have. The report shows exactly what was added and what was already present.</p>
+          <div class="form-grid">
+            <div class="field full"><label for="a-list">List</label><select id="a-list"><option value="">— Select a list —</option></select></div>
+            <div class="field full"><label for="a-emails">Addresses</label><textarea id="a-emails" placeholder="coach3@school.edu"></textarea></div>
+          </div>
+          <div class="button-row">
+            <button class="desk-btn" type="button" id="btn-add-to-list">+ Add addresses</button>
+            <button class="desk-btn secondary" type="button" id="btn-import-csv">⤓ Import .csv / .txt</button>
+            <input type="file" id="file-input" accept=".csv,.txt,text/csv,text/plain" hidden>
+          </div>
+        </div>
+      </div>
+
+      <div class="desk-card">
+        <h2>Lists</h2>
+        <div id="lists-view"><p class="muted">Loading…</p></div>
+      </div>
+
+      <div class="desk-card">
+        <h2>Suppression list</h2>
+        <p class="help">Unsubscribes and hard bounces live here. Suppressed addresses are removed from every list and are never emailed, even if they appear again.</p>
+        <div class="form-grid">
+          <div class="field"><label for="s-email">Address</label><input id="s-email" type="email" placeholder="person@example.com"></div>
+          <div class="field"><label for="s-reason">Reason</label><select id="s-reason"><option value="unsubscribed">Unsubscribed</option><option value="bounced">Hard bounce</option><option value="complaint">Spam complaint</option><option value="manual">Manually removed</option></select></div>
+        </div>
+        <div class="button-row"><button class="desk-btn danger" type="button" id="btn-suppress">Suppress address</button></div>
+        <div class="chip-row" id="suppression-list"></div>
+      </div>
+    </section>
+
+    <!-- ============================ TEMPLATES ============================ -->
+    <section id="templates-panel" class="desk-panel">
+      <div class="desk-card">
+        <h2>Saved templates</h2>
+        <p class="help">Load a template into the composer to start from a finished layout.</p>
+        <div id="templates-view"><p class="muted">Loading…</p></div>
+      </div>
+      <div class="desk-card">
+        <h2>Starters</h2>
+        <p class="help">Ready-made structures for the mail you send most often.</p>
+        <div id="starters-view"></div>
+      </div>
+    </section>
+
+    <!-- ============================ HISTORY ============================ -->
+    <section id="history-panel" class="desk-panel">
+      <div class="desk-card">
+        <h2>Queue &amp; history</h2>
+        <p class="help">Everything that has been drafted, queued, scheduled or sent. Failed sends keep their error so you can retry them.</p>
+        <div class="table-scroll">
+          <table class="grid">
+            <thead><tr><th>Subject</th><th>Status</th><th>Recipients</th><th>When</th><th>Actions</th></tr></thead>
+            <tbody id="history-body"><tr><td colspan="5" class="muted">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================ DELIVERY ============================ -->
+    <section id="delivery-panel" class="desk-panel">
+      <div class="desk-card">
+        <h2>Delivery adapter</h2>
+        <p class="help">Nothing is sent from the browser unless you point it at an endpoint. Without one, mail stays queued and you can export it for Mailchimp, Substack or Brevo.</p>
+        <div class="form-grid">
+          <div class="field"><label for="d-adapter">Adapter</label><select id="d-adapter"></select></div>
+          <div class="field"><label for="d-webhook">Webhook URL<span class="hint"> — receives a JSON POST</span></label><input id="d-webhook" placeholder="https://…"></div>
+          <div class="field"><label for="d-fromname">From name</label><input id="d-fromname" placeholder="Mountain State Miles"></div>
+          <div class="field"><label for="d-fromemail">From address</label><input id="d-fromemail" type="email" placeholder="news@mountainstatemiles.com"></div>
+          <div class="field"><label for="d-replyto">Reply-to</label><input id="d-replyto" type="email" placeholder="coach@mountainstatemiles.com"></div>
+          <div class="field"><label for="d-unsub">Unsubscribe URL</label><input id="d-unsub" placeholder="https://mountainstatemiles.com/unsubscribe"></div>
+          <div class="field full"><label for="d-footer">Footer note<span class="hint"> — appears above the sign-off in every email</span></label><input id="d-footer" placeholder="Mountain State Miles covers West Virginia track &amp; cross country."></div>
+        </div>
+        <div class="button-row">
+          <button class="desk-btn" type="button" id="btn-save-delivery">Save delivery settings</button>
+          <button class="desk-btn secondary" type="button" id="btn-show-contract">Show JSON contract</button>
+        </div>
+        <p class="muted" id="adapter-note" style="margin-top:.7rem"></p>
+      </div>
+      <div class="desk-card" id="contract-card" hidden>
+        <h2>What your endpoint receives</h2>
+        <p class="help">A stable contract — build the sender against this without touching the desk.</p>
+        <pre id="contract-json" style="white-space:pre-wrap;word-break:break-word;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-md);padding:.9rem;font-size:.78rem;line-height:1.5;overflow:auto;max-height:420px"></pre>
+      </div>
+    </section>
+
+    <div class="lock-note" style="margin-top:1.5rem">
+      <strong>Security note:</strong> this page uses the same lightweight gate as the Cross Country admin — a value in <code>localStorage</code>, checked client-side, with the password written in <code>login.html</code>. Anyone who can read the page source can bypass it. It is fine for a small team, but before you use this for real lists, move the gate and the send behind Firebase Auth or a Cloud Function so the database rules can require an authenticated writer.
+    </div>
+  </main>
+
+  <!-- Shown instead of the desk when there is no admin session. -->
+  <main class="lock-screen" id="lock-screen" hidden>
+    <h1>🔒 Email Desk</h1>
+    <p>This tool is for Mountain State Miles staff. Sign in through the Cross Country admin login, then come back here.</p>
+    <p style="margin-top:1.25rem"><a class="desk-btn" href="/CrossCountry/login.html" style="display:inline-block;text-decoration:none">Go to admin login</a></p>
+  </main>
+
+  <div id="global-footer"></div>
+
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <script src="/CrossCountry/firebase-config.js"></script>
+  <script src="/assets/email-engine.js"></script>
+  <script>
+  (function () {
+    'use strict';
+
+    /* ------------------------------------------------------------------
+     * Access gate.
+     *
+     * Deliberately the SAME literals as CrossCountry/login.html and
+     * CrossCountry/admin.html. (Note: inside a <script> element, HTML
+     * character references are NOT decoded — those files store the literal
+     * text below as the key, so we must match it exactly for an existing
+     * login to carry over.) See the security note at the foot of the page.
+     * ------------------------------------------------------------------ */
+    var ADMIN_KEY = '&#120; &#99; &#97; &#100; &#109; &#105; &#110;';
+    var ADMIN_VALUE = '&#116; &#114; &#117; &#101;';
+
+    if (localStorage.getItem(ADMIN_KEY) !== ADMIN_VALUE) {
+      document.getElementById('lock-screen').hidden = false;
+      document.getElementById('desk').hidden = true;
+      return;
+    }
+    document.getElementById('desk').hidden = false;
+
+    var E = window.MSMEmail;
+    var $ = function (id) { return document.getElementById(id); };
+
+    /* ---- transient state ---- */
+    var lists = [];
+    var templates = [];
+    var queue = [];
+    var suppressions = [];
+    var delivery = { adapter: 'none' };
+    var previewWidth = 'desktop';
+    var editingQueueId = null;   // set when a draft is loaded back into the composer
+    var lastAudience = { emails: [], perList: [] };
+
+    function alertDesk(message, type) {
+      var el = $('alert');
+      el.textContent = message;
+      el.className = 'alert show ' + (type || 'info');
+      clearTimeout(alertDesk.timer);
+      alertDesk.timer = setTimeout(function () { el.className = 'alert'; }, 6000);
+    }
+
+    function fail(err) {
+      console.error(err);
+      alertDesk(err && err.message ? err.message : String(err), 'error');
+    }
+
+    /* ==================================================================
+     * Composer model
+     * ================================================================== */
+
+    function composerDoc() {
+      var stats = [];
+      if ($('m-stat1-v').value.trim()) stats.push({ label: $('m-stat1-l').value.trim() || 'Stat', value: $('m-stat1-v').value.trim() });
+      if ($('m-stat3-v').value.trim()) stats.push({ label: $('m-stat3-l').value.trim() || 'Stat', value: $('m-stat3-v').value.trim() });
+
+      var blocks = E.textToBlocks($('m-body').value);
+      if ($('m-cta-text').value.trim() || $('m-cta-href').value.trim()) {
+        blocks.push({ type: 'button', text: $('m-cta-text').value.trim() || 'Read more', href: $('m-cta-href').value.trim() || E.BRAND.site });
+      }
+
+      return {
+        subject: $('m-subject').value.trim(),
+        preheader: $('m-preheader').value.trim(),
+        kicker: $('m-kicker').value.trim(),
+        headline: $('m-headline').value.trim() || $('m-subject').value.trim(),
+        dek: $('m-dek').value.trim(),
+        author: $('m-author').value.trim(),
+        footerNote: delivery.footerNote || '',
+        unsubscribeUrl: delivery.unsubscribeUrl || '',
+        blocks: blocks,
+        stats: stats,
+      };
+    }
+
+    function applyDoc(doc) {
+      doc = doc || {};
+      $('m-kicker').value = doc.kicker || '';
+      $('m-author').value = doc.author || 'MSM Data Desk';
+      $('m-subject').value = doc.subject || '';
+      $('m-preheader').value = doc.preheader || '';
+      $('m-headline').value = doc.headline || '';
+      $('m-dek').value = doc.dek || '';
+      $('m-cta-text').value = '';
+      $('m-cta-href').value = '';
+
+      var paragraphs = [];
+      (doc.blocks || []).forEach(function (block) {
+        if (block.type === 'paragraph') paragraphs.push(block.text);
+        else if (block.type === 'heading') paragraphs.push(block.text);
+        else if (block.type === 'list') paragraphs.push((block.items || []).join('\n'));
+        else if (block.type === 'quote') paragraphs.push(block.text);
+        else if (block.type === 'button') { $('m-cta-text').value = block.text || ''; $('m-cta-href').value = block.href || ''; }
+      });
+      $('m-body').value = paragraphs.join('\n\n');
+
+      var stats = (doc.stats || doc.blocks || []).filter(function (b) { return b.type === 'stats'; })[0];
+      var items = stats ? stats.items || [] : [];
+      $('m-stat1-v').value = items[0] ? items[0].value : '';
+      $('m-stat1-l').value = items[0] ? items[0].label : '';
+      $('m-stat3-v').value = items[1] ? items[1].value : '';
+      $('m-stat3-l').value = items[1] ? items[1].label : '';
+
+      renderPreview();
+    }
+
+    function renderPreview() {
+      var rendered = E.renderEmail(composerDoc());
+      $('preview-subject').textContent = rendered.subject || 'Subject preview';
+      var frame = $('preview-frame');
+      frame.srcdoc = rendered.html;
+      frame.style.width = previewWidth === 'mobile' ? '390px' : '100%';
+    }
+
+    /* ==================================================================
+     * Recipients
+     * ================================================================== */
+
+    function renderListPicker() {
+      var host = $('list-picker');
+      if (!lists.length) {
+        host.innerHTML = '<p class="muted">No lists yet. Create one on the Recipients tab — or import your existing Cross Country lists.</p>';
+        return;
+      }
+      host.innerHTML = lists.map(function (list) {
+        return '<label class="list-pick"><input type="checkbox" class="list-check" value="' + E.esc(list.id) + '"> ' +
+          E.esc(list.name) + '<span class="count">' + E.dedupeEmails(list.emails).length + '</span></label>';
+      }).join('');
+      host.querySelectorAll('.list-check').forEach(function (box) {
+        box.addEventListener('change', updateAudience);
+      });
+    }
+
+    function selectedListIds() {
+      return Array.prototype.slice.call(document.querySelectorAll('.list-check:checked')).map(function (b) { return b.value; });
+    }
+
+    async function updateAudience() {
+      var ids = selectedListIds();
+      if (!ids.length) {
+        lastAudience = { emails: [], perList: [] };
+        $('audience-count').textContent = 'No lists selected';
+        $('audience-detail').textContent = '';
+        return;
+      }
+      try {
+        var audience = await E.resolveAudience(ids);
+        lastAudience = audience;
+        $('audience-count').textContent = audience.emails.length + ' recipient' + (audience.emails.length === 1 ? '' : 's');
+        var parts = audience.perList.map(function (p) { return p.name + ' (' + p.count + ')'; });
+        var suppressedNote = audience.suppressedCount
+          ? ' · ' + audience.suppressedCount + ' suppressed address' + (audience.suppressedCount === 1 ? '' : 'es') + ' excluded'
+          : '';
+        $('audience-detail').textContent = parts.join(' · ') + suppressedNote;
+      } catch (err) {
+        $('audience-count').textContent = 'Could not resolve audience';
+        $('audience-detail').textContent = err.message;
+      }
+    }
+
+    function renderLists() {
+      var host = $('lists-view');
+      var select = $('a-list');
+
+      if (!lists.length) {
+        host.innerHTML = '<p class="muted">No lists yet.</p>';
+        select.innerHTML = '<option value="">— Select a list —</option>';
+        return;
+      }
+
+      select.innerHTML = '<option value="">— Select a list —</option>' + lists.map(function (list) {
+        return '<option value="' + E.esc(list.id) + '">' + E.esc(list.name) + ' (' + E.dedupeEmails(list.emails).length + ')</option>';
+      }).join('');
+
+      host.innerHTML = lists.map(function (list) {
+        var emails = E.dedupeEmails(list.emails);
+        return '<div class="starter"><div style="min-width:0">' +
+          '<b>' + E.esc(list.name) + '</b>' +
+          '<p>' + E.esc(list.description || 'No description') + ' · ' + emails.length + ' recipient' + (emails.length === 1 ? '' : 's') +
+          (list.legacyId ? ' · imported' : '') + '</p>' +
+          '</div><div class="row-actions">' +
+          '<button class="mini" data-act="rename" data-id="' + E.esc(list.id) + '">Rename</button>' +
+          '<button class="mini" data-act="export" data-id="' + E.esc(list.id) + '">⤓ CSV</button>' +
+          '<button class="mini" data-act="mailchimp" data-id="' + E.esc(list.id) + '">⤓ Mailchimp</button>' +
+          '<button class="mini danger" data-act="delete" data-id="' + E.esc(list.id) + '">Delete</button>' +
+          '</div></div>';
+      }).join('');
+    }
+
+    function renderSuppressions() {
+      var host = $('suppression-list');
+      if (!suppressions.length) {
+        host.innerHTML = '<span class="muted">Nobody has been suppressed yet.</span>';
+        return;
+      }
+      host.innerHTML = suppressions.map(function (entry) {
+        return '<span class="chip">' + E.esc(entry.email) + ' <span class="muted" style="font-size:.7rem">' + E.esc(entry.reason || '') + '</span>' +
+          '<button type="button" data-unsuppress="' + E.esc(entry.email) + '" title="Remove from suppression list">×</button></span>';
+      }).join('');
+      host.querySelectorAll('[data-unsuppress]').forEach(function (btn) {
+        btn.addEventListener('click', async function () {
+          try {
+            await E.unsuppress(btn.dataset.unsuppress);
+            alertDesk('Removed from the suppression list.', 'success');
+            await refreshAll();
+          } catch (err) { fail(err); }
+        });
+      });
+    }
+
+    /* ==================================================================
+     * Templates
+     * ================================================================== */
+
+    function renderTemplates() {
+      var host = $('templates-view');
+      if (!templates.length) {
+        host.innerHTML = '<p class="muted">No saved templates yet. Write an email and choose “Save as template”.</p>';
+      } else {
+        host.innerHTML = templates.map(function (template) {
+          return '<div class="starter"><div style="min-width:0"><b>' + E.esc(template.name) + '</b>' +
+            '<p>' + E.esc(template.subject || 'No subject') + (template.usageCount ? ' · used ' + template.usageCount + '×' : '') + '</p></div>' +
+            '<div class="row-actions">' +
+            '<button class="mini" data-act="load" data-id="' + E.esc(template.id) + '">Load</button>' +
+            '<button class="mini danger" data-act="delete" data-id="' + E.esc(template.id) + '">Delete</button>' +
+            '</div></div>';
+        }).join('');
+      }
+
+      $('starters-view').innerHTML = E.STARTER_TEMPLATES.map(function (starter, index) {
+        return '<div class="starter"><div style="min-width:0"><b>' + E.esc(starter.name) + '</b>' +
+          '<p>' + E.esc(starter.doc.dek || starter.subject || '') + '</p></div>' +
+          '<div class="row-actions"><button class="mini" data-starter="' + index + '">Use starter</button></div></div>';
+      }).join('');
+      $('starters-view').querySelectorAll('[data-starter]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var starter = E.STARTER_TEMPLATES[Number(btn.dataset.starter)];
+          applyDoc({ subject: starter.subject, preheader: starter.preheader, blocks: starter.doc.blocks, kicker: starter.doc.kicker, headline: starter.doc.headline, dek: starter.doc.dek, stats: [] });
+          showPanel('compose');
+          alertDesk('Starter loaded into the composer.', 'success');
+        });
+      });
+    }
+
+    /* ==================================================================
+     * History
+     * ================================================================== */
+
+    function statusBadge(status) {
+      return '<span class="badge ' + E.esc(status) + '">' + E.esc(E.STATUS_LABEL[status] || status) + '</span>';
+    }
+
+    function renderHistory() {
+      var body = $('history-body');
+      if (!queue.length) {
+        body.innerHTML = '<tr><td colspan="5" class="muted">Nothing yet. Drafts and sends will appear here.</td></tr>';
+        return;
+      }
+      body.innerHTML = queue.map(function (item) {
+        var count = (item.recipients || []).length;
+        var when = item.status === 'sent' && item.sentAt ? item.sentAt : item.scheduledFor || item.createdAt;
+        var actions = [];
+        if (item.status === 'sent') {
+          actions.push('<button class="mini" data-act="preview" data-id="' + E.esc(item.id) + '">Preview</button>');
+        }
+        if (E.OPEN_STATUS.has(item.status)) {
+          actions.push('<button class="mini" data-act="send" data-id="' + E.esc(item.id) + '">Send now</button>');
+        }
+        if (item.status === 'failed' || item.status === 'canceled') {
+          actions.push('<button class="mini" data-act="retry" data-id="' + E.esc(item.id) + '">Retry</button>');
+        }
+        if (item.status === 'draft' || item.status === 'scheduled') {
+          actions.push('<button class="mini" data-act="edit" data-id="' + E.esc(item.id) + '">Edit</button>');
+        }
+        if (item.status === 'scheduled') {
+          actions.push('<button class="mini" data-act="cancel" data-id="' + E.esc(item.id) + '">Cancel</button>');
+        }
+        actions.push('<button class="mini" data-act="recipients" data-id="' + E.esc(item.id) + '">⤓ CSV</button>');
+        actions.push('<button class="mini danger" data-act="delete" data-id="' + E.esc(item.id) + '">Delete</button>');
+
+        return '<tr>' +
+          '<td><strong>' + E.esc(item.subject || '(no subject)') + '</strong>' +
+          (item.isTest ? ' <span class="badge draft">test</span>' : '') +
+          (item.lastError ? '<div class="muted" style="color:var(--danger);font-size:.76rem;margin-top:.25rem">' + E.esc(item.lastError) + '</div>' : '') +
+          '</td>' +
+          '<td>' + statusBadge(item.status) + '</td>' +
+          '<td>' + count + '</td>' +
+          '<td style="white-space:nowrap">' + E.esc(E.formatDateTime(when)) + '</td>' +
+          '<td><div class="row-actions">' + actions.join('') + '</div></td>' +
+          '</tr>';
+      }).join('');
+    }
+
+    /* ==================================================================
+     * Stats
+     * ================================================================== */
+
+    async function renderStats() {
+      var stats = await E.analytics();
+      var tiles = [
+        ['Lists', stats.lists],
+        ['Reachable', stats.reach],
+        ['Scheduled', stats.scheduled],
+        ['Queued', stats.queued],
+        ['Sent', stats.sent],
+        ['Suppressed', stats.suppressed],
+      ];
+      $('stat-strip').innerHTML = tiles.map(function (tile) {
+        return '<div class="stat-tile"><b>' + E.esc(tile[1]) + '</b><span>' + E.esc(tile[0]) + '</span></div>';
+      }).join('');
+    }
+
+    /* ==================================================================
+     * Delivery
+     * ================================================================== */
+
+    function renderDelivery() {
+      $('d-adapter').innerHTML = Object.keys(E.ADAPTERS).map(function (key) {
+        return '<option value="' + key + '"' + (delivery.adapter === key ? ' selected' : '') + '>' + E.esc(E.ADAPTERS[key].label) + '</option>';
+      }).join('');
+      $('d-webhook').value = delivery.webhookUrl || '';
+      $('d-fromname').value = delivery.fromName || '';
+      $('d-fromemail').value = delivery.fromEmail || '';
+      $('d-replyto').value = delivery.replyTo || '';
+      $('d-unsub').value = delivery.unsubscribeUrl || '';
+      $('d-footer').value = delivery.footerNote || '';
+      $('adapter-note').textContent = (E.ADAPTERS[delivery.adapter] || E.ADAPTERS.none).note;
+    }
+
+    /* ==================================================================
+     * Panel switching
+     * ================================================================== */
+
+    function showPanel(name) {
+      document.querySelectorAll('.desk-tab').forEach(function (tab) {
+        tab.classList.toggle('active', tab.dataset.panel === name);
+      });
+      document.querySelectorAll('.desk-panel').forEach(function (panel) {
+        panel.classList.toggle('active', panel.id === name + '-panel');
+      });
+      if (name === 'history') renderHistory();
+    }
+
+    /* ==================================================================
+     * Load / refresh
+     * ================================================================== */
+
+    async function refreshAll() {
+      await E.waitForDb();
+      delivery = await E.getDelivery();
+      lists = await E.listLists();
+      templates = await E.listTemplates();
+      queue = await E.listQueue();
+      suppressions = await E.listSuppressions();
+
+      renderListPicker();
+      renderLists();
+      renderTemplates();
+      renderHistory();
+      renderDelivery();
+      renderSuppressions();
+      await renderStats();
+      await updateAudience();
+      renderPreview();
+    }
+
+    /* ==================================================================
+     * Actions
+     * ================================================================== */
+
+    async function requireAudience() {
+      var ids = selectedListIds();
+      if (!ids.length) throw new Error('Select at least one list to send to.');
+      var audience = await E.resolveAudience(ids);
+      if (!audience.emails.length) throw new Error('That selection has no recipients.');
+      return audience;
+    }
+
+    function validateMessage() {
+      if (!$('m-subject').value.trim()) throw new Error('A subject is required.');
+      if (!$('m-headline').value.trim() && !$('m-subject').value.trim()) throw new Error('A headline is required.');
+      if (!$('m-body').value.trim()) throw new Error('Write something in the body first.');
+    }
+
+    function currentRendered() {
+      return E.renderEmail(composerDoc());
+    }
+
+    async function sendTest() {
+      var to = $('m-test-to').value.trim();
+      if (!E.isValidEmail(to)) throw new Error('Enter a valid test address.');
+      validateMessage();
+      var rendered = currentRendered();
+      var record = await E.queueMessage(
+        { subject: '[TEST] ' + rendered.subject, html: rendered.html, text: rendered.text, recipients: [to] },
+        { status: E.STATUS.QUEUED, isTest: true }
+      );
+      var result = await E.sendNow(record.id);
+      alertDesk(result.message, result.ok ? 'success' : 'error');
+      await refreshAll();
+    }
+
+    async function saveDraft() {
+      validateMessage();
+      var audience = await requireAudience();
+      var rendered = currentRendered();
+      await E.queueMessage(
+        { subject: rendered.subject, html: rendered.html, text: rendered.text, recipients: audience.emails },
+        { status: E.STATUS.DRAFT, listIds: selectedListIds() }
+      );
+      alertDesk('Draft saved. Find it on the History tab.', 'success');
+      await refreshAll();
+    }
+
+    async function scheduleSend() {
+      validateMessage();
+      var when = E.fromLocalInputValue($('m-when').value);
+      if (!when) throw new Error('Pick a date and time to schedule this email.');
+      var audience = await requireAudience();
+      var rendered = currentRendered();
+      await E.queueMessage(
+        { subject: rendered.subject, html: rendered.html, text: rendered.text, recipients: audience.emails },
+        { status: E.STATUS.SCHEDULED, scheduledFor: when, listIds: selectedListIds() }
+      );
+      alertDesk('Scheduled for ' + E.formatDateTime(when) + '.', 'success');
+      await refreshAll();
+    }
+
+    async function sendNow() {
+      validateMessage();
+      var audience = await requireAudience();
+      var rendered = currentRendered();
+
+      if (!window.confirm('Send “' + rendered.subject + '” to ' + audience.emails.length + ' recipient' + (audience.emails.length === 1 ? '' : 's') + '?')) return;
+
+      var record = await E.queueMessage(
+        { subject: rendered.subject, html: rendered.html, text: rendered.text, recipients: audience.emails },
+        { status: E.STATUS.QUEUED, listIds: selectedListIds() }
+      );
+      var result = await E.sendNow(record.id);
+      alertDesk(result.message, result.ok ? 'success' : 'error');
+      await refreshAll();
+    }
+
+    async function saveAsTemplate() {
+      var name = window.prompt('Name this template:', $('m-subject').value.trim() || 'Untitled template');
+      if (!name) return;
+      var rendered = currentRendered();
+      await E.saveTemplate({ name: name, subject: rendered.subject, preheader: composerDoc().preheader, doc: composerDoc() });
+      alertDesk('Template saved.', 'success');
+      await refreshAll();
+    }
+
+    /* ==================================================================
+     * Wiring
+     * ================================================================== */
+
+    document.querySelectorAll('.desk-tab').forEach(function (tab) {
+      tab.addEventListener('click', function () { showPanel(tab.dataset.panel); });
+    });
+
+    ['m-kicker', 'm-author', 'm-subject', 'm-preheader', 'm-headline', 'm-dek', 'm-body', 'm-cta-text', 'm-cta-href', 'm-stat1-v', 'm-stat1-l', 'm-stat3-v', 'm-stat3-l'].forEach(function (id) {
+      $(id).addEventListener('input', renderPreview);
+    });
+
+    document.querySelectorAll('.seg button').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        previewWidth = btn.dataset.width;
+        document.querySelectorAll('.seg button').forEach(function (b) { b.classList.toggle('on', b === btn); });
+        renderPreview();
+      });
+    });
+
+    $('pick-all').addEventListener('change', function (event) {
+      document.querySelectorAll('.list-check').forEach(function (box) { box.checked = event.target.checked; });
+      updateAudience();
+    });
+
+    $('btn-test').addEventListener('click', function () { sendTest().catch(fail); });
+    $('btn-draft').addEventListener('click', function () { saveDraft().catch(fail); });
+    $('btn-schedule').addEventListener('click', function () { scheduleSend().catch(fail); });
+    $('btn-send').addEventListener('click', function () { sendNow().catch(fail); });
+    $('btn-save-template').addEventListener('click', function () { saveAsTemplate().catch(fail); });
+
+    $('btn-clear').addEventListener('click', function () {
+      applyDoc({ blocks: [], kicker: '', headline: '', dek: '', subject: '' });
+      $('m-test-to').value = '';
+      editingQueueId = null;
+      alertDesk('Composer cleared.', 'info');
+    });
+
+    $('btn-copy-html').addEventListener('click', async function () {
+      var ok = await E.copyToClipboard(currentRendered().html);
+      alertDesk(ok ? 'HTML copied to the clipboard.' : 'Could not copy — try Download instead.', ok ? 'success' : 'error');
+    });
+    $('btn-copy-text').addEventListener('click', async function () {
+      var ok = await E.copyToClipboard(currentRendered().text);
+      alertDesk(ok ? 'Plain text copied.' : 'Could not copy — try Download instead.', ok ? 'success' : 'error');
+    });
+    $('btn-download-html').addEventListener('click', function () {
+      var rendered = currentRendered();
+      E.downloadText(E.slugify(rendered.subject) + '.html', rendered.html, 'text/html;charset=utf-8');
+    });
+    $('btn-open-preview').addEventListener('click', function () {
+      if (!E.openPreview(currentRendered().html)) alertDesk('Your browser blocked the pop-up.', 'error');
+    });
+
+    $('refresh-all').addEventListener('click', function () { refreshAll().then(function () { alertDesk('Reloaded.', 'success'); }).catch(fail); });
+
+    $('import-legacy').addEventListener('click', async function () {
+      try {
+        var report = await E.importLegacy();
+        var summary = report.listsAdded + ' list' + (report.listsAdded === 1 ? '' : 's') + ' and ' + report.templatesAdded + ' template' + (report.templatesAdded === 1 ? '' : 's') + ' imported.';
+        if (!report.listsAdded && !report.templatesAdded) summary = 'Everything was already imported — nothing to do.';
+        alertDesk(summary, 'success');
+        await refreshAll();
+      } catch (err) { fail(err); }
+    });
+
+    /* ---- recipients tab ---- */
+    $('btn-create-list').addEventListener('click', async function () {
+      try {
+        var name = $('l-name').value.trim();
+        if (!name) throw new Error('Give the list a name.');
+        var parsed = E.parseRecipients($('l-emails').value);
+        var created = await E.createList({ name: name, description: $('l-desc').value.trim(), emails: parsed.valid });
+        $('l-name').value = '';
+        $('l-desc').value = '';
+        $('l-emails').value = '';
+        var notes = [created.emails.length + ' address' + (created.emails.length === 1 ? '' : 'es') + ' added.'];
+        if (parsed.invalid.length) notes.push(parsed.invalid.length + ' skipped as invalid.');
+        if (parsed.duplicates.length) notes.push(parsed.duplicates.length + ' duplicate(s) removed.');
+        alertDesk(notes.join(' '), 'success');
+        await refreshAll();
+      } catch (err) { fail(err); }
+    });
+
+    $('btn-add-to-list').addEventListener('click', async function () {
+      try {
+        var id = $('a-list').value;
+        if (!id) throw new Error('Choose a list first.');
+        if (!$('a-emails').value.trim()) throw new Error('Paste at least one address.');
+        var report = await E.addToLists([id], $('a-emails').value);
+        $('a-emails').value = '';
+        alertDesk(report.added + ' added, ' + report.alreadyPresent + ' already present, ' + report.invalid + ' invalid, ' + report.suppressed + ' suppressed.', 'success');
+        await refreshAll();
+      } catch (err) { fail(err); }
+    });
+
+    $('btn-import-csv').addEventListener('click', function () { $('file-input').click(); });
+    $('file-input').addEventListener('change', function (event) {
+      var file = event.target.files && event.target.files[0];
+      if (!file) return;
+      var reader = new FileReader();
+      reader.onload = function () {
+        var text = String(reader.result || '');
+        // Drop a header row if the file starts with one.
+        var firstLine = text.split(/\r?\n/)[0] || '';
+        var body = /e-?mail|address/i.test(firstLine) ? text.slice(text.indexOf('\n') + 1) : text;
+        $('a-emails').value = body.trim();
+        alertDesk('Loaded ' + file.name + ' — check the list above, then choose a destination and add.', 'info');
+      };
+      reader.onerror = function () { alertDesk('Could not read that file.', 'error'); };
+      reader.readAsText(file);
+      event.target.value = '';
+    });
+
+    $('lists-view').addEventListener('click', async function (event) {
+      var btn = event.target.closest('[data-act]');
+      if (!btn) return;
+      var list = lists.filter(function (l) { return l.id === btn.dataset.id; })[0];
+      if (!list) return;
+      var emails = E.dedupeEmails(list.emails);
+      try {
+        if (btn.dataset.act === 'rename') {
+          var name = window.prompt('New name:', list.name);
+          if (!name) return;
+          await E.updateList(list.id, { name: name.trim() });
+          alertDesk('List renamed.', 'success');
+        } else if (btn.dataset.act === 'export') {
+          E.downloadText(E.slugify(list.name) + '-recipients.csv', E.recipientsCSV(emails), 'text/csv;charset=utf-8');
+          return;
+        } else if (btn.dataset.act === 'mailchimp') {
+          E.downloadText(E.slugify(list.name) + '-mailchimp.csv', E.mailchimpCSV(emails), 'text/csv;charset=utf-8');
+          return;
+        } else if (btn.dataset.act === 'delete') {
+          if (!window.confirm('Delete “' + list.name + '”? The addresses are not suppressed, only the list is removed.')) return;
+          await E.deleteList(list.id);
+          alertDesk('List deleted.', 'success');
+        }
+        await refreshAll();
+      } catch (err) { fail(err); }
+    });
+
+    $('btn-suppress').addEventListener('click', async function () {
+      try {
+        var email = $('s-email').value.trim();
+        if (!E.isValidEmail(email)) throw new Error('Enter a valid address to suppress.');
+        await E.suppress(email, $('s-reason').value);
+        $('s-email').value = '';
+        alertDesk(E.normalizeEmail(email) + ' will not receive any more mail.', 'success');
+        await refreshAll();
+      } catch (err) { fail(err); }
+    });
+
+    /* ---- templates tab ---- */
+    $('templates-view').addEventListener('click', async function (event) {
+      var btn = event.target.closest('[data-act]');
+      if (!btn) return;
+      var template = templates.filter(function (t) { return t.id === btn.dataset.id; })[0];
+      if (!template) return;
+      try {
+        if (btn.dataset.act === 'load') {
+          applyDoc(template.doc || {});
+          if (template.subject) $('m-subject').value = template.subject;
+          if (template.preheader) $('m-preheader').value = template.preheader;
+          renderPreview();
+          showPanel('compose');
+          await E.markTemplateUsed(template.id);
+          alertDesk('Template loaded.', 'success');
+        } else if (btn.dataset.act === 'delete') {
+          if (!window.confirm('Delete the template “' + template.name + '”?')) return;
+          await E.deleteTemplate(template.id);
+          alertDesk('Template deleted.', 'success');
+        }
+        await refreshAll();
+      } catch (err) { fail(err); }
+    });
+
+    /* ---- history tab ---- */
+    $('history-body').addEventListener('click', async function (event) {
+      var btn = event.target.closest('[data-act]');
+      if (!btn) return;
+      var item = queue.filter(function (q) { return q.id === btn.dataset.id; })[0];
+      if (!item) return;
+      try {
+        var act = btn.dataset.act;
+        if (act === 'send') {
+          if (!window.confirm('Send “' + item.subject + '” to ' + (item.recipients || []).length + ' recipients now?')) return;
+          var sent = await E.sendNow(item.id);
+          alertDesk(sent.message, sent.ok ? 'success' : 'error');
+        } else if (act === 'retry') {
+          var retried = await E.retry(item.id);
+          alertDesk(retried.message, retried.ok ? 'success' : 'error');
+        } else if (act === 'cancel') {
+          await E.cancel(item.id);
+          alertDesk('Send canceled.', 'success');
+        } else if (act === 'preview') {
+          E.openPreview(item.html || '<p>No content stored.</p>');
+          return;
+        } else if (act === 'recipients') {
+          E.downloadText(E.slugify(item.subject) + '-recipients.csv', E.recipientsCSV(item.recipients || []), 'text/csv;charset=utf-8');
+          return;
+        } else if (act === 'edit') {
+          applyDoc(item.doc || {});
+          $('m-subject').value = item.subject || '';
+          $('m-body').value = item.doc && item.doc.blocks ? undefined : E.htmlToText(item.html || '');
+          if (!$('m-body').value) $('m-body').value = E.htmlToText(item.html || '');
+          editingQueueId = item.id;
+          renderPreview();
+          showPanel('compose');
+          alertDesk('Loaded into the composer. Saving creates a new record; the original stays on the History tab.', 'info');
+          return;
+        } else if (act === 'delete') {
+          if (!window.confirm('Delete this record?')) return;
+          await E.deleteQueueRecord(item.id);
+          alertDesk('Record deleted.', 'success');
+        }
+        await refreshAll();
+      } catch (err) { fail(err); }
+    });
+
+    /* ---- delivery tab ---- */
+    $('d-adapter').addEventListener('change', function () {
+      $('adapter-note').textContent = (E.ADAPTERS[$('d-adapter').value] || E.ADAPTERS.none).note;
+    });
+
+    $('btn-save-delivery').addEventListener('click', async function () {
+      try {
+        delivery = await E.saveDelivery({
+          adapter: $('d-adapter').value,
+          webhookUrl: $('d-webhook').value.trim(),
+          fromName: $('d-fromname').value.trim(),
+          fromEmail: $('d-fromemail').value.trim(),
+          replyTo: $('d-replyto').value.trim(),
+          unsubscribeUrl: $('d-unsub').value.trim(),
+          footerNote: $('d-footer').value.trim(),
+        });
+        renderDelivery();
+        renderPreview();
+        alertDesk('Delivery settings saved.', 'success');
+      } catch (err) { fail(err); }
+    });
+
+    $('btn-show-contract').addEventListener('click', function () {
+      var card = $('contract-card');
+      card.hidden = !card.hidden;
+      if (!card.hidden) $('contract-json').textContent = JSON.stringify(E.deliveryContract(), null, 2);
+    });
+
+    /* ---- go ---- */
+    $('m-when').value = E.toLocalInputValue(new Date(Date.now() + 3600 * 1000).toISOString());
+    renderPreview();
+    refreshAll().catch(fail);
+  })();
+  </script>
+</body>
+</html>

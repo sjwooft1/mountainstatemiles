@@ -1,3 +1,20 @@
+/* Homepage shortcuts and admin-selected upcoming meets */
+.quick-links { display: flex; align-items: center; flex-wrap: wrap; gap: .55rem; margin: 1.35rem 0; }
+.quick-links span, .featured-kicker { color: var(--text-secondary); font-size: .74rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.quick-links a { color: var(--text-primary); background: var(--bg-primary); border: 1px solid var(--border); border-radius: 999px; padding: .48rem .8rem; font-size: .86rem; font-weight: 700; text-decoration: none; }
+.quick-links a:hover, .quick-links a:focus-visible { border-color: var(--primary); color: var(--primary); }
+.featured-meets { margin: 1.5rem 0 2rem; }
+.featured-meets-heading { display: flex; justify-content: space-between; align-items: end; gap: 1rem; flex-wrap: wrap; margin-bottom: .8rem; }
+.featured-meets-heading h2 { margin: .2rem 0 0; font-family: var(--font-display); font-size: 1.45rem; }
+.featured-meets-heading > a { color: var(--primary); font-weight: 800; font-size: .86rem; }
+.featured-meets-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: .8rem; color: var(--text-secondary); }
+.featured-meet-card { display: flex; gap: .9rem; align-items: center; padding: 1rem; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--bg-primary); color: var(--text-primary); text-decoration: none; }
+.featured-meet-card:hover, .featured-meet-card:focus-visible { border-color: var(--primary); box-shadow: 0 8px 22px var(--shadow-light); }
+.featured-meet-date { flex: 0 0 auto; color: var(--primary); font-weight: 800; font-size: .85rem; }
+.featured-meet-info { display: grid; gap: .2rem; min-width: 0; }
+.featured-meet-info strong { overflow-wrap: anywhere; }
+.featured-meet-info span { color: var(--text-secondary); font-size: .82rem; }
+
 /* ============================================
    Mountain State Miles — Unified Stylesheet
    "Soft & Friendly" full-site redesign
@@ -1272,8 +1289,8 @@ body.home-page {
   height: 100%;
   object-fit: cover;
   z-index: -1;
-  opacity: 1.0;
-  filter:brightness(0.8);
+  opacity: 0.90;
+  filter:brightness(0.6);
 }
 .list-item {
   display: flex;

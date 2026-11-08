@@ -512,6 +512,7 @@
         <div class="nav-section-title">Tools</div>
         <div class="nav-section" id="tools-nav">
           <button class="nav-btn" data-section="manual-entry">✏️ Manual Entry</button>
+          <button class="nav-btn" data-section="state-lineups">🏁 State Lineups</button>
           <button class="nav-btn" data-section="seasons">📅 Seasons</button>
           <button class="nav-btn" data-section="email-tools">✉️ Email Tools</button>
           <a href="/email-desk.html" class="nav-btn">📮 Email Desk</a>
@@ -573,7 +574,9 @@
 
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="firebase-config.js"></script>
+  <script src="state-lineups-admin.js?v=20261031"></script>
   <script src="/scripts/results-filter.js"></script>
 <script src="firebase-helpers.js"></script>
   <script src="/assets/regional-qualifiers.js?v=20261030-rules"></script>
@@ -586,7 +589,9 @@
     }
 
     document.getElementById('logout-btn').addEventListener('click', () => {
+      if (currentSection === 'state-lineups' && !window.StateLineupsAdmin.confirmLeave()) return;
       localStorage.removeItem("&#120; &#99; &#97; &#100; &#109; &#105; &#110;");
+      if (window.firebase && firebase.auth) firebase.auth().signOut().catch(() => {});
       window.location.replace('login.html');
     });
 
@@ -675,6 +680,7 @@
     }
 
     async function refreshCurrentSection() {
+      if (currentSection === 'state-lineups' && !window.StateLineupsAdmin.confirmLeave()) return;
       invalidateAdminCache();
       const button = document.querySelector('.refresh-btn');
       if (button) { button.disabled = true; button.classList.contains('mobile-refresh') ? button.textContent = '…' : button.textContent = '↻ Loading…'; }
@@ -737,6 +743,7 @@
       document.getElementById(id).addEventListener('click', (e) => {
         const btn = e.target.closest('button[data-section]');
         if (!btn) return;
+        if (currentSection === 'state-lineups' && !window.StateLineupsAdmin.confirmLeave()) return;
         setActiveNav(btn.dataset.section);
         loadSection(btn.dataset.section);
         closeMobileMenu();
@@ -762,6 +769,7 @@
       athletes: 'Athletes',
       results: 'Results',
       'manual-entry': 'Manual Result Entry',
+      'state-lineups': 'State Lineups',
       seasons: 'Season Management',
       'email-tools': 'Email Tools'
     };
@@ -778,6 +786,7 @@
           case 'athletes': await renderAthletes(); break;
           case 'results': await renderResults(); break;
           case 'manual-entry': await renderManualEntry(); break;
+          case 'state-lineups': await window.StateLineupsAdmin.render(document.getElementById('content')); break;
           case 'seasons': await renderSeasons(); break;
           case 'email-tools': await renderEmailTools(); break;
           default: await renderDashboard();
@@ -1470,6 +1479,9 @@
             render: row => row.date ? new Date(row.date + 'T00:00:00').toLocaleDateString() : '—' },
 
           { key: 'location', label: 'Location', type: 'text' },
+          { key: 'featured_homepage', label: 'Featured on homepages', type: 'checkbox',
+            hint: 'Show this meet on the main and cross country homepages through its meet date.',
+            render: row => row.featured_homepage === true ? '<span class="badge badge-info">Featured</span>' : '—' },
           { key: 'is_state_championship', label: 'WV State Championship meet', type: 'checkbox',
             hint: 'Shows this meet in the Past State Championship Results section after the meet date passes.',
             render: row => row.is_state_championship ? '<span class="badge badge-info">State</span>' : '—' },
@@ -1508,7 +1520,12 @@
           data.created_at = new Date().toISOString();
           await createRecord('crosscountry/meets', data);
         },
-        onUpdate: async (id, data) => updateRecord(`crosscountry/meets/${id}`, data),
+        onUpdate: async (id, data) => {
+          // An unchecked checkbox is omitted by the shared form; explicitly clear
+          // this flag when saving the meet form, without affecting inline edits.
+          if (window.currentModal?.querySelector('[data-field="featured_homepage"]') && !('featured_homepage' in data)) data.featured_homepage = false;
+          await updateRecord(`crosscountry/meets/${id}`, data);
+        },
         onDelete: async (id) => deleteRecord(`crosscountry/meets/${id}`),
         validate: data => !data.name ? 'Meet name is required.' : null
       });

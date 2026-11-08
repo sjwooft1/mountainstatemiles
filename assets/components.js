@@ -188,9 +188,9 @@ const BASE_LINKS = [
         </div>
         <div class="mega-foot">West Virginia&rsquo;s home for Track &amp; Cross Country</div>
       </div>
-      <img src="/assets/images/bg.png" alt="Background Image" class="page-background-image" 
+      <img src="/assets/images/bg.jpg" alt="Background Image" class="page-background-image" 
       data-theme-light-src="/assets/images/background.png"
-      data-theme-dark-src="/assets/images/bg.png" />
+      data-theme-dark-src="/assets/images/bg.jpg" />
     `;
   
     setupMobileMenu();
@@ -264,12 +264,67 @@ const BASE_LINKS = [
     document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
   }
   
+  // Both homepages share the same admin-selected XC meets. Read the meet
+  // records directly so this section does not wait for the rating engine.
+  async function loadFeaturedMeets() {
+    const list = document.getElementById('featured-meets-list');
+    if (!list) return;
+    try {
+      const db = window.firebaseDatabase || (window.firebase && firebase.apps.length && firebase.database());
+      if (!db) throw new Error('Firebase unavailable');
+      const snapshot = await db.ref('crosscountry/meets').once('value');
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const meets = [];
+      snapshot.forEach(child => {
+        const meet = child.val();
+        if (!meet || meet.featured_homepage !== true || !meet.slug || !/^\d{4}-\d{2}-\d{2}$/.test(String(meet.date || ''))) return;
+        const [year, month, day] = meet.date.split('-').map(Number);
+        const date = new Date(year, month - 1, day);
+        if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day || date < today) return;
+        meets.push({ meet, date });
+      });
+      meets.sort((a, b) => a.date - b.date || String(a.meet.name || '').localeCompare(String(b.meet.name || '')));
+      list.replaceChildren();
+      if (!meets.length) {
+        list.textContent = 'No featured upcoming meets right now. Explore the full XC schedule for more meets.';
+        return;
+      }
+      meets.forEach(({ meet, date }) => {
+        const link = document.createElement('a');
+        link.className = 'featured-meet-card';
+        link.href = '/CrossCountry/meet.html?slug=' + encodeURIComponent(meet.slug);
+        const time = document.createElement('time');
+        time.className = 'featured-meet-date';
+        time.dateTime = meet.date;
+        time.textContent = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        const info = document.createElement('span');
+        info.className = 'featured-meet-info';
+        const name = document.createElement('strong');
+        name.textContent = meet.name || meet.slug;
+        info.appendChild(name);
+        if (meet.location) {
+          const location = document.createElement('span');
+          location.textContent = meet.location;
+          info.appendChild(location);
+        }
+        link.append(time, info);
+        list.appendChild(link);
+      });
+    } catch (error) {
+      console.error('Could not load featured meets:', error);
+      list.textContent = 'Featured meets are unavailable right now. Please check the full XC schedule.';
+    }
+  }
+
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
       injectHeader();
       injectFooter();
+      loadFeaturedMeets();
     });
   } else {
     injectHeader();
     injectFooter();
+    loadFeaturedMeets();
   }

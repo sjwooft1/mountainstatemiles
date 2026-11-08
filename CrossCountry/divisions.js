@@ -9,13 +9,14 @@
   const time = sec => Number.isFinite(sec) ? Math.floor(sec / 60) + ':' + (sec % 60).toFixed(1).padStart(4, '0') : '—';
   const athleteLink = r => '/CrossCountry/athlete.html?name=' + encodeURIComponent(r.name) + '&school=' + encodeURIComponent(r.school_slug);
   const schoolLink = slug => '/CrossCountry/school.html?slug=' + encodeURIComponent(slug);
-  const shell = `<section class="division-hero"><div class="division-kicker">Mountain State Miles · Cross Country</div><h1>Class ${esc(cls)}</h1><p>Your division, all season long. Explore the performances, teams and stories shaping the road to the state meet.</p><nav class="division-nav" aria-label="Cross country divisions">${classes.map(c => `<a href="/CrossCountry/${c}/"${c === cls ? ' aria-current="page"' : ''}>Class ${c}</a>`).join('')}</nav></section><div class="division-bar"><div class="division-filters"><label for="division-gender">Gender</label><select id="division-gender"><option value="M">Boys</option><option value="F">Girls</option></select><label for="division-season">Season</label><select id="division-season"><option>Loading…</option></select></div><div class="division-actions"><button class="division-button secondary" id="division-csv" disabled>Export CSV</button><button class="division-button" id="division-pdf" disabled>Export PDF</button></div></div><div id="division-status" class="division-status division-muted" role="status" aria-live="polite">Loading division data…</div><nav class="division-sections" aria-label="Division sections"><div class="division-tablist" role="tablist" aria-label="Division sections"><button type="button" role="tab" id="tab-rankings" aria-controls="panel-rankings" aria-selected="true" tabindex="0" data-section="rankings">Rankings</button><button type="button" role="tab" id="tab-teams" aria-controls="panel-teams" aria-selected="false" tabindex="-1" data-section="teams">Teams</button><button type="button" role="tab" id="tab-predictions" aria-controls="panel-predictions" aria-selected="false" tabindex="-1" data-section="predictions">State projections</button><button type="button" role="tab" id="tab-stories" aria-controls="panel-stories" aria-selected="false" tabindex="-1" data-section="stories">Stories</button></div></nav><div id="division-content"></div><section id="panel-stories" class="division-section division-panel" role="tabpanel" aria-labelledby="tab-stories" hidden><h2>Division stories &amp; athlete spotlights</h2><p class="division-muted">Reporting from the Mountain State Miles news desk.</p><div id="division-stories" class="division-stories"><p class="division-muted">Loading stories…</p></div></section>`;
+  const shell = `<section class="division-hero"><div class="division-kicker">Mountain State Miles · Cross Country</div><h1>Class ${esc(cls)}</h1><p>Your division, all season long. Explore the performances, teams and stories shaping the road to the state meet.</p><nav class="division-nav" aria-label="Cross country divisions">${classes.map(c => `<a href="/CrossCountry/${c}/"${c === cls ? ' aria-current="page"' : ''}>Class ${c}</a>`).join('')}</nav></section><div class="division-bar"><div class="division-filters"><label for="division-gender">Gender</label><select id="division-gender"><option value="M">Boys</option><option value="F">Girls</option></select><label for="division-season">Season</label><select id="division-season"><option>Loading…</option></select></div><div class="division-actions"><button class="division-button secondary" id="division-csv" disabled>Export CSV</button><button class="division-button" id="division-pdf" disabled>Export PDF</button></div></div><dialog id="pdf-options" class="division-dialog" aria-labelledby="pdf-options-title"><form id="pdf-options-form"><h2 id="pdf-options-title">Choose PDF sections</h2><p class="division-muted">Export the full data for any combination of sections, regardless of the page currently shown.</p><fieldset><legend>Sections to include</legend><label><input type="checkbox" name="pdf-section" value="Individual rankings" checked> Individual rankings</label><label><input type="checkbox" name="pdf-section" value="Team analysis" checked> Team analysis</label><label><input type="checkbox" name="pdf-section" value="Regional qualification rules" checked> Regional qualification rules</label><label><input type="checkbox" name="pdf-section" value="Official state entries" checked> Official state entries</label><label><input type="checkbox" name="pdf-section" value="State team projection" checked> State team projection</label><label><input type="checkbox" name="pdf-section" value="Projected individual field" checked> Projected individual field</label></fieldset><p id="pdf-options-error" class="division-muted" role="alert"></p><div class="division-actions"><button type="button" class="division-button secondary" id="pdf-cancel">Cancel</button><button type="submit" class="division-button" id="pdf-generate">Download PDF</button></div></form></dialog><div id="division-status" class="division-status division-muted" role="status" aria-live="polite">Loading division data…</div><nav class="division-sections" aria-label="Division sections"><div class="division-tablist" role="tablist" aria-label="Division sections"><button type="button" role="tab" id="tab-rankings" aria-controls="panel-rankings" aria-selected="true" tabindex="0" data-section="rankings">Rankings</button><button type="button" role="tab" id="tab-teams" aria-controls="panel-teams" aria-selected="false" tabindex="-1" data-section="teams">Teams</button><button type="button" role="tab" id="tab-predictions" aria-controls="panel-predictions" aria-selected="false" tabindex="-1" data-section="predictions">State projections</button><button type="button" role="tab" id="tab-stories" aria-controls="panel-stories" aria-selected="false" tabindex="-1" data-section="stories">Stories</button></div></nav><div id="division-content"></div><section id="panel-stories" class="division-section division-panel" role="tabpanel" aria-labelledby="tab-stories" hidden><h2>Division stories &amp; athlete spotlights</h2><p class="division-muted">Reporting from the Mountain State Miles news desk.</p><div id="division-stories" class="division-stories"><p class="division-muted">Loading stories…</p></div></section>`;
   app.innerHTML = shell;
   const gender = document.getElementById('division-gender');
   const season = document.getElementById('division-season');
   const status = document.getElementById('division-status');
   const content = document.getElementById('division-content');
   let hub, exported = null;
+  let officialLineup = null, lineupError = '', lineupRequest = 0;
   let activeSection = 'rankings';
   let pagedTables = {};
   const pageSize = 10;
@@ -99,6 +100,30 @@
       const feedsState = rules && (target.is_state_championship || /\bstate\b/i.test([rules.targetName, rules.targetSlug.replace(/[-_]/g, ' '), target.name].join(' ')));
       return {meet:m, rules, feedsState, hasResults:hub.results.some(r => r.meet_slug === m.slug && prepareRegionalResult(r).normalizedGender === sex)};
     }).sort((a,b) => String(a.meet.name || '').localeCompare(String(b.meet.name || '')));
+    if (officialLineup && Array.isArray(officialLineup.entries)) {
+      const lookup = new Map(athletes.map(a => [key(a.name, a.school_slug), a]));
+      const field = officialLineup.entries.map(entry => {
+        const rated = lookup.get(key(entry.name, entry.school_slug));
+        const projected = rated ? MSMRating.pointsToEquiv5Ksec(sex, rated.rating) : null;
+        return {name:entry.name, school_slug:entry.school_slug, school:entry.school, grade:entry.grade || '', seed:entry.seed || '', note:entry.note || '', rating:rated && rated.rating, projected, role:entry.role, entry:'Official entry'};
+      }).sort((a,b) => (a.projected ?? Infinity) - (b.projected ?? Infinity) || a.name.localeCompare(b.name));
+      const unrated = field.filter(a => !Number.isFinite(a.projected)).length;
+      const teamSlugs = [...new Set(field.filter(a => a.role === 'team').map(a => a.school_slug))];
+      const scoring = new Set(teamSlugs.filter(slug => field.filter(a => a.school_slug === slug && a.role === 'team').length >= 5));
+      const teamOrder = new Map();
+      let scorePlace = 0, place = 0;
+      field.forEach(a => {
+        a.place = Number.isFinite(a.projected) ? ++place : null;
+        if (a.role === 'team') { const n = (teamOrder.get(a.school_slug) || 0) + 1; teamOrder.set(a.school_slug, n); a.projectedStarter = n <= 7; if (!unrated && !a.projectedStarter) a.entry = 'Official entry · possible alternate'; }
+        a.scoringPlace = a.place && a.role === 'team' && a.projectedStarter && scoring.has(a.school_slug) ? ++scorePlace : null;
+      });
+      const teams = teamSlugs.map(slug => {
+        const runners = field.filter(a => a.school_slug === slug && a.role === 'team');
+        const canScore = !unrated && runners.length >= 5;
+        return {slug, school:runners[0].school, depth:runners.length, score:canScore ? runners.slice(0,5).reduce((n,a) => n+a.scoringPlace,0) : null, sixth:canScore && runners[5] ? runners[5].scoringPlace : Infinity};
+      }).sort((a,b) => (a.score ?? Infinity) - (b.score ?? Infinity) || a.sixth - b.sixth || a.school.localeCompare(b.school));
+      return {official:true, source:officialLineup.source, updatedAt:officialLineup.updatedAt, unrated, message:unrated ? `${unrated} official entries have no matching season rating; team scores are unavailable until every entrant is rated.` : '', teams, field, meets, coverage, resultMeets:0, target:'State meet'};
+    }
     if (!meets.length) return {message:'No regional meets with state qualification rules are available for this season.', teams:[], field:[], meets:[], coverage};
     // Never merge regional meets targeting different championships.
     const groups = new Map();
@@ -184,9 +209,11 @@
       rules ? esc((rules.raceScope === 'all' ? 'All races' : 'Varsity only') + (feedsState ? '' : ' · target not identified as state meet') + (rules.note ? ' · ' + rules.note : '')) : '—',
       hasResults ? 'Available' : 'No results'
     ]);
-    const projectionRows = prediction.teams.map((t,i) => [String(i+1), `<a href="${schoolLink(t.slug)}">${esc(t.school)}</a>`, t.score == null ? 'Incomplete' : esc(t.score), esc(t.depth)]);
-    const fieldRows = prediction.field.map(a => [esc(a.place), `<a href="${athleteLink(a)}">${esc(a.name)}</a>`, esc(a.school), esc(time(a.projected)), a.entry.startsWith('Possible') ? '<span class="division-tag">Possible entry</span>' : 'Regional runner · entry unconfirmed']);
-    content.innerHTML = `<section class="division-section division-fade"><h2>Division at a glance</h2><div class="division-grid"><div class="division-card"><div class="division-muted">Rated athletes</div><div class="division-stat">${athletes.length}</div><div class="division-muted">${names} · ${year}</div></div><div class="division-card"><div class="division-muted">Individual leader</div><div class="division-stat">${leader ? esc(leader.rating) : '—'}</div><div class="division-muted">${leader ? esc(leader.name + ' · ' + leader.school) : 'No rated results'}</div></div><div class="division-card"><div class="division-muted">Leading team power</div><div class="division-stat">${teamLeader ? esc(teamLeader.power) : '—'}</div><div class="division-muted">${teamLeader ? esc(teamLeader.school) : 'No complete teams'}</div></div></div></section><section id="panel-rankings" class="division-section division-panel" role="tabpanel" aria-labelledby="tab-rankings"><h2>Individual rankings</h2><p class="division-muted">Best in-season MSM rating per athlete, including relay legs as in the existing hub; higher is better. Time shown is from the rated performance, not necessarily a personal best. <a href="/CrossCountry/rankings-explained.html">How ratings work</a></p>${table(['Rank','Athlete','School','MSM','Time','Meet'],rows,'No rated results are available for this selection.','rankings')}</section><section id="panel-teams" class="division-section division-panel" role="tabpanel" aria-labelledby="tab-teams" hidden><h2>Team analysis</h2><p class="division-muted">Power is the sum of a team’s five best athlete ratings. Spread is the difference between its first and fifth rating; smaller indicates a tighter scoring pack.</p>${table(['Rank','Team','Top-five power','Rated runners','1–5 spread'],teamRows,'No team data is available for this selection.','teams')}</section><section id="panel-predictions" class="division-section division-panel" role="tabpanel" aria-labelledby="tab-predictions" hidden><h2>Road to states · projection</h2><p class="division-note">An estimate, not an official entry list. Regional results and the meet’s published qualification settings determine the field. For qualifying teams, the best season-rated runners up to the configured team roster size are included even if they did not race at regionals; those runners are marked <strong>possible entry</strong> and their eligibility is unverified. Individual qualifiers are included where identifiable. Projection ratings exclude relay legs. Projected 5K times are neutral-condition MSM equivalents, not state-course or weather forecasts. Missing regional results, entry changes, combined races, or incomplete qualification rules can change the outcome.</p><p class="division-muted">${prediction.message ? esc(prediction.message) : `Target: ${esc(prediction.target)} · ${prediction.resultMeets} of ${prediction.meets.length} configured regional meets have ${names.toLowerCase()} results. Check completeness and official qualification rules before relying on this field.`}</p><h3>Regional qualification rules</h3><p class="division-muted">The rules below are the same meet-specific settings used by each meet’s Road to States graphic. Regions without rules are omitted from the projection; open a meet to review its results.</p>${table(['Regional meet','Advancement per race','Scope and notes','Results'],ruleRows,'No regional meets identified for this division and season.')}<h3>Projected team standings</h3>${table(['Rank','Qualified team','Projected points','Projected runners'],projectionRows,'No qualifying team projections available.','projected teams')}<h3 class="division-subheading">Projected individual field</h3><p class="division-muted">Ranked by neutral equivalent 5K. Possible entries are not confirmed state-meet participants.</p>${table(['Place','Athlete','School','Equivalent 5K','Entry status'],fieldRows,'No projected individual field available.','projected athletes')}</section>`;
+    const officialRows = prediction.official ? prediction.field.map(a => [`<a href="${athleteLink(a)}">${esc(a.name)}</a>`, esc(a.school), esc(a.grade || '—'), esc(a.seed || '—'), esc(a.role === 'team' ? 'Team' : 'Individual'), esc(a.note || '—')]) : [];
+    const projectionRows = prediction.teams.map((t,i) => [t.score == null ? '—' : String(i+1), `<a href="${schoolLink(t.slug)}">${esc(t.school)}</a>`, t.score == null ? 'Incomplete' : esc(t.score), esc(t.depth)]);
+    const fieldRows = prediction.field.map(a => [a.place == null ? '—' : esc(a.place), `<a href="${athleteLink(a)}">${esc(a.name)}</a>`, esc(a.school), esc(time(a.projected)), a.entry.startsWith('Possible') ? '<span class="division-tag">Possible entry</span>' : esc(a.entry)]);
+    const projectionNote = prediction.official ? `Official entries published by an administrator. Source: ${esc(prediction.source)} · Updated: ${esc(prediction.updatedAt)}. Projected times and standings remain estimates based on season ratings, not official results. For team scoring, each team's top seven rated entries are assumed to start; additional entries are possible alternates, not confirmed scratches. Athletes without a matching rating remain in the field without a projected time.` : 'An estimate, not an official entry list. Regional results and the meet’s published qualification settings determine the field. For qualifying teams, the best season-rated runners up to the configured team roster size are included even if they did not race at regionals; those runners are marked <strong>possible entry</strong> and their eligibility is unverified. Individual qualifiers are included where identifiable. Projection ratings exclude relay legs. Projected 5K times are neutral-condition MSM equivalents, not state-course or weather forecasts. Missing regional results, entry changes, combined races, or incomplete qualification rules can change the outcome.';
+    content.innerHTML = `<section class="division-section division-fade"><h2>Division at a glance</h2><div class="division-grid"><div class="division-card"><div class="division-muted">Rated athletes</div><div class="division-stat">${athletes.length}</div><div class="division-muted">${names} · ${year}</div></div><div class="division-card"><div class="division-muted">Individual leader</div><div class="division-stat">${leader ? esc(leader.rating) : '—'}</div><div class="division-muted">${leader ? esc(leader.name + ' · ' + leader.school) : 'No rated results'}</div></div><div class="division-card"><div class="division-muted">Leading team power</div><div class="division-stat">${teamLeader ? esc(teamLeader.power) : '—'}</div><div class="division-muted">${teamLeader ? esc(teamLeader.school) : 'No complete teams'}</div></div></div></section><section id="panel-rankings" class="division-section division-panel" role="tabpanel" aria-labelledby="tab-rankings"><h2>Individual rankings</h2><p class="division-muted">Best in-season MSM rating per athlete, including relay legs as in the existing hub; higher is better. Time shown is from the rated performance, not necessarily a personal best. <a href="/CrossCountry/rankings-explained.html">How ratings work</a></p>${table(['Rank','Athlete','School','MSM','Time','Meet'],rows,'No rated results are available for this selection.','rankings')}</section><section id="panel-teams" class="division-section division-panel" role="tabpanel" aria-labelledby="tab-teams" hidden><h2>Team analysis</h2><p class="division-muted">Power is the sum of a team’s five best athlete ratings. Spread is the difference between its first and fifth rating; smaller indicates a tighter scoring pack.</p>${table(['Rank','Team','Top-five power','Rated runners','1–5 spread'],teamRows,'No team data is available for this selection.','teams')}</section><section id="panel-predictions" class="division-section division-panel" role="tabpanel" aria-labelledby="tab-predictions" hidden><h2>Road to states · projection</h2><p class="division-note">${projectionNote}</p>${lineupError ? `<p class="division-note">Official entries could not be checked: ${esc(lineupError)}. The field below is an estimate and may not reflect published entries.</p>` : ''}<p class="division-muted">${prediction.message ? esc(prediction.message) : prediction.official ? 'The published entry list determines the projected field.' : `Target: ${esc(prediction.target)} · ${prediction.resultMeets} of ${prediction.meets.length} configured regional meets have ${names.toLowerCase()} results. Check completeness and official qualification rules before relying on this field.`}</p><h3>Regional qualification rules</h3><p class="division-muted">The rules below are the same meet-specific settings used by each meet’s Road to States graphic. Regions without rules are omitted from the projection; open a meet to review its results.</p>${table(['Regional meet','Advancement per race','Scope and notes','Results'],ruleRows,'No regional meets identified for this division and season.')}${prediction.official ? `<h3>Official state entries</h3>${table(['Athlete','School','Grade','Seed time','Type','Qualification note'],officialRows,'No published entries.','official entries')}` : ''}<h3>Projected team standings</h3>${table(['Rank','Qualified team','Projected points','Projected runners'],projectionRows,'No qualifying team projections available.','projected teams')}<h3 class="division-subheading">Projected individual field</h3><p class="division-muted">${prediction.official ? 'Official entries; times and places are projected, and unrated entrants have no projected place.' : 'Ranked by neutral equivalent 5K. Possible entries are not confirmed state-meet participants.'}</p>${table(['Place','Athlete','School','Equivalent 5K','Entry status'],fieldRows,'No projected individual field available.','projected athletes')}</section>`;
     selectSection(activeSection, false);
     exported = {year, names, athletes, teams, prediction};
     document.getElementById('division-csv').disabled = false;
@@ -195,12 +222,14 @@
 
   function exportRows() {
     const {year,names,athletes,teams,prediction} = exported;
-    const rows = [['Class',cls,'Season',year,'Gender',names], ['Method','Current classification mapping is used for all seasons. MSM ratings from in-season WV performances include relay legs. Projection excludes relay legs and uses configured regional qualifying rules and neutral equivalent 5K; possible entries are unverified.'], ['Regional coverage',`${prediction.resultMeets || 0} of ${prediction.meets.length} configured meets with results`, 'Target',prediction.target || '', 'Status',prediction.message || ''], [], ['Regional qualification rules'], ['Meet','Teams','Runners per team','Individuals','Wildcards','Race scope','Note','Results'], ...prediction.coverage.map(({meet,rules,feedsState,hasResults}) => [meet.name || meet.slug, rules ? rules.teamSpots : 'Not configured', rules ? rules.teamMembers : '', rules ? rules.individualSpots : '', rules ? rules.wildcardSpots : '', rules ? rules.raceScope : '', rules ? [rules.note, feedsState ? '' : 'Target not identified as state meet'].filter(Boolean).join(' · ') : '', hasResults ? 'Available' : 'No results']), [], ['Individual rankings'], ['Rank','Athlete','School','MSM','Time','Meet']];
+    const rows = [['Class',cls,'Season',year,'Gender',names], ['Method',prediction.official ? `Official entries published by an administrator; source: ${prediction.source}; updated: ${prediction.updatedAt}. Projected times and standings are estimates using season ratings and the top seven rated entries per team as assumed starters. Other entries are possible alternates, not confirmed scratches. Unrated entries have no projected time.` : `Current classification mapping is used for all seasons. MSM ratings from in-season WV performances include relay legs. Projection excludes relay legs and uses configured regional qualifying rules and neutral equivalent 5K; possible entries are unverified.${lineupError ? ' Official entries could not be checked: ' + lineupError : ''}`], ['Regional coverage',`${prediction.resultMeets || 0} of ${prediction.meets.length} configured meets with results`, 'Target',prediction.target || '', 'Status',prediction.message || ''], [], ['Regional qualification rules'], ['Meet','Teams','Runners per team','Individuals','Wildcards','Race scope','Note','Results'], ...prediction.coverage.map(({meet,rules,feedsState,hasResults}) => [meet.name || meet.slug, rules ? rules.teamSpots : 'Not configured', rules ? rules.teamMembers : '', rules ? rules.individualSpots : '', rules ? rules.wildcardSpots : '', rules ? rules.raceScope : '', rules ? [rules.note, feedsState ? '' : 'Target not identified as state meet'].filter(Boolean).join(' · ') : '', hasResults ? 'Available' : 'No results']), [], ['Individual rankings'], ['Rank','Athlete','School','MSM','Time','Meet']];
     athletes.forEach((a,i) => rows.push([i+1,a.name,a.school,a.rating,time(a.time),a.meet]));
     rows.push([],['Team analysis'],['Rank','Team','Top-five power','Rated runners','1–5 spread']);
     teams.forEach((t,i) => rows.push([i+1,t.school,t.power == null ? 'Incomplete' : t.power,t.depth,t.spread == null ? '' : t.spread]));
+    rows.push([],['Official state entries'],['Athlete','School','Grade','Seed time','Type','Qualification note']);
+    if (prediction.official) prediction.field.forEach(a => rows.push([a.name,a.school,a.grade,a.seed,a.role,a.note]));
     rows.push([],['State team projection'],['Rank','Team','Projected points','Projected runners']);
-    prediction.teams.forEach((t,i) => rows.push([i+1,t.school,t.score == null ? 'Incomplete' : t.score,t.depth]));
+    prediction.teams.forEach((t,i) => rows.push([t.score == null ? '' : i+1,t.school,t.score == null ? 'Incomplete' : t.score,t.depth]));
     rows.push([],['Projected individual field'],['Place','Athlete','School','Equivalent 5K','Entry status']);
     prediction.field.forEach(a => rows.push([a.place,a.name,a.school,time(a.projected),a.entry]));
     return rows;
@@ -209,15 +238,27 @@
     const csv = exportRows().map(row => row.map(value => { const s = String(value == null ? '' : value); return '"' + (/^[\s]*[=+@\-\t\r]/.test(s) ? "'" + s : s).replace(/"/g,'""') + '"'; }).join(',')).join('\r\n');
     const url = URL.createObjectURL(new Blob(['\ufeff',csv],{type:'text/csv;charset=utf-8'})); const a = document.createElement('a'); a.href = url; a.download = `class-${cls}-${exported.year}-${exported.names.toLowerCase()}.csv`; a.click(); setTimeout(() => URL.revokeObjectURL(url),1000);
   });
-  document.getElementById('division-pdf').addEventListener('click', async () => {
+  const pdfDialog = document.getElementById('pdf-options');
+  const pdfForm = document.getElementById('pdf-options-form');
+  const pdfError = document.getElementById('pdf-options-error');
+  document.getElementById('division-pdf').addEventListener('click', () => { pdfError.textContent = ''; pdfDialog.showModal(); });
+  document.getElementById('pdf-cancel').addEventListener('click', () => pdfDialog.close());
+  pdfForm.addEventListener('submit', async event => {
+    event.preventDefault();
+    const selected = new Set(Array.from(pdfForm.querySelectorAll('input[name="pdf-section"]:checked'), input => input.value));
+    if (!selected.size) { pdfError.textContent = 'Select at least one section.'; return; }
+    pdfError.textContent = '';
+    const button = document.getElementById('pdf-generate');
+    button.disabled = true;
     try {
       await MSMPdf.ready(); const doc = new window.jspdf.jsPDF();
       const header = await MSMPdf.brandHeader(doc,{title:`Class ${cls} Cross Country`,subtitle:`${exported.year} · ${exported.names} · Rankings and state projections`});
       const rows = exportRows();
-      const headings = ['Regional qualification rules','Individual rankings','Team analysis','State team projection','Projected individual field'];
+      const headings = ['Regional qualification rules','Individual rankings','Team analysis','Official state entries','State team projection','Projected individual field'];
       const intro = rows.slice(0,3).map(row => [row.join(' · ')]);
       doc.autoTable({head:[['Report notes']],body:intro,didDrawPage:header,margin:{top:32,bottom:20},styles:{fontSize:8,cellPadding:2,overflow:'linebreak'},headStyles:{fillColor:[63,125,99]}});
       headings.forEach((title, index) => {
+        if (!selected.has(title)) return;
         const start = rows.findIndex(r => r.length === 1 && r[0] === title);
         const end = index + 1 < headings.length ? rows.findIndex(r => r.length === 1 && r[0] === headings[index+1]) : rows.length;
         const columns = rows[start+1];
@@ -226,9 +267,30 @@
         doc.autoTable({startY:doc.lastAutoTable.finalY+7,head:[[{content:title,colSpan:columns.length}],columns],body,didDrawPage:header,margin:{top:32,bottom:20},styles:{fontSize:8,cellPadding:2,overflow:'linebreak'},headStyles:{fillColor:[63,125,99]}});
       });
       MSMPdf.finalize(doc); doc.save(`class-${cls}-${exported.year}-${exported.names.toLowerCase()}.pdf`);
-    } catch(e) { status.textContent = 'PDF export failed: ' + e.message; }
+      pdfDialog.close();
+    } catch(e) { pdfError.textContent = 'PDF export failed: ' + e.message; }
+    finally { button.disabled = false; }
   });
-  gender.addEventListener('change', render); season.addEventListener('change', render);
+  async function loadLineup() {
+    const request = ++lineupRequest;
+    officialLineup = null; lineupError = '';
+    status.textContent = 'Checking published state entries…';
+    content.innerHTML = '';
+    document.getElementById('division-csv').disabled = true;
+    document.getElementById('division-pdf').disabled = true;
+    try {
+      const snapshot = await window.firebaseDatabase.ref(`state_lineups/${season.value}/${cls}/${gender.value}`).once('value');
+      if (request !== lineupRequest) return;
+      const record = snapshot.val();
+      if (record) {
+        const entries = record.entries && Object.values(record.entries);
+        if (!Array.isArray(entries) || !entries.length || entries.some(e => !e || !e.name || !e.school_slug || !e.school || !['team','individual'].includes(e.role))) throw new Error('The published entry list is incomplete.');
+        officialLineup = {...record, entries};
+      }
+    } catch (error) { if (request !== lineupRequest) return; lineupError = error.message || 'Database unavailable'; }
+    render();
+  }
+  gender.addEventListener('change', loadLineup); season.addEventListener('change', loadLineup);
 
   async function loadStories() {
     const box = document.getElementById('division-stories');
@@ -241,12 +303,18 @@
     } catch(e) { box.textContent = 'Stories could not be loaded: ' + e.message; }
   }
   loadStories();
-  MSMHub.load().then(data => {
+  MSMHub.load().then(async data => {
     hub = data;
-    const years = [...new Set(hub.results.map(r => MSMHub.seasonOf(r)).filter(Number.isFinite))].sort((a,b) => b-a);
-    if (!years.length) { status.textContent = 'No dated results are available.'; return; }
+    const current = MSMHub.currentSeason();
+    let publishedYears = [];
+    try {
+      const snapshot = await window.firebaseDatabase.ref('state_lineups').once('value');
+      const all = snapshot.val() || {};
+      publishedYears = Object.keys(all).filter(y => /^\d{4}$/.test(y) && all[y] && all[y][cls]).map(Number);
+    } catch (_) { /* The selected race is checked separately and reports failures. */ }
+    const years = [...new Set([...hub.results.map(r => MSMHub.seasonOf(r)).filter(Number.isFinite), ...publishedYears, current])].sort((a,b) => b-a);
     season.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join('');
-    const current = MSMHub.currentSeason(); if (years.includes(current)) season.value = String(current);
-    render();
+    season.value = String(current);
+    loadLineup();
   }).catch(e => { status.textContent = 'Division data could not be loaded: ' + e.message; });
 })();

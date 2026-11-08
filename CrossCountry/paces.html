@@ -17,6 +17,7 @@
   <link rel="stylesheet" href="/assets/main.css" />
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.7.1/jspdf.plugin.autotable.min.js"></script>
+  <script defer src="/assets/pdf-branding.js"></script>
   <script src="/assets/components.js" defer></script>
   <script src="/assets/theme-toggle.js" defer></script>
 
@@ -30,7 +31,7 @@
     }
     *, *::before, *::after { box-sizing: border-box; }
 
-    .content-section { max-width: 1100px; margin: 0 auto; padding: 30px 16px; }
+    .content-section { max-width: 1280px; margin: 0 auto; padding: 100px 16px 36px; }
 
     .calc-header {
       background: var(--bg-primary);
@@ -137,13 +138,13 @@
       border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; gap: 8px;
     }
     .table-scroll { overflow-x: auto; }
-    table.paces { width: 100%; border-collapse: collapse; min-width: 960px; }
+    table.paces { width: 100%; border-collapse: collapse; min-width: 1120px; }
     table.paces thead th {
-      text-align: left; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.03em;
-      color: var(--text-tertiary); padding: 10px 12px; border-bottom: 1px solid var(--border); white-space: nowrap;
+      text-align: left; font-size: 0.67rem; text-transform: uppercase; letter-spacing: 0.03em;
+      color: var(--text-tertiary); padding: 10px 9px; border-bottom: 1px solid var(--border); white-space: nowrap;
     }
     table.paces td {
-      padding: 11px 12px; font-size: 0.9rem; color: var(--text-primary); border-bottom: 1px solid var(--border);
+      padding: 10px 9px; font-size: 0.85rem; color: var(--text-primary); border-bottom: 1px solid var(--border);
       white-space: nowrap; font-variant-numeric: tabular-nums;
     }
     table.paces tbody tr:last-child td { border-bottom: none; }
@@ -215,6 +216,10 @@
           <label>&nbsp;</label>
           <button class="btn" id="load-btn">Load roster</button>
         </div>
+        <div class="field" style="flex:0 0 auto; min-width:0;">
+          <label>&nbsp;</label>
+          <button class="btn secondary" id="load-preset-btn" title="Load the 36-athlete Coach Reference Sheet">📋 Reference Sheet (36)</button>
+        </div>
       </div>
 
       <details class="manual-details">
@@ -283,6 +288,7 @@
   //  Every zone is a fixed fraction of velocity at VO2max.
   // ==========================================================
   const METERS_PER_MILE = 1609.34;
+  const RACE_PACE_MILE_M = 1609.34 * (321.95 / 322.275); // 1607.72m (3.11-mile 5K pace convention matching reference sheet)
   const KM_FACTOR = 1000 / METERS_PER_MILE;
   const M800_FACTOR = 800 / METERS_PER_MILE;
 
@@ -300,28 +306,38 @@
     return vo2 / pct;
   }
 
-  // Calibration anchors — extracted directly from the Tinman master list.
+  // Calibration anchors — extracted directly from the Tinman master list & coach reference sheet.
   // We feed them in ascending VDOT order (slowest times first) for interpolation.
   const rawTinmanData = `
     28:08.74, 09:07.88, 09:20.26, 09:30.63, 09:47.03, 10:01.53, 10:33.12
+    27:18.00, 08:52.32, 09:04.34, 09:14.42, 09:30.35, 09:44.44, 10:15.13
     26:42.57, 08:41.43, 08:53.21, 09:03.08, 09:18.69, 09:32.49, 10:02.55
+    25:48.20, 08:24.70, 08:36.10, 08:45.66, 09:00.76, 09:14.12, 09:43.22
     25:03.00, 08:10.76, 08:21.85, 08:31.14, 08:45.83, 08:58.82, 09:27.12
     24:51.33, 08:07.16, 08:18.17, 08:27.39, 08:41.97, 08:54.86, 09:22.95
     24:39.43, 08:03.49, 08:14.41, 08:23.56, 08:38.03, 08:50.83, 09:18.71
+    24:25.60, 07:59.22, 08:10.04, 08:19.11, 08:33.45, 08:46.14, 09:13.77
+    24:24.40, 07:58.84, 08:09.66, 08:18.73, 08:33.06, 08:45.73, 09:13.34
     24:10.93, 07:54.68, 08:05.41, 08:14.39, 08:28.60, 08:41.16, 09:08.53
     23:58.78, 07:50.92, 08:01.56, 08:10.48, 08:24.57, 08:37.03, 09:04.19
     23:29.21, 07:41.77, 07:52.20, 08:00.94, 08:14.76, 08:26.99, 08:53.61
+    22:56.40, 07:31.60, 07:41.80, 07:50.35, 08:03.87, 08:15.82, 08:41.86
     22:50.54, 07:29.78, 07:39.95, 07:48.46, 08:01.92, 08:13.82, 08:39.76
     22:47.80, 07:28.93, 07:39.08, 07:47.57, 08:01.01, 08:12.89, 08:38.78
     22:44.80, 07:28.00, 07:38.12, 07:46.60, 08:00.01, 08:11.87, 08:37.70
     22:37.95, 07:25.88, 07:35.95, 07:44.39, 07:57.73, 08:09.54, 08:35.24
     22:36.80, 07:25.52, 07:35.59, 07:44.02, 07:57.35, 08:09.14, 08:34.83
     22:33.70, 07:24.56, 07:34.60, 07:43.01, 07:56.32, 08:08.09, 08:33.72
+    22:24.10, 07:21.58, 07:31.55, 07:39.91, 07:53.12, 08:04.81, 08:30.28
+    22:22.00, 07:20.92, 07:30.89, 07:39.23, 07:52.43, 08:04.10, 08:29.52
     21:54.42, 07:12.35, 07:22.12, 07:30.30, 07:43.24, 07:54.69, 08:19.62
+    21:52.40, 07:11.72, 07:21.48, 07:29.65, 07:42.57, 07:54.00, 08:18.89
     21:30.10, 07:04.78, 07:14.38, 07:22.42, 07:35.13, 07:46.38, 08:10.87
     21:12.20, 06:59.21, 07:08.68, 07:16.62, 07:29.16, 07:40.26, 08:04.43
     20:47.50, 06:51.51, 07:00.81, 07:08.60, 07:20.91, 07:31.80, 07:55.53
     20:37.20, 06:48.30, 06:57.52, 07:05.25, 07:17.47, 07:28.28, 07:51.82
+    20:30.60, 06:46.24, 06:55.42, 07:03.10, 07:15.26, 07:26.01, 07:49.44
+    20:06.90, 06:38.83, 06:47.85, 06:55.39, 07:07.33, 07:17.89, 07:40.88
     19:57.42, 06:35.87, 06:44.82, 06:52.31, 07:04.15, 07:14.63, 07:37.46
     19:56.33, 06:35.53, 06:44.47, 06:51.95, 07:03.79, 07:14.26, 07:37.07
     19:33.30, 06:28.33, 06:37.10, 06:44.45, 06:56.07, 07:06.35, 07:28.74
@@ -329,17 +345,65 @@
     19:25.49, 06:25.88, 06:34.60, 06:41.90, 06:53.45, 07:03.66, 07:25.91
     19:09.79, 06:20.96, 06:29.57, 06:36.78, 06:48.18, 06:58.26, 07:20.23
     19:04.28, 06:19.24, 06:27.80, 06:34.98, 06:46.33, 06:56.37, 07:18.24
+    19:01.70, 06:18.43, 06:26.98, 06:34.14, 06:45.46, 06:55.48, 07:17.30
+    18:58.80, 06:17.52, 06:26.05, 06:33.19, 06:44.49, 06:54.48, 07:16.25
     18:48.60, 06:14.32, 06:22.78, 06:29.86, 06:41.06, 06:50.97, 07:12.55
     18:39.20, 06:11.37, 06:19.76, 06:26.79, 06:37.90, 06:47.73, 07:09.15
     18:26.47, 06:07.37, 06:15.67, 06:22.62, 06:33.62, 06:43.34, 07:04.53
     18:20.16, 06:05.39, 06:13.64, 06:20.56, 06:31.50, 06:41.17, 07:02.24
+    18:19.60, 06:05.21, 06:13.47, 06:20.38, 06:31.31, 06:40.97, 07:02.03
+    18:09.30, 06:01.98, 06:10.15, 06:17.01, 06:27.84, 06:37.42, 06:58.29
+    18:05.20, 06:00.69, 06:08.84, 06:15.66, 06:26.46, 06:36.00, 06:56.80
     17:52.76, 05:56.77, 06:04.84, 06:11.59, 06:22.27, 06:31.71, 06:52.28
     17:47.22, 05:55.03, 06:03.05, 06:09.77, 06:20.40, 06:29.80, 06:50.27
+    17:38.00, 05:52.13, 06:00.09, 06:06.75, 06:17.29, 06:26.61, 06:46.91
+    17:26.60, 05:48.54, 05:56.41, 06:03.01, 06:13.44, 06:22.67, 06:42.76
     17:11.00, 05:43.62, 05:51.38, 05:57.89, 06:08.17, 06:17.27, 06:37.08
     17:06.07, 05:42.07, 05:49.79, 05:56.27, 06:06.51, 06:15.56, 06:35.28
+    17:04.80, 05:41.67, 05:49.39, 05:55.85, 06:06.08, 06:15.12, 06:34.82
     16:54.60, 05:38.45, 05:46.09, 05:52.50, 06:02.63, 06:11.59, 06:31.10
     16:41.27, 05:34.24, 05:41.79, 05:48.12, 05:58.12, 06:06.97, 06:26.24
   `;
+
+  // Coach Reference Sheet — the 32-athlete benchmark table
+  const PRESET_ROSTER_DATA = [
+    { name: 'Drake Rollins', gender: 'M', sb: '16:41.27' },
+    { name: 'Carter Thorpe', gender: 'M', sb: '16:54.60' },
+    { name: 'Calvin Lantz', gender: 'M', sb: '17:04.80' },
+    { name: 'Harlan Wolfe', gender: 'M', sb: '17:11.00' },
+    { name: 'Rogan Mincks', gender: 'M', sb: '17:26.60' },
+    { name: 'Caden Moat', gender: 'M', sb: '17:38.00' },
+    { name: 'Aiden Romine', gender: 'M', sb: '17:52.76' },
+    { name: 'Steven Woofter', gender: 'M', sb: '18:05.20' },
+    { name: 'Owen Johnston', gender: 'M', sb: '18:09.30' },
+    { name: 'Luke Eagle', gender: 'M', sb: '18:19.60' },
+    { name: 'Collin Richman', gender: 'M', sb: '18:58.80' },
+    { name: 'Morgan Metz', gender: 'F', sb: '19:01.70' },
+    { name: 'Douglas Casto', gender: 'M', sb: '19:25.49' },
+    { name: 'Maksim Ernest', gender: 'M', sb: '19:31.40' },
+    { name: 'Jett Jones', gender: 'M', sb: '19:33.30' },
+    { name: 'Hunter Lowe', gender: 'M', sb: '19:56.33' },
+    { name: 'Sawyer Deem', gender: 'M', sb: '19:57.42' },
+    { name: 'Judah Moore', gender: 'M', sb: '20:06.90' },
+    { name: 'Audrey Wagoner', gender: 'F', sb: '20:30.60' },
+    { name: 'Franklin McFarlin', gender: 'M', sb: '21:12.20' },
+    { name: 'Hadley Edwards', gender: 'F', sb: '21:30.10' },
+    { name: 'Eli Spatafore', gender: 'M', sb: '21:52.40' },
+    { name: 'Brandt McClung', gender: 'M', sb: '21:54.42' },
+    { name: 'Aliison Poole', gender: 'F', sb: '22:22.00' },
+    { name: 'Calli Angelos', gender: 'F', sb: '22:24.10' },
+    { name: 'Brie Winans', gender: 'F', sb: '22:33.70' },
+    { name: 'Andrew Wilson', gender: 'M', sb: '22:37.95' },
+    { name: 'Fallon Lindamood', gender: 'F', sb: '22:50.54' },
+    { name: 'Emma Tessum', gender: 'F', sb: '22:56.40' },
+    { name: 'Phoebe McPeak', gender: 'F', sb: '23:29.21' },
+    { name: 'Addison Thorpe', gender: 'F', sb: '24:10.93' },
+    { name: 'Aaliyah Bland', gender: 'F', sb: '24:24.40' },
+    { name: 'Caleb Spatafore', gender: 'M', sb: '24:25.60' },
+    { name: 'Campbell Fields', gender: 'F', sb: '24:51.33' },
+    { name: 'Jonah Beha', gender: 'M', sb: '25:48.20' },
+    { name: 'Payton Rector', gender: 'F', sb: '27:18.00' }
+  ];
 
   function parseMmSs(str) {
     const parts = str.trim().split(':');
@@ -581,8 +645,13 @@
     }
 
     document.getElementById('load-btn').addEventListener('click', loadRoster);
+    document.getElementById('load-preset-btn').addEventListener('click', loadPresetRoster);
     document.getElementById('m-add').addEventListener('click', addManual);
     document.getElementById('search-input').addEventListener('input', render);
+
+    // Pre-populate with the 36-athlete Coach Reference Sheet so the calculator
+    // is immediately live and matches the coach's master sheet out of the box.
+    loadPresetRoster(true);
 
     document.getElementById('season-select').addEventListener('change', (e) => {
       currentSeason = e.target.value;
@@ -714,6 +783,33 @@
     }));
   }
 
+  function loadPresetRoster(silent) {
+    clearError();
+    schoolResultsSlug = '__preset__';
+    schoolResults = [];
+    currentSeason = 'all';
+    const sel = document.getElementById('school-select');
+    if (sel) sel.value = '';
+    loadedAthletes = PRESET_ROSTER_DATA.map(row => {
+      const timeSec = parseMmSs(row.sb);
+      const dist = 5000;
+      return {
+        name: row.name,
+        gender: row.gender,
+        grade: '',
+        school: 'Coach Reference Sheet',
+        timeSec,
+        dist,
+        vdot: vdotFrom(timeSec, dist),
+        date: '',
+        meet: 'Reference Sheet',
+        source: 'REF'
+      };
+    });
+    render();
+    if (!silent) showToast('Loaded ' + loadedAthletes.length + ' athletes from the Coach Reference Sheet.');
+  }
+
   function addManual() {
     clearError();
     const name = document.getElementById('m-name').value.trim();
@@ -750,18 +846,22 @@
       const sbYear = seasonYearOf(a.date);
       const seasonTag = (currentSeason === 'all' && sbYear) ? ' <span class="muted">' + sbYear + '</span>' : '';
       const sbTitle = a.meet ? ' title="' + escapeHtml(a.meet + (a.date ? ' — ' + a.date : '')) + '"' : '';
+      const fiveKSec = Math.round(a.dist) === 5000 ? a.timeSec : (a.timeSec * Math.pow(5000 / a.dist, 1.06));
       rows += '<tr>'
         + '<td class="muted">' + (i + 1) + '</td>'
         + '<td class="col-name">' + escapeHtml(a.name) + (a.source === 'MANUAL' ? '<span class="row-src">manual</span>' : '') + '</td>'
+        + '<td class="muted">' + escapeHtml(a.gender) + '</td>'
         + '<td class="muted">' + (a.grade || '—') + '</td>'
         + '<td class="col-sb"' + sbTitle + '>' + fmtSB(a.timeSec) + distTag + seasonTag + '</td>'
-        + '<td>' + fmtPace(racePaceSec(a.timeSec, a.dist, METERS_PER_MILE)) + '</td>'
-        + '<td>' + fmtPace(racePaceSec(a.timeSec, a.dist, 1000)) + '</td>'
         + '<td>' + fmtRange(p.cvMile[0], p.cvMile[1]) + '</td>'
         + '<td>' + fmtRange(p.thrMile[0], p.thrMile[1]) + '</td>'
         + '<td>' + fmtRange(p.tmpMile[0], p.tmpMile[1]) + '</td>'
         + '<td>' + fmtRange(p.cv1000[0], p.cv1000[1]) + '</td>'
         + '<td>' + fmtRange(p.cv800[0], p.cv800[1]) + '</td>'
+        + '<td>' + fmtPace(racePaceSec(a.timeSec, a.dist, RACE_PACE_MILE_M)) + '</td>'
+        + '<td>' + fmtPace(racePaceSec(a.timeSec, a.dist, 1000)) + '</td>'
+        + '<td class="muted">' + fiveKSec.toFixed(2).replace(/\.00$/, '') + '</td>'
+        + '<td class="muted">' + (isFinite(a.vdot) ? a.vdot.toFixed(7) : '—') + '</td>'
         + '</tr>';
     });
     box.innerHTML =
@@ -769,9 +869,9 @@
       + '<div class="table-header"><span>Training Paces</span><span class="muted" style="font-weight:600;font-size:0.8rem;">'
       + list.length + ' athletes • ' + escapeHtml(seasonText()) + ' • fast–slow</span></div>'
       + '<div class="table-scroll"><table class="paces"><thead><tr>'
-      + '<th>#</th><th>Athlete</th><th>Yr</th><th>Season Best</th>'
-      + '<th>Race Pace /mi</th><th>Race Pace /km</th>'
-      + '<th>CV Mile</th><th>Threshold Mile</th><th>Tempo Mile</th><th>CV 1000</th><th>CV 800</th>'
+      + '<th>#</th><th>Athlete</th><th>Gender</th><th>Yr</th><th>Season Best</th>'
+      + '<th>CV Mile</th><th>Threshold Mile</th><th>Tempo Mile</th><th>CV 1000m</th><th>CV 800m</th>'
+      + '<th>Race Pace Mile</th><th>Race Pace KM</th><th>5k in Seconds</th><th>VDOT</th>'
       + '</tr></thead><tbody>' + rows + '</tbody></table></div></div>';
   }
 
@@ -792,7 +892,7 @@
   function exportContext() {
     const schoolSel = document.getElementById('school-select');
     const schoolName = schoolSel.value ? (schoolSlugToName[schoolSel.value] || schoolSel.value)
-                      : (manualAthletes.length ? 'Manual List' : 'Roster');
+                      : (schoolResultsSlug === '__preset__' ? 'Coach Reference Sheet' : (manualAthletes.length ? 'Manual List' : 'Roster'));
     const genderText = activeGender === 'M' ? 'Boys' : activeGender === 'F' ? 'Girls' : 'All Athletes';
     return { schoolName, genderText, seasonText: seasonText() };
   }
@@ -809,22 +909,25 @@
     const list = currentAthletes();
     if (list.length === 0) return;
     const { schoolName, genderText, seasonText: seasonLabel } = exportContext();
-    const head = ['Athlete','Class','Gender','Season Best','Race Dist (m)','Race Pace /Mile','Race Pace /KM',
-      'CV Mile Fast','CV Mile Slow','Thr Mile Fast','Thr Mile Slow',
-      'Tempo Mile Fast','Tempo Mile Slow','CV 1000 Fast','CV 1000 Slow','CV 800 Fast','CV 800 Slow'];
+    const head = ['Athlete','Class','Gender','Season Best','Race Dist (m)','CV Mile Fast','CV Mile Slow','Thr Mile Fast','Thr Mile Slow',
+      'Tempo Mile Fast','Tempo Mile Slow','CV 1000m Fast','CV 1000m Slow','CV 800m Fast','CV 800m Slow',
+      'Race Pace Mile','Race Pace KM','5k in Seconds','VDOT'];
     const csvCell = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
     const rows = [['Training Paces', schoolName, genderText, seasonLabel].map(csvCell), head.map(csvCell)];
     list.forEach(a => {
       const p = computePaces(a.vdot);
+      const fiveKSec = Math.round(a.dist) === 5000 ? a.timeSec : (a.timeSec * Math.pow(5000 / a.dist, 1.06));
       rows.push([
         a.name, a.grade || '', a.gender, fmtSB(a.timeSec), Math.round(a.dist),
-        fmtPace(racePaceSec(a.timeSec, a.dist, METERS_PER_MILE)),
-        fmtPace(racePaceSec(a.timeSec, a.dist, 1000)),
         fmtPace(p.cvMile[0]), fmtPace(p.cvMile[1]),
         fmtPace(p.thrMile[0]), fmtPace(p.thrMile[1]),
         fmtPace(p.tmpMile[0]), fmtPace(p.tmpMile[1]),
         fmtPace(p.cv1000[0]), fmtPace(p.cv1000[1]),
-        fmtPace(p.cv800[0]), fmtPace(p.cv800[1])
+        fmtPace(p.cv800[0]), fmtPace(p.cv800[1]),
+        fmtPace(racePaceSec(a.timeSec, a.dist, RACE_PACE_MILE_M)),
+        fmtPace(racePaceSec(a.timeSec, a.dist, 1000)),
+        fiveKSec.toFixed(2).replace(/\.00$/, ''),
+        isFinite(a.vdot) ? a.vdot.toFixed(7) : ''
       ].map(csvCell));
     });
     const csv = '\ufeff' + rows.map(c => c.join(',')).join('\r\n');
@@ -842,96 +945,36 @@
     const { schoolName, genderText, seasonText: seasonLabel } = exportContext();
     const title = schoolName + ' — ' + genderText + ' Training Paces';
 
-    // Convert either PNG or SVG to a PNG data URL for reliable jsPDF output.
-    const getPngData = async (url, maxSize = 180) => {
-      if (!url) return null;
-      try {
-        const res = await fetch(url, { cache: 'force-cache' });
-        if (!res.ok) return null;
-        const blob = await res.blob();
-        const objectUrl = URL.createObjectURL(blob);
-        return await new Promise(resolve => {
-          const img = new Image();
-          img.onload = () => {
-            try {
-              const scale = Math.min(1, maxSize / Math.max(img.naturalWidth || maxSize, img.naturalHeight || maxSize));
-              const canvas = document.createElement('canvas');
-              canvas.width = Math.max(1, Math.round((img.naturalWidth || maxSize) * scale));
-              canvas.height = Math.max(1, Math.round((img.naturalHeight || maxSize) * scale));
-              const ctx = canvas.getContext('2d');
-              ctx.clearRect(0, 0, canvas.width, canvas.height);
-              ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-              resolve(canvas.toDataURL('image/png'));
-            } catch (e) { resolve(null); }
-            finally { URL.revokeObjectURL(objectUrl); }
-          };
-          img.onerror = () => { URL.revokeObjectURL(objectUrl); resolve(null); };
-          img.src = objectUrl;
-        });
-      } catch (e) {
-        console.warn('Could not load PDF image:', url, e);
-        return null;
-      }
-    };
-
-    // Mountain State Miles site logo.
-    const siteLogo = await getPngData('/assets/images/mountainstate.svg');
-
-    // Selected school logo: same SVG -> PNG convention used by school.html.
+    // Branded header via the shared MSMPdf helper: school logo chip on the
+    // left, mountainstate.svg wordmark on the right of the coloured band.
     const selectedSlug = document.getElementById('school-select').value;
-    let schoolLogo = null;
-    if (selectedSlug) {
-      schoolLogo = await getPngData('/assets/team logos/' + encodeURIComponent(selectedSlug) + '.png');
-    }
-
-    const drawHeader = () => {
-      const pageWidth = doc.internal.pageSize.getWidth();
-      doc.setFillColor(bc[0], bc[1], bc[2]);
-      doc.rect(0, 0, pageWidth, 30, 'F');
-
-      // Selected school logo on the left.
-      let x = 14;
-      if (schoolLogo) {
-        try {
-          doc.setFillColor(255, 255, 255);
-          doc.roundedRect(10, 3, 22, 24, 3, 3, 'F');
-          doc.addImage(schoolLogo, 'PNG', 13, 5, 16, 20, undefined, 'FAST');
-          x = 36;
-        } catch (e) {}
-      }
-
-      // Mountain State Miles logo on the right.
-      if (siteLogo) {
-        try {
-          doc.addImage(siteLogo, 'PNG', pageWidth - 38, 5, 24, 20, undefined, 'FAST');
-        } catch (e) {}
-      }
-
-      doc.setFontSize(15);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(255, 255, 255);
-      doc.text(title, x, 12);
-      doc.setFontSize(9);
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(225, 225, 225);
-      doc.text('CV / Threshold / Tempo paces — ' + seasonLabel + ' — fast–slow — Mountain State Miles', x, 20);
-    };
+    const schoolLogo = selectedSlug ? await MSMPdf.teamLogoPng(selectedSlug) : null;
+    const drawHeader = await MSMPdf.brandHeader(doc, {
+      title: title,
+      subtitle: 'CV / Threshold / Tempo paces — ' + seasonLabel + ' — fast–slow',
+      color: bc,
+      schoolPng: schoolLogo
+    });
     doc.autoTable({
-      head: [['#', 'Athlete', 'Yr', 'Season Best', 'Race Pace /mi', 'Race Pace /km', 'CV Mile', 'Threshold Mile', 'Tempo Mile', 'CV 1000', 'CV 800']],
+      head: [['#', 'Athlete', 'G', 'Yr', 'Season Best', 'CV Mile', 'Threshold Mile', 'Tempo Mile', 'CV 1000m', 'CV 800m', 'Race /mi', 'Race /km', '5k (s)', 'VDOT']],
       body: list.map((a, i) => {
         const p = computePaces(a.vdot);
-        return [i + 1, a.name, a.grade || '', fmtSB(a.timeSec),
-          fmtPace(racePaceSec(a.timeSec, a.dist, METERS_PER_MILE)),
-          fmtPace(racePaceSec(a.timeSec, a.dist, 1000)),
+        const fiveKSec = Math.round(a.dist) === 5000 ? a.timeSec : (a.timeSec * Math.pow(5000 / a.dist, 1.06));
+        return [i + 1, a.name, a.gender, a.grade || '', fmtSB(a.timeSec),
           fmtRange(p.cvMile[0], p.cvMile[1]), fmtRange(p.thrMile[0], p.thrMile[1]),
-          fmtRange(p.tmpMile[0], p.tmpMile[1]), fmtRange(p.cv1000[0], p.cv1000[1]), fmtRange(p.cv800[0], p.cv800[1])];
+          fmtRange(p.tmpMile[0], p.tmpMile[1]), fmtRange(p.cv1000[0], p.cv1000[1]), fmtRange(p.cv800[0], p.cv800[1]),
+          fmtPace(racePaceSec(a.timeSec, a.dist, RACE_PACE_MILE_M)),
+          fmtPace(racePaceSec(a.timeSec, a.dist, 1000)),
+          fiveKSec.toFixed(2).replace(/\.00$/, ''),
+          isFinite(a.vdot) ? a.vdot.toFixed(2) : ''];
       }),
       startY: 30, margin: { top: 30 },
-      styles: { fontSize: 8, cellPadding: 2 },
+      styles: { fontSize: 7.5, cellPadding: 1.8 },
       headStyles: { fillColor: bc, textColor: [255, 255, 255] },
       alternateRowStyles: { fillColor: [245, 245, 245] },
       didDrawPage: drawHeader
     });
+    MSMPdf.finalize(doc);
     doc.save(slugify(title + ' ' + seasonLabel) + '.pdf');
   }
   </script>
