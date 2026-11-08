@@ -16,51 +16,7 @@
   <script src="/assets/components.js" defer></script>
   <script src="/assets/theme-toggle.js" defer></script>
   <style>
-    @font-face {
-      font-family: 'Aqeon Demo';
-      src: url('../assets/Aqeon Demo Font.ttf') format('truetype');
-    }
-
     * { box-sizing: border-box; }
-    
-    :root {
-      /* Light Mode (Default) */
-      --primary: #000000;
-      --primary-light: #1a1a1a;
-      --primary-lighter: #333333;
-      --accent: #ffffff;
-      --accent-dark: #f5f5f5;
-      --border: #403e3e;
-      --border-light: #f0f0f0;
-      --text-primary: #000000;
-      --text-secondary: #252424;
-      --text-tertiary: #999999;
-      --bg-primary: #ffffff;
-      --bg-secondary: #f9f9f9;
-      --shadow-light: rgba(0, 0, 0, 0.08);
-      
-      /* Typography */
-      --font-display: 'Aqeon Demo', sans-serif;
-      --font-sans: 'Inter', system-ui, sans-serif;
-      --radius-lg: 12px;
-    }
-
-    /* Dark Mode */
-    html[data-theme="dark"] {
-      --primary: #ffffff;
-      --primary-light: #f0f0f0;
-      --primary-lighter: #e0e0e0;
-      --accent: #1a1a1a;
-      --accent-dark: #2a2a2a;
-      --border: #404040;
-      --border-light: #303030;
-      --text-primary: #ffffff;
-      --text-secondary: #b0b0b0;
-      --text-tertiary: #808080;
-      --bg-primary: #1a1a1a;
-      --bg-secondary: #252525;
-      --shadow-light: rgba(0, 0, 0, 0.3);
-    }
     
     html, body {
       margin: 0; padding: 0;
@@ -241,29 +197,33 @@
     }
   </style>
 </head>
-<body>
+<body class="xc-page">
   <div id="global-header"></div>
 
-  <script src="/assets/msm-loader.js"></script>
+  <script src="/assets/msm-loader.js?v=20261110"></script>
 
-  <main class="content-section" style="max-width: 1200px; margin: 0 auto; padding: 40px 20px;">
+  <main class="content-section">
     
-    <!-- Hero & Stats Area -->
-    <section class="page-hero">
-      <h1 class="section-title">Cross Country Meets</h1>
-      <p class="page-hero-sub">Explore upcoming events, historical results, and full season schedules for every team.</p>
-      
-      <div class="stat-strip">
-        <div class="mini-stat"><span class="mini-stat-num" id="stat-total">–</span><span class="mini-stat-lbl">Total Meets</span></div>
-        <div class="mini-stat"><span class="mini-stat-num" id="stat-upcoming">–</span><span class="mini-stat-lbl">Upcoming</span></div>
-        <div class="mini-stat"><span class="mini-stat-num" id="stat-past">–</span><span class="mini-stat-lbl">Completed</span></div>
-      </div>
-
-      <div class="view-toggles">
-        <button class="view-btn active" onclick="switchView('list')"><i class="fa-solid fa-list"></i> List View</button>
-        <button class="view-btn" onclick="switchView('calendar')"><i class="fa-regular fa-calendar"></i> Calendar View</button>
+    <!-- Photo hero -->
+    <section class="xc-hero">
+      <img class="xc-hero-bg" src="/assets/images/photos/boys-state-pack.jpg"
+           alt="" width="1800" height="1200" fetchpriority="high" decoding="async" />
+      <div class="xc-hero-inner">
+        <span class="xc-hero-kicker">Cross country &middot; WV schedule</span>
+        <h1>Cross Country Meets</h1>
+        <p>Every West Virginia meet in one calendar &mdash; upcoming events, historical results, and full season schedules for every team.</p>
+        <div class="stat-strip">
+          <div class="mini-stat"><span class="mini-stat-num" id="stat-total">&ndash;</span><span class="mini-stat-lbl">Total Meets</span></div>
+          <div class="mini-stat"><span class="mini-stat-num" id="stat-upcoming">&ndash;</span><span class="mini-stat-lbl">Upcoming</span></div>
+          <div class="mini-stat"><span class="mini-stat-num" id="stat-past">&ndash;</span><span class="mini-stat-lbl">Completed</span></div>
+        </div>
       </div>
     </section>
+
+    <div class="view-toggles">
+      <button class="view-btn active" onclick="switchView('list')"><i class="fa-solid fa-list"></i> List View</button>
+      <button class="view-btn" onclick="switchView('calendar')"><i class="fa-regular fa-calendar"></i> Calendar View</button>
+    </div>
 
     <div id="state-championship-section" hidden></div>
 

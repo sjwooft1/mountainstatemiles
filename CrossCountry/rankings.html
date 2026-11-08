@@ -176,20 +176,22 @@
 
   </style>
 </head>
-<body>
+<body class="xc-page">
 
   <div id="global-header"></div>
 
   <main class="content-section">
-    <div class="hero-section">
-      <div class="hero-content">
-        <img src="/assets/images/logo.svg" alt="Mountain State Miles Logo" class="hero-logo" />
-        <h1 class="hero-title">State Rankings</h1>
-        <p class="hero-subtitle">The fastest 50 times across Cross Country running in West Virginia.</p>
+    <section class="xc-hero">
+      <img class="xc-hero-bg" src="/assets/images/photos/state-leaders.jpg"
+           alt="" width="1200" height="801" fetchpriority="high" decoding="async" />
+      <div class="xc-hero-inner">
+        <span class="xc-hero-kicker">State rankings &middot; cross country</span>
+        <h1>State Rankings</h1>
+        <p>The fastest 50 times in West Virginia, filterable by class, season, meet and distance.</p>
       </div>
-    </div>
+    </section>
 
-    <!-- Ranking Mode Toggle: Raw Time vs. MSM Rating -->
+    <!-- Ranking Mode Toggle    <!-- Ranking Mode Toggle: Raw Time vs. MSM Rating -->
     <div class="rank-mode-tabs">
       <button id="mode-raw" class="rank-mode-tab active" onclick="setRankMode('raw')">Raw Time</button>
       <button id="mode-dynamic" class="rank-mode-tab" onclick="setRankMode('dynamic')">MSM Rating</button>

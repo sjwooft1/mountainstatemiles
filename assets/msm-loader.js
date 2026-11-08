@@ -1,8 +1,8 @@
 /**
  * Mountain State Miles — Smooth Experience Engine (/assets/msm-loader.js)
  * ---------------------------------------------------------------------------------
- * • Mounts a live header ticker (news headlines, latest meet results, fastest
- *   season marks) inside #global-header, replacing the old top progress bar
+ * • Mounts a live header ticker (news, latest results, state + regional archive
+ *   headlines, fastest season marks) inside #global-header
  * • Smooth scroll-reveal animations for cards and sections
  * • Prefetches internal pages on link hover for near-instant navigation
  * • Lazy-decodes non-critical images
@@ -27,30 +27,60 @@
       height: var(--msm-ticker-h, 34px);
       z-index: 1001;
       display: flex;
-      align-items: center;
+      align-items: stretch;
       overflow: hidden;
-      background: var(--primary, #3f7d63);
+      background: linear-gradient(90deg, #2c5a47 0%, #3f7d63 58%, #47896c 100%);
       color: #fff;
       font-size: 0.78rem;
       font-weight: 600;
       letter-spacing: 0.02em;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.22);
     }
     #msm-ticker .msm-ticker-label {
       flex: 0 0 auto;
-      height: 100%;
       display: flex;
       align-items: center;
-      padding: 0 14px;
-      background: rgba(0, 0, 0, 0.22);
+      gap: 8px;
+      padding: 0 14px 0 10px;
+      background: rgba(0, 0, 0, 0.26);
+      color: #fff;
+      text-decoration: none;
       font-weight: 800;
       text-transform: uppercase;
-      letter-spacing: 0.08em;
-      font-size: 0.7rem;
+      letter-spacing: 0.1em;
+      font-size: 0.68rem;
       z-index: 1;
+      transition: background 0.2s ease;
+    }
+    #msm-ticker .msm-ticker-label:hover,
+    #msm-ticker .msm-ticker-label:focus-visible { background: rgba(0, 0, 0, 0.42); }
+    #msm-ticker .msm-ticker-photo {
+      width: 24px;
+      height: 24px;
+      flex: none;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 1.5px solid rgba(255, 255, 255, 0.7);
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+    }
+    #msm-ticker .msm-ticker-live {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    #msm-ticker .msm-ticker-live::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #7dd8a5;
+      box-shadow: 0 0 0 3px rgba(125, 216, 165, 0.22);
     }
     #msm-ticker .msm-ticker-viewport {
       flex: 1 1 auto;
+      display: flex;
+      align-items: stretch;
       overflow: hidden;
       white-space: nowrap;
       mask-image: linear-gradient(90deg, transparent, #000 24px, #000 calc(100% - 24px), transparent);
@@ -58,19 +88,29 @@
     }
     #msm-ticker .msm-ticker-track {
       display: inline-flex;
-      align-items: center;
-      gap: 0;
-      padding-left: 100%;
+      align-items: stretch;
       animation: msm-ticker-scroll var(--msm-ticker-dur, 60s) linear infinite;
+      will-change: transform;
+      backface-visibility: hidden;
     }
-    #msm-ticker:hover .msm-ticker-track { animation-play-state: paused; }
+    #msm-ticker .msm-ticker-group {
+      display: inline-flex;
+      align-items: stretch;
+    }
+    #msm-ticker:hover .msm-ticker-track,
+    #msm-ticker:focus-within .msm-ticker-track,
+    #msm-ticker.is-paused .msm-ticker-track { animation-play-state: paused; }
     #msm-ticker .msm-tick {
+      display: inline-flex;
+      align-items: center;
+      height: var(--msm-ticker-h, 34px);
       color: #fff;
       text-decoration: none;
       padding: 0 10px;
       opacity: 0.95;
     }
-    #msm-ticker .msm-tick:hover { text-decoration: underline; opacity: 1; }
+    #msm-ticker .msm-tick:hover,
+    #msm-ticker .msm-tick:focus-visible { text-decoration: underline; opacity: 1; }
     #msm-ticker .msm-tick-tag {
       display: inline-block;
       margin-right: 6px;
@@ -81,14 +121,22 @@
       text-transform: uppercase;
       letter-spacing: 0.06em;
     }
-    #msm-ticker .msm-tick-sep { opacity: 0.55; padding: 0 4px; }
+    #msm-ticker .msm-tick-sep { opacity: 0.55; padding: 0 4px; align-self: center; }
     @keyframes msm-ticker-scroll {
       from { transform: translateX(0); }
-      to { transform: translateX(-100%); }
+      to { transform: translateX(-50%); }
     }
     @media (max-width: 640px) {
-      #msm-ticker { font-size: 0.7rem; }
-      #msm-ticker .msm-ticker-label { padding: 0 9px; font-size: 0.62rem; }
+      :root.msm-ticker-on { --msm-ticker-h: 40px; }
+      #msm-ticker { font-size: 0.72rem; letter-spacing: 0.01em; }
+      #msm-ticker .msm-ticker-label { padding: 0 9px 0 6px; font-size: 0.6rem; gap: 6px; }
+      #msm-ticker .msm-ticker-photo { width: 22px; height: 22px; }
+      #msm-ticker .msm-tick { padding: 0 8px; }
+      #msm-ticker .msm-tick-tag { font-size: 0.6rem; padding: 1px 5px; margin-right: 5px; }
+      #msm-ticker .msm-ticker-viewport {
+        mask-image: linear-gradient(90deg, transparent, #000 10px, #000 calc(100% - 10px), transparent);
+        -webkit-mask-image: linear-gradient(90deg, transparent, #000 10px, #000 calc(100% - 10px), transparent);
+      }
     }
     .msm-reveal {
       opacity: 0;
@@ -112,8 +160,9 @@
   // ---------------------------------------------------------------------------
   // 2. Header ticker: news, results, ratings
   // ---------------------------------------------------------------------------
-  const CACHE_KEY = "msm-ticker-v2"; // bumped when item order/shape changes so stale caches are ignored
+  const CACHE_KEY = "msm-ticker-v3"; // bumped when item order/shape changes so stale caches are ignored
   const CACHE_MS = 10 * 60 * 1000; // refresh every 10 minutes per browser session
+  const MAX_ITEMS = 26;
   const FALLBACK_ITEMS = [
     { tag: "MSM", text: "Mountain State Miles · West Virginia Track & Cross Country", href: "/home/" }
   ];
@@ -144,12 +193,108 @@
       .join(" ");
   }
 
+  // Seconds -> "16:41.3"
+  function fmtRaceTime(value) {
+    const sec = timeToSec(value);
+    if (!isFinite(sec) || sec <= 0) return "";
+    const m = Math.floor(sec / 60);
+    const s = sec - m * 60;
+    return m + ":" + (s < 10 ? "0" : "") + s.toFixed(1);
+  }
+
   function snapshotEntries(snap) {
     const out = [];
     if (!snap) return out;
     snap.forEach((child) => {
       out.push({ key: child.key, val: child.val() || {} });
     });
+    return out;
+  }
+
+  function meetTitle(meet) {
+    const raw = String(meet.name || slugToTitle(meet.slug || meet.key) || "Meet")
+      .replace(/\s+/g, " ")
+      .trim()
+      .replace(/^[-–—\s]+/, "");
+    return raw || "Meet";
+  }
+
+  // "State" for championship meets, "Region" for regional qualifiers.
+  function meetKind(meet) {
+    if (meet.is_state_championship === true) return "state";
+    const blob = (String(meet.name || "") + " " + String(meet.slug || meet.key || ""))
+      .toLowerCase()
+      .replace(/[–—]/g, "-");
+    if (/\bstate[\s-]*(meet|champ|final)/.test(blob)) return "state";
+    if (/\bregion/.test(blob)) return "region";
+    return "";
+  }
+
+  function meetYear(meet) {
+    const d = new Date(meet.date);
+    return isNaN(d.getTime()) ? "" : String(d.getFullYear());
+  }
+
+  function classLabel(raceType) {
+    const t = String(raceType || "").trim().toUpperCase();
+    if (["A", "AA", "AAA", "AAAA"].indexOf(t) !== -1) return t;
+    return t.replace(/^CLASS\s+/, "");
+  }
+
+  function regionLabel(meet) {
+    const name = meetTitle(meet);
+    const m = name.match(/region\s*([0-9]{1,2}|[IVX]{1,4})/i);
+    if (m) return "Region " + m[1].toUpperCase();
+    if (/south/i.test(name)) return "South Regional";
+    if (/north/i.test(name)) return "North Regional";
+    if (/east/i.test(name)) return "East Regional";
+    if (/west/i.test(name)) return "West Regional";
+    return "Regional";
+  }
+
+  function resultLabel(r) {
+    const school = r.school_slug ? slugToTitle(r.school_slug) : "";
+    return school ? r.athlete_name + " (" + school + ")" : r.athlete_name;
+  }
+
+  function genderWord(r, lower) {
+    const word = r.gender === "F" ? "Girls" : r.gender === "M" ? "Boys" : "";
+    return lower ? word.toLowerCase() : word;
+  }
+
+  // Best finishers for one meet, grouped by class + gender, so a state meet
+  // yields one headline per race instead of four AAAA boys.
+  function winnerRows(meetSlug, results, perRace) {
+    const groups = {};
+    results.forEach((r) => {
+      if (r.meet_slug !== meetSlug) return;
+      const place = parseInt(r.place, 10);
+      if (!isFinite(place) || place < 1 || place > perRace) return;
+      const sec = timeToSec(r.time);
+      if (!isFinite(sec) || sec <= 0) return;
+      const key = (r.gender || "") + "|" + classLabel(r.race_type);
+      (groups[key] = groups[key] || []).push({ row: r, place });
+    });
+    return Object.keys(groups)
+      .sort()
+      .reduce((out, key) => {
+        groups[key]
+          .sort((a, b) => a.place - b.place)
+          .slice(0, perRace)
+          .forEach((entry) => out.push(entry.row));
+        return out;
+      }, []);
+  }
+
+  // Even a meet from years ago keeps cycling through: the window advances one
+  // slot per day, so the archive never goes stale.
+  function rotateWindow(pool, count, seed) {
+    if (!pool.length) return [];
+    const offset = seed % pool.length;
+    const out = [];
+    for (let i = 0; i < Math.min(count, pool.length); i++) {
+      out.push(pool[(offset + i) % pool.length]);
+    }
     return out;
   }
 
@@ -163,93 +308,120 @@
       db.ref("crosscountry/results").once("value").catch(() => null),
     ]);
 
-    const items = [];
-
-    // Meets indexed by slug, plus the most recent meet that has already happened
     const now = Date.now();
-    const meets = {};
+    const daySeed = Math.floor(now / 86400000);
+    const items = [];
+    const seen = new Set();
+    const meetHref = (slug) => "/CrossCountry/meet.html?slug=" + encodeURIComponent(slug);
+    const push = (item) => {
+      if (!item || !item.text || seen.has(item.text)) return;
+      seen.add(item.text);
+      items.push(item);
+    };
+
+    const meetsBySlug = {};
     snapshotEntries(meetsSnap).forEach((e) => {
       const slug = e.val.slug || e.key;
-      meets[slug] = { ...e.val, slug };
+      meetsBySlug[slug] = { ...e.val, slug, key: e.key };
     });
-    const pastMeets = Object.values(meets)
-      .filter((m) => m.date && !isNaN(new Date(m.date).getTime()) && new Date(m.date).getTime() <= now)
+
+    const pastMeets = Object.values(meetsBySlug)
+      .filter((m) => {
+        const t = m.date ? new Date(m.date).getTime() : NaN;
+        return isFinite(t) && t <= now;
+      })
       .sort((a, b) => new Date(b.date) - new Date(a.date));
-    const latest = pastMeets[0];
-    // This week's meet if one ran in the last 7 days, otherwise the most recent meet
-    const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
-    const recentMeet = pastMeets.find((m) => now - new Date(m.date).getTime() <= WEEK_MS);
-    const weekMeet = recentMeet || latest;
-    const weekTag = recentMeet ? "This Week" : "Results";
 
-    const results = snapshotEntries(resultsSnap).map((e) => e.val).filter((r) => r && r.athlete_name);
+    const results = snapshotEntries(resultsSnap)
+      .map((e) => e.val)
+      .filter((r) => r && r.athlete_name && !String(r.relay_team || "").trim());
 
-    // Results first: this week's meet (or the most recent one) podium
-    if (weekMeet) {
-      const podium = results
-        .filter((r) => r.meet_slug === weekMeet.slug && r.place != null && r.time)
+    // 1. The most recent meet's podium. A scheduled meet with no results yet
+    //    (or a non-XC entry) should not blank the freshest headlines.
+    const hasResults = (m) =>
+      results.some((r) => r.meet_slug === m.slug && parseInt(r.place, 10) >= 1 && timeToSec(r.time) > 0);
+    const latest = pastMeets.find(hasResults) || pastMeets[0];
+    if (latest) {
+      const weekMs = 7 * 86400000;
+      const weekTag = now - new Date(latest.date).getTime() <= weekMs ? "This Week" : "Results";
+      results
+        .filter((r) => r.meet_slug === latest.slug && r.place != null && r.time)
         .sort((a, b) => parseInt(a.place, 10) - parseInt(b.place, 10))
-        .slice(0, 5);
-      podium.forEach((r) => {
-        items.push({
+        .slice(0, 4)
+        .forEach((r) => push({
           tag: weekTag,
-          text: `${weekMeet.name || slugToTitle(weekMeet.slug)} · #${r.place} ${r.athlete_name} ${r.time}`,
-          href: "/CrossCountry/meet.html?slug=" + encodeURIComponent(weekMeet.slug),
+          text: meetTitle(latest) + " · #" + r.place + " " + resultLabel(r) + " " + fmtRaceTime(r.time),
+          href: meetHref(latest.slug),
+        }));
+    }
+
+    // 2. State championship headlines from every past season, not just this one.
+    const statePool = [];
+    pastMeets
+      .filter((m) => meetKind(m) === "state")
+      .forEach((m) => {
+        const year = meetYear(m);
+        winnerRows(m.slug, results, 1).forEach((r) => {
+          const bits = [year, classLabel(r.race_type), genderWord(r, true)].filter(Boolean).join(" ");
+          statePool.push({
+            tag: "State",
+            text: bits + " champion · " + resultLabel(r) + " " + fmtRaceTime(r.time),
+            href: meetHref(m.slug),
+          });
         });
       });
-    }
-    const timeInSeconds = r.time; // e.g., 1134.56
-    
-    const minutes = Math.floor(timeInSeconds / 60);
-    const seconds = Math.floor(timeInSeconds % 60);
-    
-    // Extract milliseconds and round to 2 decimal places
-    const milliseconds = Math.round((timeInSeconds % 1) * 100); 
-    
-    // Pad with leading zeros so single digits display correctly
-    const mm = String(minutes).padStart(2, '0');
-    const ss = String(seconds).padStart(2, '0');
-    const ms = String(milliseconds).padStart(2, '0');
-    
-    const formattedTime = `${mm}:${ss}.${ms}`; 
-    console.log(formattedTime); // Outputs: "18:54.56"
+    rotateWindow(statePool, 6, daySeed).forEach(push);
 
+    // 3. Regional qualifier headlines, also evergreen.
+    const regionPool = [];
+    pastMeets
+      .filter((m) => meetKind(m) === "region")
+      .forEach((m) => {
+        const label = regionLabel(m);
+        const year = meetYear(m);
+        winnerRows(m.slug, results, 1).forEach((r) => {
+          const bits = [year, label, genderWord(r, true)].filter(Boolean).join(" ");
+          regionPool.push({
+            tag: "Region",
+            text: bits + " champion · " + resultLabel(r) + " " + fmtRaceTime(r.time),
+            href: meetHref(m.slug),
+          });
+        });
+      });
+    rotateWindow(regionPool, 5, daySeed + 7).forEach(push);
 
-    // Then the latest news headlines (newest first)
-    const news = snapshotEntries(newsSnap)
-      .map((e) => e.val)
-      .filter((a) => a && a.title)
-      .sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0))
-      .slice(0, 4);
-    news.forEach((a) => items.push({ tag: "News", text: a.title, href: "/news.html" }));
-
-    // Fastest marks of the latest season (one best mark per athlete)
+    // 4. Fastest marks of the latest season (one best mark per athlete).
     if (latest) {
       const season = new Date(latest.date).getFullYear();
       const best = {};
       results.forEach((r) => {
         const sec = timeToSec(r.time);
-        if (!isNaN(sec) && r.athlete_name) {
-          const meet = meets[r.meet_slug];
-          if (!meet || !meet.date || new Date(meet.date).getFullYear() !== season) return;
-          const key = r.athlete_name + "|" + (r.school_slug || "") + "|" + (r.gender || "");
-          if (!best[key] || sec < best[key].sec) best[key] = { ...r, sec };
-        }
+        if (isNaN(sec) || !r.athlete_name) return;
+        const meet = meetsBySlug[r.meet_slug];
+        if (!meet || !meet.date || new Date(meet.date).getFullYear() !== season) return;
+        const key = r.athlete_name + "|" + (r.school_slug || "") + "|" + (r.gender || "");
+        if (!best[key] || sec < best[key].sec) best[key] = { row: r, sec };
       });
       Object.values(best)
         .sort((a, b) => a.sec - b.sec)
-        .slice(0, 5)
-        .forEach((r) => {
-          items.push({
-            tag: "Top " + season,
-            text: `${r.athlete_name} (${slugToTitle(r.school_slug)}) ${r.time}`,
-            href: "/CrossCountry/athlete.html?name=" + encodeURIComponent(r.athlete_name) +
-              (r.school_slug ? "&school=" + encodeURIComponent(r.school_slug) : ""),
-          });
-        });
+        .slice(0, 4)
+        .forEach(({ row }) => push({
+          tag: "Top " + season,
+          text: row.athlete_name + " (" + slugToTitle(row.school_slug) + ") " + fmtRaceTime(row.time),
+          href: "/CrossCountry/athlete.html?name=" + encodeURIComponent(row.athlete_name) +
+            (row.school_slug ? "&school=" + encodeURIComponent(row.school_slug) : ""),
+        }));
     }
 
-    return items;
+    // 5. News headlines (newest first).
+    snapshotEntries(newsSnap)
+      .map((e) => e.val)
+      .filter((a) => a && a.title)
+      .sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0))
+      .slice(0, 3)
+      .forEach((a) => push({ tag: "News", text: a.title, href: "/news.html" }));
+
+    return items.slice(0, MAX_ITEMS);
   }
 
   function readCache() {
@@ -273,23 +445,24 @@
   function renderTicker(ticker, items) {
     const track = ticker.querySelector(".msm-ticker-track");
     const list = items && items.length ? items : FALLBACK_ITEMS;
-    const sep = '<span class="msm-tick-sep" aria-hidden="true">◆</span>';
-    const chunk = list
-      .map(
-        (i) =>
-          `<a class="msm-tick" href="${esc(i.href)}"><span class="msm-tick-tag">${esc(i.tag)}</span>${esc(i.text)}</a>`
-      )
-      .join(sep) + sep;
-    track.innerHTML = chunk;
-    // Duplicate once for a seamless loop
-    const copy = document.createElement("div");
-    copy.setAttribute("aria-hidden", "true");
-    copy.style.display = "inline-flex";
-    copy.innerHTML = chunk;
-    track.appendChild(copy);
-    // Speed scales with length so readers get a steady pace
-    const chars = list.reduce((n, i) => n + i.text.length + i.tag.length, 0);
-    const dur = Math.max(30, Math.round(chars / 3));
+    const groupHtml = (isClone) =>
+      list
+        .map(
+          (i) =>
+            '<a class="msm-tick" href="' + esc(i.href) + '"' +
+            (isClone ? ' tabindex="-1" aria-hidden="true"' : "") +
+            '><span class="msm-tick-tag">' + esc(i.tag) + "</span>" + esc(i.text) + "</a>"
+        )
+        .join('<span class="msm-tick-sep" aria-hidden="true">◆</span>') +
+      '<span class="msm-tick-sep" aria-hidden="true">◆</span>';
+    track.innerHTML =
+      '<div class="msm-ticker-group">' + groupHtml(false) + "</div>" +
+      '<div class="msm-ticker-group" aria-hidden="true">' + groupHtml(true) + "</div>";
+    // Both groups are identical, so a -50% shift loops seamlessly. Pace the loop
+    // by pixel width (~85px/s) so long headline lists still read comfortably.
+    const group = track.firstElementChild;
+    const groupW = group ? Math.round(group.getBoundingClientRect().width) : 0;
+    const dur = groupW > 0 ? Math.max(45, Math.min(240, Math.round(groupW / 85))) : 60;
     ticker.style.setProperty("--msm-ticker-dur", dur + "s");
   }
 
@@ -303,10 +476,30 @@
     ticker.setAttribute("role", "region");
     ticker.setAttribute("aria-label", "Latest news, results and ratings");
     ticker.innerHTML = `
-      <span class="msm-ticker-label">Live</span>
+      <a class="msm-ticker-label" href="/CrossCountry/xc.html" aria-label="Mountain State Miles cross country hub">
+        <img class="msm-ticker-photo" src="/assets/images/photos/ticker-thumb.jpg" alt="" width="24" height="24" decoding="async" />
+        <span class="msm-ticker-live">Live</span>
+      </a>
       <div class="msm-ticker-viewport"><div class="msm-ticker-track"></div></div>`;
     document.body.appendChild(ticker);
     document.documentElement.classList.add("msm-ticker-on");
+
+    // Hold the marquee still while a finger or pointer is down so links are easy to tap.
+    let resumeTimer = null;
+    const pause = () => {
+      clearTimeout(resumeTimer);
+      ticker.classList.add("is-paused");
+    };
+    const resume = () => {
+      clearTimeout(resumeTimer);
+      resumeTimer = setTimeout(() => ticker.classList.remove("is-paused"), 1600);
+    };
+    ticker.addEventListener("touchstart", pause, { passive: true });
+    ticker.addEventListener("touchend", resume, { passive: true });
+    ticker.addEventListener("touchcancel", resume, { passive: true });
+    ticker.addEventListener("mouseenter", pause, { passive: true });
+    ticker.addEventListener("mouseleave", resume, { passive: true });
+
     renderTicker(ticker, []);
 
     const cached = readCache();
