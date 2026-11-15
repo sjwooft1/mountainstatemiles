@@ -137,9 +137,9 @@ const BASE_LINKS = [
         
         <div class="header-container">
           <a href="/home/" class="brand-logo" aria-label="Mountain State Miles home">
-            <img class="brand-logo-img" src="/assets/images/logo1.svg" alt="Mountain State Miles"
+            <img class="brand-logo-img" src="/assets/images/logo.svg" alt="Mountain State Miles"
                  width="52" height="52"
-                 data-theme-light-src="/assets/images/logo1.svg"
+                 data-theme-light-src="/assets/images/logo.svg"
                  data-theme-dark-src="/assets/images/logob.svg" />
             <span class="brand-wordmark"><span class="brand-bold">MOUNTAIN STATE</span> MILES</span>
           </a>

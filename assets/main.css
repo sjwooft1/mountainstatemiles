@@ -2558,20 +2558,18 @@ main.content-section {
 .brand-logo {
   display: flex;
   align-items: center;
-  gap: 10px;
   letter-spacing: 1px;
   text-decoration: none;
   color: var(--text-primary);
-  max-height: 62px;
+  max-height: 100px;
   height: auto;
   border: none;
   flex-shrink: 0;
 }
 
 .brand-logo-img {
-  height: 52px;
-  width: 52px;
-  object-fit: contain;
+  height: 100px;
+  width: auto;
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.25));
 }
 
@@ -3936,4 +3934,115 @@ html[data-theme="dark"] .xc-page .meet-card-status.upcoming { color: var(--msm-g
   .xc-page .view-btn,
   .xc-page .view-tab,
   .xc-page .rank-mode-tab { transition: none; }
+}
+
+/* ==========================================================================
+   Header refresh — slim bar, crest logo that breaks the edge
+   The bar shrinks to a calm strip and the brand medallion is taller than it,
+   so the logo hangs past the bottom border like a crest pinned to the header
+   instead of a picture sitting inside it.
+   ========================================================================== */
+
+:root {
+  --msm-header-h: 70px;   /* bar height */
+  --msm-crest-h: 90px;    /* medallion diameter */
+  --msm-crest-top: 6px;   /* gap from the bar's top edge to the medallion */
+}
+
+/* Only the crest escapes the header box; the painted scene clips itself. */
+.site-header {
+  overflow: visible;
+  background: linear-gradient(180deg,
+    color-mix(in srgb, var(--bg-primary) 92%, #fff 8%) 0%,
+    var(--bg-primary) 78%);
+  box-shadow:
+    0 1px 0 var(--border),
+    0 18px 34px -30px rgba(24, 20, 14, .9);
+}
+
+.header-container {
+  height: var(--msm-header-h);
+  padding: 0 clamp(16px, 2.2vw, 30px);
+  align-items: center;
+}
+
+.header-ridges { opacity: .85; }
+
+/* ---- Brand crest ---- */
+.brand-logo {
+  align-self: flex-start;
+  margin-top: var(--msm-crest-top);
+  max-height: none;
+  z-index: 5;
+}
+
+.brand-logo-img {
+  height: var(--msm-crest-h);
+  width: var(--msm-crest-h);
+  box-sizing: border-box;
+  padding: 9px;
+  border-radius: 50%;
+  object-fit: contain;
+  background: radial-gradient(circle at 34% 26%, #fffdf8 0%, #f7eee0 54%, #e6d5b7 100%);
+  border: 2px solid color-mix(in srgb, var(--msm-gold) 62%, #fff);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .85),
+    inset 0 -10px 18px -14px rgba(92, 68, 30, .5),
+    0 12px 24px -14px rgba(18, 36, 28, .6);
+  filter: none;
+  transition: transform .35s var(--ease-soft), box-shadow .35s var(--ease-soft);
+}
+
+/* The dark logomark is white line art, so the medal flips to pine at night. */
+html[data-theme="dark"] .brand-logo-img {
+  background: radial-gradient(circle at 34% 24%, #3b5a47 0%, #1e3227 56%, #0f1a14 100%);
+  border-color: color-mix(in srgb, var(--msm-gold) 55%, #101a15);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .16),
+    inset 0 -10px 18px -14px rgba(0, 0, 0, .85),
+    0 12px 26px -12px rgba(0, 0, 0, .8);
+}
+
+.brand-logo:hover .brand-logo-img,
+.brand-logo:focus-visible .brand-logo-img {
+  transform: translateY(-2px);
+}
+
+.brand-logo:focus-visible {
+  outline: 2px solid var(--msm-gold);
+  outline-offset: 6px;
+  border-radius: 999px;
+}
+
+/* The Track meets hero starts tucked under the bar, which the crest would
+   sit on top of. Give that one hero room to clear both. */
+main .page-hero { padding-top: 46px; }
+
+/* XC and Track navs carry a lot of links; drop the decorative icons and
+   tighten the gaps before they push the Explore button off the edge. */
+@media (max-width: 1600px) {
+  .nav-link .nav-ico { display: none; }
+  .desktop-nav { gap: 10px; }
+}
+
+/* Eleven links need roughly 1300px of header. Below that the Explore column
+   takes over instead of a clipped, half-off-screen nav. */
+@media (max-width: 1320px) {
+  .desktop-nav { display: none; }
+  .header-actions-mobile { display: flex; }
+}
+
+@media (max-width: 900px) {
+  :root {
+    --msm-header-h: 58px;
+    --msm-crest-h: 72px;
+    --msm-crest-top: 5px;
+  }
+  .header-container { padding: 0 14px; }
+  .brand-logo-img { padding: 7px; }
+  main .page-hero { padding-top: 58px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .brand-logo-img { transition: none; }
 }

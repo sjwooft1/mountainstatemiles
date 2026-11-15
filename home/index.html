@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Mountain State Miles &mdash; Track &amp; Cross Country</title>
+    <title>Mountain State Miles &mdash; West Virginia Track &amp; Cross Country Hub</title>
 
     <meta property="og:image" content="/assets/images/logo.svg" />
     <link rel="icon" type="image/png" href="/assets/images/favicon/favicon-96x96.png" sizes="96x96" />
     <link rel="icon" type="image/svg+xml" href="/assets/images/favicon/favicon.svg" />
     <link rel="shortcut icon" href="/assets/images/favicon/favicon.ico" />
-    <link rel="apple-touch-icon"s sizes="180x180" href="/assets/images/favicon/apple-touch-icon.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/images/favicon/apple-touch-icon.png" />
     <meta name="apple-mobile-web-app-title" content="MSM" />
     <link rel="manifest" href="/assets/images/favicon/site.webmanifest" />
 
@@ -20,86 +20,372 @@
     <link rel="stylesheet" href="/assets/main.css" />
 
     <style>
-        /* --- Hero Section --- */
-        .home-hero {
-            text-align: center;
-        }
-        .home-hero .hero-logo {
-            width:80%;
-            height: auto;
-            margin-bottom: 14px;
-            margin-top: -15%;
-        }
-        .home-hero h1 {
-            font-size: clamp(2rem, 5vw, 3rem);
-            font-weight: 800;
-            letter-spacing: -0.02em;
-            margin: 0 0 0.4rem;
-        }
-        .home-hero p {
-            color: var(--text-secondary);
-            max-width: 560px;
+        .home-wrap {
+            max-width: 1240px;
             margin: 0 auto;
-            font-size: 1.05rem;
+            padding: 96px 1.25rem 4rem;
         }
 
-        /* --- Search Bar --- */
+        /* --- Photographic hero stage --- */
+        .hero-stage {
+            position: relative;
+            z-index: 5;
+            display: grid;
+            grid-template-columns: minmax(0, 1.04fr) minmax(0, .96fr);
+            align-items: center;
+            gap: clamp(1.5rem, 3vw, 3rem);
+            padding: clamp(1.5rem, 3.2vw, 2.9rem);
+            border-radius: clamp(22px, 3vw, 32px);
+            color: #fbf7ef;
+            background: radial-gradient(130% 130% at 8% 0%, #2f6350 0%, #1d4133 46%, #12291f 100%);
+            box-shadow: 0 34px 68px -40px rgba(17, 39, 30, .8);
+            isolation: isolate;
+            overflow: visible;
+        }
+
+        .hero-stage-scene {
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            overflow: hidden;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .hero-stage-glow {
+            position: absolute;
+            top: -190px;
+            left: 46%;
+            width: min(680px, 72vw);
+            height: 390px;
+            transform: translateX(-50%);
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(224, 166, 63, .38) 0%, rgba(224, 121, 79, .15) 44%, transparent 72%);
+        }
+
+        .hero-stage-ridges {
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: -1px;
+            width: 100%;
+            height: 44%;
+        }
+        .hero-stage-ridges .hr-far  { fill: rgba(109, 184, 148, .18); }
+        .hero-stage-ridges .hr-mid  { fill: rgba(63, 125, 99, .30); }
+        .hero-stage-ridges .hr-near { fill: rgba(9, 24, 18, .74); }
+
+        .hero-stage-copy {
+            position: relative;
+            z-index: 2;
+            max-width: 620px;
+        }
+
+        .hero-kicker {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: .34rem .9rem;
+            border-radius: 999px;
+            background: rgba(251, 247, 239, .1);
+            border: 1px solid rgba(251, 247, 239, .2);
+            font-size: .7rem;
+            font-weight: 800;
+            letter-spacing: .12em;
+            text-transform: uppercase;
+            color: var(--msm-gold, #e0a63f);
+            margin-bottom: .9rem;
+        }
+        .live-pulse {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #7dd8a5;
+            display: inline-block;
+            animation: homePulse 2s infinite;
+        }
+        @keyframes homePulse {
+            0% { box-shadow: 0 0 0 0 rgba(125, 216, 165, .6); }
+            70% { box-shadow: 0 0 0 9px rgba(125, 216, 165, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(125, 216, 165, 0); }
+        }
+
+        .hero-brand-lockup {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            gap: .85rem;
+            margin-bottom: .65rem;
+            flex-wrap: wrap;
+        }
+        .hero-runner-mark {
+            height: clamp(44px, 5vw, 58px);
+            width: auto;
+            filter: drop-shadow(0 6px 16px rgba(0, 0, 0, .35));
+        }
+        .hero-script-mark {
+            height: clamp(38px, 4.4vw, 50px);
+            width: auto;
+            filter: brightness(1.15) drop-shadow(0 6px 16px rgba(0, 0, 0, .3));
+        }
+
+        .hero-stage h1 {
+            font-family: var(--font-display);
+            font-size: clamp(2.15rem, 4.5vw, 3.45rem);
+            font-weight: 700;
+            color: #fbf7ef;
+            letter-spacing: -.025em;
+            line-height: 1.04;
+            margin: 0 0 .75rem;
+            text-wrap: balance;
+        }
+        .hero-stage h1 em {
+            font-style: italic;
+            color: var(--msm-gold, #e0a63f);
+        }
+        .hero-stage p.hero-lead {
+            color: rgba(251, 247, 239, .82);
+            font-size: clamp(.95rem, 1.5vw, 1.05rem);
+            max-width: 36rem;
+            margin: 0 0 1.35rem;
+            line-height: 1.6;
+        }
+
+        /* --- Global Search Bar --- */
         .home-search {
-            max-width: 560px;
-            margin: 22px auto 4px;
+            max-width: 480px;
+            margin: 0;
             position: relative;
         }
         .home-search input {
             width: 100%;
-            padding: 14px 16px 14px 44px;
-            font-size: 1rem;
+            padding: 14px 92px 14px 44px;
+            font-size: .98rem;
             font-family: inherit;
-            border: 1.5px solid var(--border-color, #dcdcdc);
-            border-radius: 10px;
-            background: var(--card-bg,);
-            color: inherit;
+            font-weight: 600;
+            border: 1.5px solid rgba(251, 247, 239, .42);
+            border-radius: 999px;
+            background: rgba(255, 253, 248, .97);
+            color: #2f2a24;
             outline: none;
-            transition: border-color 0.15s;
+            box-shadow: 0 16px 32px -22px rgba(0, 0, 0, .85);
+            transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease;
         }
+        html[data-theme="dark"] .home-search input {
+            background: rgba(38, 34, 27, .97);
+            color: #f6efe1;
+        }
+        .home-search input::placeholder { color: #7d7264; }
         .home-search input:focus {
-            border-color: var(--accent, #c07f1e);
+            border-color: var(--msm-gold, #e0a63f);
+            transform: translateY(-1px);
+            box-shadow: 0 0 0 4px rgba(224, 166, 63, .22), 0 18px 34px -22px rgba(0, 0, 0, .85);
         }
         .home-search .search-icon {
             position: absolute;
-            left: 16px;
+            left: 17px;
             top: 50%;
             transform: translateY(-50%);
-            color: var(--text-secondary);
+            color: #6b6154;
             pointer-events: none;
+        }
+        .home-search .kbd-badge {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: .7rem;
+            font-weight: 800;
+            padding: 5px 10px;
+            border-radius: 999px;
+            background: rgba(63, 125, 99, .12);
+            color: var(--primary);
+            pointer-events: none;
+        }
+
+        /* --- Hero calls to action --- */
+        .hero-cta-row {
+            display: flex;
+            gap: .6rem;
+            flex-wrap: wrap;
+            margin-top: 1.1rem;
+        }
+        .hero-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: .5rem;
+            min-height: 46px;
+            padding: .7rem 1.25rem;
+            border-radius: 999px;
+            border: 1.5px solid transparent;
+            font-family: var(--font-sans);
+            font-size: .9rem;
+            font-weight: 800;
+            text-decoration: none;
+            transition: transform .25s var(--ease-soft), background .2s ease, border-color .2s ease, box-shadow .25s ease;
+        }
+        .hero-btn:hover { transform: translateY(-2px); text-decoration: none; }
+        .hero-btn-primary {
+            background: var(--msm-gold, #e0a63f);
+            color: #2a2010;
+            box-shadow: 0 14px 28px -16px rgba(224, 166, 63, .95);
+        }
+        .hero-btn-primary:hover { background: #f0bc5c; }
+        .hero-btn-ghost {
+            background: rgba(251, 247, 239, .08);
+            border-color: rgba(251, 247, 239, .3);
+            color: #fbf7ef;
+        }
+        .hero-btn-ghost:hover {
+            background: rgba(251, 247, 239, .16);
+            border-color: rgba(251, 247, 239, .5);
+        }
+
+        /* --- Hero photo collage --- */
+        .hero-stage-collage {
+            position: relative;
+            z-index: 2;
+            min-height: clamp(300px, 32vw, 400px);
+            animation: heroCollageIn .8s var(--ease-soft) both;
+        }
+        @keyframes heroCollageIn {
+            from { opacity: 0; transform: translateY(18px) scale(.98); }
+            to   { opacity: 1; transform: none; }
+        }
+        .hero-photo {
+            margin: 0;
+            position: absolute;
+            overflow: hidden;
+            border-radius: 20px;
+            background: #1a352a;
+            box-shadow: 0 26px 50px -26px rgba(0, 0, 0, .85);
+        }
+        .hero-photo img {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 1.2s var(--ease-soft);
+        }
+        .hero-photo-main {
+            inset: 0 0 30px 0;
+        }
+        .hero-photo-main img { object-position: center 38%; }
+        .hero-photo-main:hover img { transform: scale(1.04); }
+        .hero-photo-main figcaption {
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            padding: 2.4rem .95rem .7rem;
+            font-size: .66rem;
+            font-weight: 800;
+            letter-spacing: .09em;
+            text-transform: uppercase;
+            color: rgba(251, 247, 239, .9);
+            background: linear-gradient(to top, rgba(8, 20, 15, .9), transparent);
+        }
+        .hero-photo-inset {
+            width: 42%;
+            aspect-ratio: 4 / 3;
+            left: 0;
+            bottom: 0;
+            border: 5px solid #1b3c2f;
+            border-radius: 16px;
+            box-shadow: 0 20px 38px -20px rgba(0, 0, 0, .95);
+        }
+        .hero-photo-inset img { object-position: 62% center; }
+        .hero-photo-inset:hover img { transform: scale(1.06); }
+        .hero-photo-chip {
+            position: absolute;
+            top: .85rem;
+            right: .85rem;
+            display: inline-flex;
+            align-items: center;
+            gap: .35rem;
+            padding: .3rem .7rem;
+            border-radius: 999px;
+            background: rgba(251, 247, 239, .94);
+            color: #22392e;
+            font-size: .68rem;
+            font-weight: 800;
+            letter-spacing: .06em;
+            text-transform: uppercase;
+            box-shadow: 0 8px 18px -12px rgba(0, 0, 0, .9);
+        }
+        .hero-photo-chip i { color: var(--msm-clay, #e0794f); }
+
+        /* --- Live Telemetry Strip --- */
+        .hero-stats-strip {
+            grid-column: 1 / -1;
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: .7rem;
+            margin-top: .35rem;
+            padding-top: 1.15rem;
+            border-top: 1px solid rgba(251, 247, 239, .14);
+            position: relative;
+            z-index: 2;
+        }
+        .hero-stat-pill {
+            background: rgba(251, 247, 239, .07);
+            border: 1px solid rgba(251, 247, 239, .15);
+            border-radius: 14px;
+            padding: .72rem .95rem;
+            text-align: left;
+            backdrop-filter: blur(6px);
+            transition: transform .28s var(--ease-soft), background .22s ease, border-color .22s ease;
+        }
+        .hero-stat-pill:hover {
+            transform: translateY(-2px);
+            background: rgba(251, 247, 239, .12);
+            border-color: rgba(224, 166, 63, .4);
+        }
+        .hero-stat-pill b {
+            display: block;
+            font-family: var(--font-display);
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #fff;
+            line-height: 1.15;
+            font-variant-numeric: tabular-nums;
+        }
+        .hero-stat-pill span {
+            font-size: .68rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .07em;
+            color: rgba(251, 247, 239, .68);
         }
 
         /* --- Search Dropdown --- */
         .search-results {
             display: none;
             position: absolute;
-            top: calc(100% + 6px);
+            top: calc(100% + 8px);
             left: 0;
             right: 0;
-            z-index: 900;
-            max-height: 420px;
+            z-index: 950;
+            max-height: 400px;
             overflow-y: auto;
-            background: var(--card-bg, #fff);
-            border: 1.5px solid var(--border-color, #dcdcdc);
-            border-radius: 10px;
-            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.16);
+            overscroll-behavior: contain;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            border: 1.5px solid var(--border);
+            border-radius: 18px;
+            box-shadow: 0 26px 56px -22px rgba(0, 0, 0, .55);
             text-align: left;
         }
-        .search-results.open {
-            display: block;
-        }
+        .search-results.open { display: block; }
         .search-group-label {
             padding: 8px 14px 4px;
-            font-size: 0.66rem;
+            font-size: .66rem;
             font-weight: 800;
-            letter-spacing: 0.09em;
+            letter-spacing: .09em;
             text-transform: uppercase;
-            color: var(--text-secondary);
-            background: var(--card-bg, #fff);
+            color: var(--text-tertiary);
+            background: var(--bg-secondary);
             position: sticky;
             top: 0;
         }
@@ -109,355 +395,946 @@
             gap: 12px;
             padding: 10px 14px;
             cursor: pointer;
-            border-top: 1px solid var(--border-color, #eee);
-        }
-        .search-item:first-of-type {
-            border-top: none;
+            border-top: 1px solid var(--border-light);
+            color: var(--text-primary);
+            text-decoration: none;
+            transition: background .18s ease;
         }
         .search-item:hover,
         .search-item.active {
-            background: var(--border-color, #f2f2f2);
+            background: var(--bg-secondary);
         }
         .search-item-icon {
             flex: none;
-            width: 30px;
-            height: 30px;
-            border-radius: 8px;
+            width: 32px;
+            height: 32px;
+            border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
-            background: var(--accent, #c07f1e);
+            background: var(--primary);
             color: #fff;
-            font-size: 0.8rem;
+            font-size: .82rem;
         }
-        .search-item-body {
-            min-width: 0;
-        }
+        .search-item-body { min-width: 0; }
         .search-item-title {
+            display: block;
             font-weight: 700;
-            font-size: 0.92rem;
+            font-size: .92rem;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
         .search-item-sub {
-            font-size: 0.76rem;
+            display: block;
+            font-size: .75rem;
             color: var(--text-secondary);
         }
         .search-empty {
             padding: 18px 14px;
             text-align: center;
-            font-size: 0.88rem;
+            font-size: .88rem;
             color: var(--text-secondary);
         }
 
-        /* --- Layout Grid --- */
-        .home-grid {
-            display: grid;
-            grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
-            gap: 28px;
-            align-items: start;
-            margin-top: 34px;
-        }
-        @media(max-width: 860px) {
-            .home-grid {
-                grid-template-columns: 1fr;
+        /* --- Hero responsive --- */
+        @media (max-width: 980px) {
+            .hero-stage {
+                grid-template-columns: minmax(0, 1fr);
+                gap: 1.6rem;
+                padding: 1.35rem 1.35rem 1.5rem;
             }
+            .hero-stage-collage {
+                order: -1;
+                min-height: 0;
+                aspect-ratio: 16 / 10;
+                width: 100%;
+            }
+            .hero-photo-main { inset: 0; }
+            .hero-photo-inset { display: none; }
+            .hero-stage-copy { max-width: none; }
+            .hero-stage p.hero-lead { max-width: none; }
+            .home-search { max-width: none; }
+            .hero-cta-row { margin-top: 1rem; }
+            .hero-stats-strip { margin-top: .6rem; }
+        }
+        @media (max-width: 620px) {
+            .hero-stage {
+                gap: 1.15rem;
+                padding: 1.1rem 1.1rem 1.25rem;
+                border-radius: 22px;
+            }
+            .hero-stage-collage { aspect-ratio: 4 / 3; }
+            .hero-kicker { font-size: .62rem; padding: .3rem .7rem; margin-bottom: .7rem; }
+            .hero-brand-lockup { gap: .6rem; margin-bottom: .5rem; }
+            .hero-runner-mark { height: 42px; }
+            .hero-script-mark { height: 36px; }
+            .hero-stage p.hero-lead { font-size: .93rem; margin-bottom: 1.05rem; }
+            .home-search input {
+                padding: 13px 16px 13px 42px;
+                font-size: .92rem;
+            }
+            .home-search .kbd-badge { display: none; }
+            .search-results { max-height: 62vh; }
+            .hero-cta-row .hero-btn { flex: 1 1 auto; padding-inline: 1rem; font-size: .85rem; }
+            .hero-stats-strip {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: .55rem;
+                padding-top: .9rem;
+            }
+            .hero-stat-pill { padding: .6rem .8rem; }
+            .hero-stat-pill b { font-size: 1.25rem; }
+            .hero-stat-pill span { font-size: .6rem; }
+            .hero-photo-chip { display: none; }
+            .hero-photo-main figcaption { font-size: .58rem; padding: 1.6rem .7rem .55rem; }
+        }
+        /* --- Photo-led hub cards + tool dock --- */
+        .feature-dock {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+        .feature-tile {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            gap: .4rem;
+            padding: 1.15rem 1.2rem 1.2rem;
+            border: 1.5px solid var(--border);
+            border-radius: 20px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            text-decoration: none;
+            overflow: hidden;
+            box-shadow: 0 1px 2px rgba(47, 42, 36, .03), 0 14px 30px -26px rgba(47, 42, 36, .7);
+            transition: transform .32s var(--ease-soft), box-shadow .32s var(--ease-soft), border-color .22s ease;
+        }
+        .feature-tile::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--msm-pine), var(--msm-gold));
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform .4s var(--ease-soft);
+        }
+        .feature-tile:hover {
+            transform: translateY(-5px);
+            border-color: var(--primary);
+            box-shadow: 0 24px 42px -26px rgba(47, 42, 36, .6);
+        }
+        .feature-tile:hover::after { transform: scaleX(1); }
+        .feature-tile-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 14px;
+            display: grid;
+            place-items: center;
+            background: color-mix(in srgb, var(--primary) 12%, transparent);
+            color: var(--primary);
+            font-size: 1.12rem;
+            margin-bottom: .3rem;
+        }
+        .feature-tile.gold .feature-tile-icon {
+            background: color-mix(in srgb, var(--msm-gold) 22%, transparent);
+            color: #a8750f;
+        }
+        .feature-tile.clay .feature-tile-icon {
+            background: color-mix(in srgb, var(--msm-clay) 16%, transparent);
+            color: var(--msm-clay);
+        }
+        html[data-theme="dark"] .feature-tile.gold .feature-tile-icon { color: var(--msm-gold); }
+        .feature-tile h3 {
+            font-family: var(--font-display);
+            font-size: 1.06rem;
+            font-weight: 600;
+            margin: 0;
+            line-height: 1.25;
+            color: var(--text-primary);
+        }
+        .feature-tile p {
+            font-size: .79rem;
+            color: var(--text-secondary);
+            margin: 0;
+            line-height: 1.45;
+        }
+        .feature-tile .tile-cta {
+            margin-top: auto;
+            padding-top: .5rem;
+            font-size: .72rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: .07em;
+            color: var(--primary);
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
         }
 
-        /* --- Section Headers --- */
+        /* Photo-backed hub cards */
+        .feature-tile-photo {
+            grid-column: span 2;
+            justify-content: flex-end;
+            min-height: 205px;
+            gap: .28rem;
+            padding: 1.4rem;
+            border: none;
+            color: #fbf7ef;
+            background: #16302a;
+            box-shadow: 0 22px 44px -30px rgba(15, 36, 27, .9);
+        }
+        .feature-tile-photo:hover { border: none; }
+        .feature-tile-photo::after { display: none; }
+        .feature-tile-bg {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center 40%;
+            transform: scale(1.02);
+            transition: transform 1.1s var(--ease-soft);
+            z-index: 0;
+        }
+        .feature-tile-photo::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+            background: linear-gradient(190deg, rgba(8, 22, 16, .08) 0%, rgba(10, 28, 21, .62) 56%, rgba(8, 21, 16, .94) 100%);
+        }
+        .feature-tile-photo:hover .feature-tile-bg { transform: scale(1.08); }
+        .feature-tile-photo > *:not(.feature-tile-bg) {
+            position: relative;
+            z-index: 2;
+        }
+        .feature-tile-eyebrow {
+            font-size: .66rem;
+            font-weight: 800;
+            letter-spacing: .15em;
+            text-transform: uppercase;
+            color: var(--msm-gold, #e0a63f);
+        }
+        .feature-tile-photo h3 {
+            font-family: var(--font-display);
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #fbf7ef;
+            text-shadow: 0 2px 14px rgba(0, 0, 0, .4);
+        }
+        .feature-tile-photo p {
+            color: rgba(251, 247, 239, .8);
+            font-size: .82rem;
+            max-width: 34ch;
+        }
+        .feature-tile-photo .tile-cta { color: var(--msm-gold, #e0a63f); }
+
+        @media (max-width: 980px) {
+            .feature-dock { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .feature-tile-photo { grid-column: span 2; min-height: 190px; }
+        }
+        @media (max-width: 560px) {
+            .feature-dock { grid-template-columns: minmax(0, 1fr); gap: .8rem; }
+            .feature-tile-photo { grid-column: span 1; min-height: 175px; padding: 1.2rem; }
+            .feature-tile-photo h3 { font-size: 1.3rem; }
+            .feature-tile { padding: 1rem 1.05rem 1.05rem; }
+            .feature-tile-icon { width: 40px; height: 40px; border-radius: 12px; }
+        }
+        /* --- Interactive Quick Lab (Instant Pace & Race Converter) --- */
+        .quick-lab-card {
+            margin-top: 1.75rem;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-xl, 24px);
+            padding: 1.4rem 1.6rem;
+            box-shadow: 0 6px 22px var(--shadow-light);
+        }
+        .quick-lab-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+        }
+        .quick-lab-head h2 {
+            font-size: 1.25rem;
+            font-weight: 800;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.55rem;
+        }
+        .quick-lab-head h2 i { color: var(--primary); }
+        .quick-lab-grid {
+            display: grid;
+            grid-template-columns: 320px minmax(0, 1fr);
+            gap: 1.25rem;
+            align-items: center;
+        }
+        @media (max-width: 900px) {
+            .quick-lab-grid { grid-template-columns: 1fr; }
+        }
+        .ql-inputs {
+            display: flex;
+            gap: 0.6rem;
+            align-items: flex-end;
+            min-width: 0;
+        }
+        .ql-field {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .ql-field label {
+            font-size: 0.68rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-tertiary);
+        }
+        .ql-field input,
+        .ql-field select {
+            width: 100%;
+            padding: 0.6rem 0.7rem;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-weight: 700;
+            font-size: 0.88rem;
+            font-family: inherit;
+        }
+        .ql-outputs {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 0.65rem;
+        }
+        .ql-chip {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 0.65rem 0.85rem;
+        }
+        .ql-chip span {
+            display: block;
+            font-size: 0.66rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-tertiary);
+        }
+        .ql-chip b {
+            font-family: var(--font-display);
+            font-size: 1.15rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* --- Main Two-Column Content Grid --- */
+        .home-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr);
+            gap: 28px;
+            align-items: start;
+            margin-top: 2rem;
+        }
+        @media (max-width: 900px) {
+            .home-grid { grid-template-columns: 1fr; }
+        }
+
         .home-section {
-            margin-bottom: 34px;
+            margin-bottom: 2.2rem;
+            background: var(--bg-primary);
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-xl, 24px);
+            padding: 1.35rem 1.45rem;
+            box-shadow: 0 6px 20px var(--shadow-light);
         }
         .home-section-head {
             display: flex;
             align-items: baseline;
             justify-content: space-between;
-            border-bottom: 2px solid var(--text-primary, #1a1a1a);
-            padding-bottom: 8px;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 10px;
             margin-bottom: 14px;
+            position: relative;
+        }
+        .home-section-head::after {
+            content: "";
+            position: absolute;
+            left: 0;
+            bottom: -2px;
+            width: 72px;
+            height: 2px;
+            background: var(--primary);
         }
         .home-section-head h2 {
             margin: 0;
-            font-size: 1.35rem;
+            font-size: 1.25rem;
             font-weight: 800;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .home-section-head h2 i {
+            color: var(--primary);
+            font-size: 1rem;
         }
         .home-section-head .view-all-link {
             font-size: 0.8rem;
-            font-weight: 700;
+            font-weight: 800;
             text-transform: uppercase;
             letter-spacing: 0.05em;
+            color: var(--primary);
         }
 
-        /* --- Results Table --- */
-        .results-table {
-            width: 100%;
-            border-collapse: collapse;
+        #results-body,
+        .side-card {
+            background: var(--bg-primary);
+            border-radius: var(--radius-md, 12px);
+            overflow: hidden;
+            border: 1px solid var(--border);
         }
-        .results-table td {
-            padding: 11px 8px;
-            border-top: 1px solid var(--border-color, #e6e6e6);
-            vertical-align: middle;
+
+        .list-item {
+            display: flex;
+            align-items: stretch;
+            border-bottom: 1px solid var(--border);
+            background: var(--bg-primary);
         }
-        .results-table tr:first-child td {
-            border-top: none;
-        }
-        .res-place {
+        .list-item:last-child { border-bottom: none; }
+        .list-item:hover { background: var(--bg-secondary); }
+        .item-place {
+            width: 46px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--text-primary);
+            color: var(--bg-primary);
             font-weight: 800;
-            color: var(--accent, #c07f1e);
-            width: 30px;
             font-size: 1.05rem;
         }
-        .res-name {
-            font-weight: 700;
-        }
-        .res-sub {
-            font-size: 0.8rem;
-            color: var(--text-secondary);
-        }
-        .res-meet {
-            font-size: 0.82rem;
-            font-weight: 600;
-            color: var(--text-secondary);
-        }
-        .res-mark {
-            font-weight: 800;
-            text-align: right;
-            white-space: nowrap;
-            font-variant-numeric: tabular-nums;
-        }
-        .list-item {
-          display: flex;
-          align-items: stretch; /* Stretches the place box to full height */
-          border-bottom: 1px solid var(--border);
-          background: var(--bg-primary);
-          transition: background 0.2s;
-        }
-        .list-item:last-child {
-          border-bottom: none;
-        }
-        .list-item:hover {
-          background: var(--bg-secondary);
-        }
-    
-        /* Placement Block */
-        .item-place {
-          width: 48px;
-          flex-shrink: 0;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background: var(--text-primary);
-          color: var(--bg-primary);
-          font-weight: 800;
-          font-size: 1.15rem;
-        }
-    
-        /* Avatar / Logo */
         .item-avatar {
-          display: flex;
-          align-items: center;
-          padding-left: 12px;
+            display: flex;
+            align-items: center;
+            padding-left: 12px;
         }
         .item-avatar img {
-          width: 40px;
-          height: 40px;
-          border-radius: 50%;
-          object-fit: contain;
-          background: #fff; /* Keep white bg for logos to pop */
-          padding: 2px;
-          border: 1px solid var(--border);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            object-fit: contain;
+            background: #fff;
+            padding: 2px;
+            border: 1px solid var(--border);
         }
-    
-        /* Middle Details */
         .item-details {
-          flex: 1;
-          padding: 12px;
-          min-width: 0; /* Prevents flex blowout on long names */
-          display: flex;
-          flex-direction: column;
-          justify-content: center;
+            flex: 1;
+            padding: 10px 12px;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
         }
         .item-name {
-          font-weight: 700;
-          font-size: 1.05rem;
-          color: var(--text-primary);
-          text-decoration: none;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
+            font-weight: 700;
+            font-size: 0.98rem;
+            color: var(--text-primary);
+            text-decoration: none;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         .item-school {
-          font-size: 0.85rem;
-          color: var(--text-secondary);
-          text-decoration: none;
-          margin: 2px 0 4px;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+            text-decoration: none;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         .item-meta {
-          font-size: 0.75rem;
-          color: var(--text-tertiary);
-          font-weight: 600;
+            font-size: 0.72rem;
+            color: var(--text-tertiary);
+            font-weight: 600;
         }
         .item-score {
-          padding: 12px 16px 12px 8px;
-          display: flex;
-          align-items: center;
-          justify-content: flex-end;
-          font-weight: 800;
-          font-size: 1.15rem;
-          color: var(--text-primary);
-          font-variant-numeric: tabular-nums;
+            padding: 10px 16px 10px 8px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            font-weight: 800;
+            font-size: 1.08rem;
+            color: var(--text-primary);
+            font-variant-numeric: tabular-nums;
         }
-    
+
         /* --- Meets List --- */
         .meet-row {
             display: flex;
             gap: 14px;
-            padding: 13px 0;
-            border-top: 1px solid var(--border-color, #e6e6e6);
+            padding: 13px 16px;
+            border-top: 1px solid var(--border-light);
+            align-items: center;
         }
-        .meet-row:first-child {
-            border-top: none;
-        }
+        .meet-row:first-child { border-top: none; }
+        .meet-row:hover { background: var(--bg-secondary); }
         .meet-cal {
             flex: none;
             width: 52px;
             text-align: center;
-            border-radius: 8px;
-            padding: 8px 0;
-            background: var(--accent, #1f4d3a);
+            border-radius: 10px;
+            padding: 7px 0;
+            background: var(--primary);
             color: #fff;
         }
         .meet-cal .m {
             font-size: 0.62rem;
-            font-weight: 700;
+            font-weight: 800;
             letter-spacing: 0.1em;
             text-transform: uppercase;
             opacity: 0.9;
         }
         .meet-cal .d {
-            font-size: 1.35rem;
+            font-size: 1.3rem;
             font-weight: 800;
-            line-height: 1;
+            line-height: 1.05;
         }
         .meet-info h3 {
-            margin: 0 0 3px;
-            font-size: 1rem;
-            font-weight: 700;
+            margin: 0 0 4px;
+            font-size: 0.96rem;
+            font-weight: 800;
         }
         .meet-info .badges {
             display: flex;
             gap: 5px;
             flex-wrap: wrap;
         }
-        
         .div-badge {
             font-size: 0.62rem;
             font-weight: 800;
             letter-spacing: 0.04em;
-            padding: 2px 6px;
-            border-radius: 4px;
-            background: var(--border-color, #eee);
+            padding: 2px 7px;
+            border-radius: 99px;
+            background: var(--bg-secondary);
             color: var(--text-secondary);
-        }
-        #results-body {
-            margin-top: 1.5rem;
-            background: var(--bg-primary);
-            border-radius: var(--radius-xl);
-            overflow: hidden;
-            border: 1.5px solid var(--border);
+            border: 1px solid var(--border);
         }
 
-        /* --- Utilities & Cards --- */
         .loading-state {
-            padding: 20px;
+            padding: 24px;
             text-align: center;
             color: var(--text-secondary);
+        }        /* --- Ridges panorama band --- */
+        .ridge-band {
+            position: relative;
+            margin-top: clamp(2rem, 4vw, 3rem);
+            padding: clamp(2rem, 5vw, 3.8rem) clamp(1.4rem, 4vw, 3.4rem);
+            border-radius: clamp(22px, 3vw, 30px);
+            overflow: hidden;
+            isolation: isolate;
+            color: #fbf7ef;
+            background: #16261f;
+            box-shadow: 0 30px 60px -40px rgba(15, 36, 27, .9);
         }
-        .sport-cards {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 14px;
-            margin-top: 6px;
+        .ridge-band-bg {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center 42%;
+            z-index: -2;
+            transform: scale(1.03);
         }
-        @media(max-width: 520px) {
-            .sport-cards {
-                grid-template-columns: 1fr;
+        .ridge-band::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            z-index: -1;
+            background: linear-gradient(100deg, rgba(9, 23, 17, .95) 0%, rgba(9, 23, 17, .82) 46%, rgba(9, 23, 17, .32) 100%);
+        }
+        .ridge-band-inner { max-width: 620px; }
+        .ridge-band .featured-kicker { color: var(--msm-gold, #e0a63f); }
+        .ridge-band h2 {
+            font-family: var(--font-display);
+            font-size: clamp(1.7rem, 3.4vw, 2.5rem);
+            font-weight: 700;
+            line-height: 1.1;
+            letter-spacing: -.02em;
+            color: #fbf7ef;
+            margin: .45rem 0 .8rem;
+        }
+        .ridge-band p {
+            color: rgba(251, 247, 239, .8);
+            font-size: .98rem;
+            max-width: 46ch;
+            margin: 0 0 1.4rem;
+        }
+        .ridge-band-actions { display: flex; gap: .6rem; flex-wrap: wrap; }
+        .ridge-credit {
+            position: absolute;
+            right: 1.3rem;
+            bottom: .95rem;
+            font-size: .64rem;
+            font-weight: 700;
+            letter-spacing: .12em;
+            text-transform: uppercase;
+            color: rgba(251, 247, 239, .45);
+        }
+
+        /* --- Homepage surface polish --- */
+        .home-wrap { width: 100%; padding-inline: clamp(.9rem, 3vw, 1.25rem); }
+
+        .quick-links { margin-top: 1.6rem; }
+        .quick-links a {
+            transition: transform .26s var(--ease-soft), border-color .2s ease, color .2s ease, background .2s ease;
+        }
+        .quick-links a:hover {
+            transform: translateY(-2px);
+            background: var(--bg-secondary);
+        }
+
+        .featured-meets { margin-top: 2.4rem; }
+        .featured-meets-heading h2 { letter-spacing: -.01em; }
+
+        .home-section {
+            border-width: 1.5px;
+            border-radius: 22px;
+            box-shadow: 0 1px 2px rgba(47, 42, 36, .03), 0 18px 40px -32px rgba(47, 42, 36, .8);
+        }
+        .home-section-head h2 {
+            font-family: var(--font-display);
+            font-size: 1.26rem;
+            font-weight: 600;
+            letter-spacing: -.01em;
+        }
+        .home-section-head::after {
+            width: 88px;
+            height: 3px;
+            border-radius: 999px;
+            background: linear-gradient(90deg, var(--msm-pine), var(--msm-gold));
+        }
+        .home-section-head .view-all-link { transition: color .2s ease, transform .2s ease; }
+        .home-section-head .view-all-link:hover { transform: translateX(2px); }
+
+        .item-place { background: linear-gradient(180deg, var(--primary), #2c5a47); color: #fff; }
+        .list-item { transition: background .18s ease; }
+        .meet-cal {
+            background: linear-gradient(160deg, var(--primary), #2c5a47);
+            border-radius: 12px;
+            box-shadow: 0 10px 20px -14px rgba(44, 90, 71, .9);
+        }
+
+        .quick-lab-card { border-radius: 22px; }
+        .quick-lab-head h2 { font-family: var(--font-display); font-size: 1.32rem; font-weight: 600; }
+        .ql-chip {
+            border-radius: 14px;
+            transition: transform .26s var(--ease-soft), border-color .2s ease, box-shadow .26s ease;
+        }
+        .ql-chip:hover {
+            transform: translateY(-2px);
+            border-color: var(--primary);
+            box-shadow: 0 14px 26px -20px rgba(47, 42, 36, .8);
+        }
+        .ql-chip b { color: var(--primary); }
+
+        /* --- Small-screen comfort --- */
+        @media (max-width: 640px) {
+            .home-wrap { padding-top: 86px; padding-bottom: 2.6rem; }
+            .quick-links {
+                flex-wrap: nowrap;
+                overflow-x: auto;
+                scrollbar-width: none;
+                padding-bottom: .45rem;
+                margin-inline: -.15rem;
+                -webkit-overflow-scrolling: touch;
             }
+            .quick-links::-webkit-scrollbar { display: none; }
+            .quick-links span { display: none; }
+            .quick-links a { flex: 0 0 auto; padding: .5rem .8rem; font-size: .82rem; }
+            .featured-meets { margin-top: 1.8rem; }
+            .featured-meets-heading h2 { font-size: 1.3rem; }
+            .home-section { padding: 1.05rem .95rem 1.15rem; border-radius: 18px; }
+            .home-section-head h2 { font-size: 1.08rem; }
+            .home-section-head .view-all-link {
+                display: inline-flex;
+                align-items: center;
+                min-height: 34px;
+                font-size: .7rem;
+            }
+            .featured-meets-heading > a {
+                display: inline-flex;
+                align-items: center;
+                min-height: 34px;
+            }
+            .quick-lab-card { padding: 1.1rem 1rem; }
+            .quick-lab-head h2 { font-size: 1.1rem; }
+            .ridge-band { border-radius: 20px; }
+            .ridge-credit { display: none; }
+            .featured-meet-card { padding: .85rem; border-radius: 16px; }
         }
+
     </style>
-        
 
     <script src="/assets/theme-toggle.js" defer></script>
     <script src="/assets/components.js" defer></script>
 </head>
 <body class="home-page">
     <div id="global-header"></div>
-    <script src="/assets/msm-loader.js"></script>
-    
+    <script src="/assets/msm-loader.js?v=20261110"></script>
 
-    <main class="content-section">
-        <div class="content-wrapper">
-            <div class="hero home-hero">
-                <img src="/assets/images/logo.svg" alt="Mountain State Miles Logo" class="hero-logo"
-                     data-theme-light-src="/assets/images/logo.svg"
-                     data-theme-dark-src="/assets/images/logob.svg" />
-                <p>Your source for West Virginia track &amp; cross country results, rankings, and records</p>
+    <main class="home-wrap">
+        <!-- Photographic hero -->
+        <section class="hero-stage" aria-labelledby="home-hero-title">
+            <div class="hero-stage-scene" aria-hidden="true">
+                <div class="hero-stage-glow"></div>
+                <svg class="hero-stage-ridges" viewBox="0 0 1440 200" preserveAspectRatio="none">
+                    <path class="hr-far" d="M0,120 C160,64 320,132 500,96 C680,60 840,124 1020,88 C1180,56 1320,104 1440,84 L1440,200 L0,200 Z"></path>
+                    <path class="hr-mid" d="M0,150 C200,112 380,162 600,134 C820,106 1040,156 1260,128 C1350,116 1400,132 1440,124 L1440,200 L0,200 Z"></path>
+                    <path class="hr-near" d="M0,178 C240,156 460,186 720,170 C980,154 1200,182 1440,164 L1440,200 L0,200 Z"></path>
+                </svg>
+            </div>
+
+            <div class="hero-stage-copy">
+                <span class="hero-kicker">
+                    <span class="live-pulse"></span> West Virginia&rsquo;s premier running hub
+                </span>
+                <div class="hero-brand-lockup">
+                    <img src="/assets/images/msmrunner.svg" alt="" class="hero-runner-mark" />
+                    <img src="/assets/images/mountainstate.svg" alt="Mountain State Miles" class="hero-script-mark" />
+                </div>
+                <h1 id="home-hero-title">Every mile.<br /><em>Every ridge.</em></h1>
+                <p class="hero-lead">
+                    Live West Virginia high school Track &amp; Cross Country results, terrain-calibrated MSM ratings, virtual meet simulations, and Tinman training paces.
+                </p>
 
                 <div class="home-search">
                     <i class="fa-solid fa-magnifying-glass search-icon"></i>
                     <input id="home-search-input" type="search" autocomplete="off"
-                           placeholder="Search athletes, schools, or meets&hellip;" aria-label="Search"
+                           placeholder="Search any WV athlete, school, or meet&hellip;" aria-label="Search"
                            role="combobox" aria-expanded="false" aria-controls="search-results-list" />
+                    <span class="kbd-badge">Press /</span>
                     <div id="search-results-list" class="search-results" role="listbox"></div>
+                </div>
+
+                <div class="hero-cta-row">
+                    <a class="hero-btn hero-btn-primary" href="/CrossCountry/rankings.html">
+                        XC rankings <i class="fa-solid fa-arrow-right"></i>
+                    </a>
+                    <a class="hero-btn hero-btn-ghost" href="/Track/rankings.html">Track leaderboards</a>
                 </div>
             </div>
 
-            <div class="home-grid">
-                <div>
-                    <div class="home-section" id="results-section">
-                        <div class="home-section-head">
-                            <h2>Latest Results</h2>
-                            <a href="/CrossCountry/xc" class="view-all-link">All Meets &rarr;</a>
-                        </div>
-                        <div id="results-body">
-                            <div class="loading-state">Loading results&hellip;</div>
-                        </div>
-                    </div>
+            <div class="hero-stage-collage">
+                <figure class="hero-photo hero-photo-main">
+                    <img src="/assets/images/photos/boys-state-pack.jpg"
+                         alt="WV state championship runners charging up the final grass straight"
+                         width="1800" height="1200" fetchpriority="high" decoding="async" />
+                    <figcaption>2026 state meet &middot; Boys AA/A final &middot; Brian Cox Photography</figcaption>
+                </figure>
+                <figure class="hero-photo hero-photo-inset">
+                    <img src="/assets/images/photos/state-leaders.jpg"
+                         alt="Two leaders pressing the pace on the championship loop"
+                         width="1200" height="801" loading="lazy" decoding="async" />
+                </figure>
+                <span class="hero-photo-chip"><i class="fa-solid fa-bolt"></i> Live results</span>
+            </div>
 
-                    <div class="meets-section home-section" id="news-section">
-                        <div class="home-section-head meets-header">
-                            <h2>&#128240; Latest Recaps</h2>
-                            <a href="/news" class="view-all-link">View All &rarr;</a>
-                        </div>
-                        <div class="meets-grid" id="news-grid">
-                            <div class="loading-state">Loading recaps&hellip;</div>
-                        </div>
-                    </div>
+            <div class="hero-stats-strip">
+                <div class="hero-stat-pill">
+                    <b id="stat-total-results">&mdash;</b>
+                    <span>Performances Logged</span>
+                </div>
+                <div class="hero-stat-pill">
+                    <b id="stat-total-athletes">&mdash;</b>
+                    <span>WV Athletes Indexed</span>
+                </div>
+                <div class="hero-stat-pill">
+                    <b id="stat-total-schools">&mdash;</b>
+                    <span>High Schools</span>
+                </div>
+                <div class="hero-stat-pill">
+                    <b id="stat-total-meets">&mdash;</b>
+                    <span>Meets Tracked</span>
+                </div>
+            </div>
+        </section>
 
-                    <div class="sport-cards">
-                        <a href="/Track/index" class="sport-card">
-                            <h3>&#127939; Track &amp; Field</h3>
-                            <p>Meet records, rankings, and results</p>
-                        </a>
-                        <a href="/CrossCountry/xc" class="sport-card">
-                            <h3>&#127941; Cross Country</h3>
-                            <p>School rankings and meet results</p>
-                        </a>
+        <nav class="quick-links" aria-label="Find information quickly">
+            <span>Find it fast</span>
+            <a href="/CrossCountry/meets.html">XC meets &amp; results</a>
+            <a href="/CrossCountry/rankings.html">XC rankings</a>
+            <a href="/CrossCountry/schools.html">XC schools</a>
+            <a href="/Track/meets.html">Track meets &amp; results</a>
+            <a href="/Track/rankings.html">Track rankings</a>
+            <a href="/CrossCountry/paces.html">Training paces</a>
+        </nav>
+
+        <section class="featured-meets" aria-labelledby="featured-meets-title">
+            <div class="featured-meets-heading"><div><span class="featured-kicker">On the calendar</span><h2 id="featured-meets-title">Featured upcoming meets</h2></div><a href="/CrossCountry/meets.html">Full XC schedule →</a></div>
+            <div id="featured-meets-list" class="featured-meets-list" role="status" aria-live="polite">Loading featured meets…</div>
+        </section>
+
+        <!-- Photo-led hubs + tool dock -->
+        <section class="feature-dock" aria-label="Key tools and hubs">
+            <a href="/CrossCountry/xc.html" class="feature-tile feature-tile-photo">
+                <img class="feature-tile-bg" src="/assets/images/photos/girls-state-pack.jpg"
+                     alt="" width="1800" height="1200" loading="lazy" decoding="async" />
+                <span class="feature-tile-eyebrow">Cross country</span>
+                <h3>Cross Country Hub</h3>
+                <p>WV running news, divisional podiums, and meet recaps from the grass.</p>
+                <span class="tile-cta">Explore XC &rarr;</span>
+            </a>
+            <a href="/Track/index.html" class="feature-tile feature-tile-photo">
+                <img class="feature-tile-bg" src="/assets/images/bg.jpg"
+                     alt="" width="2048" height="1365" loading="lazy" decoding="async" />
+                <span class="feature-tile-eyebrow">Track &amp; field</span>
+                <h3>Track &amp; Field Hub</h3>
+                <p>Statewide leaderboards, event records, and regional qualifying.</p>
+                <span class="tile-cta">Explore Track &rarr;</span>
+            </a>
+            <a href="/CrossCountry/simulator.html" class="feature-tile gold">
+                <div class="feature-tile-icon"><i class="fa-solid fa-microchip"></i></div>
+                <h3>XC Meet Simulator</h3>
+                <p>Multi-factor time projections, pack compression &amp; win probabilities.</p>
+                <span class="tile-cta">Run XC Sim &rarr;</span>
+            </a>
+            <a href="/CrossCountry/paces.html" class="feature-tile">
+                <div class="feature-tile-icon"><i class="fa-solid fa-gauge-high"></i></div>
+                <h3>Training Pace Calc</h3>
+                <p>Tinman CV, Threshold &amp; Tempo zones with instant coach PDF sheets.</p>
+                <span class="tile-cta">Open Paces &rarr;</span>
+            </a>
+            <a href="/CrossCountry/courses/course%20viewer.html" class="feature-tile clay">
+                <div class="feature-tile-icon"><i class="fa-solid fa-route"></i></div>
+                <h3>3D Course GPS Lab</h3>
+                <p>Interactive elevation profiles, grade costs, and mile split plans.</p>
+                <span class="tile-cta">Inspect Courses &rarr;</span>
+            </a>
+            <a href="/Portal/portal.html" class="feature-tile gold">
+                <div class="feature-tile-icon"><i class="fa-solid fa-id-badge"></i></div>
+                <h3>Coach &amp; Athlete Portal</h3>
+                <p>Personalized trajectories, mileage builder, and team analytics.</p>
+                <span class="tile-cta">Open Portal &rarr;</span>
+            </a>
+        </section>
+
+        <!-- Instant Interactive Pace & VDOT Quick-Converter -->
+        <section class="quick-lab-card" aria-label="Quick Pace and VDOT Converter">
+            <div class="quick-lab-head">
+                <h2><i class="fa-solid fa-bolt"></i> Instant Race &amp; Training Zone Preview</h2>
+                <a href="/CrossCountry/paces.html" style="font-size:0.82rem;font-weight:800;color:var(--primary);">Full 36-Athlete Reference Sheet &amp; PDF Export &rarr;</a>
+            </div>
+            <div class="quick-lab-grid">
+                <div class="ql-inputs">
+                    <div class="ql-field">
+                        <label for="ql-time">5K Race Time</label>
+                        <input id="ql-time" type="text" value="17:26.60" placeholder="17:26.60" />
+                    </div>
+                    <div class="ql-field" style="flex:0 0 110px;">
+                        <label for="ql-dist">Distance</label>
+                        <select id="ql-dist">
+                            <option value="5000" selected>5K (5000m)</option>
+                            <option value="3200">3200m</option>
+                            <option value="1600">1600m</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="ql-outputs">
+                    <div class="ql-chip">
+                        <span>Race Pace /Mi</span>
+                        <b id="ql-race-mi">5:36.8</b>
+                    </div>
+                    <div class="ql-chip">
+                        <span>CV Mile Zone</span>
+                        <b id="ql-cv-mi">5:48&ndash;5:56</b>
+                    </div>
+                    <div class="ql-chip">
+                        <span>Threshold Mile</span>
+                        <b id="ql-thr-mi">6:03&ndash;6:13</b>
+                    </div>
+                    <div class="ql-chip">
+                        <span>Tempo Mile</span>
+                        <b id="ql-tmp-mi">6:22&ndash;6:42</b>
+                    </div>
+                    <div class="ql-chip">
+                        <span>VDOT Fitness</span>
+                        <b id="ql-vdot">58.4</b>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Ridges panorama band -->
+        <section class="ridge-band" aria-labelledby="ridge-title">
+            <img class="ridge-band-bg" src="/assets/images/background.png"
+                 alt="" width="1600" height="900" loading="lazy" decoding="async" />
+            <div class="ridge-band-inner">
+                <span class="featured-kicker">The Mountain State advantage</span>
+                <h2 id="ridge-title">Times are honest here.<br />So are the ratings.</h2>
+                <p>MSM ratings fold in elevation, grade, and surface &mdash; so a 17:26 on the ridge and a 17:26 on the flats finally mean different things.</p>
+                <div class="ridge-band-actions">
+                    <a class="hero-btn hero-btn-primary" href="/CrossCountry/rankings-explained.html">
+                        How ratings work <i class="fa-solid fa-arrow-right"></i>
+                    </a>
+                    <a class="hero-btn hero-btn-ghost" href="/CrossCountry/courses/course%20viewer.html">Open course lab</a>
+                </div>
+            </div>
+            <span class="ridge-credit">Ridges of the Alleghenies</span>
+        </section>
+
+        <!-- Main Feed Grid -->
+        <div class="home-grid">
+            <div>
+                <div class="home-section" id="results-section">
+                    <div class="home-section-head">
+                        <h2><i class="fa-solid fa-flag-checkered"></i> Latest Finish-Line Results</h2>
+                        <a href="/CrossCountry/meets.html" class="view-all-link">All Meets &rarr;</a>
+                    </div>
+                    <div id="results-body">
+                        <div class="loading-state">Loading latest meet results&hellip;</div>
                     </div>
                 </div>
 
-                <div>
-                    <div class="home-section" id="upcoming-section">
-                        <div class="home-section-head">
-                            <h2>Recent &amp; Upcoming Meets</h2>
-                        </div>
-                        <div id="upcoming-body">
-                            <div class="loading-state">Loading meets&hellip;</div>
-                        </div>
+                <div class="home-section" id="news-section">
+                    <div class="home-section-head">
+                        <h2><i class="fa-solid fa-newspaper"></i> Latest Dispatches &amp; Recaps</h2>
+                        <a href="/news.html" class="view-all-link">Newsroom &rarr;</a>
+                    </div>
+                    <div class="meets-grid" id="news-grid">
+                        <div class="loading-state">Loading articles&hellip;</div>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <div class="home-section" id="leaders-section">
+                    <div class="home-section-head">
+                        <h2><i class="fa-solid fa-crown"></i> Top XC Performances</h2>
+                        <a href="/CrossCountry/rankings.html" class="view-all-link">Rankings &rarr;</a>
+                    </div>
+                    <div class="side-card" id="leaders-body">
+                        <div class="loading-state">Loading leaders&hellip;</div>
+                    </div>
+                </div>
+
+                <div class="home-section" id="upcoming-section">
+                    <div class="home-section-head">
+                        <h2><i class="fa-solid fa-calendar-days"></i> Recent &amp; Upcoming Meets</h2>
+                    </div>
+                    <div class="side-card" id="upcoming-body">
+                        <div class="loading-state">Loading schedule&hellip;</div>
                     </div>
                 </div>
             </div>
@@ -485,7 +1362,6 @@
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
-        // --- Shared Helpers ---
         function snapshotToArray(snapshot) {
             if (!snapshot.exists()) return [];
             const data = snapshot.val();
@@ -525,112 +1401,169 @@
             return m + ":" + sStr;
         }
 
-        // --- Data Loading Functions ---
+        // --- Quick Pace & VDOT Preview Calculator ---
+        function setupQuickLab() {
+            const timeInput = document.getElementById("ql-time");
+            const distSelect = document.getElementById("ql-dist");
 
+            function parseClock(str) {
+                const p = String(str || "").trim().split(":");
+                if (p.length === 2) return parseInt(p[0], 10) * 60 + parseFloat(p[1]);
+                return parseFloat(str);
+            }
+            function fmtClockShort(sec) {
+                if (!isFinite(sec) || sec <= 0) return "—";
+                const m = Math.floor(sec / 60);
+                const s = Math.round(sec - m * 60);
+                return m + ":" + String(s).padStart(2, "0");
+            }
+            function update() {
+                const sec = parseClock(timeInput.value);
+                const dist = parseFloat(distSelect.value) || 5000;
+                if (!isFinite(sec) || sec <= 60) return;
+                const v = (dist * 60) / sec;
+                const vo2 = -4.6 + 0.182258 * v + 0.000104 * v * v;
+                const tMin = sec / 60;
+                const pct = 0.8 + 0.1894393 * Math.exp(-0.012778 * tMin) + 0.2989558 * Math.exp(-0.1932605 * tMin);
+                const vdot = vo2 / pct;
+                const eq5k = dist === 5000 ? sec : sec * Math.pow(5000 / dist, 1.06);
+                const raceMile = (sec * 1609.34) / dist;
+                const fiveKMile = (eq5k * 1609.34) / 5000;
+
+                document.getElementById("ql-race-mi").textContent = fmtTime(raceMile);
+                document.getElementById("ql-cv-mi").textContent = fmtClockShort(fiveKMile * 1.035) + "–" + fmtClockShort(fiveKMile * 1.058);
+                document.getElementById("ql-thr-mi").textContent = fmtClockShort(fiveKMile * 1.078) + "–" + fmtClockShort(fiveKMile * 1.11);
+                document.getElementById("ql-tmp-mi").textContent = fmtClockShort(fiveKMile * 1.136) + "–" + fmtClockShort(fiveKMile * 1.195);
+                document.getElementById("ql-vdot").textContent = vdot.toFixed(1);
+            }
+            timeInput.addEventListener("input", update);
+            distSelect.addEventListener("change", update);
+            update();
+        }
+
+        // --- Latest Results + Top Performers ---
         async function loadLatestResults() {
-                    const body = document.getElementById("results-body");
-                    try {
-                        const [ccMeetsSnap, trkMeetsSnap] = await Promise.all([
-                            database.ref("crosscountry/meets").once("value"),
-                            database.ref("Track/meets").once("value"),
-                        ]);
+            const body = document.getElementById("results-body");
+            const leadersBox = document.getElementById("leaders-body");
+            try {
+                const [ccMeetsSnap, trkMeetsSnap] = await Promise.all([
+                    database.ref("crosscountry/meets").once("value"),
+                    database.ref("Track/meets").once("value"),
+                ]);
 
-                        const now = Date.now();
+                const now = Date.now();
+                const allMeets = [
+                    ...snapshotToArray(ccMeetsSnap).map((m) => ({ ...m, _tree: "crosscountry" })),
+                    ...snapshotToArray(trkMeetsSnap).map((m) => ({ ...m, _tree: "Track" })),
+                ];
+                document.getElementById("stat-total-meets").textContent = allMeets.length.toLocaleString();
 
-                        const meets = [
-                            ...snapshotToArray(ccMeetsSnap).map((m) => ({ ...m, _tree: "crosscountry" })),
-                            ...snapshotToArray(trkMeetsSnap).map((m) => ({ ...m, _tree: "Track" })),
-                        ]
-                        // 1. Ensure the date is valid
-                        .filter((m) => m.date && !isNaN(new Date(m.date).getTime()))
-                        // 2. Only include meets that are happening today or have already happened
-                        .filter((m) => new Date(m.date).getTime() <= now)
-                        // 3. Sort by the closest time to right now
-                        .sort((a, b) => {
-                            const diffA = Math.abs(now - new Date(a.date).getTime());
-                            const diffB = Math.abs(now - new Date(b.date).getTime());
-                            return diffA - diffB;
-                        });
+                const meets = allMeets
+                    .filter((m) => m.date && !isNaN(new Date(m.date).getTime()))
+                    .filter((m) => new Date(m.date).getTime() <= now)
+                    .sort((a, b) => Math.abs(now - new Date(a.date).getTime()) - Math.abs(now - new Date(b.date).getTime()));
 
-                        if (!meets.length) {
-                            body.innerHTML = '<div class="loading-state">No past meets posted yet.</div>';
-                            return;
-                        }
-
-                        const latest = meets[0];
-                        const snap = await database.ref(`${latest._tree}/results`)
-                            .orderByChild("meet_slug").equalTo(latest.slug).once("value");
-
-                        let results = snapshotToArray(snap)
-                            .sort((a, b) => (a.time ?? Infinity) - (b.time ?? Infinity))
-                            .slice(0, 8);
-
-                        if (!results.length) {
-                            body.innerHTML = `<div class="loading-state">Latest meet: ${esc(latest.name)} &mdash; results coming soon.</div>`;
-                            return;
-                        }
-
-                        // Render Results
-                        const headerMeetHref = latest.slug
-                            ? "/CrossCountry/meet.html?slug=" + encodeURIComponent(latest.slug)
-                            : "";
-                        const headerMeet = headerMeetHref
-                            ? `<a href="${headerMeetHref}" style="color:inherit;">${esc(latest.name)}</a>`
-                            : esc(latest.name);
-                        let html = `
-                            <p style="background: var(--bg-secondary);padding: 12px 16px;font-size: 0.8rem;font-weight: 700;color: var(--text-secondary);text-transform: uppercase;letter-spacing: 0.05em;border-bottom: 1px solid var(--border);">
-                                ${headerMeet} &middot; ${esc(fmtShort(latest.date))}
-                            </p>
-                            <table class="results-table">
-                                <tbody>
-                        `;
-
-                        results.forEach((r, i) => {
-                            const place = r.place || r.placement || i + 1;
-                            const name = r.athlete_name || "";
-                            const schoolSlug = r.school_slug || "";
-                            const schoolLabel = schoolSlug ? slugToName(schoolSlug) : "";
-                            const genderLabel = r.gender === "M" ? "Boys" : r.gender === "F" ? "Girls" : "";
-                            const genderStr = genderLabel ? " &middot; " + genderLabel : "";
-
-                            const athleteHref = r.athlete_name
-                                ? "/CrossCountry/athlete.html?name=" + encodeURIComponent(r.athlete_name) +
-                                  (schoolSlug ? "&school=" + encodeURIComponent(schoolSlug) : "")
-                                : "";
-                            const schoolHref = schoolSlug
-                                ? "/CrossCountry/school.html?slug=" + encodeURIComponent(schoolSlug)
-                                : "";
-
-                            const nameCell = athleteHref
-                                ? `<a class="item-name" href="${athleteHref}">${esc(name)}</a>`
-                                : `<span class="item-name">${name ? esc(name) : "&mdash;"}</span>`;
-                            const schoolCell = schoolLabel
-                                ? (schoolHref
-                                    ? `<a class="item-school" href="${schoolHref}">${esc(schoolLabel)}</a>`
-                                    : `<span class="item-school">${esc(schoolLabel)}</span>`)
-                                : "";
-
-                            html += `
-                                <div class="list-item">
-                                    <div class="item-place">${place}</div>
-                                    <div class="item-details">
-                                        ${nameCell}
-                                        ${schoolCell}
-                                        <div class="item-meta">${genderStr}</div>
-                                    </div>
-                                    <div class="item-score">${(fmtTime(r.time))}</div>
-                                </div>
-                            `;
-                        });
-
-                        html += `</tbody></table>`;
-                        body.innerHTML = html;
-
-                    } catch (err) {
-                        console.error("Error loading results:", err);
-                        body.innerHTML = '<div class="loading-state">Results feed unavailable.</div>';
-                    }
+                if (!meets.length) {
+                    body.innerHTML = '<div class="loading-state">No past meets posted yet.</div>';
+                    return;
                 }
+
+                const latest = meets[0];
+                const snap = await database.ref(`${latest._tree}/results`)
+                    .orderByChild("meet_slug").equalTo(latest.slug).once("value");
+
+                const allMeetRows = snapshotToArray(snap).filter((r) => r.time && Number(r.time) > 0);
+                let results = allMeetRows
+                    .slice()
+                    .sort((a, b) => (Number(a.time) || Infinity) - (Number(b.time) || Infinity))
+                    .slice(0, 8);
+
+                if (!results.length) {
+                    body.innerHTML = `<div class="loading-state">Latest meet: ${esc(latest.name)} &mdash; results coming soon.</div>`;
+                } else {
+                    const headerMeetHref = latest.slug
+                        ? "/CrossCountry/meet.html?slug=" + encodeURIComponent(latest.slug)
+                        : "";
+                    const headerMeet = headerMeetHref
+                        ? `<a href="${headerMeetHref}" style="color:inherit;">${esc(latest.name)}</a>`
+                        : esc(latest.name);
+
+                    let html = `
+                        <div style="background: var(--bg-secondary);padding: 11px 16px;font-size: 0.78rem;font-weight: 800;color: var(--text-secondary);text-transform: uppercase;letter-spacing: 0.05em;border-bottom: 1px solid var(--border);display:flex;justify-content:space-between;">
+                            <span>${headerMeet}</span>
+                            <span>${esc(fmtShort(latest.date))}</span>
+                        </div>
+                    `;
+
+                    results.forEach((r, i) => {
+                        const place = r.place || r.placement || i + 1;
+                        const name = r.athlete_name || "";
+                        const schoolSlug = r.school_slug || "";
+                        const schoolLabel = schoolSlug ? slugToName(schoolSlug) : "";
+                        const genderLabel = r.gender === "M" ? "Boys" : r.gender === "F" ? "Girls" : "";
+
+                        const athleteHref = r.athlete_name
+                            ? "/CrossCountry/athlete.html?name=" + encodeURIComponent(r.athlete_name) +
+                              (schoolSlug ? "&school=" + encodeURIComponent(schoolSlug) : "")
+                            : "";
+                        const schoolHref = schoolSlug
+                            ? "/CrossCountry/school.html?slug=" + encodeURIComponent(schoolSlug)
+                            : "";
+
+                        const nameCell = athleteHref
+                            ? `<a class="item-name" href="${athleteHref}">${esc(name)}</a>`
+                            : `<span class="item-name">${name ? esc(name) : "&mdash;"}</span>`;
+                        const schoolCell = schoolLabel
+                            ? (schoolHref
+                                ? `<a class="item-school" href="${schoolHref}">${esc(schoolLabel)}</a>`
+                                : `<span class="item-school">${esc(schoolLabel)}</span>`)
+                            : "";
+
+                        html += `
+                            <div class="list-item">
+                                <div class="item-place">${place}</div>
+                                <div class="item-avatar">
+                                    <img src="/assets/team logos/${encodeURIComponent(schoolSlug)}.png" alt="" onerror="this.onerror=null;this.src='/assets/images/msmrunner.svg'" />
+                                </div>
+                                <div class="item-details">
+                                    ${nameCell}
+                                    ${schoolCell}
+                                    <div class="item-meta">${genderLabel}</div>
+                                </div>
+                                <div class="item-score">${fmtTime(r.time)}</div>
+                            </div>
+                        `;
+                    });
+                    body.innerHTML = html;
+                }
+
+                // Populate Top Boys & Girls mini-podium from latest meet
+                const topBoys = allMeetRows.filter((r) => r.gender === "M").sort((a, b) => Number(a.time) - Number(b.time)).slice(0, 3);
+                const topGirls = allMeetRows.filter((r) => r.gender === "F").sort((a, b) => Number(a.time) - Number(b.time)).slice(0, 3);
+                const renderLeaderRow = (r, idx, badge) => {
+                    const slug = r.school_slug || "";
+                    return `<div class="list-item">
+                        <div class="item-place" style="font-size:0.85rem;">${badge} #${idx + 1}</div>
+                        <div class="item-avatar">
+                            <img src="/assets/team logos/${encodeURIComponent(slug)}.png" alt="" onerror="this.onerror=null;this.src='/assets/images/msmrunner.svg'" />
+                        </div>
+                        <div class="item-details">
+                            <a class="item-name" href="/CrossCountry/athlete.html?name=${encodeURIComponent(r.athlete_name || "")}&school=${encodeURIComponent(slug)}">${esc(r.athlete_name)}</a>
+                            <div class="item-school">${esc(slugToName(slug))}</div>
+                        </div>
+                        <div class="item-score">${fmtTime(r.time)}</div>
+                    </div>`;
+                };
+                const leaderHTML = [
+                    ...topBoys.map((r, i) => renderLeaderRow(r, i, "B")),
+                    ...topGirls.map((r, i) => renderLeaderRow(r, i, "G")),
+                ].join("");
+                leadersBox.innerHTML = leaderHTML || '<div class="loading-state">Leaders updating soon.</div>';
+            } catch (err) {
+                console.error("Error loading results:", err);
+                body.innerHTML = '<div class="loading-state">Results feed unavailable.</div>';
+            }
+        }
 
         async function loadRecentNews() {
             const grid = document.getElementById("news-grid");
@@ -638,7 +1571,7 @@
                 const snap = await database.ref("news").once("value");
                 const articles = snapshotToArray(snap)
                     .sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0))
-                    .slice(0, 3);
+                    .slice(0, 4);
 
                 if (!articles.length) {
                     grid.innerHTML = '<div class="loading-state">No articles yet. Check back soon!</div>';
@@ -648,20 +1581,20 @@
                 let html = "";
                 articles.forEach((a) => {
                     const locationHtml = a.category ? `<p class="meet-card-location">${esc(a.category)}</p>` : "";
-                    const snippet = (a.content || "").substring(0, 100) + "&hellip;";
+                    const rawText = String(a.content || "").replace(/<[^>]*>/g, "");
+                    const snippet = rawText.substring(0, 120) + (rawText.length > 120 ? "&hellip;" : "");
 
                     html += `
-                        <div class="meet-card" style="cursor:default;">
+                        <a class="meet-card" href="/news.html" style="text-decoration:none;color:inherit;display:block;">
                             <h3 class="meet-card-title">${esc(a.title)}</h3>
                             <p class="meet-card-date">&#128197; ${esc(fmtShort(a.date))}</p>
                             ${locationHtml}
                             <p style="font-size:0.9rem; color:var(--text-secondary); margin:0;">${esc(snippet)}</p>
-                        </div>
+                        </a>
                     `;
                 });
 
                 grid.innerHTML = html;
-
             } catch (err) {
                 console.error("Error loading news:", err);
                 grid.innerHTML = '<div class="loading-state">Error loading articles.</div>';
@@ -679,18 +1612,13 @@
                 ]);
 
                 const now = Date.now();
-
                 const meets = [
                     ...snapshotToArray(ccSnap).map((m) => ({ ...m, _sport: "XC" })),
                     ...snapshotToArray(trkSnap).map((m) => ({ ...m, _sport: "TF" })),
                 ]
-                .filter((m) => m.date && !isNaN(new Date(m.date).getTime()))
-                .sort((a, b) => {
-                    const diffA = Math.abs(new Date(a.date).getTime() - now);
-                    const diffB = Math.abs(new Date(b.date).getTime() - now);
-                    return diffA - diffB; // Sort ascending by closest time distance to today
-                })
-                .slice(0, 5);
+                    .filter((m) => m.date && !isNaN(new Date(m.date).getTime()))
+                    .sort((a, b) => Math.abs(new Date(a.date).getTime() - now) - Math.abs(new Date(b.date).getTime() - now))
+                    .slice(0, 6);
 
                 if (!meets.length) {
                     body.innerHTML = '<div class="loading-state">No meets scheduled.</div>';
@@ -699,70 +1627,59 @@
 
                 let html = "";
                 meets.forEach((m) => {
-                  // Parse string components as local numbers (Month is 0-indexed in JS)
-                  const parts = m.date ? m.date.split("-").map(Number) : [];
-                  const d = parts.length === 3 ? new Date(parts[0], parts[1] - 1, parts[2]) : new Date(NaN);
-                
-                  const mon = isNaN(d) ? "" : d.toLocaleDateString("en-US", { month: "short" });
-                  const day = isNaN(d) ? "" : d.getDate();
-                  
-                  const divs = (m.divisions ? String(m.divisions).split(/[,|]/) : [])
-                    .map((x) => x.trim())
-                    .filter(Boolean);
-                    
-                  const badges = [m._sport, ...divs]
-                    .map((b) => `<span class="div-badge">${esc(b)}</span>`)
-                    .join("");
+                    const parts = m.date ? m.date.split("-").map(Number) : [];
+                    const d = parts.length === 3 ? new Date(parts[0], parts[1] - 1, parts[2]) : new Date(NaN);
+                    const mon = isNaN(d) ? "" : d.toLocaleDateString("en-US", { month: "short" });
+                    const day = isNaN(d) ? "" : d.getDate();
 
-                  const meetSlug = m.slug || m.id || "";
-                  const meetHref = meetSlug
-                    ? "/CrossCountry/meet.html?slug=" + encodeURIComponent(meetSlug)
-                    : "";
-                  const nameHtml = esc(m.name || "Meet");
-                  const info = meetHref
-                    ? `<a class="meet-info" href="${meetHref}" style="color:inherit;text-decoration:none;">
-                        <h3>${nameHtml}</h3>
-                        <div class="badges">${badges}</div>
-                      </a>`
-                    : `<div class="meet-info">
-                        <h3>${nameHtml}</h3>
-                        <div class="badges">${badges}</div>
-                      </div>`;
+                    const divs = (m.divisions ? String(m.divisions).split(/[,|]/) : [])
+                        .map((x) => x.trim())
+                        .filter(Boolean);
 
-                  html += `
-                    <div class="meet-row">
-                      <div class="meet-cal">
-                        <div class="m">${mon}</div>
-                        <div class="d">${day}</div>
-                      </div>
-                      ${info}
-                    </div>
-                  `;
+                    const badges = [m._sport, ...divs]
+                        .map((b) => `<span class="div-badge">${esc(b)}</span>`)
+                        .join("");
+
+                    const meetSlug = m.slug || m.id || "";
+                    const meetHref = meetSlug
+                        ? (m._sport === "TF" ? "/Track/meet.html?slug=" : "/CrossCountry/meet.html?slug=") + encodeURIComponent(meetSlug)
+                        : "";
+                    const nameHtml = esc(m.name || "Meet");
+                    const info = meetHref
+                        ? `<a class="meet-info" href="${meetHref}" style="color:inherit;text-decoration:none;flex:1;">
+                            <h3>${nameHtml}</h3>
+                            <div class="badges">${badges}</div>
+                          </a>`
+                        : `<div class="meet-info" style="flex:1;">
+                            <h3>${nameHtml}</h3>
+                            <div class="badges">${badges}</div>
+                          </div>`;
+
+                    html += `
+                        <div class="meet-row">
+                          <div class="meet-cal">
+                            <div class="m">${mon}</div>
+                            <div class="d">${day}</div>
+                          </div>
+                          ${info}
+                        </div>
+                    `;
                 });
 
-
                 body.innerHTML = html;
-
             } catch (err) {
                 console.error("Error loading meets:", err);
                 body.innerHTML = '<div class="loading-state">Schedule unavailable.</div>';
             }
         }
 
-        // ============================================================
-        //  GLOBAL SEARCH
-        //  Loads athletes / schools / meets (XC + Track) once, builds
-        //  an in-memory index, and filters client-side on every
-        //  keystroke. snapshotToArray() iterates via Object.keys(), so
-        //  it is immune to Firebase's forEach "truthy return stops
-        //  iteration" pitfall.
-        // ============================================================
+        // --- Global Search + Hero Telemetry ---
         const MSMSearch = {
-            index: [],       // [{ type, title, sub, url, key, hay }]
+            index: [],
             ready: false,
             input: null,
             box: null,
-            items: [],       // currently rendered <a> nodes
+            items: [],
             activeIdx: -1,
 
             norm(s) {
@@ -770,7 +1687,6 @@
             },
 
             slugToName(slug) {
-                // "spring-mills" -> "Spring Mills" (readable fallback when no name field)
                 return String(slug || "")
                     .split(/[-_]/)
                     .filter(Boolean)
@@ -780,20 +1696,23 @@
 
             async build() {
                 try {
-                    const [athSnap, trkAthSnap, schoolSnap, ccMeetSnap, trkMeetSnap] = await Promise.all([
+                    const [athSnap, trkAthSnap, schoolSnap, ccMeetSnap, trkMeetSnap, ccResSnap] = await Promise.all([
                         database.ref("crosscountry/athletes").once("value"),
                         database.ref("Track/athletes").once("value"),
                         database.ref("crosscountry/schools").once("value"),
                         database.ref("crosscountry/meets").once("value"),
                         database.ref("Track/meets").once("value"),
+                        database.ref("crosscountry/results").once("value"),
                     ]);
 
                     const idx = [];
                     const seenAthletes = new Set();
 
-                    // Athletes (XC + Track). XC ids resolve directly; Track/dup
-                    // entries fall back to ?name=&school= which athlete.html
-                    // matches against results.
+                    const ccAthletes = snapshotToArray(athSnap);
+                    const trkAthletes = snapshotToArray(trkAthSnap);
+                    const schoolsArr = snapshotToArray(schoolSnap);
+                    const ccResultsCount = ccResSnap.numChildren ? ccResSnap.numChildren() : snapshotToArray(ccResSnap).length;
+
                     const addAthletes = (arr, useId) => {
                         arr.forEach((a) => {
                             const name = a.name || "";
@@ -819,11 +1738,10 @@
                             });
                         });
                     };
-                    addAthletes(snapshotToArray(athSnap), true);
-                    addAthletes(snapshotToArray(trkAthSnap), false);
+                    addAthletes(ccAthletes, true);
+                    addAthletes(trkAthletes, false);
 
-                    // Schools -> school.html?slug=<slug>
-                    snapshotToArray(schoolSnap).forEach((s) => {
+                    schoolsArr.forEach((s) => {
                         const slug = s.slug || s.id;
                         const name = s.name || this.slugToName(slug);
                         if (!name) return;
@@ -837,7 +1755,6 @@
                         });
                     });
 
-                    // Meets (XC + Track) -> meet.html?slug=<slug>
                     const addMeets = (arr, sport) => {
                         arr.forEach((m) => {
                             const slug = m.slug || m.id;
@@ -848,13 +1765,18 @@
                                 type: "meet",
                                 title: name,
                                 sub: [sport, dateLabel].filter(Boolean).join(" · ") || "Meet",
-                                url: "/CrossCountry/meet.html?slug=" + encodeURIComponent(slug),
+                                url: (sport === "Track & Field" ? "/Track/meet.html?slug=" : "/CrossCountry/meet.html?slug=") + encodeURIComponent(slug),
                                 hay: this.norm(name + " " + slug),
                             });
                         });
                     };
                     addMeets(snapshotToArray(ccMeetSnap), "Cross Country");
                     addMeets(snapshotToArray(trkMeetSnap), "Track & Field");
+
+                    // Update Hero Live Counters
+                    document.getElementById("stat-total-results").textContent = ccResultsCount.toLocaleString() + "+";
+                    document.getElementById("stat-total-athletes").textContent = seenAthletes.size.toLocaleString();
+                    document.getElementById("stat-total-schools").textContent = schoolsArr.length.toLocaleString();
 
                     this.index = idx;
                     this.ready = true;
@@ -872,7 +1794,6 @@
                 for (const rec of this.index) {
                     const pos = rec.hay.indexOf(q);
                     if (pos === -1) continue;
-                    // Prefix / word-start matches rank higher than mid-string matches.
                     const wordStart = pos === 0 || rec.hay[pos - 1] === " ";
                     const score = (pos === 0 ? 0 : wordStart ? 1 : 2) + pos * 0.001;
                     scored.push({ rec, score });
@@ -980,7 +1901,6 @@
                             e.preventDefault();
                             window.location.href = this.items[0].getAttribute("href");
                         } else {
-                            // No index match — fall back to a name search on the athlete page.
                             const q = this.input.value.trim();
                             if (q) window.location.href = "/CrossCountry/athlete.html?name=" + encodeURIComponent(q);
                         }
@@ -997,11 +1917,19 @@
                 document.addEventListener("click", (e) => {
                     if (!e.target.closest(".home-search")) this.close();
                 });
+
+                // "/" keyboard shortcut to focus search
+                document.addEventListener("keydown", (e) => {
+                    if (e.key === "/" && document.activeElement !== this.input && !["INPUT", "TEXTAREA", "SELECT"].includes(document.activeElement?.tagName)) {
+                        e.preventDefault();
+                        this.input.focus();
+                    }
+                });
             },
         };
 
-        // Run on load
         document.addEventListener("DOMContentLoaded", () => {
+            setupQuickLab();
             loadLatestResults();
             loadRecentNews();
             loadMeets();
